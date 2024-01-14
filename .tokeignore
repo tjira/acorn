@@ -1,0 +1,10 @@
+# folders
+.github
+example
+script
+basis
+docs
+
+# exts
+*.txt
+*.md

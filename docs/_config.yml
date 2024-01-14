@@ -1,0 +1,19 @@
+title: Quantum Acorn
+email: tom.jira@gmail.com
+github_username: jirat
+
+url: "https://tjira.github.io"
+baseurl: "/acorn"
+
+plugins:
+  - jekyll-remote-theme
+
+remote_theme: just-the-docs/just-the-docs
+
+aux_links:
+  "Quantum Acorn on GitHub":
+    - "//github.com/tjira/acorn"
+
+callouts:
+  note:
+    color: blue

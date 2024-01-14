@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v**'
+
+permissions:
+  contents: write
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build_linux_x86-64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Packages
+        run: sudo apt install -y libboost-all-dev libeigen3-dev
+
+      - name: Build Libint
+        run: ./script/libint.sh
+
+      - name: Configure Acorn
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build Acorn
+        run: |
+          export CPLUS_INCLUDE_PATH="$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
+          export LIBRARY_PATH="$PWD/libint/install/lib:$LIBRARY_PATH"
+          cmake --build build
+
+      - name: Rename Executable
+        run: mv bin/acorn bin/acorn_linux_x86-64
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            bin/acorn_linux_x86-64
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [build_linux_x86-64]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Copy x86-64 Binaries to the Root Folder
+        run: |
+          cp artifact/acorn_linux_x86-64 acorn
+
+      - name: Create x86-64 Packages
+        run: |
+          tar -czf acorn_linux_x86-64.tar.gz acorn basis example LICENSE.md
+
+      - name: Release linux_x86-64 Version of Acorn
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn_linux_x86-64.tar.gz
+          tag: ${{github.ref}}

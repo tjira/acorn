@@ -1,0 +1,12 @@
+# root links
+/molecule.xyz
+
+# exts
+*.json
+*.lock
+*.out
+
+# folders
+/.cache/
+/build/
+/bin/
