@@ -1,8 +1,8 @@
 # root links
+/compile_commands.json
 /molecule.xyz
 
 # exts
-*.json
 *.lock
 *.out
 

@@ -37,8 +37,10 @@ add_executable(acorn
     src/method.cpp
     src/restrictedhartreefock.cpp
     src/restrictedmethod.cpp
+    src/restrictedmollerplesset.cpp
     src/system.cpp
     src/timer.cpp
+    src/transform.cpp
 )
 target_compile_definitions(acorn PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(acorn int2.a Eigen3::Eigen OpenMP::OpenMP_CXX)

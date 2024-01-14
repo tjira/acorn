@@ -1,0 +1,10 @@
+{
+    "molecule" : {
+        "file" : "../../example/molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "rhf" : {
+        "gradient" : true
+    },
+    "mp" : {}
+}

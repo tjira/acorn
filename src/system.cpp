@@ -1,11 +1,11 @@
 #include "system.h"
 
-System::System(std::ifstream& stream, std::string basis, int charge, int multi) : electrons(0), charge(charge), multi(multi) {
+System::System(std::ifstream& stream, std::string basis, int charge, int multi) : electrons(0), charge(charge), multi(multi), basis(basis) {
     // check for the input geometry file existence
     if (!stream.good()) throw std::runtime_error("SYSTEM FILE DOES NOT EXIST");
 
     // replace the basis placeholders
-    std::replace(basis.begin(), basis.end(), '*', 's'), std::replace(basis.begin(), basis.end(), '+', 'p');
+    std::replace(this->basis.begin(), this->basis.end(), '*', 's'), std::replace(this->basis.begin(), this->basis.end(), '+', 'p');
 
     // read the input geometry
     atoms = libint2::read_dotxyz(stream);
@@ -15,11 +15,22 @@ System::System(std::ifstream& stream, std::string basis, int charge, int multi) 
     for (const auto& atom : atoms) electrons += atom.atomic_number;
 }
 
+void System::move(const Matrix<>& dir) {
+    // shift the atoms
+    for (size_t i = 0; i < atoms.size(); i++) {
+        atoms.at(i).x += dir(i, 0);
+        atoms.at(i).y += dir(i, 1);
+        atoms.at(i).z += dir(i, 2);
+    }
+
+    // shift the coords and recreate the basis
+    shells = libint2::BasisSet(basis, atoms, true);
+}
+
 double System::repulsion() const {
     // create nuclear repulsion variable
     double repulsion = 0;
 
-    #pragma omp parallel for num_threads(nthread)
     for (size_t i = 0; i < atoms.size(); i++) {
         for (size_t j = 0; j < i; j++) {
             // extract the atoms at position i and j

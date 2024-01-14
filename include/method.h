@@ -8,9 +8,14 @@ public:
         struct RestrictedHartreeFock {
             double E; Vector<> eps; Matrix<> C, D;
         } rhf;
+        struct RestrictedMollerPlesset {
+            double Ecorr = 0;
+        } rmp;
+        double Etot; Matrix<> G;
     };
 public:
-    virtual Result run(const System&, const Integrals&, bool) const = 0;
+    virtual Result gradient(const System&, const Integrals&, Result, bool print = true) const;
+    virtual Result run(const System&, const Integrals&, Result, bool print = true) const = 0;
 };
 
 #include <nlohmann/json.hpp>

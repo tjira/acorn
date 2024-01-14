@@ -1,5 +1,7 @@
 #pragma once
 
+#define EIGEN_INITIALIZE_MATRICES_BY_ZERO
+
 #include <unsupported/Eigen/MatrixFunctions>
 #include <unsupported/Eigen/CXX11/Tensor>
 

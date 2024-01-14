@@ -1,6 +1,6 @@
 #include "restrictedhartreefock.h"
 
-Method::Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, bool print) const {
+Method::Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, Result, bool print) const {
     // create the antisymetrized Coulomb integral and define contraction axes with DIIS
     libint2::DIIS<Matrix<>> diis(2, 5); Eigen::IndexPair<int> first(2, 0), second(3, 1);
     Tensor<> ERI = ints.J - 0.5 * ints.J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1});
@@ -55,6 +55,6 @@ Method::Result RestrictedHartreeFock::run(const System& system, const Integrals&
         }
     }
 
-    // return the results
-    return res;
+    // assign total energy and return the struct
+    res.Etot = res.rhf.E + system.repulsion(); return res;
 }
