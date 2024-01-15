@@ -1,6 +1,6 @@
 #include "restrictedhartreefock.h"
 
-double RestrictedHartreeFock::energy(const System& system, Result res) const {
+Result RestrictedHartreeFock::run(const System& system, Result res, bool print) const {
     // define the integral struct
     Integrals ints;
 
@@ -8,11 +8,11 @@ double RestrictedHartreeFock::energy(const System& system, Result res) const {
     ints.S = Integral::Overlap(system), ints.T = Integral::Kinetic(system);
     ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system);
 
-    // run the restricted Hartree-Fock method and return the total energy
-    return RestrictedHartreeFock(opt).run(system, ints, res, false).Etot;
+    // run the restricted Hartree-Fock method and return the result struct
+    return RestrictedHartreeFock(opt).run(system, ints, res, print);
 }
 
-Method::Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, Result res, bool print) const {
+Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, Result res, bool print) const {
     // create the antisymmetrized Coulomb integral and define contraction axes with DIIS
     libint2::DIIS<Matrix<>> diis(2, 5); Eigen::IndexPair<int> first(2, 0), second(3, 1);
     Tensor<> ERI = ints.J - 0.5 * ints.J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1});
@@ -70,3 +70,6 @@ Method::Result RestrictedHartreeFock::run(const System& system, const Integrals&
     // assign total energy and return the struct
     res.Etot = res.rhf.E + system.repulsion(); return res;
 }
+
+#include "method.cpp"
+template class Method<RestrictedHartreeFock>;

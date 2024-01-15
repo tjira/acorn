@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // set the number of threads and defne results and integrals
-    nthread = program.get<int>("-n"); Method::Result res; Integrals ints;
+    nthread = program.get<int>("-n"); Result res; Integrals ints;
 
     // open the input file, parse the input, create integrals container and create the molecule
     std::ifstream istream(program.get("input")); nlohmann::json input = nlohmann::json::parse(istream); istream.close();
@@ -52,47 +52,37 @@ int main(int argc, char** argv) {
     rmpopt["rhfopt"] = rhfopt.template get<RestrictedHartreeFock::Options>();
 
     if (input.contains("rhf")) {
-        // perform the RHF calculation, assign it to the result struct and print the results
-        res = RestrictedHartreeFock(rhfopt.template get<RestrictedHartreeFock::Options>()).run(system, ints);
-        std::printf("\nRHF ENERGY: %.14f\n", res.Etot);
+        RestrictedHartreeFock rhf(rhfopt.template get<RestrictedHartreeFock::Options>());
+        res = rhf.run(system, ints); std::printf("\nRHF ENERGY: %.14f\n", res.Etot);
 
         if (libint2::initialize(); input.at("rhf").contains("gradient")) {
-            // calculate the RHF gradient, assign it to the result struct and print the results
-            res = RestrictedHartreeFock(rhfopt.template get<RestrictedHartreeFock::Options>()).gradient(system, ints, res);
-            std::cout << "\nRHF GRADIENT:\n" << res.G << "\n" << "RHF GRADIENT NORM: " << res.G.norm() << std::endl;
+            res = rhf.gradient(system, ints, res); std::cout << "\nRHF GRADIENT:\n" << res.G << "\n" << "RHF GRADIENT NORM: " << res.G.norm() << std::endl;
         } libint2::finalize();
 
         if (libint2::initialize(); input.at("rhf").contains("hessian")) {
-            // calculate the RHF gradient, assign it to the result struct and print the results
-            res = RestrictedHartreeFock(rhfopt.template get<RestrictedHartreeFock::Options>()).hessian(system, ints, res);
-            std::cout << "\nRHF HESSIAN:\n" << res.H << "\n" << "RHF HESSIAN NORM: " << res.H.norm() << std::endl;
-            std::cout << "\nRHF FREQUENCIES:\n" << Method::frequency(system, res.H) << std::endl;
+            res = rhf.hessian(system, ints, res); std::cout << "\nRHF HESSIAN:\n" << res.H << "\n" << "RHF HESSIAN NORM: " << res.H.norm() << std::endl;
+            std::cout << "\nRHF FREQUENCIES:\n" << Method<RestrictedHartreeFock>::frequency(system, res.H) << std::endl;
         } libint2::finalize();
 
         if (libint2::initialize(); input.at("rhf").contains("dynamics")) {
-            // perforn the RHF dynamics
-            RestrictedHartreeFock(rhfopt.template get<RestrictedHartreeFock::Options>()).dynamics(system, ints, res);
+            rhf.dynamics(system, ints, res);
         } libint2::finalize();
 
         if (input.contains("rmp")) {
-            // initialize the restricted RMP method, run it, assign it to the result struct and print the results
             RestrictedMollerPlesset rmp(rmpopt.template get<RestrictedMollerPlesset::Options>());
             ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C); res = rmp.run(system, ints, res);
             std::printf("\nRMP2 ENERGY: %.14f\n", res.Etot);
 
             if (libint2::initialize(); input.at("rmp").contains("gradient")) {
-                // calculate the RMP gradient, assign it to the result struct and print the results
                 res = rmp.gradient(system, ints, res); std::cout << "\nRMP2 GRADIENT:\n" << res.G << "\n" << "RMP2 GRADIENT NORM: " << res.G.norm() << std::endl;
             } libint2::finalize();
 
             if (libint2::initialize(); input.at("rmp").contains("hessian")) {
-                // calculate the RHF gradient, assign it to the result struct and print the results
                 res = rmp.hessian(system, ints, res); std::cout << "\nRMP HESSIAN:\n" << res.H << "\n" << "RMP HESSIAN NORM: " << res.H.norm() << std::endl;
-                std::cout << "\nRMP FREQUENCIES:\n" << Method::frequency(system, res.H) << std::endl;
+                std::cout << "\nRMP FREQUENCIES:\n" << Method<RestrictedMollerPlesset>::frequency(system, res.H) << std::endl;
             } libint2::finalize();
 
             if (libint2::initialize(); input.at("rmp").contains("dynamics")) {
-                // perform the dynamics
                 rmp.dynamics(system, ints, res);
             } libint2::finalize();
         }

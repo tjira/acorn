@@ -1,6 +1,7 @@
 #include "method.h"
 
-void Method::dynamics(System system, Integrals ints, Result res, bool print) const {
+template <class M>
+void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool print) const {
     // print the header
     if (print) std::printf("\n ITER  TIME [fs]        E [Eh]              KIN [Eh]              TK [K]         |GRAD|      TIME\n");
 
@@ -13,39 +14,39 @@ void Method::dynamics(System system, Integrals ints, Result res, bool print) con
     }
 
     // get the degrees of freedom and write the initial geometry
-    double Nf = system.getAtoms().size() * 3 - 6; system.save(opt.dynamics.output) ;
+    double Nf = system.getAtoms().size() * 3 - 6; system.save(get()->opt.dynamics.output) ;
 
     // print the zeroth iteration
     if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", 0, 0.0, res.Etot, 0.0, 0.0, res.G.norm(), "00:00:00.000");
 
-    // move the system while gradient is big
-    for (int i = 0; i < opt.dynamics.iters; i++) {
+    for (int i = 0; i < get()->opt.dynamics.iters; i++) {
         // start the timer and store the previous v and a
         auto start = Timer::Now();
         Matrix<> vp = v, ap = a;
 
         // calculate the velocity and accceleration
-        a = -res.G.array() / m.array(); v = vp + (ap + a) * opt.dynamics.step / 2;
+        a = -res.G.array() / m.array(); v = vp + (ap + a) * get()->opt.dynamics.step / 2;
 
         // calculate the kinetic energy and temperature
         double Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); double T = 2 * Ekin / Nf;
 
         // move the system
-        system.move(opt.dynamics.step * (v + 0.5 * a * opt.dynamics.step));
+        system.move(get()->opt.dynamics.step * (v + 0.5 * a * get()->opt.dynamics.step));
 
         // write the current geometry
-        system.save(opt.dynamics.output, std::ios::app);
+        system.save(get()->opt.dynamics.output, std::ios::app);
 
         // calculate the next energy with gradient
-        res.Etot = energy(system, res); res = gradient(system, ints, res, false);
+        res = run(system, res, false); res = gradient(system, ints, res, false);
 
         // print the iteration info
-        if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", i + 1, AU2FS * opt.dynamics.step * (i + 1), res.Etot, Ekin, T / BOLTZMANN, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+        if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", i + 1, AU2FS * get()->opt.dynamics.step * (i + 1), res.Etot, Ekin, T / BOLTZMANN, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
     }
 
 }
 
-Vector<> Method::frequency(const System& system, const Matrix<>& H) {
+template <class M>
+Vector<> Method<M>::frequency(const System& system, const Matrix<>& H) {
     // create the mass matrix
     Matrix<> MM(3 * system.getAtoms().size(), 3 * system.getAtoms().size());
     for (int i = 0; i < MM.rows(); i++) {
@@ -58,7 +59,8 @@ Vector<> Method::frequency(const System& system, const Matrix<>& H) {
     std::sort(freqs.begin(), freqs.end(), std::greater<>()); return freqs;
 }
 
-Method::Result Method::gradient(const System& system, const Integrals&, Result res, bool print) const {
+template <class M>
+Result Method<M>::gradient(const System& system, const Integrals&, Result res, bool print) const {
     // define the gradient matrix
     res.G = Matrix<>(system.getAtoms().size(), 3);
 
@@ -76,13 +78,13 @@ Method::Result Method::gradient(const System& system, const Integrals&, Result r
             Matrix<> dirPlus(system.getAtoms().size(), 3); System sysPlus = system;
 
             // fill the direction matrices
-            dirMinus(i, j) -= opt.gradient.step * A2BOHR; dirPlus(i, j) += opt.gradient.step * A2BOHR;
+            dirMinus(i, j) -= get()->opt.gradient.step * A2BOHR; dirPlus(i, j) += get()->opt.gradient.step * A2BOHR;
 
             // move the systems
             sysMinus.move(dirMinus), sysPlus.move(dirPlus);
 
             // calculate and assign the derivative
-            res.G(i, j) = BOHR2A * (energy(sysPlus, res) - energy(sysMinus, res)) / opt.gradient.step / 2;
+            res.G(i, j) = BOHR2A * (run(sysPlus, res, false).Etot - run(sysMinus, res, false).Etot) / get()->opt.gradient.step / 2;
 
             // print the iteration info
             if (print) std::printf("(%2d, %2d) %18.14f %s\n", i + 1, j + 1, res.G(i, j), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -93,7 +95,8 @@ Method::Result Method::gradient(const System& system, const Integrals&, Result r
     return res;
 }
 
-Method::Result Method::hessian(const System& system, const Integrals&, Result res, bool print) const {
+template <class M>
+Result Method<M>::hessian(const System& system, const Integrals&, Result res, bool print) const {
     // define the gradient matrix
     res.H = Matrix<>(3 * system.getAtoms().size(), 3 * system.getAtoms().size());
 
@@ -111,18 +114,18 @@ Method::Result Method::hessian(const System& system, const Integrals&, Result re
             Matrix<> dir1(system.getAtoms().size(), 3), dir2(system.getAtoms().size(), 3);
 
             // fill the direction matrices
-            dir1(i / 3, i % 3) = opt.hessian.step * A2BOHR; dir2(j / 3, j % 3) = opt.hessian.step * A2BOHR;
+            dir1(i / 3, i % 3) = get()->opt.hessian.step * A2BOHR; dir2(j / 3, j % 3) = get()->opt.hessian.step * A2BOHR;
 
             // move the systems
             sysMinusMinus.move(-dir1 - dir2), sysMinusPlus.move(-dir1 + dir2);
             sysPlusMinus.move(dir1 - dir2), sysPlusPlus.move(dir1 + dir2);
 
             // calculate the energies
-            double energyMinusMinus = energy(sysMinusMinus, res), energyMinusPlus = energy(sysMinusPlus, res);
-            double energyPlusMinus = energy(sysPlusMinus, res), energyPlusPlus = energy(sysPlusPlus, res);
+            double energyMinusMinus = run(sysMinusMinus, res, false).Etot, energyMinusPlus = run(sysMinusPlus, res, false).Etot;
+            double energyPlusMinus = run(sysPlusMinus, res, false).Etot, energyPlusPlus = run(sysPlusPlus, res, false).Etot;
 
             // calculate and assign the derivative
-            res.H(i, j) = BOHR2A * BOHR2A * (energyPlusPlus - energyMinusPlus - energyPlusMinus + energyMinusMinus) / opt.hessian.step / opt.hessian.step / 4;
+            res.H(i, j) = BOHR2A * BOHR2A * (energyPlusPlus - energyMinusPlus - energyPlusMinus + energyMinusMinus) / get()->opt.hessian.step / get()->opt.hessian.step / 4;
 
             // print the iteration info
             if (print) std::printf("(%2d, %2d) %18.14f %s\n", i + 1, j + 1, res.H(i, j), Timer::Format(Timer::Elapsed(start)).c_str());

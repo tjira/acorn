@@ -1,6 +1,6 @@
 #include "restrictedmollerplesset.h"
 
-double RestrictedMollerPlesset::energy(const System& system, Result res) const {
+Result RestrictedMollerPlesset::run(const System& system, Result res, bool print) const {
     // define the integral struct
     Integrals ints;
 
@@ -15,10 +15,10 @@ double RestrictedMollerPlesset::energy(const System& system, Result res) const {
     ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
 
     // run the RMP and return the total energy
-    return run(system, ints, res, false).Etot;
+    return run(system, ints, res, print);
 }
 
-Method::Result RestrictedMollerPlesset::run(const System& system, const Integrals& ints, Result res, bool) const {
+Result RestrictedMollerPlesset::run(const System& system, const Integrals& ints, Result res, bool) const {
     // initialize the correlation energy
     res.rmp.Ecorr = 0;
 
@@ -36,3 +36,6 @@ Method::Result RestrictedMollerPlesset::run(const System& system, const Integral
     // assign the total energy and return the struct
     res.Etot = res.rhf.E + res.rmp.Ecorr + system.repulsion(); return res;
 }
+
+#include "method.cpp"
+template class Method<RestrictedMollerPlesset>;
