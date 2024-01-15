@@ -6,5 +6,7 @@
     "rhf" : {
         "gradient" : true
     },
-    "mp" : {}
+    "rmp" : {
+        "gradient" : true
+    }
 }

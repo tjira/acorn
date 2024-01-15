@@ -13,4 +13,4 @@ namespace Integral {
     // general integrals
     Matrix<> Single(libint2::Engine& engine, const System& system);
     Tensor<> Double(libint2::Engine& engine, const System& system);
-} struct Integrals {Matrix<> T, S, V; Tensor<> J;};
+} struct Integrals {Matrix<> T, S, V; Tensor<> J, Jmo;};

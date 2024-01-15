@@ -1,5 +1,17 @@
 #include "restrictedhartreefock.h"
 
+double RestrictedHartreeFock::energy(const System& system) const {
+    // define the integral struct
+    Integrals ints;
+
+    // calculate all the atomic integrals
+    libint2::initialize(); ints.S = Integral::Overlap(system), ints.T = Integral::Kinetic(system);
+    ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system); libint2::finalize();
+
+    // run the restricted Hartree-Fock method and return the total energy
+    return RestrictedHartreeFock(opt).run(system, ints, {}, false).Etot;
+}
+
 Method::Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, Result, bool print) const {
     // create the antisymetrized Coulomb integral and define contraction axes with DIIS
     libint2::DIIS<Matrix<>> diis(2, 5); Eigen::IndexPair<int> first(2, 0), second(3, 1);

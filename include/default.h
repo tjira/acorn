@@ -10,7 +10,7 @@
 
 inline int nthread;
 
-inline nlohmann::json mpopt = {
+inline nlohmann::json rmpopt = {
     {"order", 2}, {"gradient", false}
 };
 

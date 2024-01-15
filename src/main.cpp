@@ -49,35 +49,49 @@ int main(int argc, char** argv) {
 
     // path the input json file and apply defaults
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
-    if (input.contains("mp")) mpopt.merge_patch(input.at("mp"));
+    if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
     if (input.contains("rhf")) {
         // initialize the restricted Hartree-Fock method
         RestrictedHartreeFock rhf(rhfopt.template get<RestrictedHartreeFock::Options>());
 
-        // run the restricted Hartree-Fock method
+        // pass the options to the post-RHF method
+        rmpopt["rhfopt"] = rhfopt.template get<RestrictedHartreeFock::Options>();
+
+        // run the RHF method
         res = rhf.run(system, ints);
 
-        // print the final SCF energy
-        std::printf("\nSCF ENERGY: %.14f\n", res.Etot);
+        // print the final RHF energy
+        std::printf("\nRHF ENERGY: %.14f\n", res.Etot);
 
         if (rhfopt.at("gradient")) {
             // calculate the gradient
             res = rhf.gradient(system, ints, res);
 
             // print the final gradient
-            std::cout << "\nGRADIENT:\n" << res.G << "\n\n" << "GRADIENT NORM: " << res.G.norm() << std::endl;
+            std::cout << "\nRHF GRADIENT:\n" << res.G << "\n" << "RHF GRADIENT NORM: " << res.G.norm() << std::endl;
         }
 
-        if (input.contains("mp")) {
+        if (input.contains("rmp")) {
             // initialize the restricted Moller-Plesset method
-            RestrictedMollerPlesset rmp(mpopt.template get<RestrictedMollerPlesset::Options>());
+            RestrictedMollerPlesset rmp(rmpopt.template get<RestrictedMollerPlesset::Options>());
+
+            // transform the Coulomb integral to the MO basis
+            ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
 
             // run the restricted Moller-Plesset method
             res = rmp.run(system, ints, res);
 
             // print the final MP2 energy
             std::printf("\nMP2 ENERGY: %.14f\n", res.Etot);
+
+            if (rmpopt.at("gradient")) {
+                // calculate the gradient
+                res = rmp.gradient(system, ints, res);
+
+                // print the final gradient
+                std::cout << "\nMP2 GRADIENT:\n" << res.G << "\n" << "MP2 GRADIENT NORM: " << res.G.norm() << std::endl;
+            }
         }
     }
 }

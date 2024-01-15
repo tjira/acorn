@@ -14,8 +14,12 @@ public:
         double Etot; Matrix<> G;
     };
 public:
-    virtual Result gradient(const System&, const Integrals&, Result, bool print = true) const;
-    virtual Result run(const System&, const Integrals&, Result, bool print = true) const = 0;
+    // general methods
+    Result gradient(const System& system, const Integrals& ints, Result res, bool print = true) const;
+
+    // virtual functions
+    virtual double energy(const System&) const = 0;
+    virtual Result run(const System&, const Integrals&, Result, bool) const = 0;
 };
 
 #include <nlohmann/json.hpp>

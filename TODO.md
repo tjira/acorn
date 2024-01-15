@@ -1,6 +1,7 @@
 # TODO List
 
+- [ ] Add the ability to export the atomic integrals
 - [ ] Implement passing of the density matrix to HF method
-- [ ] Fix gradient calculation
-- [ ] Implements general gradients
+- [x] Fix gradient calculation
 - [x] Implement MP2 method
+- [x] Implements general gradients

@@ -22,19 +22,11 @@ Method::Result Method::gradient(const System& system, const Integrals& ints, Res
             // fill the direction matrices
             dirMinus(i, j) -= step * A2BOHR; dirPlus(i, j) += step * A2BOHR;
 
-            // move the systems and create the integral containers
-            sysMinus.move(dirMinus), sysPlus.move(dirPlus); Integrals intsMinus, intsPlus;
-
-            // calculate all the atomic integrals
-            libint2::initialize();
-            intsMinus.S = Integral::Overlap(sysMinus), intsMinus.T = Integral::Kinetic(sysMinus);
-            intsMinus.V = Integral::Nuclear(sysMinus), intsMinus.J = Integral::Coulomb(sysMinus);
-            intsPlus.S = Integral::Overlap(sysPlus), intsPlus.T = Integral::Kinetic(sysPlus);
-            intsPlus.V = Integral::Nuclear(sysPlus), intsPlus.J = Integral::Coulomb(sysPlus);
-            libint2::finalize();
+            // move the systems
+            sysMinus.move(dirMinus), sysPlus.move(dirPlus);
 
             // calculate and assign the derivative
-            res.G(i, j) = BOHR2A * (run(sysPlus, intsPlus, {}, false).Etot - run(sysMinus, intsMinus, {}, false).Etot) / step / 2;
+            res.G(i, j) = BOHR2A * (energy(sysPlus) - energy(sysMinus)) / step / 2;
 
             // print the iteration info
             if (print) std::printf("(%2d, %2d) %18.14f %s\n", i + 1, j + 1, res.G(i, j), Timer::Format(Timer::Elapsed(start)).c_str());
