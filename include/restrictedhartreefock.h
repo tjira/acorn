@@ -6,6 +6,7 @@ class RestrictedHartreeFock : public RestrictedMethod {
 public:
     struct Options {
         // structure of the options
+        Method::Options::Dynamics dynamics;
         Method::Options::Gradient gradient;
         Method::Options::Hessian hessian;
 
@@ -15,14 +16,14 @@ public:
     };
 public:
     // constructors and destructors
-    RestrictedHartreeFock(const Options& opt) : RestrictedMethod({opt.gradient, opt.hessian}), opt(opt) {}
+    RestrictedHartreeFock(const Options& opt) : RestrictedMethod({opt.gradient, opt.hessian, opt.dynamics}), opt(opt) {}
 
     // overriden virtual methods
-    double energy(const System& system, Result res = {}) const override;
+    double energy(const System& system, Result res) const override;
     Result run(const System& system, const Integrals& ints, Result res = {}, bool print = true) const override;
 
 private:
     Options opt;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, gradient, hessian, maxiter, thresh);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);

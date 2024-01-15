@@ -1,7 +1,17 @@
 #pragma once
 
+#include "default.h"
 #include "eigen.h"
 #include "timer.h"
+
+inline std::unordered_map<int, std::string> an2sm = {
+    { 1,  "H"},
+    { 6,  "C"},
+    { 7,  "N"},
+    { 8,  "O"},
+    { 9,  "F"},
+    {17, "Cl"}
+};
 
 class System {
 public:

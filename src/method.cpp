@@ -1,5 +1,50 @@
 #include "method.h"
 
+void Method::dynamics(System system, Integrals ints, Result res, bool print) const {
+    // print the header
+    if (print) std::printf("\n ITER  TIME [fs]        E [Eh]              KIN [Eh]              TK [K]         |GRAD|      TIME\n");
+
+    // create position, velocity and mass matrices
+    Matrix<> v(system.getAtoms().size(), 3), a(system.getAtoms().size(), 3), m(system.getAtoms().size(), 3);
+
+    // fill the mass matrix
+    for(size_t i = 0; i < system.getAtoms().size(); i++) {
+        m.row(i) = [](double m) {return Vector<>::Constant(3, m);}(masses.at(system.getAtoms().at(i).atomic_number));
+    }
+
+    // get the degrees of freedom and write the initial geometry
+    double Nf = system.getAtoms().size() * 3 - 6; system.save(opt.dynamics.output) ;
+
+    // print the zeroth iteration
+    if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", 0, 0.0, res.Etot, 0.0, 0.0, res.G.norm(), "00:00:00.000");
+
+    // move the system while gradient is big
+    for (int i = 0; i < opt.dynamics.iters; i++) {
+        // start the timer and store the previous v and a
+        auto start = Timer::Now();
+        Matrix<> vp = v, ap = a;
+
+        // calculate the velocity and accceleration
+        a = -res.G.array() / m.array(); v = vp + (ap + a) * opt.dynamics.step / 2;
+
+        // calculate the kinetic energy and temperature
+        double Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); double T = 2 * Ekin / Nf;
+
+        // move the system
+        system.move(opt.dynamics.step * (v + 0.5 * a * opt.dynamics.step));
+
+        // write the current geometry
+        system.save(opt.dynamics.output, std::ios::app);
+
+        // calculate the next energy with gradient
+        res.Etot = energy(system, res); res = gradient(system, ints, res, false);
+
+        // print the iteration info
+        if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", i + 1, AU2FS * opt.dynamics.step * (i + 1), res.Etot, Ekin, T / BOLTZMANN, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+    }
+
+}
+
 Vector<> Method::frequency(const System& system, const Matrix<>& H) {
     // create the mass matrix
     Matrix<> MM(3 * system.getAtoms().size(), 3 * system.getAtoms().size());
@@ -16,8 +61,6 @@ Vector<> Method::frequency(const System& system, const Matrix<>& H) {
 Method::Result Method::gradient(const System& system, const Integrals&, Result res, bool print) const {
     // define the gradient matrix
     res.G = Matrix<>(system.getAtoms().size(), 3);
-
-    std::cout << opt.gradient.step << std::endl;
 
     // print the header
     if (print) std::printf("\n  ELEM      dE [Eh/Bohr]        TIME\n");

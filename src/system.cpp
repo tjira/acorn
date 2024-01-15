@@ -47,3 +47,17 @@ double System::repulsion() const {
     // return the repulsion
     return repulsion;
 }
+
+void System::save(std::string fname, std::ios::openmode mode) const {
+    // open the file, write number of atoms and set output stream flags
+    std::ofstream file(fname, mode); file << atoms.size() << "\n" << fname;
+    file << std::fixed << std::setprecision(14) << "\n";
+
+    // print all the atom coordinates
+    for (size_t i = 0; i < atoms.size(); i++) {
+        file << an2sm.at(atoms.at(i).atomic_number) << " "
+             << std::setw(20) << BOHR2A * atoms.at(i).x << " "
+             << std::setw(20) << BOHR2A * atoms.at(i).y << " "
+             << std::setw(20) << BOHR2A * atoms.at(i).z << std::endl;
+    }
+}

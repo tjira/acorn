@@ -69,6 +69,11 @@ int main(int argc, char** argv) {
             std::cout << "\nRHF FREQUENCIES:\n" << Method::frequency(system, res.H) << std::endl;
         } libint2::finalize();
 
+        if (libint2::initialize(); input.at("rhf").contains("dynamics")) {
+            // perforn the RHF dynamics
+            RestrictedHartreeFock(rhfopt.template get<RestrictedHartreeFock::Options>()).dynamics(system, ints, res);
+        } libint2::finalize();
+
         if (input.contains("rmp")) {
             // initialize the restricted RMP method, run it, assign it to the result struct and print the results
             RestrictedMollerPlesset rmp(rmpopt.template get<RestrictedMollerPlesset::Options>());
@@ -84,6 +89,11 @@ int main(int argc, char** argv) {
                 // calculate the RHF gradient, assign it to the result struct and print the results
                 res = rmp.hessian(system, ints, res); std::cout << "\nRMP HESSIAN:\n" << res.H << "\n" << "RMP HESSIAN NORM: " << res.H.norm() << std::endl;
                 std::cout << "\nRMP FREQUENCIES:\n" << Method::frequency(system, res.H) << std::endl;
+            } libint2::finalize();
+
+            if (libint2::initialize(); input.at("rmp").contains("dynamics")) {
+                // perform the dynamics
+                rmp.dynamics(system, ints, res);
             } libint2::finalize();
         }
     }

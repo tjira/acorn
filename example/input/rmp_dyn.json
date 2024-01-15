@@ -1,0 +1,16 @@
+{
+    "molecule" : {
+        "file" : "../molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "rhf" : {},
+    "rmp" : {
+        "dynamics" : {
+            "iters" : 100,
+            "step" : 1
+        },
+        "gradient" : {
+            "step" : 1e-5
+        }
+    }
+}

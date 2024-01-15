@@ -8,6 +8,7 @@ public:
     struct Options {
         // structure of the options
         RestrictedHartreeFock::Options rhfopt;
+        Method::Options::Dynamics dynamics;
         Method::Options::Gradient gradient;
         Method::Options::Hessian hessian;
 
@@ -16,7 +17,7 @@ public:
     };
 public:
     // constructors and destructors
-    RestrictedMollerPlesset(const Options& opt) : RestrictedMethod({opt.gradient, opt.hessian}), opt(opt) {}
+    RestrictedMollerPlesset(const Options& opt) : RestrictedMethod({opt.gradient, opt.hessian, opt.dynamics}), opt(opt) {}
 
     // methods
     double energy(const System& system, Result res) const override;
@@ -26,4 +27,4 @@ private:
     Options opt;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, gradient, hessian, rhfopt, order);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, rhfopt, order);
