@@ -11,3 +11,5 @@ template <typename T = double> using Vector = Eigen::Vector<T, Eigen::Dynamic>;
 
 inline Matrix<> toMatrix(Tensor<2> A) {return Eigen::Map<Matrix<>>(A.data(), A.dimension(0), A.dimension(1));}
 inline Tensor<2> toTensor(Matrix<> A) {return Eigen::TensorMap<Tensor<2>>(A.data(), A.rows(), A.cols());}
+
+template <typename T> std::ostream& operator<<(std::ostream& os, const Matrix<T>& A);

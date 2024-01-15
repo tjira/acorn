@@ -32,6 +32,7 @@ find_package(OpenMP REQUIRED)
 
 # add acorn executable
 add_executable(acorn
+    src/eigen.cpp
     src/integral.cpp
     src/main.cpp
     src/method.cpp

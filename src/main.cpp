@@ -24,6 +24,9 @@ int main(int argc, char** argv) {
     // set the number of threads and defne results and integrals
     nthread = program.get<int>("-n"); Result res; Integrals ints;
 
+    // set printing precision
+    std::cout << std::fixed << std::setprecision(14);
+
     // open the input file, parse the input, create integrals container and create the molecule
     std::ifstream istream(program.get("input")); nlohmann::json input = nlohmann::json::parse(istream); istream.close();
 
