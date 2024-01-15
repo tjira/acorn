@@ -1,27 +1,27 @@
 #include "restrictedhartreefock.h"
 
-double RestrictedHartreeFock::energy(const System& system) const {
+double RestrictedHartreeFock::energy(const System& system, Result res) const {
     // define the integral struct
     Integrals ints;
 
     // calculate all the atomic integrals
-    libint2::initialize(); ints.S = Integral::Overlap(system), ints.T = Integral::Kinetic(system);
-    ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system); libint2::finalize();
+    ints.S = Integral::Overlap(system), ints.T = Integral::Kinetic(system);
+    ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system);
 
     // run the restricted Hartree-Fock method and return the total energy
-    return RestrictedHartreeFock(opt).run(system, ints, {}, false).Etot;
+    return RestrictedHartreeFock(opt).run(system, ints, res, false).Etot;
 }
 
-Method::Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, Result, bool print) const {
-    // create the antisymetrized Coulomb integral and define contraction axes with DIIS
+Method::Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, Result res, bool print) const {
+    // create the antisymmetrized Coulomb integral and define contraction axes with DIIS
     libint2::DIIS<Matrix<>> diis(2, 5); Eigen::IndexPair<int> first(2, 0), second(3, 1);
     Tensor<> ERI = ints.J - 0.5 * ints.J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1});
 
-    // define result struct and initialize the density matrix
-    Result res; res.rhf.D = Matrix<>::Zero(ints.S.rows(), ints.S.cols());
+    // initialize the density matrix
+    res.rhf.D = res.rhf.D.size() ? res.rhf.D : Matrix<>::Zero(ints.S.rows(), ints.S.cols());
 
-    // define the Hamiltonian with Fock matrix and calculate energy
-    Matrix<> H = ints.T + ints.V, F = H; res.rhf.E = 0.5 * res.rhf.D.cwiseProduct(H + F).sum();
+    // define the Hamiltonian and Fock matrix
+    Matrix<> H = ints.T + ints.V, F = H;
 
     // print the iteration header
     if (print) std::printf("\nITER       Eel [Eh]         |dE|     |dD|       TIME    \n");

@@ -10,10 +10,18 @@
 
 inline int nthread;
 
+inline std::unordered_map<int, double> masses = {
+    {1, 01.007840},
+    {6, 12.011000},
+    {7, 14.006700},
+    {8, 15.999000},
+    {9, 18.998403},
+};
+
 inline nlohmann::json rmpopt = {
-    {"order", 2}, {"gradient", false}
+    {"order", 2}, {"gradient", {{"step", 1e-5}}}, {"hessian", {{"step", 1e-5}}}
 };
 
 inline nlohmann::json rhfopt = {
-    {"maxiter", 100}, {"thresh", 1e-8}, {"gradient", false}
+    {"maxiter", 1000}, {"thresh", 1e-12}, {"gradient", {{"step", 1e-5}}}, {"hessian", {{"step", 1e-5}}}
 };

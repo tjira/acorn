@@ -2,9 +2,6 @@
 #include "restrictedhartreefock.h"
 #include <argparse/argparse.hpp>
 
-// transform algorithms
-#include "transform.h"
-
 int main(int argc, char** argv) {
     // set path to the basis function folder if not set
     if (!std::filesystem::is_directory(std::string(DATADIR) + "/basis")) {
@@ -47,51 +44,47 @@ int main(int argc, char** argv) {
     libint2::initialize(); ints.S = Integral::Overlap(system), ints.T = Integral::Kinetic(system);
     ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system); libint2::finalize();
 
-    // path the input json file and apply defaults
+    // patch the input json file and apply defaults
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
+    // pass the HF options to the post-HF methods
+    rmpopt["rhfopt"] = rhfopt.template get<RestrictedHartreeFock::Options>();
+
     if (input.contains("rhf")) {
-        // initialize the restricted Hartree-Fock method
-        RestrictedHartreeFock rhf(rhfopt.template get<RestrictedHartreeFock::Options>());
-
-        // pass the options to the post-RHF method
-        rmpopt["rhfopt"] = rhfopt.template get<RestrictedHartreeFock::Options>();
-
-        // run the RHF method
-        res = rhf.run(system, ints);
-
-        // print the final RHF energy
+        // perform the RHF calculation, assign it to the result struct and print the results
+        res = RestrictedHartreeFock(rhfopt.template get<RestrictedHartreeFock::Options>()).run(system, ints);
         std::printf("\nRHF ENERGY: %.14f\n", res.Etot);
 
-        if (rhfopt.at("gradient")) {
-            // calculate the gradient
-            res = rhf.gradient(system, ints, res);
-
-            // print the final gradient
+        if (libint2::initialize(); input.at("rhf").contains("gradient")) {
+            // calculate the RHF gradient, assign it to the result struct and print the results
+            res = RestrictedHartreeFock(rhfopt.template get<RestrictedHartreeFock::Options>()).gradient(system, ints, res);
             std::cout << "\nRHF GRADIENT:\n" << res.G << "\n" << "RHF GRADIENT NORM: " << res.G.norm() << std::endl;
-        }
+        } libint2::finalize();
+
+        if (libint2::initialize(); input.at("rhf").contains("hessian")) {
+            // calculate the RHF gradient, assign it to the result struct and print the results
+            res = RestrictedHartreeFock(rhfopt.template get<RestrictedHartreeFock::Options>()).hessian(system, ints, res);
+            std::cout << "\nRHF HESSIAN:\n" << res.H << "\n" << "RHF HESSIAN NORM: " << res.H.norm() << std::endl;
+            std::cout << "\nRHF FREQUENCIES:\n" << Method::frequency(system, res.H) << std::endl;
+        } libint2::finalize();
 
         if (input.contains("rmp")) {
-            // initialize the restricted Moller-Plesset method
+            // initialize the restricted RMP method, run it, assign it to the result struct and print the results
             RestrictedMollerPlesset rmp(rmpopt.template get<RestrictedMollerPlesset::Options>());
+            ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C); res = rmp.run(system, ints, res);
+            std::printf("\nRMP2 ENERGY: %.14f\n", res.Etot);
 
-            // transform the Coulomb integral to the MO basis
-            ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+            if (libint2::initialize(); input.at("rmp").contains("gradient")) {
+                // calculate the RMP gradient, assign it to the result struct and print the results
+                res = rmp.gradient(system, ints, res); std::cout << "\nRMP2 GRADIENT:\n" << res.G << "\n" << "RMP2 GRADIENT NORM: " << res.G.norm() << std::endl;
+            } libint2::finalize();
 
-            // run the restricted Moller-Plesset method
-            res = rmp.run(system, ints, res);
-
-            // print the final MP2 energy
-            std::printf("\nMP2 ENERGY: %.14f\n", res.Etot);
-
-            if (rmpopt.at("gradient")) {
-                // calculate the gradient
-                res = rmp.gradient(system, ints, res);
-
-                // print the final gradient
-                std::cout << "\nMP2 GRADIENT:\n" << res.G << "\n" << "MP2 GRADIENT NORM: " << res.G.norm() << std::endl;
-            }
+            if (libint2::initialize(); input.at("rmp").contains("hessian")) {
+                // calculate the RHF gradient, assign it to the result struct and print the results
+                res = rmp.hessian(system, ints, res); std::cout << "\nRMP HESSIAN:\n" << res.H << "\n" << "RMP HESSIAN NORM: " << res.H.norm() << std::endl;
+                std::cout << "\nRMP FREQUENCIES:\n" << Method::frequency(system, res.H) << std::endl;
+            } libint2::finalize();
         }
     }
 }

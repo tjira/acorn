@@ -36,7 +36,6 @@ add_executable(acorn
     src/main.cpp
     src/method.cpp
     src/restrictedhartreefock.cpp
-    src/restrictedmethod.cpp
     src/restrictedmollerplesset.cpp
     src/system.cpp
     src/timer.cpp

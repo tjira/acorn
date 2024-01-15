@@ -3,9 +3,7 @@
 <h4 align="center">
   <a href="https://github.com/tjira/acorn#compilation">Compilation</a>
   ·
-  <a href="https://github.com/tjira/acorn#examples">Examples</a>
-  ·
-  <a href="https://github.com/tjira/acorn#printing">Printing</a>
+  <a href="https://github.com/tjira/acorn#credits">Credits</a>
   ·
   <a href="https://tjira.github.io/acorn/">Docs</a>
 </h4>
@@ -20,15 +18,12 @@
     <a href="https://github.com/tjira/acorn/stargazers">
         <img src="https://img.shields.io/github/stars/tjira/acorn?style=for-the-badge"/>
     </a>
-    <a href="https://github.com/tjira/acorn/releases/latest">
-        <img src="https://img.shields.io/github/v/release/tjira/acorn?display_name=tag&style=for-the-badge"/>
-    </a>
     <br>
     <a href="https://github.com/tjira/acorn">
-        <img src="https://tokei.rs/b1/github/tjira/acorn?category=code&style=for-the-badge"/>
-    </a>
-    <a href="https://github.com/tjira/acorn">
         <img src="https://img.shields.io/github/languages/code-size/tjira/acorn?style=for-the-badge"/>
+    </a>
+    <a href="https://github.com/tjira/acorn/releases/latest">
+        <img src="https://img.shields.io/github/v/release/tjira/acorn?display_name=tag&style=for-the-badge"/>
     </a>
     <a href="https://github.com/tjira/acorn/releases/latest">
         <img src="https://img.shields.io/github/downloads/tjira/acorn/total?style=for-the-badge"/>

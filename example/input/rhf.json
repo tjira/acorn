@@ -1,0 +1,7 @@
+{
+    "molecule" : {
+        "file" : "../molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "rhf" : {}
+}
