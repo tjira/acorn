@@ -1,5 +1,8 @@
 #include "restrictedhartreefock.h"
 
+// include DIIS from libint
+#include <libint2/diis.h>
+
 Result RestrictedHartreeFock::run(const System& system, Result res, bool print) const {
     // define the integral struct
     Integrals ints;

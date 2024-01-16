@@ -11,7 +11,7 @@ public:
         struct Dynamics {int iters; double step; std::string output;} dynamics;
 
         // variables
-        int maxiter = rhfopt.at("maxiter"); double thresh = rhfopt.at("thresh");
+        int maxiter; double thresh;
     };
 public:
     // constructors and destructors

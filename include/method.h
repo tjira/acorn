@@ -1,6 +1,7 @@
 #pragma once
 
 #include "integral.h"
+#include "timer.h"
 
 struct Result {
     struct RestrictedHartreeFock {
@@ -30,3 +31,5 @@ public:
     // child type converter
     const M* get() const {return static_cast<const M*>(this);}
 };
+
+#include <nlohmann/json.hpp>

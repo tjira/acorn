@@ -10,7 +10,7 @@ void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool 
 
     // fill the mass matrix
     for(size_t i = 0; i < system.getAtoms().size(); i++) {
-        m.row(i) = [](double m) {return Vector<>::Constant(3, m);}(masses.at(system.getAtoms().at(i).atomic_number));
+        m.row(i) = [](double m) {return Vector<>::Constant(3, m);}(an2m.at(system.getAtoms().at(i).atomic_number));
     }
 
     // get the degrees of freedom and write the initial geometry
@@ -50,7 +50,7 @@ Vector<> Method<M>::frequency(const System& system, const Matrix<>& H) {
     // create the mass matrix
     Matrix<> MM(3 * system.getAtoms().size(), 3 * system.getAtoms().size());
     for (int i = 0; i < MM.rows(); i++) {
-        MM(i, i) = std::sqrt(1 / masses.at(system.getAtoms().at(i / 3).atomic_number));
+        MM(i, i) = std::sqrt(1 / an2m.at(system.getAtoms().at(i / 3).atomic_number));
     }
 
     // calculate the frequencies in atomic units, convert them, exract them and return

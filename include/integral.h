@@ -1,6 +1,5 @@
 #pragma once
 
-#include "default.h"
 #include "system.h"
 
 namespace Integral {

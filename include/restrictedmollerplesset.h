@@ -15,7 +15,7 @@ public:
         struct Dynamics {int iters; double step; std::string output;} dynamics;
 
         // values of simple options
-        int order = rmpopt.at("order");
+        int order;
     };
 public:
     // constructors and destructors

@@ -1,8 +1,15 @@
 #pragma once
 
-#include "default.h"
 #include "eigen.h"
-#include "timer.h"
+#include <libint2.hpp>
+
+inline std::unordered_map<int, double> an2m = {
+    {1, 01.007840},
+    {6, 12.011000},
+    {7, 14.006700},
+    {8, 15.999000},
+    {9, 18.998403},
+};
 
 inline std::unordered_map<int, std::string> an2sm = {
     { 1,  "H"},

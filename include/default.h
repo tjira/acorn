@@ -2,20 +2,9 @@
 
 #include <nlohmann/json.hpp>
 
-#define CFREQ 5140.486777894163
-#define BOHR2A 0.529177210903
-#define A2BOHR 1 / BOHR2A
-#define BOLTZMANN 3.166811429e-6
-#define AU2FS 0.02418884254
-
-inline int nthread;
-
-inline std::unordered_map<int, double> masses = {
-    {1, 01.007840},
-    {6, 12.011000},
-    {7, 14.006700},
-    {8, 15.999000},
-    {9, 18.998403},
+inline nlohmann::json intopt = {
+    {"export", {{"kinetic", false}, {"nuclear", false}, {"overlap", false}, {"coulomb", false}}},
+    {"print", {{"kinetic", false}, {"nuclear", false}, {"overlap", false}, {"coulomb", false}}}
 };
 
 inline nlohmann::json rmpopt = {

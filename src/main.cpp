@@ -2,6 +2,9 @@
 #include "restrictedhartreefock.h"
 #include <argparse/argparse.hpp>
 
+// include default options
+#include "default.h"
+
 int main(int argc, char** argv) {
     // set path to the basis function folder if not set
     if (!std::filesystem::is_directory(std::string(DATADIR) + "/basis")) {
@@ -30,8 +33,9 @@ int main(int argc, char** argv) {
     // open the input file, parse the input, create integrals container and create the molecule
     std::ifstream istream(program.get("input")); nlohmann::json input = nlohmann::json::parse(istream); istream.close();
 
-    // get the path of the system file
-    auto syspath = std::filesystem::path(program.get("input")).parent_path().string() / std::filesystem::path(input.at("molecule").at("file"));
+    // get the path of the input and the system file
+    auto inputpath = std::filesystem::path(program.get("input")).parent_path().string();
+    auto syspath = inputpath / std::filesystem::path(input.at("molecule").at("file"));
 
     // create the system from the system file
     std::ifstream mstream(syspath); System system(mstream, input.at("molecule").at("basis")); mstream.close();
@@ -48,11 +52,28 @@ int main(int argc, char** argv) {
     ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system); libint2::finalize();
 
     // patch the input json file and apply defaults
+    if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
     // pass the HF options to the post-HF methods
     rmpopt["rhfopt"] = rhfopt.template get<RestrictedHartreeFock::Options>();
+
+    // print and export the atomic integrals
+    if (input.contains("integral")) {
+        if (input.at("integral").contains("print")) {
+            if (input.at("integral").at("print").at("overlap")) std::cout << "\nOVERLAP INTEGRAL:\n" << ints.S << std::endl;
+            if (input.at("integral").at("print").at("kinetic")) std::cout << "\nKINETIC INTEGRAL:\n" << ints.T << std::endl;
+            if (input.at("integral").at("print").at("nuclear")) std::cout << "\nNUCLEAR INTEGRAL:\n" << ints.V << std::endl;
+            if (input.at("integral").at("print").at("coulomb")) std::cout << "\nCOULOMB INTEGRAL:\n" << ints.J << std::endl;
+        }
+        if (input.at("integral").contains("export")) {
+            if (input.at("integral").at("export").at("overlap")) EigenWrite(inputpath / std::filesystem::path("S.mat"), ints.S);
+            if (input.at("integral").at("export").at("kinetic")) EigenWrite(inputpath / std::filesystem::path("T.mat"), ints.T);
+            if (input.at("integral").at("export").at("nuclear")) EigenWrite(inputpath / std::filesystem::path("V.mat"), ints.V);
+            if (input.at("integral").at("export").at("coulomb")) EigenWrite(inputpath / std::filesystem::path("J.mat"), ints.J);
+        }
+    }
 
     if (input.contains("rhf")) {
         RestrictedHartreeFock rhf(rhfopt.template get<RestrictedHartreeFock::Options>());

@@ -5,6 +5,7 @@
 
 # exts
 *.lock
+*.mat
 *.out
 
 # folders
