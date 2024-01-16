@@ -3,13 +3,25 @@
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& A) {
     // print the dimensions
-    os << "(" << A.rows() << "x" << A.cols() << "):" << std::endl;
+    os << "(" << A.rows() << "x" << A.cols() << "): "; int maxcols = 10;
 
-    // print the matrix
-    for (int i = 0; i < A.rows(); i++) {
-        for (int j = 0; j < A.cols(); j++) {
-            os << (j ? " " : "") << std::setw(20) << A(i, j);
-        } os << (i < A.rows() - 1 ? "\n" : "");
+    // for every printed range of columns
+    for (int i = 0; i < A.cols() / maxcols + !!(A.cols() % maxcols); i++) {
+        // print the column range
+        os << i * maxcols + 1 << "-" << std::min((int)A.cols(), maxcols * (i + 1)) << "\n";
+
+        // for every row and column in range print the value
+        for (int j = 0; j < A.rows(); j++) {
+            for (int k = i * maxcols; k < std::min((int)A.cols(), (i + 1) * maxcols); k++) {
+                os << std::setw(20) << A(j, k) << " ";
+            }
+
+            // print the new line at the end of line
+            if (j < A.rows() - 1) os << "\n";
+        }
+
+        // print the new line at the end of column range
+        if (i != A.cols() / maxcols + !!(A.cols() % maxcols) - 1) os << "\n";
     }
 
     // return stream

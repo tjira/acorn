@@ -1,7 +1,9 @@
 # root links
 /compile_commands.json
-/trajectory.xyz
-/molecule.xyz
+
+# files
+trajectory.xyz
+molecule.xyz
 
 # exts
 *.lock

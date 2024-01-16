@@ -4,11 +4,11 @@
 #include "timer.h"
 
 struct Result {
-    struct RestrictedHartreeFock {
-        double E; Vector<> eps; Matrix<> C, D;
+    struct { // restricted Hartree-Fock
+        double E; Vector<> eps; Matrix<> C, D, G, H;
     } rhf;
-    struct RestrictedMollerPlesset {
-        double Ecorr;
+    struct { // restricted Moller-Plesset
+        double Ecorr; Matrix<> G, H;
     } rmp;
     double Etot; Matrix<> G, H;
 };
@@ -31,5 +31,3 @@ public:
     // child type converter
     const M* get() const {return static_cast<const M*>(this);}
 };
-
-#include <nlohmann/json.hpp>

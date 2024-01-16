@@ -9,7 +9,7 @@ Result RestrictedMollerPlesset::run(const System& system, Result res, bool print
     ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system);
 
     // perform the RHF method
-    res = RestrictedHartreeFock(opt.rhfopt).run(system, ints, res, false);
+    res = RestrictedHartreeFock(rhfopt).run(system, ints, res, false);
 
     // transform the Coulomb integral to the MO basis
     ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);

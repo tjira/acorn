@@ -1,4 +1,4 @@
-#include "method.h"
+#include "restrictedmollerplesset.h"
 
 template <class M>
 void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool print) const {
@@ -91,6 +91,10 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
         }
     }
 
+    // assign the gradient to the correct variable
+    if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.G = res.G;
+    if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.G = res.G;
+
     // return the gradient
     return res;
 }
@@ -131,6 +135,11 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
             if (print) std::printf("(%2d, %2d) %18.14f %s\n", i + 1, j + 1, res.H(i, j), Timer::Format(Timer::Elapsed(start)).c_str());
         }
     }
+
+
+    // assign the hessian to the correct variable
+    if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.H = res.H;
+    if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.H = res.H;
 
     // return the gradient
     return res;
