@@ -1,5 +1,8 @@
 #include "integral.h"
 
+// include the libint
+#include <libint2.hpp>
+
 Matrix<> Integral::Single(libint2::Engine& engine, const System& system) {
     // extract shells, create a map between shell and basis function indices and initialize the engine vector
     auto shells = system.getShells(); std::vector<size_t> sh2bf = shells.shell2bf(); std::vector<libint2::Engine> engines(nthread, engine);
@@ -29,7 +32,7 @@ Matrix<> Integral::Single(libint2::Engine& engine, const System& system) {
         }
     }
 
-    // return the resulting integral matrix
+    // return the integrals
     return matrix;
 };
 
@@ -38,7 +41,7 @@ Tensor<> Integral::Double(libint2::Engine& engine, const System& system) {
     auto shells = system.getShells(); std::vector<size_t> sh2bf = shells.shell2bf(); std::vector<libint2::Engine> engines(nthread, engine);
 
     // create the result tensor and set the tensor elements to zero
-    Tensor tensor(shells.nbf(), shells.nbf(), shells.nbf(), shells.nbf()); tensor.setZero();
+    Tensor<> tensor(shells.nbf(), shells.nbf(), shells.nbf(), shells.nbf()); tensor.setZero();
 
     #pragma omp parallel for num_threads(nthread)
     for (size_t i = 0; i < shells.size(); i++) {
@@ -92,10 +95,13 @@ Matrix<> Integral::Kinetic(const System& system) {
 
 Matrix<> Integral::Nuclear(const System& system) {
     libint2::Engine engine(libint2::Operator::nuclear, system.getShells().max_nprim(), system.getShells().max_l(), 0, 1e-12);
-    engine.set_params(libint2::make_point_charges(system.getAtoms())); return Single(engine, system);
+    engine.set_params(libint2::make_point_charges(system.getAtoms<libint2::Atom>())); return Single(engine, system);
 }
 
 Matrix<> Integral::Overlap(const System& system) {
     libint2::Engine engine(libint2::Operator::overlap, system.getShells().max_nprim(), system.getShells().max_l(), 0, 1e-12);
     return Single(engine, system);
 }
+
+void Integral::Initialize() {libint2::initialize();}
+void Integral::Finalize() {libint2::finalize();}

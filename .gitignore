@@ -10,6 +10,9 @@ molecule.xyz
 *.mat
 *.out
 
+# specific exts
+/python/*.json
+
 # folders
 /.cache/
 /build/

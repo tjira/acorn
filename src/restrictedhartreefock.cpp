@@ -12,12 +12,12 @@ Result RestrictedHartreeFock::run(const System& system, Result res, bool print) 
     ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system);
 
     // run the restricted Hartree-Fock method and return the result struct
-    return RestrictedHartreeFock(opt).run(system, ints, res, print);
+    return run(system, ints, res, print);
 }
 
 Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, Result res, bool print) const {
     // create the antisymmetrized Coulomb integral and define contraction axes with DIIS
-    libint2::DIIS<Matrix<>> diis(2, 5); Eigen::IndexPair<int> first(2, 0), second(3, 1);
+    libint2::DIIS<Matrix<>> diis(1, 5); Eigen::IndexPair<int> first(2, 0), second(3, 1);
     Tensor<> ERI = ints.J - 0.5 * ints.J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1});
 
     // initialize the density matrix
@@ -37,7 +37,7 @@ Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, R
         F = H + toMatrix(ERI.contract(toTensor(res.rhf.D), Eigen::array<Eigen::IndexPair<int>, 2>{first, second}));
 
         // exrapolate the fock matrix
-        Matrix<> e = ints.S * res.rhf.D * F - F * res.rhf.D * ints.S; diis.extrapolate(F, e);
+        Matrix<> e = ints.S * res.rhf.D * F - F * res.rhf.D * ints.S; if (i > 1) diis.extrapolate(F, e);
 
         // solve the roothan equations
         Eigen::GeneralizedSelfAdjointEigenSolver<Matrix<>> solver(F, ints.S);

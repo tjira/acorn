@@ -1,36 +1,28 @@
 #pragma once
 
 #include "eigen.h"
-#include <libint2.hpp>
+#include "table.h"
 
-inline std::unordered_map<int, double> an2m = {
-    {1, 01.007840},
-    {6, 12.011000},
-    {7, 14.006700},
-    {8, 15.999000},
-    {9, 18.998403},
-};
-
-inline std::unordered_map<int, std::string> an2sm = {
-    { 1,  "H"},
-    { 6,  "C"},
-    { 7,  "N"},
-    { 8,  "O"},
-    { 9,  "F"},
-    {17, "Cl"}
-};
+namespace libint2 {
+    class BasisSet; int major(); int minor(); int micro();
+} struct Atom {int atomic_number; double x, y, z;};
 
 class System {
 public:
+    // constructors and destructors
     System(std::ifstream& stream, std::string basis, int charge = 0, int multi = 1);
-    double repulsion() const; libint2::BasisSet getShells() const {return shells;}
-    void save(std::string fname, std::ios::openmode mode = std::ios::out) const;
-    int nocc() const {return electrons / 2;} void move(const Matrix<>& dir);
-    std::vector<libint2::Atom> getAtoms() const {return atoms;}
+
+    // atom container getter
+    template <typename T = Atom> std::vector<T> getAtoms() const {return *reinterpret_cast<const std::vector<T>*>(&atoms);}
+
+    // shell container and getter, molecule mover, and number of occupied orbitals getter
+    libint2::BasisSet getShells() const; void move(const Matrix<>& dir); int nocc() const {return electrons / 2;}
+
+    // molecule exporter and nuclear repulsion getter
+    void save(std::string fname, std::ios::openmode mode = std::ios::out) const; double repulsion() const;
 
 private:
-    std::vector<libint2::Atom> atoms;
     int electrons, charge, multi;
-    libint2::BasisSet shells;
+    std::vector<Atom> atoms;
     std::string basis;
 };

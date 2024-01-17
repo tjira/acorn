@@ -26,5 +26,4 @@ template <typename T> void EigenWrite(const std::string& fname, const Tensor<4, 
 template <typename T> void EigenWrite(const std::string& fname, const Matrix<T>& A);
 template <typename T> void EigenWrite(const std::string& fname, const Vector<T>& A);
 
-// all std functions
-#include <bits/stdc++.h>
+#include <fstream>

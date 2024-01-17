@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     std::ifstream istream(program.get("input")); nlohmann::json input = nlohmann::json::parse(istream); istream.close();
 
     // get the path of the input and the system file
-    auto inputpath = std::filesystem::absolute(std::filesystem::path(program.get("input")).parent_path());
+    auto inputpath = std::filesystem::current_path() / std::filesystem::path(program.get("input")).parent_path();
     std::filesystem::path syspath = inputpath / std::filesystem::path(input.at("molecule").at("file"));
 
     // parse the default options
@@ -74,16 +74,16 @@ int main(int argc, char** argv) {
     std::printf("QUANTUM ACORN (GCC %d.%d.%d, ", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 
     // print library versions
-    std::printf("LIBINT %d.%d.%d, ", LIBINT_MAJOR_VERSION, LIBINT_MINOR_VERSION, LIBINT_MICRO_VERSION);
-    std::printf("EIGEN %d.%d.%d)\n\n", EIGEN_WORLD_VERSION, EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
+    std::printf("EIGEN %d.%d.%d, ", EIGEN_WORLD_VERSION, EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
+    std::printf("LIBINT %d.%d.%d)\n\n", libint2::major(), libint2::minor(), libint2::micro());
 
     // calculate all the atomic integrals
-    libint2::initialize();
+    Integral::Initialize();
     std::printf("OVERLAP INTEGRALS: "); auto stimer = Timer::Now(); ints.S = Integral::Overlap(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(stimer)).c_str());
     std::printf("KINETIC INTEGRALS: "); auto ttimer = Timer::Now(); ints.T = Integral::Kinetic(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(ttimer)).c_str());
     std::printf("NUCLEAR INTEGRALS: "); auto vtimer = Timer::Now(); ints.V = Integral::Nuclear(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(vtimer)).c_str());
     std::printf("COULOMB INTEGRALS: "); auto jtimer = Timer::Now(); ints.J = Integral::Coulomb(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(jtimer)).c_str());
-    libint2::finalize();
+    Integral::Finalize();
 
     // print and export the atomic integrals
     if (input.contains("integral")) {
@@ -109,38 +109,38 @@ int main(int argc, char** argv) {
         RestrictedHartreeFock rhf(rhfopt); res = rhf.run(system, ints);
         std::printf("\nRHF ENERGY: %.14f\n", res.Etot);
 
-        if (libint2::initialize(); input.at("rhf").contains("gradient")) {
+        if (Integral::Initialize(); input.at("rhf").contains("gradient")) {
             res = rhf.gradient(system, ints, res); std::cout << "\nRHF GRADIENT:\n" << res.rhf.G << "\n" << "RHF GRADIENT NORM: " << res.rhf.G.norm() << std::endl;
-        } libint2::finalize();
+        } Integral::Finalize();
 
-        if (libint2::initialize(); input.at("rhf").contains("hessian")) {
+        if (Integral::Initialize(); input.at("rhf").contains("hessian")) {
             res = rhf.hessian(system, ints, res); std::cout << "\nRHF HESSIAN:\n" << res.rhf.H << "\n" << "RHF HESSIAN NORM: " << res.rhf.H.norm() << std::endl;
             std::cout << "\nRHF FREQUENCIES:\n" << Method<RestrictedHartreeFock>::frequency(system, res.rhf.H) << std::endl;
-        } libint2::finalize();
+        } Integral::Finalize();
 
-        if (libint2::initialize(); input.at("rhf").contains("dynamics")) {
+        if (Integral::Initialize(); input.at("rhf").contains("dynamics")) {
             rhf.dynamics(system, ints, res);
-        } libint2::finalize();
+        } Integral::Finalize();
 
         if (input.contains("rmp")) {
             RestrictedMollerPlesset rmp(rmpoptstruct, rhfoptstruct); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
             res = rmp.run(system, ints, res); std::printf("\nRMP2 ENERGY: %.14f\n", res.Etot);
 
-            if (libint2::initialize(); input.at("rmp").contains("gradient")) {
+            if (Integral::Initialize(); input.at("rmp").contains("gradient")) {
                 res = rmp.gradient(system, ints, res); std::cout << "\nRMP2 GRADIENT:\n" << res.rmp.G << "\n" << "RMP2 GRADIENT NORM: " << res.rmp.G.norm() << std::endl;
-            } libint2::finalize();
+            } Integral::Finalize();
 
-            if (libint2::initialize(); input.at("rmp").contains("hessian")) {
+            if (Integral::Initialize(); input.at("rmp").contains("hessian")) {
                 res = rmp.hessian(system, ints, res); std::cout << "\nRMP HESSIAN:\n" << res.rmp.H << "\n" << "RMP HESSIAN NORM: " << res.rmp.H.norm() << std::endl;
                 std::cout << "\nRMP FREQUENCIES:\n" << Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H) << std::endl;
-            } libint2::finalize();
+            } Integral::Finalize();
 
-            if (libint2::initialize(); input.at("rmp").contains("dynamics")) {
+            if (Integral::Initialize(); input.at("rmp").contains("dynamics")) {
                 rmp.dynamics(system, ints, res);
-            } libint2::finalize();
+            } Integral::Finalize();
         }
     }
 
-    // print the elapsed time
+    // finalize the integral engine and print the elapsed time
     std::printf("\nELAPSED TIME: %s\n", Timer::Format(Timer::Elapsed(programtimer)).c_str());
 }
