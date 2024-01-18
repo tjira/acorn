@@ -27,3 +27,4 @@ template <typename T> void EigenWrite(const std::string& fname, const Matrix<T>&
 template <typename T> void EigenWrite(const std::string& fname, const Vector<T>& A);
 
 #include <fstream>
+#include <iomanip>
