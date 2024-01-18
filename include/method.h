@@ -4,10 +4,10 @@
 #include "timer.h"
 
 struct Result {
-    struct { // restricted Hartree-Fock
+    struct RestrictedHartreeFock {
         double E; Vector<> eps; Matrix<> C, D, G, H;
     } rhf;
-    struct { // restricted Moller-Plesset
+    struct RestrictedMollerPlesset {
         double Ecorr; Matrix<> G, H;
     } rmp;
     double Etot; Matrix<> G, H;

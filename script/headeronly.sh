@@ -13,4 +13,4 @@ cat \
     include/transform.h \
     include/restrictedmollerplesset.h  \
     include/default.h \
-| sed '/#pragma once/d ; /#include "/d' | tee bin/acorn.h
+| sed '/#pragma once/d ; /#include "/d'

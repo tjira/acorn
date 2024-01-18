@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
         } Integral::Finalize();
 
         if (input.contains("rmp")) {
-            RestrictedMollerPlesset rmp(rmpoptstruct, rhfoptstruct); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+            RestrictedMollerPlesset rmp(rhfoptstruct, rmpoptstruct); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
             res = rmp.run(system, ints, res); std::printf("\nRMP2 ENERGY: %.14f\n", res.Etot);
 
             if (Integral::Initialize(); input.at("rmp").contains("gradient")) {

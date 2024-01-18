@@ -33,13 +33,21 @@ jobs:
           export LIBRARY_PATH="$PWD/libint/install/lib:$LIBRARY_PATH"
           cmake --build build
 
-      - name: Rename Executable
-        run: mv bin/acorn bin/acorn_linux_x86-64
+      - name: Copy the Integral Library to the Binary Folder
+        run: cp $PWD/libint/install/lib/libint2.a bin/libint.a
+
+      - name: Rename the Binaries
+        run: |
+          mv bin/libacorn.a bin/libacorn_linux_x86-64.a
+          mv bin/libint.a bin/libint_linux_x86-64.a
+          mv bin/acorn bin/acorn_linux_x86-64
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           path: |
+            bin/libacorn_linux_x86-64.a
+            bin/libint_linux_x86-64.a
             bin/acorn_linux_x86-64
 
   release:
@@ -52,13 +60,18 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v3
 
-      - name: Copy x86-64 Binaries to the Root Folder
+      - name: Generate the Header Only Library
+        run: ./script/headeronly.sh > acorn.h
+
+      - name: Copy x86-64 Binaries and Headers to the Root Folder
         run: |
+          cp artifact/libacorn_linux_x86-64.a libacorn.a
+          cp artifact/libint_linux_x86-64.a libint.a
           cp artifact/acorn_linux_x86-64 acorn
 
       - name: Create x86-64 Packages
         run: |
-          tar -czf acorn_linux_x86-64.tar.gz acorn basis example LICENSE.md
+          tar -czf acorn_linux_x86-64.tar.gz acorn libacorn.a libint.a acorn.h basis example LICENSE.md
 
       - name: Release linux_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
