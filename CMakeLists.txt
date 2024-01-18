@@ -53,3 +53,6 @@ target_compile_definitions(acorn-exe PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
 # set the executable name
 set_target_properties(acorn-exe PROPERTIES OUTPUT_NAME "acorn")
+
+# create the header library
+execute_process(COMMAND /bin/bash ${PROJECT_SOURCE_DIR}/script/headeronly.sh OUTPUT_FILE ${PROJECT_SOURCE_DIR}/bin/acorn.h)
