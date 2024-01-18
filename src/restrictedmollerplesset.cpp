@@ -36,6 +36,3 @@ Result RestrictedMollerPlesset::run(const System& system, const Integrals& ints,
     // assign the total energy and return the struct
     res.Etot = res.rhf.E + res.rmp.Ecorr + system.repulsion(); return res;
 }
-
-#include "method.cpp"
-template class Method<RestrictedMollerPlesset>;

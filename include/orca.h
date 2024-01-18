@@ -20,10 +20,6 @@ public:
     // overriden virtual derivatives
     Result gradient(const System& system, const Integrals& ints, Result res, bool print = true) const override;
 
-    // virtual method functions
-    Result run(const System&, const Integrals&, Result res, bool) const override {return res;}
-    Result run(const System&, Result res, bool) const override {return res;}
-
 private:
     Options opt;
 };

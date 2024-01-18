@@ -103,5 +103,5 @@ Matrix<> Integral::Overlap(const System& system) {
     return Single(engine, system);
 }
 
-void Integral::Initialize() {libint2::initialize();}
-void Integral::Finalize() {libint2::finalize();}
+// integrals struct constructor and destructor
+Integrals::Integrals(bool main) : main(main) {if (main) libint2::initialize();} Integrals::~Integrals() {if (main) libint2::finalize();}

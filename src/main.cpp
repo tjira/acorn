@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     }
 
     // set the number of threads and defne results and integrals
-    nthread = program.get<int>("-n"); Result res; Integrals ints;
+    nthread = program.get<int>("-n"); Result res; Integrals ints(true);
 
     // set printing precision
     std::cout << std::fixed << std::setprecision(14);
@@ -94,12 +94,12 @@ int main(int argc, char** argv) {
     std::printf("LIBINT %d.%d.%d)\n", libint2::major(), libint2::minor(), libint2::micro());
 
     // calculate all the atomic integrals
-    if (Integral::Initialize(); !input.contains("orca")) {std::cout << std::endl;
+    if (!input.contains("orca")) {std::cout << std::endl;
         std::printf("OVERLAP INTEGRALS: "); auto stimer = Timer::Now(); ints.S = Integral::Overlap(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(stimer)).c_str());
         std::printf("KINETIC INTEGRALS: "); auto ttimer = Timer::Now(); ints.T = Integral::Kinetic(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(ttimer)).c_str());
         std::printf("NUCLEAR INTEGRALS: "); auto vtimer = Timer::Now(); ints.V = Integral::Nuclear(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(vtimer)).c_str());
         std::printf("COULOMB INTEGRALS: "); auto jtimer = Timer::Now(); ints.J = Integral::Coulomb(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(jtimer)).c_str());
-    } Integral::Finalize();
+    }
 
     // print and export the atomic integrals
     if (input.contains("integral")) {
@@ -128,27 +128,27 @@ int main(int argc, char** argv) {
         RestrictedHartreeFock rhf(rhfopt); res = rhf.run(system, ints);
         std::printf("\nRHF ENERGY: %.14f\n", res.Etot);
 
-        if (Integral::Initialize(); input.at("rhf").contains("dynamics")) {
+        if (input.at("rhf").contains("dynamics")) {
             rhf.dynamics(system, ints, res);
         } else if (input.at("rhf").contains("hessian")) {
             res = rhf.hessian(system, ints, res); std::cout << "\nRHF HESSIAN:\n" << res.rhf.H << "\n" << "RHF HESSIAN NORM: " << res.rhf.H.norm() << std::endl;
             std::cout << "\nRHF FREQUENCIES:\n" << Method<RestrictedHartreeFock>::frequency(system, res.rhf.H) << std::endl;
         } else if (input.at("rhf").contains("gradient")) {
             res = rhf.gradient(system, ints, res); std::cout << "\nRHF GRADIENT:\n" << res.rhf.G << "\n" << "RHF GRADIENT NORM: " << res.rhf.G.norm() << std::endl;
-        } Integral::Finalize();
+        }
 
         if (input.contains("rmp")) {
             RestrictedMollerPlesset rmp(rhfopt, rmpopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
             res = rmp.run(system, ints, res); std::printf("\nRMP2 ENERGY: %.14f\n", res.Etot);
 
-            if (Integral::Initialize(); input.at("rmp").contains("dynamics")) {
+            if (input.at("rmp").contains("dynamics")) {
                 rmp.dynamics(system, ints, res);
             } else if (input.at("rmp").contains("hessian")) {
                 res = rmp.hessian(system, ints, res); std::cout << "\nRMP HESSIAN:\n" << res.rmp.H << "\n" << "RMP HESSIAN NORM: " << res.rmp.H.norm() << std::endl;
                 std::cout << "\nRMP FREQUENCIES:\n" << Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H) << std::endl;
             } else if (input.at("rmp").contains("gradient")) {
                 res = rmp.gradient(system, ints, res); std::cout << "\nRMP2 GRADIENT:\n" << res.rmp.G << "\n" << "RMP2 GRADIENT NORM: " << res.rmp.G.norm() << std::endl;
-            } Integral::Finalize();
+            }
         }
     }
 

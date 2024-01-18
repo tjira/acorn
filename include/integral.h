@@ -17,8 +17,5 @@ namespace Integral {
     Matrix<> Single(libint2::Engine& engine, const System& system);
     Tensor<> Double(libint2::Engine& engine, const System& system);
 
-    // initializer and finalizer
-    void Initialize(); void Finalize();
-
 // integral container
-} struct Integrals {Matrix<> T, S, V; Tensor<> J, Jmo;};
+} struct Integrals {Integrals(bool main = false), ~Integrals(); bool main; Matrix<> T, S, V; Tensor<> J, Jmo;};

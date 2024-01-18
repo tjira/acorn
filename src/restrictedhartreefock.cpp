@@ -73,6 +73,3 @@ Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, R
     // assign total energy and return the struct
     res.Etot = res.rhf.E + system.repulsion(); return res;
 }
-
-#include "method.cpp"
-template class Method<RestrictedHartreeFock>;

@@ -26,6 +26,3 @@ Result Orca::gradient(const System& system, const Integrals&, Result res, bool p
     // return the results
     return res;
 }
-
-#include "method.cpp"
-template class Method<Orca>;

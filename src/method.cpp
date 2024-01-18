@@ -166,3 +166,10 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     // return the gradient
     return res;
 }
+
+// method definitions
+template class Method<RestrictedMollerPlesset>;
+template class Method<RestrictedHartreeFock>;
+
+// interface definitions
+template class Method<Orca>;

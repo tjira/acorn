@@ -18,8 +18,10 @@ public:
     // constructors and destructors
     RestrictedMollerPlesset(const RestrictedHartreeFock::Options& rhfopt, const Options& opt) : opt(opt), rhfopt(rhfopt) {}
 
-    // methods
+    // overriden virtual methods
     Result run(const System& system, const Integrals& ints, Result res, bool print = true) const override;
+
+private:
     Result run(const System& system, Result res, bool print = true) const override;
 
 private:
