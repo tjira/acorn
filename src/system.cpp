@@ -8,8 +8,12 @@ int libint2::major() {return LIBINT_MAJOR_VERSION;}
 int libint2::minor() {return LIBINT_MINOR_VERSION;}
 int libint2::micro() {return LIBINT_MICRO_VERSION;}
 
-// define the shell getter
-libint2::BasisSet System::getShells() const {return libint2::BasisSet(basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms), true);}
+// define the shell getter and the destructor
+libint2::BasisSet System::getShells() const {return *shells;} System::~System() {delete shells;}
+
+System::System(const System& system) : atoms(system.atoms), electrons(system.electrons), charge(system.charge), multi(system.multi), basis(system.basis) {
+    shells = new libint2::BasisSet(basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
+}
 
 System::System(std::ifstream& stream, std::string basis, int charge, int multi) : electrons(0), charge(charge), multi(multi), basis(basis) {
     // check for the input geometry file existence
@@ -22,15 +26,22 @@ System::System(std::ifstream& stream, std::string basis, int charge, int multi) 
     std::vector<libint2::Atom> libintatoms = libint2::read_dotxyz(stream);
     atoms = *reinterpret_cast<const std::vector<Atom>*>(&libintatoms);
 
+    // create the shell container
+    shells = new libint2::BasisSet(basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
+
     // calculate the number of electrons
     electrons -= charge; for (const auto& atom : atoms) electrons += atom.atomic_number;
 }
 
 
 void System::move(const Matrix<>& dir) {
+    // move the system
     for (size_t i = 0; i < atoms.size(); i++) {
         atoms.at(i).x += dir(i, 0), atoms.at(i).y += dir(i, 1), atoms.at(i).z += dir(i, 2);
     }
+
+    // create the shell container
+    delete shells; shells = new libint2::BasisSet(basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
 }
 
 double System::repulsion() const {

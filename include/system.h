@@ -10,7 +10,7 @@ namespace libint2 {
 class System {
 public:
     // constructors and destructors
-    System(std::ifstream& stream, std::string basis, int charge = 0, int multi = 1);
+    ~System(); System(const System& system); System(std::ifstream& stream, std::string basis, int charge = 0, int multi = 1);
 
     // atom container getter
     template <typename T = Atom> std::vector<T> getAtoms() const {return *reinterpret_cast<const std::vector<T>*>(&atoms);}
@@ -22,7 +22,6 @@ public:
     void save(std::string fname, std::ios::openmode mode = std::ios::out) const; double repulsion() const;
 
 private:
-    int electrons, charge, multi;
-    std::vector<Atom> atoms;
-    std::string basis;
+    libint2::BasisSet* shells; std::vector<Atom> atoms;
+    int electrons, charge, multi; std::string basis;
 };
