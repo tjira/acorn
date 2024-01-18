@@ -17,3 +17,6 @@ molecule.xyz
 /.cache/
 /build/
 /bin/
+
+# interface folders
+orca.[0-9]*

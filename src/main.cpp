@@ -2,6 +2,9 @@
 #include "restrictedmollerplesset.h"
 #include "restrictedhartreefock.h"
 
+// interfaces
+#include "orca.h"
+
 // include default options
 #include "default.h"
 
@@ -19,9 +22,15 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Dynamics, i
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Hessian, step);
 
+// option structures loaders for ORCA
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Gradient, step);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Hessian, step);
+
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, gradient, hessian, interface, folder);
 
 int main(int argc, char** argv) {
     // create the argument parser and the program timer
@@ -56,16 +65,23 @@ int main(int argc, char** argv) {
     std::filesystem::path syspath = inputpath / std::filesystem::path(input.at("molecule").at("file"));
 
     // parse the default options
-    auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr), rmpopt = nlohmann::json::parse(rmpoptstr);
+    auto rmpopt = nlohmann::json::parse(rmpoptstr), orcaopt = nlohmann::json::parse(orcaoptstr);
+    auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr);
+
+    // assign the interface input path
+    orcaopt["folder"] = inputpath;
 
     // patch the input json file and apply defaults
     if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
+    if (input.contains("orca")) orcaopt.merge_patch(input.at("orca"));
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
     // make all the input and output paths absolute
+    orcaopt.at("dynamics").at("output") = inputpath / orcaopt.at("dynamics").at("output");
     rhfopt.at("dynamics").at("output") = inputpath / rhfopt.at("dynamics").at("output");
     rmpopt.at("dynamics").at("output") = inputpath / rmpopt.at("dynamics").at("output");
+    orcaopt.at("interface") = inputpath / orcaopt.at("interface");
 
     // create the system from the system file
     std::ifstream mstream(syspath); System system(mstream, input.at("molecule").at("basis")); mstream.close();
@@ -75,15 +91,15 @@ int main(int argc, char** argv) {
 
     // print library versions
     std::printf("EIGEN %d.%d.%d, ", EIGEN_WORLD_VERSION, EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
-    std::printf("LIBINT %d.%d.%d)\n\n", libint2::major(), libint2::minor(), libint2::micro());
+    std::printf("LIBINT %d.%d.%d)\n", libint2::major(), libint2::minor(), libint2::micro());
 
     // calculate all the atomic integrals
-    Integral::Initialize();
-    std::printf("OVERLAP INTEGRALS: "); auto stimer = Timer::Now(); ints.S = Integral::Overlap(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(stimer)).c_str());
-    std::printf("KINETIC INTEGRALS: "); auto ttimer = Timer::Now(); ints.T = Integral::Kinetic(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(ttimer)).c_str());
-    std::printf("NUCLEAR INTEGRALS: "); auto vtimer = Timer::Now(); ints.V = Integral::Nuclear(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(vtimer)).c_str());
-    std::printf("COULOMB INTEGRALS: "); auto jtimer = Timer::Now(); ints.J = Integral::Coulomb(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(jtimer)).c_str());
-    Integral::Finalize();
+    if (Integral::Initialize(); !input.contains("orca")) {std::cout << std::endl;
+        std::printf("OVERLAP INTEGRALS: "); auto stimer = Timer::Now(); ints.S = Integral::Overlap(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(stimer)).c_str());
+        std::printf("KINETIC INTEGRALS: "); auto ttimer = Timer::Now(); ints.T = Integral::Kinetic(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(ttimer)).c_str());
+        std::printf("NUCLEAR INTEGRALS: "); auto vtimer = Timer::Now(); ints.V = Integral::Nuclear(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(vtimer)).c_str());
+        std::printf("COULOMB INTEGRALS: "); auto jtimer = Timer::Now(); ints.J = Integral::Coulomb(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(jtimer)).c_str());
+    } Integral::Finalize();
 
     // print and export the atomic integrals
     if (input.contains("integral")) {
@@ -101,42 +117,42 @@ int main(int argc, char** argv) {
         }
     }
 
-    // extract method options
-    auto rmpoptstruct = rmpopt.template get<RestrictedMollerPlesset::Options>();
-    auto rhfoptstruct = rhfopt.template get<RestrictedHartreeFock::Options>();
+    if (input.contains("orca")) {
+        if (input.at("orca").contains("dynamics")) {
+            Orca orca(orcaopt); orca.dynamics(system, ints, res);
+        } else if (input.at("orca").contains("hessian")) {
+            throw std::runtime_error("ORCA HESSIAN NOT IMPLEMENTED");
+        } else if (input.at("orca").contains("gradient")) {
+            Orca orca(orcaopt); res = orca.gradient(system, ints, res); std::printf("\nORCA ENERGY: %.14f\n", res.Etot);
+            std::cout << "\nORCA GRADIENT:\n" << res.orca.G << "\n" << "ORCA GRADIENT NORM: " << res.orca.G.norm() << std::endl;
+        } else {
+            Orca orca(orcaopt); res = orca.run(system, ints, res); std::printf("\nORCA ENERGY: %.14f\n", res.Etot);
+        }
 
-    if (input.contains("rhf")) {
+    } else if (input.contains("rhf")) {
         RestrictedHartreeFock rhf(rhfopt); res = rhf.run(system, ints);
         std::printf("\nRHF ENERGY: %.14f\n", res.Etot);
 
-        if (Integral::Initialize(); input.at("rhf").contains("gradient")) {
+        if (Integral::Initialize(); input.at("rhf").contains("dynamics")) {
+            rhf.dynamics(system, ints, res);
+        } else if (input.at("rhf").contains("hessian")) {
+            res = rhf.hessian(system, ints, res); std::cout << "\nRHF HESSIAN:\n" << res.rhf.H << "\n" << "RHF HESSIAN NORM: " << res.rhf.H.norm() << std::endl;
+            std::cout << "\nRHF FREQUENCIES:\n" << Method<RestrictedHartreeFock>::frequency(system, res.rhf.H) << std::endl;
+        } else if (input.at("rhf").contains("gradient")) {
             res = rhf.gradient(system, ints, res); std::cout << "\nRHF GRADIENT:\n" << res.rhf.G << "\n" << "RHF GRADIENT NORM: " << res.rhf.G.norm() << std::endl;
         } Integral::Finalize();
 
-        if (Integral::Initialize(); input.at("rhf").contains("hessian")) {
-            res = rhf.hessian(system, ints, res); std::cout << "\nRHF HESSIAN:\n" << res.rhf.H << "\n" << "RHF HESSIAN NORM: " << res.rhf.H.norm() << std::endl;
-            std::cout << "\nRHF FREQUENCIES:\n" << Method<RestrictedHartreeFock>::frequency(system, res.rhf.H) << std::endl;
-        } Integral::Finalize();
-
-        if (Integral::Initialize(); input.at("rhf").contains("dynamics")) {
-            rhf.dynamics(system, ints, res);
-        } Integral::Finalize();
-
         if (input.contains("rmp")) {
-            RestrictedMollerPlesset rmp(rhfoptstruct, rmpoptstruct); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+            RestrictedMollerPlesset rmp(rhfopt, rmpopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
             res = rmp.run(system, ints, res); std::printf("\nRMP2 ENERGY: %.14f\n", res.Etot);
-
-            if (Integral::Initialize(); input.at("rmp").contains("gradient")) {
-                res = rmp.gradient(system, ints, res); std::cout << "\nRMP2 GRADIENT:\n" << res.rmp.G << "\n" << "RMP2 GRADIENT NORM: " << res.rmp.G.norm() << std::endl;
-            } Integral::Finalize();
-
-            if (Integral::Initialize(); input.at("rmp").contains("hessian")) {
-                res = rmp.hessian(system, ints, res); std::cout << "\nRMP HESSIAN:\n" << res.rmp.H << "\n" << "RMP HESSIAN NORM: " << res.rmp.H.norm() << std::endl;
-                std::cout << "\nRMP FREQUENCIES:\n" << Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H) << std::endl;
-            } Integral::Finalize();
 
             if (Integral::Initialize(); input.at("rmp").contains("dynamics")) {
                 rmp.dynamics(system, ints, res);
+            } else if (input.at("rmp").contains("hessian")) {
+                res = rmp.hessian(system, ints, res); std::cout << "\nRMP HESSIAN:\n" << res.rmp.H << "\n" << "RMP HESSIAN NORM: " << res.rmp.H.norm() << std::endl;
+                std::cout << "\nRMP FREQUENCIES:\n" << Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H) << std::endl;
+            } else if (input.at("rmp").contains("gradient")) {
+                res = rmp.gradient(system, ints, res); std::cout << "\nRMP2 GRADIENT:\n" << res.rmp.G << "\n" << "RMP2 GRADIENT NORM: " << res.rmp.G.norm() << std::endl;
             } Integral::Finalize();
         }
     }

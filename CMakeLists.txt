@@ -36,6 +36,7 @@ add_library(acorn
     src/eigen.cpp
     src/integral.cpp
     src/method.cpp
+    src/orca.cpp
     src/restrictedhartreefock.cpp
     src/restrictedmollerplesset.cpp
     src/system.cpp

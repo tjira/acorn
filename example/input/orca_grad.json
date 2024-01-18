@@ -1,0 +1,10 @@
+{
+    "molecule" : {
+        "file" : "../molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "orca" : {
+        "interface" : "../../interface/orca.sh",
+        "gradient" : {}
+    }
+}

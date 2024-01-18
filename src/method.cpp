@@ -1,5 +1,8 @@
 #include "restrictedmollerplesset.h"
 
+// include interfaces
+#include "orca.h"
+
 template <class M>
 void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool print) const {
     // print the header
@@ -16,19 +19,31 @@ void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool 
     // get the degrees of freedom and write the initial geometry
     double Nf = system.getAtoms().size() * 3 - 6; system.save(get()->opt.dynamics.output) ;
 
+    // start the timer
+    auto start = Timer::Now();
+
+    // calculate the initial energy with gradient
+    if constexpr (std::is_same_v<M, Orca>) {
+        res = gradient(system, ints, res, false);
+    } else {
+        res = run(system, res, false); res = gradient(system, ints, res, false);
+    }
+
+    // calculate the initial kinetic energy and temperature
+    double Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); double T = 2 * Ekin / Nf;
+
     // print the zeroth iteration
-    if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", 0, 0.0, res.Etot, 0.0, 0.0, res.G.norm(), "00:00:00.000");
+    if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", 0, 0.0, res.Etot, Ekin, T / BOLTZMANN, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
 
     for (int i = 0; i < get()->opt.dynamics.iters; i++) {
         // start the timer and store the previous v and a
-        auto start = Timer::Now();
-        Matrix<> vp = v, ap = a;
+        start = Timer::Now(); Matrix<> vp = v, ap = a;
 
         // calculate the velocity and accceleration
         a = -res.G.array() / m.array(); v = vp + (ap + a) * get()->opt.dynamics.step / 2;
 
         // calculate the kinetic energy and temperature
-        double Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); double T = 2 * Ekin / Nf;
+        Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); T = 2 * Ekin / Nf;
 
         // move the system
         system.move(get()->opt.dynamics.step * (v + 0.5 * a * get()->opt.dynamics.step));
@@ -37,7 +52,11 @@ void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool 
         system.save(get()->opt.dynamics.output, std::ios::app);
 
         // calculate the next energy with gradient
-        res = run(system, res, false); res = gradient(system, ints, res, false);
+        if constexpr (std::is_same_v<M, Orca>) {
+            res = gradient(system, ints, res, false);
+        } else {
+            res = run(system, res, false); res = gradient(system, ints, res, false);
+        }
 
         // print the iteration info
         if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", i + 1, AU2FS * get()->opt.dynamics.step * (i + 1), res.Etot, Ekin, T / BOLTZMANN, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -91,9 +110,12 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
         }
     }
 
-    // assign the gradient to the correct variable
+    // assign the gradient to the correct method variable
     if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.G = res.G;
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.G = res.G;
+
+    // assign the gradient to the correct interface variable
+    if constexpr (std::is_same_v<M, Orca>) res.orca.G = res.G;
 
     // return the gradient
     return res;
@@ -137,9 +159,12 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     }
 
 
-    // assign the hessian to the correct variable
+    // assign the hessian to the correct method variable
     if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.H = res.H;
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.H = res.H;
+
+    // assign the hessian to the correct interface variable
+    if constexpr (std::is_same_v<M, Orca>) res.orca.H = res.H;
 
     // return the gradient
     return res;

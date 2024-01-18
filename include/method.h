@@ -10,6 +10,9 @@ struct Result {
     struct RestrictedMollerPlesset {
         double Ecorr; Matrix<> G, H;
     } rmp;
+    struct Orca {
+        double E; Matrix<> G, H;
+    } orca;
     double Etot; Matrix<> G, H;
 };
 
@@ -17,12 +20,14 @@ template <class M>
 class Method {
 public:
     // general methods
-    Result gradient(const System& system, const Integrals& ints, Result res, bool print = true) const;
-    Result hessian(const System& system, const Integrals& ints, Result res, bool print = true) const;
     void dynamics(System system, const Integrals& ints, Result res, bool print = true) const;
 
     // static methods
     static Vector<> frequency(const System& system, const Matrix<>& H);
+
+    // virtual derivatives
+    virtual Result gradient(const System& system, const Integrals& ints, Result res, bool print = true) const;
+    virtual Result hessian(const System& system, const Integrals& ints, Result res, bool print = true) const;
 
     // virtual method functions
     virtual Result run(const System&, const Integrals&, Result, bool) const = 0;
