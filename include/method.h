@@ -10,9 +10,6 @@ struct Result {
     struct RestrictedMollerPlesset {
         double Ecorr; Matrix<> G, H;
     } rmp;
-    struct Orca {
-        double E; Matrix<> G, H;
-    } orca;
     double Etot; Matrix<> G, H;
 };
 

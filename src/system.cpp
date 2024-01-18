@@ -11,11 +11,11 @@ int libint2::micro() {return LIBINT_MICRO_VERSION;}
 // define the shell getter and the destructor
 libint2::BasisSet System::getShells() const {return *shells;} System::~System() {delete shells;}
 
-System::System(const System& system) : atoms(system.atoms), electrons(system.electrons), charge(system.charge), multi(system.multi), basis(system.basis) {
+System::System(const System& system) : electrons(system.electrons), charge(system.charge), multi(system.multi), basis(system.basis), lnxbasis(system.lnxbasis), atoms(system.atoms) {
     shells = new libint2::BasisSet(basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
 }
 
-System::System(std::ifstream& stream, std::string basis, int charge, int multi) : electrons(0), charge(charge), multi(multi), basis(basis) {
+System::System(std::ifstream& stream, std::string basis, int charge, int multi) : electrons(0), charge(charge), multi(multi), basis(basis), lnxbasis(basis) {
     // check for the input geometry file existence
     if (!stream.good()) throw std::runtime_error("SYSTEM FILE DOES NOT EXIST");
 
@@ -66,6 +66,9 @@ void System::save(std::string fname, std::ios::openmode mode) const {
     // open the file, write number of atoms and set output stream flags
     std::ofstream file(fname, mode); file << atoms.size() << "\n";
     file << fname << std::fixed << std::setprecision(14) << "\n";
+
+    // check for correct file output
+    if (!file.good()) throw std::runtime_error("ERROR WHEN OPENING THE OUTPUT FILE");
 
     // print all the atom coordinates
     for (size_t i = 0; i < atoms.size(); i++) {

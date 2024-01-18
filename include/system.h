@@ -12,16 +12,17 @@ public:
     // constructors and destructors
     ~System(); System(const System& system); System(std::ifstream& stream, std::string basis, int charge = 0, int multi = 1);
 
-    // atom container getter
+    // atom container getter and charge, multi and basis getters
+    int getCharge() const {return charge;} int getMulti() const {return multi;} std::string getBasis() const {return lnxbasis;}
     template <typename T = Atom> std::vector<T> getAtoms() const {return *reinterpret_cast<const std::vector<T>*>(&atoms);}
 
-    // shell container and getter, molecule mover, and number of occupied orbitals getter
+    // shell container and getter, molecule mover, number of occupied orbitals getter
     libint2::BasisSet getShells() const; void move(const Matrix<>& dir); int nocc() const {return electrons / 2;}
 
     // molecule exporter and nuclear repulsion getter
     void save(std::string fname, std::ios::openmode mode = std::ios::out) const; double repulsion() const;
 
 private:
+    int electrons, charge, multi; std::string basis, lnxbasis;
     libint2::BasisSet* shells; std::vector<Atom> atoms;
-    int electrons, charge, multi; std::string basis;
 };

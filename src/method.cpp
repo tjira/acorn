@@ -80,6 +80,9 @@ Vector<> Method<M>::frequency(const System& system, const Matrix<>& H) {
 
 template <class M>
 Result Method<M>::gradient(const System& system, const Integrals&, Result res, bool print) const {
+    // return if run from interface
+    if constexpr (std::is_same_v<M, Orca>) return res;
+
     // define the gradient matrix
     res.G = Matrix<>(system.getAtoms().size(), 3);
 
@@ -113,9 +116,6 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
     // assign the gradient to the correct method variable
     if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.G = res.G;
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.G = res.G;
-
-    // assign the gradient to the correct interface variable
-    if constexpr (std::is_same_v<M, Orca>) res.orca.G = res.G;
 
     // return the gradient
     return res;
@@ -162,9 +162,6 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     // assign the hessian to the correct method variable
     if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.H = res.H;
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.H = res.H;
-
-    // assign the hessian to the correct interface variable
-    if constexpr (std::is_same_v<M, Orca>) res.orca.H = res.H;
 
     // return the gradient
     return res;

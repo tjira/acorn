@@ -30,7 +30,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Hessian, step);
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, gradient, hessian, interface, folder);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, folder);
 
 int main(int argc, char** argv) {
     // create the argument parser and the program timer
@@ -119,14 +119,9 @@ int main(int argc, char** argv) {
 
     if (input.contains("orca")) {
         if (input.at("orca").contains("dynamics")) {
-            Orca orca(orcaopt); orca.dynamics(system, ints, res);
-        } else if (input.at("orca").contains("hessian")) {
-            throw std::runtime_error("ORCA HESSIAN NOT IMPLEMENTED");
-        } else if (input.at("orca").contains("gradient")) {
-            Orca orca(orcaopt); res = orca.gradient(system, ints, res); std::printf("\nORCA ENERGY: %.14f\n", res.Etot);
-            std::cout << "\nORCA GRADIENT:\n" << res.orca.G << "\n" << "ORCA GRADIENT NORM: " << res.orca.G.norm() << std::endl;
+            Orca(orcaopt).dynamics(system, ints, res);
         } else {
-            Orca orca(orcaopt); res = orca.run(system, ints, res); std::printf("\nORCA ENERGY: %.14f\n", res.Etot);
+            throw std::runtime_error("YOU HAVE TO SPECIFY THE DYNAMICS BLOCK IN THE ORCA BLOCK");
         }
 
     } else if (input.contains("rhf")) {

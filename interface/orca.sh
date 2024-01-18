@@ -2,9 +2,9 @@
 
 # create the input file
 cat << EOT > orca.inp
-! HF STO-3G ENGRAD
+! HF ENGRAD $3
 
-*xyzfile 0 1 molecule.xyz
+*xyzfile $1 $2 molecule.xyz
 EOT
 
 # run the calculation
