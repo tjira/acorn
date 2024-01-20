@@ -7,6 +7,7 @@ molecule.xyz
 
 # exts
 *.lock
+*.dat
 *.mat
 *.out
 
@@ -19,4 +20,4 @@ molecule.xyz
 /bin/
 
 # interface folders
-orca.[0-9]*
+.orca.[0-9]*

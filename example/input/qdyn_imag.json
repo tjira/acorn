@@ -1,0 +1,10 @@
+{
+    "model" : {
+        "potential" : "0.5*x^2",
+        "limits" : [[-16, 16]],
+        "ngrid" : 512
+    },
+    "solve" : {
+        "real" : false
+    }
+}

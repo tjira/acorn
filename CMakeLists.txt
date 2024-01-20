@@ -19,13 +19,14 @@ set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3")
 
 # declare libraries
 FetchContent_Declare(argparse SYSTEM GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG ac4c578f6020d5164f66ccb26b4727dea657a12b)
+FetchContent_Declare(exprtk GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git GIT_TAG f46bffcd6966d38a09023fb37ba9335214c9b959)
 FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG a259ecc51e1951e12f757ce17db958e9881e9c6c)
 
 # fetch the libraries
-FetchContent_MakeAvailable(argparse json)
+FetchContent_MakeAvailable(argparse exprtk json)
 
 # include directories
-include_directories(include ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
+include_directories(include ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
 
 # find OpenMP
 find_package(Eigen3 REQUIRED)
@@ -34,8 +35,11 @@ find_package(OpenMP REQUIRED)
 # add acorn library
 add_library(acorn
     src/eigen.cpp
+    src/expression.cpp
     src/integral.cpp
     src/method.cpp
+    src/modelsolver.cpp
+    src/modelsystem.cpp
     src/orca.cpp
     src/restrictedhartreefock.cpp
     src/restrictedmollerplesset.cpp

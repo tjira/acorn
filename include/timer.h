@@ -1,7 +1,6 @@
 #pragma once
 
-#include <chrono>
-#include <string>
+#include <bits/stdc++.h>
 
 namespace Timer {
     // typedefs of the timepoint and time intervals

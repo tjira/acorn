@@ -2,7 +2,7 @@
 
 Result Orca::gradient(const System& system, const Integrals&, Result res, bool print) const {
     // define the name of the orca folder and create the gradient matrix
-    std::filesystem::path orcadir = opt.folder / ("orca." + std::to_string(Timer::Now().time_since_epoch().count())); res.G = Matrix<>(system.getAtoms().size(), 3);
+    std::filesystem::path orcadir = opt.folder / (".orca." + std::to_string(Timer::Now().time_since_epoch().count())); res.G = Matrix<>(system.getAtoms().size(), 3);
 
     // define the execution connamd and create the execution directory
     std::stringstream cmd; cmd << "./orca.sh " << system.getCharge() << " " << system.getMulti() << " " << system.getBasis(), std::filesystem::create_directory(orcadir); 

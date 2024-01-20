@@ -12,5 +12,7 @@ cat \
     include/restrictedhartreefock.h  \
     include/transform.h \
     include/restrictedmollerplesset.h  \
+    include/modelsystem.h \
+    include/modelsolver.h \
     include/default.h \
 | sed '/#pragma once/d ; /#include "/d'
