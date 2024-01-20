@@ -42,6 +42,7 @@ Below are all the important features of Acorn divided into categories.
 
 * Hartree-Fock Method
 * Møller–Plesset Perturbation Theory
+* Numerically Exact Quantum Dynamics
 
 ### Additional Calculations
 
@@ -52,7 +53,7 @@ Below are all the important features of Acorn divided into categories.
 The software requires the [libint](https://github.com/evaleev/libint) library. Before the library compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
-sudo apt install libboost-all-dev libeigen3-dev
+sudo apt install libboost-dev libeigen3-dev
 ```
 
 To compile the library execute `./script/libint.sh` from the project root directory. This command creates the *libint* folder with the compiled library. Now, we export the necessary environment variables.
@@ -79,5 +80,6 @@ After the compilation the bin folder will be created along with the executable.
 ## Credits
 
 * [argparse](https://github.com/p-ranav/argparse) - Argument Parser for Modern C++.
+* [exprtk](https://github.com/ArashPartow/exprtk) - C++ Mathematical Expression Parsing and Evaluation Library.
 * [json](https://github.com/nlohmann/json) - JSON for Modern C++.
 * [libint](https://github.com/evaleev/libint) - High-performance library for computing Gaussian integrals in quantum mechanics.

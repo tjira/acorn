@@ -118,7 +118,7 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.G = res.G;
 
     // return the gradient
-    return res;
+    if (print) {std::cout << std::endl;} return res;
 }
 
 template <class M>
@@ -158,13 +158,12 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
         }
     }
 
-
     // assign the hessian to the correct method variable
     if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.H = res.H;
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.H = res.H;
 
-    // return the gradient
-    return res;
+    // print the new line return the gradient
+    if (print) {std::cout << std::endl;} return res;
 }
 
 // method definitions

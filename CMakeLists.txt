@@ -41,6 +41,7 @@ add_library(acorn
     src/modelsolver.cpp
     src/modelsystem.cpp
     src/orca.cpp
+    src/printer.cpp
     src/restrictedhartreefock.cpp
     src/restrictedmollerplesset.cpp
     src/system.cpp

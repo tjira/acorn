@@ -103,6 +103,6 @@ ModelSolver::Result ModelSolver::run(const ModelSystem& system, Result res, bool
         energy(i) = E;
     }
 
-    // return the results
-    return {states, energy, x.real(), V.real()};
+    // print the new line and return the results
+    if (print) {std::printf("\n");} return {states, energy, x.real(), V.real()};
 }

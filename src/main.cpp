@@ -8,7 +8,8 @@
 // interfaces
 #include "orca.h"
 
-// include default options
+// include specific
+#include "printer.h"
 #include "default.h"
 
 // include parsing and json libraries
@@ -61,7 +62,6 @@ int main(int argc, char** argv) {
     // get the path of the input
     auto inputpath = std::filesystem::current_path() / std::filesystem::path(program.get("input")).parent_path();
 
-
     // print program name and compiler version
     std::printf("QUANTUM ACORN (GCC %d.%d.%d, ", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 
@@ -111,10 +111,10 @@ int main(int argc, char** argv) {
         // print and export the atomic integrals
         if (input.contains("integral")) {
             if (input.at("integral").contains("print")) {
-                if (intopt.at("print").at("overlap")) std::cout << "\nOVERLAP INTEGRALS:\n" << ints.S << std::endl;
-                if (intopt.at("print").at("kinetic")) std::cout << "\nKINETIC INTEGRALS:\n" << ints.T << std::endl;
-                if (intopt.at("print").at("nuclear")) std::cout << "\nNUCLEAR INTEGRALS:\n" << ints.V << std::endl;
-                if (intopt.at("print").at("coulomb")) std::cout << "\nCOULOMB INTEGRALS:\n" << ints.J << std::endl;
+                if (intopt.at("print").at("overlap")) std::cout << "\n", Printer::Print(ints.S, "OVERLAP INTEGRALS");
+                if (intopt.at("print").at("kinetic")) std::cout << "\n", Printer::Print(ints.T, "KINETIC INTEGRALS");
+                if (intopt.at("print").at("nuclear")) std::cout << "\n", Printer::Print(ints.V, "NUCLEAR INTEGRALS");
+                if (intopt.at("print").at("coulomb")) std::cout << "\n", Printer::Print(ints.J, "COULOMB INTEGRALS");
             }
             if (input.at("integral").contains("export")) {
                 if (intopt.at("export").at("overlap")) EigenWrite(inputpath / "S.mat", ints.S);
@@ -125,45 +125,35 @@ int main(int argc, char** argv) {
         }
 
         if (input.contains("orca")) {
-            if (input.at("orca").contains("dynamics")) {
-                Orca(orcaopt).dynamics(system, ints, res);
-            } else {
-                throw std::runtime_error("YOU HAVE TO SPECIFY THE DYNAMICS BLOCK IN THE ORCA BLOCK");
-            }
-
+            if (input.at("orca").contains("dynamics")) Orca(orcaopt).dynamics(system, ints, res);
         } else if (input.contains("rhf")) {
             RestrictedHartreeFock rhf(rhfopt); res = rhf.run(system, ints);
-            std::printf("\nRHF ENERGY: %.14f\n", res.Etot);
-
+            Printer::Print(res.Etot, "RESTRICTED HARTREE-FOCK ENERGY");
             if (input.at("rhf").contains("dynamics")) {
                 rhf.dynamics(system, ints, res);
             } else if (input.at("rhf").contains("hessian")) {
-                res = rhf.hessian(system, ints, res); std::cout << "\nRHF HESSIAN:\n" << res.rhf.H << "\n" << "RHF HESSIAN NORM: " << res.rhf.H.norm() << std::endl;
-                std::cout << "\nRHF FREQUENCIES:\n" << Method<RestrictedHartreeFock>::frequency(system, res.rhf.H) << std::endl;
+                res = rhf.hessian(system, ints, res); Printer::Print(res.rhf.H, "RESTRICTED HARTREE-FOCK HESSIAN"); std::cout << std::endl;
+                Printer::Print(Method<RestrictedHartreeFock>::frequency(system, res.rhf.H), "RESTRICTED HARTREE-FOCK FREQUENCIES");
             } else if (input.at("rhf").contains("gradient")) {
-                res = rhf.gradient(system, ints, res); std::cout << "\nRHF GRADIENT:\n" << res.rhf.G << "\n" << "RHF GRADIENT NORM: " << res.rhf.G.norm() << std::endl;
+                res = rhf.gradient(system, ints, res); Printer::Print(res.rhf.G, "RHF GRADIENT");;
             }
-
             if (input.contains("rmp")) {
                 RestrictedMollerPlesset rmp(rhfopt, rmpopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
-                res = rmp.run(system, ints, res); std::printf("\nRMP2 ENERGY: %.14f\n", res.Etot);
-
+                res = rmp.run(system, ints, res); Printer::Print(res.Etot, "RESTRICTED MOLLER-PLESSET ENERGY");
                 if (input.at("rmp").contains("dynamics")) {
                     rmp.dynamics(system, ints, res);
                 } else if (input.at("rmp").contains("hessian")) {
-                    res = rmp.hessian(system, ints, res); std::cout << "\nRMP HESSIAN:\n" << res.rmp.H << "\n" << "RMP HESSIAN NORM: " << res.rmp.H.norm() << std::endl;
-                    std::cout << "\nRMP FREQUENCIES:\n" << Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H) << std::endl;
+                    res = rmp.hessian(system, ints, res); Printer::Print(res.rmp.H, "RESTRICTED MOLLER-PLESSET HESSIAN"); std::cout << std::endl;
+                    Printer::Print(Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H), "RESTRICTED MOLLER-PLESSET FREQUENSIES");
                 } else if (input.at("rmp").contains("gradient")) {
-                    res = rmp.gradient(system, ints, res); std::cout << "\nRMP2 GRADIENT:\n" << res.rmp.G << "\n" << "RMP2 GRADIENT NORM: " << res.rmp.G.norm() << std::endl;
+                    res = rmp.gradient(system, ints, res); Printer::Print(res.rmp.G, "RESTRICTED MOLLER-PLESSET GRADIENT");
                 }
             }
         }
     } else if (input.contains("model")) {
         ModelSystem model(input.at("model").at("potential"), input.at("model").at("limits"), input.at("model").at("ngrid")); ModelSolver::Result res;
-
         if (input.contains("solve")) {
-            ModelSolver msv(msvopt); res = msv.run(model);
-            std::cout << "\nENERGIES:\n" << res.energy << std::endl;
+            ModelSolver msv(msvopt); res = msv.run(model); Printer::Print(res.energy, "ENERGIES");
             ModelSystem::SaveWavefunction("wavefunction.dat", res.r, res.states, res.energy);
             Matrix<> U(res.r.size(), 2); U << res.r, res.u; EigenWrite("U.mat", U);
         }

@@ -64,7 +64,7 @@ Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, R
         if (print) std::printf("%4d %20.14f %.2e %.2e %s\n", i, res.rhf.E, Eerr, Derr, elapsed.c_str());
 
         // finish if covergence reached
-        if (Eerr < opt.thresh && Derr < opt.thresh) break;
+        if (Eerr < opt.thresh && Derr < opt.thresh) {if (print) std::cout << std::endl; break;}
         else if (i == opt.maxiter) {
             throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN SCF REACHED.");
         }
