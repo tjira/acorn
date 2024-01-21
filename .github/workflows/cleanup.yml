@@ -1,6 +1,8 @@
 name: Workflow Cleanup
 
-on: workflow_dispatch
+on:
+  schedule:
+    - cron: '*/5 * * * *'
 
 permissions:
   actions: write
@@ -15,4 +17,4 @@ jobs:
         uses: Mattraks/delete-workflow-runs@v2
         with:
           keep_minimum_runs: 1
-          retain_days: 1
+          retain_days: 0
