@@ -8,10 +8,9 @@ public:
     struct Options {Options(){};
         // structures
         struct Dynamics {int iters=100; double step=1.0; std::string output="trajectory.xyz";} dynamics={};
-        struct Gradient {double step=1e-5;} gradient={}; struct Hessian {double step=1e-5;} hessian={};
 
         // variables
-        std::filesystem::path interface, folder;
+        std::string method; std::filesystem::path interface, folder;
     };
 public:
     // constructors and destructors

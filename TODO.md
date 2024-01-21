@@ -1,5 +1,7 @@
 # TODO List
 
+- [ ] Implement the unrestricted Hartree-Fock
+- [ ] Implement the analytical gradient for RHF
 - [x] Add the ability to use orca to perform ground state dynamics
 - [x] Add the ability to export the atomic integrals
 - [x] Fix gradient calculation

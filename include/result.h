@@ -9,5 +9,9 @@ struct Result {
     struct RestrictedMollerPlesset {
         double Ecorr; Matrix<> G, H;
     } rmp;
+    struct ModelSolver {
+        std::vector<std::vector<Vector<std::complex<double>>>> states;
+        Vector<> E, U, r, k;
+    } msv;
     double Etot; Matrix<> G, H;
 };

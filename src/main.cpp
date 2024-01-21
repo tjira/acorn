@@ -1,6 +1,5 @@
 // include the methods
 #include "restrictedmollerplesset.h"
-#include "restrictedhartreefock.h"
 
 // model system and solver
 #include "modelsolver.h"
@@ -28,8 +27,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Hessian, st
 
 // option structures loaders for ORCA
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, output);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Gradient, step);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Hessian, step);
 
 // option structures loaders for model method
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::Options::Dynamics, iters, step, output);
@@ -38,7 +35,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::Options::Dynamics, iters, step, 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::Options, dynamics, real, step, iters, nstate, thresh, optimize);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, folder);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, method, folder);
 
 int main(int argc, char** argv) {
     // create the argument parser and the program timer
@@ -57,7 +54,7 @@ int main(int argc, char** argv) {
     // set path to the basis function folder if not set
     if (!std::filesystem::is_directory(std::string(DATADIR) + "/basis")) {
         setenv("LIBINT_DATA_PATH", std::filesystem::weakly_canonical(std::filesystem::path(argv[0])).parent_path().c_str(), true);
-    } nthread = program.get<int>("-n"); std::cout << std::fixed << std::setprecision(14);
+    } nthread = program.get<int>("-n"); std::cout << std::fixed << std::setprecision(14); Result res;
 
     // get the path of the input
     auto inputpath = std::filesystem::current_path() / std::filesystem::path(program.get("input")).parent_path();
@@ -73,14 +70,17 @@ int main(int argc, char** argv) {
     std::ifstream istream(program.get("input")); nlohmann::json input = nlohmann::json::parse(istream); istream.close();
 
     // parse the default options
-    auto rmpopt = nlohmann::json::parse(rmpoptstr), orcaopt = nlohmann::json::parse(orcaoptstr);
+    auto rmpopt = nlohmann::json::parse(rmpoptstr), orcopt = nlohmann::json::parse(orcoptstr);
     auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr);
     auto msvopt = nlohmann::json::parse(msvoptstr);
+
+    // assign the interface input path
+    orcopt["folder"] = inputpath;
 
     // patch the input json file and apply defaults
     if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
     if (input.contains("solve")) msvopt.merge_patch(input.at("solve"));
-    if (input.contains("orca")) orcaopt.merge_patch(input.at("orca"));
+    if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
@@ -88,14 +88,14 @@ int main(int argc, char** argv) {
         // get the path of the system file
         std::filesystem::path syspath = inputpath / std::filesystem::path(input.at("molecule").at("file"));
 
-        // assign the interface input path and define the result container
-        orcaopt["folder"] = inputpath; Result res; Integrals ints(true);
+        // define the integral container
+        Integrals ints(true);
 
         // make all the input and output paths absolute
-        orcaopt.at("dynamics").at("output") = inputpath / orcaopt.at("dynamics").at("output");
+        orcopt.at("dynamics").at("output") = inputpath / orcopt.at("dynamics").at("output");
         rhfopt.at("dynamics").at("output") = inputpath / rhfopt.at("dynamics").at("output");
         rmpopt.at("dynamics").at("output") = inputpath / rmpopt.at("dynamics").at("output");
-        orcaopt.at("interface") = inputpath / orcaopt.at("interface");
+        orcopt.at("interface") = inputpath / orcopt.at("interface");
 
         // create the system from the system file
         std::ifstream mstream(syspath); System system(mstream, input.at("molecule").at("basis")); mstream.close();
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
         }
 
         if (input.contains("orca")) {
-            if (input.at("orca").contains("dynamics")) Orca(orcaopt).dynamics(system, ints, res);
+            if (input.at("orca").contains("dynamics")) Orca(orcopt).dynamics(system, ints, res);
         } else if (input.contains("rhf")) {
             RestrictedHartreeFock rhf(rhfopt); res = rhf.run(system, ints);
             Printer::Print(res.Etot, "RESTRICTED HARTREE-FOCK ENERGY");
@@ -151,11 +151,11 @@ int main(int argc, char** argv) {
             }
         }
     } else if (input.contains("model")) {
-        ModelSystem model(input.at("model").at("potential"), input.at("model").at("limits"), input.at("model").at("ngrid")); ModelSolver::Result res;
+        ModelSystem model(input.at("model").at("potential"), input.at("model").at("limits"), input.at("model").at("ngrid"));
         if (input.contains("solve")) {
-            ModelSolver msv(msvopt); res = msv.run(model); Printer::Print(res.energy, "ENERGIES");
-            ModelSystem::SaveWavefunction("wavefunction.dat", res.r, res.states, res.energy);
-            Matrix<> U(res.r.size(), 2); U << res.r, res.u; EigenWrite("U.mat", U);
+            ModelSolver msv(msvopt); res = msv.run(model); Printer::Print(res.msv.E, "ENERGIES");
+            Matrix<> U(res.msv.r.size(), 2); U << res.msv.r, res.msv.U; EigenWrite("U.mat", U);
+            ModelSystem::SaveWavefunction("wfn.dat", res.msv.r, res.msv.states, res.msv.E);
         }
     }
 

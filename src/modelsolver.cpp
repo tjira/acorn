@@ -2,53 +2,53 @@
 
 #define I std::complex<double>(0, 1)
 
-ModelSolver::Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
+Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
     // define the real and Fourier space
-    Vector<std::complex<double>> x(system.ngrid), k(system.ngrid);
+    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid);
 
     // fill the real space and calculate dx
     for (int i = 0; i < system.ngrid; i++) {
-        x(i) = system.limits.at(0).at(0) + (system.limits.at(0).at(1) - system.limits.at(0).at(0)) * i / (system.ngrid - 1);
-    } double dx = (x(1) - x(0)).real();
+        res.msv.r(i) = system.limits.at(0).at(0) + (system.limits.at(0).at(1) - system.limits.at(0).at(0)) * i / (system.ngrid - 1);
+    } double dx = res.msv.r(1) - res.msv.r(0);
 
     // fill the Fourier space
-    k.fill(2 * M_PI / k.size() / dx); for (int i = 0; i < k.size(); i++) k(i) *= i - (i < x.size() / 2 ? 0 : x.size());
+    res.msv.k.fill(2 * M_PI / res.msv.k.size() / dx); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
 
     // calculate the potential function values
-    Vector<std::complex<double>> V = Expression(system.potential).eval(x.real());
+    res.msv.U = Expression(system.potential).eval(res.msv.r);
 
     // define the initial wavefunction and the energy vector
-    Vector<std::complex<double>> psi = (-(x.array() - 0.8).pow(2)).exp(); Vector<> energy(opt.nstate);
+    Vector<std::complex<double>> psi = (-(res.msv.r.array() - 0.8).pow(2)).exp(); res.msv.E = Vector<>(opt.nstate);
 
     // define the vector of all wavefunctions
-    std::vector<std::vector<Vector<std::complex<double>>>> states(opt.nstate, {psi}); 
+    res.msv.states = std::vector<std::vector<Vector<std::complex<double>>>>(opt.nstate, {psi}); 
 
     // define the real and imaginary space operators
-    Vector<std::complex<double>> K = (-0.5 * k.array().pow(2) * opt.step).exp();
-    Vector<std::complex<double>> R = (-0.5 * V.array() * opt.step).exp();
+    Vector<std::complex<double>> K = (-0.5 * res.msv.k.array().pow(2) * opt.step).exp();
+    Vector<std::complex<double>> R = (-0.5 * res.msv.U.array() * opt.step).exp();
 
     // real time dynamics operators
     if (opt.real) {
-        K = (-0.5 * I * k.array().pow(2) * opt.step).exp();
-        R = (-0.5 * I * V.array() * opt.step).exp();
+        K = (-0.5 * I * res.msv.k.array().pow(2) * opt.step).exp();
+        R = (-0.5 * I * res.msv.U.array() * opt.step).exp();
 
         if (opt.optimize) {
             // create imaginary options and set some necessary values
             Options imopt = opt; imopt.real = false, imopt.iters = 100000;
 
             // optimize the wavefunctions
-            states = ModelSolver(imopt).run(system, res, false).states;
+            res.msv.states = ModelSolver(imopt).run(system, res, false).msv.states;
 
             // delete optimization steps
-            for (size_t i = 0; i < states.size(); i++) {
-                states.at(i) = {states.at(i).at(states.at(i).size() - 1)};
+            for (size_t i = 0; i < res.msv.states.size(); i++) {
+                res.msv.states.at(i) = {res.msv.states.at(i).at(res.msv.states.at(i).size() - 1)};
             }
         }
     }
 
     // calculate the total energy
-    Vector<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * EigenFourier(k.array().pow(2) * EigenFourier(psi).array(), true).array();
-    Vector<std::complex<double>> Ep = EigenConj(psi).array() * V.array() * psi.array(); double E = (Ek + Ep).sum().real() * dx;
+    Vector<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * EigenFourier(res.msv.k.array().pow(2) * EigenFourier(psi).array(), true).array();
+    Vector<std::complex<double>> Ep = EigenConj(psi).array() * res.msv.U.array() * psi.array(); double E = (Ek + Ep).sum().real() * dx;
 
     // print the header
     if (print) std::printf("\n");
@@ -59,7 +59,7 @@ ModelSolver::Result ModelSolver::run(const ModelSystem& system, Result res, bool
         if (print) std::printf("%sSTATE %i %s\n ITER        Eel [Eh]         |dE|     |dD|\n", i ? "\n" : "", i, opt.real ? "(RT)" : "(IT)");
 
         // assign the psi WFN to the correct state
-        psi = states.at(i).at(states.at(i).size() - 1);
+        psi = res.msv.states.at(i).at(res.msv.states.at(i).size() - 1);
 
         // propagate the current state
         for (int j = 1; j <= opt.iters; j++) {
@@ -73,15 +73,15 @@ ModelSolver::Result ModelSolver::run(const ModelSystem& system, Result res, bool
 
             // subtract lower eigenstates
             for (int k = 0; k < i && !opt.real; k++) {
-                psi = psi.array() - (EigenConj(states.at(k).at(states.at(k).size() - 1)).array() * psi.array()).sum() * dx * states.at(k).at(states.at(k).size() - 1).array();
+                psi = psi.array() - (EigenConj(res.msv.states.at(k).at(res.msv.states.at(k).size() - 1)).array() * psi.array()).sum() * dx * res.msv.states.at(k).at(res.msv.states.at(k).size() - 1).array();
             }
 
             // normalize the wavefunction
             psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dx);
 
             // calculate the total energy
-            Ek = 0.5 * EigenConj(psi).array() * EigenFourier(k.array().pow(2) * EigenFourier(psi).array(), true).array();
-            Ep = EigenConj(psi).array() * V.array() * psi.array(); E = (Ek + Ep).sum().real() * dx;
+            Ek = 0.5 * EigenConj(psi).array() * EigenFourier(res.msv.k.array().pow(2) * EigenFourier(psi).array(), true).array();
+            Ep = EigenConj(psi).array() * res.msv.U.array() * psi.array(); E = (Ek + Ep).sum().real() * dx;
 
             // calculate the errors
             double Eerr = std::abs(E - Eprev), Derr = (psi.array().abs2() - Dprev.array()).abs2().sum();
@@ -90,7 +90,7 @@ ModelSolver::Result ModelSolver::run(const ModelSystem& system, Result res, bool
             if (print) std::printf("%6d %20.14f %.2e %.2e\n", j, E, Eerr, Derr);
 
             // append the wave function
-            states.at(i).push_back(psi);
+            res.msv.states.at(i).push_back(psi);
 
             // end the loop if converged
             if (!opt.real && Eerr < opt.thresh && Derr < opt.thresh) break;
@@ -100,9 +100,9 @@ ModelSolver::Result ModelSolver::run(const ModelSystem& system, Result res, bool
         }
 
         // assign the energy
-        energy(i) = E;
+        res.msv.E(i) = E;
     }
 
     // print the new line and return the results
-    if (print) {std::printf("\n");} return {states, energy, x.real(), V.real()};
+    if (print) {std::printf("\n");} return res;
 }

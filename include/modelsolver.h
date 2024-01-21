@@ -1,6 +1,7 @@
 #pragma once
 
 #include "modelsystem.h"
+#include "result.h"
 
 class ModelSolver {
 public:
@@ -10,10 +11,6 @@ public:
 
         // variables
         int nstate=3, iters=1000; bool real=false, optimize=false; double step=0.1, thresh=1e-8;
-    };
-    struct Result {
-        std::vector<std::vector<Vector<std::complex<double>>>> states;
-        Vector<> energy, r, u;
     };
 public:
     // constructors and destructors

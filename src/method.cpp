@@ -80,11 +80,11 @@ Vector<> Method<M>::frequency(const System& system, const Matrix<>& H) {
 
 template <class M>
 Result Method<M>::gradient(const System& system, const Integrals&, Result res, bool print) const {
-    // return if run from interface
-    if constexpr (std::is_same_v<M, Orca>) return res;
-
     // define the gradient matrix
     res.G = Matrix<>(system.getAtoms().size(), 3);
+
+    // define the step
+    double step; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.gradient.step;
 
     // print the header
     if (print) std::printf("\n  ELEM      dE [Eh/Bohr]        TIME\n");
@@ -100,13 +100,13 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
             Matrix<> dirPlus(system.getAtoms().size(), 3); System sysPlus = system;
 
             // fill the direction matrices
-            dirMinus(i, j) -= get()->opt.gradient.step * A2BOHR; dirPlus(i, j) += get()->opt.gradient.step * A2BOHR;
+            dirMinus(i, j) -= step * A2BOHR; dirPlus(i, j) += step * A2BOHR;
 
             // move the systems
             sysMinus.move(dirMinus), sysPlus.move(dirPlus);
 
             // calculate and assign the derivative
-            res.G(i, j) = BOHR2A * (run(sysPlus, res, false).Etot - run(sysMinus, res, false).Etot) / get()->opt.gradient.step / 2;
+            res.G(i, j) = BOHR2A * (run(sysPlus, res, false).Etot - run(sysMinus, res, false).Etot) / step / 2;
 
             // print the iteration info
             if (print) std::printf("(%2d, %2d) %18.14f %s\n", i + 1, j + 1, res.G(i, j), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -126,12 +126,15 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     // define the gradient matrix
     res.H = Matrix<>(3 * system.getAtoms().size(), 3 * system.getAtoms().size());
 
+    // define the step
+    double step; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.hessian.step;
+
     // print the header
     if (print) std::printf("\n  ELEM      dE [Eh/Bohr]        TIME\n");
 
-    #pragma omp parallel for num_threads(nthread) collapse(2)
+    #pragma omp parallel for num_threads(nthread)
     for (int i = 0; i < res.H.rows(); i++) {
-        for (int j = 0; j < res.H.cols(); j++) {
+        for (int j = i; j < res.H.cols(); j++) {
             // start the timer
             Timer::Timepoint start = Timer::Now();
 
@@ -140,7 +143,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
             Matrix<> dir1(system.getAtoms().size(), 3), dir2(system.getAtoms().size(), 3);
 
             // fill the direction matrices
-            dir1(i / 3, i % 3) = get()->opt.hessian.step * A2BOHR; dir2(j / 3, j % 3) = get()->opt.hessian.step * A2BOHR;
+            dir1(i / 3, i % 3) = step * A2BOHR; dir2(j / 3, j % 3) = step * A2BOHR;
 
             // move the systems
             sysMinusMinus.move(-dir1 - dir2), sysMinusPlus.move(-dir1 + dir2);
@@ -151,7 +154,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
             double energyPlusMinus = run(sysPlusMinus, res, false).Etot, energyPlusPlus = run(sysPlusPlus, res, false).Etot;
 
             // calculate and assign the derivative
-            res.H(i, j) = BOHR2A * BOHR2A * (energyPlusPlus - energyMinusPlus - energyPlusMinus + energyMinusMinus) / get()->opt.hessian.step / get()->opt.hessian.step / 4;
+            res.H(i, j) = BOHR2A * BOHR2A * (energyPlusPlus - energyMinusPlus - energyPlusMinus + energyMinusMinus) / step / step / 4; res.H(j, i) = res.H(i, j);
 
             // print the iteration info
             if (print) std::printf("(%2d, %2d) %18.14f %s\n", i + 1, j + 1, res.H(i, j), Timer::Format(Timer::Elapsed(start)).c_str());
