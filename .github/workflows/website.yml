@@ -18,6 +18,7 @@ jobs:
       - name: Delete Past Deployments
         uses: strumwolf/delete-deployment-environment@v2
         with:
+          token: ${{secrets.GITHUB_TOKEN}}
           onlyRemoveDeployments: true
           environment: docs
 
