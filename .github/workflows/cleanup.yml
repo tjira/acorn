@@ -1,8 +1,8 @@
-name: Workflow Cleanup
+name: Cleanup
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '0 0 * * *'
 
 permissions:
   actions: write
