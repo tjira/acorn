@@ -155,7 +155,6 @@ int main(int argc, char** argv) {
         if (input.contains("solve")) {
             ModelSolver msv(msvopt); res = msv.run(model); Printer::Print(res.msv.E, "ENERGIES");
             Matrix<> U(res.msv.r.size(), 2); U << res.msv.r, res.msv.U; EigenWrite("U.mat", U);
-            ModelSystem::SaveWavefunction("wfn.dat", res.msv.r, res.msv.states, res.msv.E);
         }
     }
 

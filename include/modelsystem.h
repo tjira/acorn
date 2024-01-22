@@ -9,7 +9,7 @@ public:
     ModelSystem(const std::string& potential, const std::vector<std::vector<double>> limits, int ngrid);
 
     // static methods
-    void static SaveWavefunction(const std::string& fname, const Vector<>& r, const std::vector<std::vector<Vector<std::complex<double>>>>& wfns, const Vector<>& energy);
+    void static SaveWavefunction(const std::string& fname, const Vector<>& r, const std::vector<Vector<std::complex<double>>>& wfns, const std::vector<double>& energy);
 
 private:
     const std::vector<std::vector<double>> limits;

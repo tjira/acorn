@@ -1,4 +1,5 @@
 #include "modelsolver.h"
+#include "modelsystem.h"
 
 #define I std::complex<double>(0, 1)
 
@@ -21,7 +22,7 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
     Vector<std::complex<double>> psi = (-(res.msv.r.array() - 0.8).pow(2)).exp(); res.msv.E = Vector<>(opt.nstate);
 
     // define the vector of all wavefunctions
-    res.msv.states = std::vector<std::vector<Vector<std::complex<double>>>>(opt.nstate, {psi}); 
+    res.msv.states = std::vector<Vector<std::complex<double>>>(opt.nstate, psi); 
 
     // define the real and imaginary space operators
     Vector<std::complex<double>> K = (-0.5 * res.msv.k.array().pow(2) * opt.step).exp();
@@ -38,17 +39,8 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
 
             // optimize the wavefunctions
             res.msv.states = ModelSolver(imopt).run(system, res, false).msv.states;
-
-            // delete optimization steps
-            for (size_t i = 0; i < res.msv.states.size(); i++) {
-                res.msv.states.at(i) = {res.msv.states.at(i).at(res.msv.states.at(i).size() - 1)};
-            }
         }
     }
-
-    // calculate the total energy
-    Vector<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * EigenFourier(res.msv.k.array().pow(2) * EigenFourier(psi).array(), true).array();
-    Vector<std::complex<double>> Ep = EigenConj(psi).array() * res.msv.U.array() * psi.array(); double E = (Ek + Ep).sum().real() * dx;
 
     // print the header
     if (print) std::printf("\n");
@@ -58,8 +50,15 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
         // print the iteration header
         if (print) std::printf("%sSTATE %i %s\n ITER        Eel [Eh]         |dE|     |dD|\n", i ? "\n" : "", i, opt.real ? "(RT)" : "(IT)");
 
-        // assign the psi WFN to the correct state
-        psi = res.msv.states.at(i).at(res.msv.states.at(i).size() - 1);
+        // assign the guess to psi, create a vector that will hold the state dynamics and define vector of energies
+        psi = res.msv.states.at(i); std::vector<Vector<std::complex<double>>> wfns = {psi};
+
+        // calculate the total energy of the guess function
+        Vector<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * EigenFourier(res.msv.k.array().pow(2) * EigenFourier(psi).array(), true).array();
+        Vector<std::complex<double>> Ep = EigenConj(psi).array() * res.msv.U.array() * psi.array(); double E = (Ek + Ep).sum().real() * dx;
+
+        // vector of state energy evolution
+        std::vector<double> energies = {E};
 
         // propagate the current state
         for (int j = 1; j <= opt.iters; j++) {
@@ -73,7 +72,7 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
 
             // subtract lower eigenstates
             for (int k = 0; k < i && !opt.real; k++) {
-                psi = psi.array() - (EigenConj(res.msv.states.at(k).at(res.msv.states.at(k).size() - 1)).array() * psi.array()).sum() * dx * res.msv.states.at(k).at(res.msv.states.at(k).size() - 1).array();
+                psi = psi.array() - (EigenConj(res.msv.states.at(k)).array() * psi.array()).sum() * dx * res.msv.states.at(k).array();
             }
 
             // normalize the wavefunction
@@ -89,8 +88,8 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
             // print the iteration
             if (print) std::printf("%6d %20.14f %.2e %.2e\n", j, E, Eerr, Derr);
 
-            // append the wave function
-            res.msv.states.at(i).push_back(psi);
+            // push back the wfns and energies
+            wfns.push_back(psi), energies.push_back(E);
 
             // end the loop if converged
             if (!opt.real && Eerr < opt.thresh && Derr < opt.thresh) break;
@@ -99,8 +98,11 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
             }
         }
 
-        // assign the energy
-        res.msv.E(i) = E;
+        // assign the energy and wfn
+        res.msv.states.at(i) = psi, res.msv.E(i) = E;
+
+        // save the state
+        ModelSystem::SaveWavefunction("state" + std::to_string(i) + ".dat", res.msv.r, wfns, energies);
     }
 
     // print the new line and return the results

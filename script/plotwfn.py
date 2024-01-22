@@ -18,7 +18,7 @@ density = lambda re, im: re * re + im * im
 
 if __name__ == "__main__":
     # create the argument parser
-    parser = ap.ArgumentParser(prog="Hazel Wavefunction Plotter", description="Wavefunction plotting script for the Hazel package.")
+    parser = ap.ArgumentParser(prog="Acorn Wavefunction Plotter", description="Wavefunction plotting script for the Quantum Acorn package.")
 
     # add arguments
     parser.add_argument("--dens", action="store_true")
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         data.append([]) if line[0] == "#" else data[-1].append([float(entry) for entry in line.split()])
 
     # extract the energy from the wavefunction file
-    energy = np.array([float(re.sub("[E=,\[\]]", "", cell)) for cell in input.split("\n")[0].split()[len(data[0][0]) + 1:]])
+    energy = np.array([float(re.sub("[E=,\\[\\]]", "", cell)) for cell in input.split("\n")[0].split()[len(data[0][0]) + 1:]])
 
     # create the figure and plot the potential
     fig, ax = plt.subplots(); plt.plot(U.T[0], U.T[1])
@@ -42,18 +42,14 @@ if __name__ == "__main__":
     for i in range(len(data)):
         xming = np.min(np.array(data[0]).T[0][np.apply_along_axis(lambda row: row.sum(), 1, np.abs(np.array(data[i])[:, 1:])) > 0.01])
         xmaxg = np.max(np.array(data[0]).T[0][np.apply_along_axis(lambda row: row.sum(), 1, np.abs(np.array(data[i])[:, 1:])) > 0.01])
-        yming = np.min(np.array(data[i])[:, 1:3]) + np.min(energy)
-        ymaxg = np.max(np.array(data[i])[:, -2:]) + np.max(energy)
         xmin = xming if xming < xmin else xmin
         xmax = xmaxg if xmaxg > xmax else xmax
-        ymin = yming if yming < ymin else ymin
-        ymax = ymaxg if ymaxg > ymax else ymax
 
     # set the Y axis minimum
-    ymin = np.min([ymin, np.min(U[:, 1])])
+    ymin, ymax = min([np.min(np.array(data)[:, :, 1:]) + energy, np.min(U[:, 1])]), np.array(data)[:, :, 1:].max() + energy
 
     # set the plot limits
-    plt.axis([xmin, xmax, ymin - 0.1 * (ymax - ymin), ymax + 0.1 * (ymax - ymin)])
+    plt.axis([xmin, xmax, ymin - 0.02 * (ymax - ymin), ymax + 0.02 * (ymax - ymin)])
 
     # define the plots and animation update function
     if args.real:
