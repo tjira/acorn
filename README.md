@@ -60,7 +60,7 @@ The software requires the [libint](https://github.com/evaleev/libint) library. B
 sudo apt install libboost-dev libeigen3-dev
 ```
 
-To compile the library execute `./script/libint.sh` from the project root directory. This command creates the *libint* folder with the compiled library. Now, we export the necessary environment variables.
+To compile the library execute `./script/libint.sh` from the project root directory. This command creates the `libint` folder with the compiled library. Now, we export the necessary environment variables.
 
 ```bash
 export CPLUS_INCLUDE_PATH="$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
@@ -83,7 +83,13 @@ After the compilation the bin folder will be created along with the executable.
 
 ## Examples
 
-All the example inputs are located in the `example/input` folder. They are meant to be kept there due to the relative paths to the molecules. If you are in the project root directory, you can run one of the examples as `./bin/acorn example/input/rhf.json` and the calculation should start. Feel free to explore all the examples. 
+All the example inputs are located in the `example/input` folder. They are meant to be kept there due to the relative paths to the molecules. If you are in the project root directory, you can run one of the examples with the following command.
+
+```bash
+./bin/acorn example/input/rhf.json
+```
+
+The calculation should finish without errors. Feel free to explore all the examples. Keep in mind that to execute the ORCA dynamics example you need the ORCA executable in your PATH variable.
 
 ## Credits
 
