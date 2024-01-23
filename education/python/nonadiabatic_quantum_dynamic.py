@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # import numpy library
 import numpy as np
 
-ngrid, dt, iters, m = 512, 50, 256, 2000
+ngrid, dt, iters, m = 512, 32, 256, 2048
 
 def V(x):
     # define the matrix
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # define the array for density matrices
     rho = np.zeros((2, 2, iters), dtype=complex)
 
-    # calculate the expansion coefficients of the wavefunction
+    # calculate the expansion coefficients of the diabatic wavefunction
     ci = np.array([sum(psi * eigf[:, i]) for i in range(2 * ngrid)])
 
     max_y = np.max(abs(psi))

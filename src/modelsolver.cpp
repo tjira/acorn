@@ -98,10 +98,8 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
             }
         }
 
-        // assign the energy and wfn
-        res.msv.states.at(i) = psi, res.msv.E(i) = E;
-
-        // save the state
+        // assign the energy and wavefunctions and save the current state
+        res.msv.states.at(i) = psi, res.msv.E(i) = E; if (i < opt.nstate - 1) res.msv.states.at(i + 1) = psi;
         ModelSystem::SaveWavefunction("state" + std::to_string(i) + ".dat", res.msv.r, wfns, energies);
     }
 
