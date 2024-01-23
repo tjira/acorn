@@ -1,7 +1,11 @@
 <h1 align="center">Quantum Acorn</h1>
 
 <h4 align="center">
+  <a href="https://github.com/tjira/acorn#features">Features</a>
+  ·
   <a href="https://github.com/tjira/acorn#compilation">Compilation</a>
+  ·
+  <a href="https://github.com/tjira/acorn#examples">Examples</a>
   ·
   <a href="https://github.com/tjira/acorn#credits">Credits</a>
   ·
@@ -15,12 +19,12 @@
     <a href="https://github.com/tjira/acorn/blob/master/LICENSE.md">
         <img src="https://img.shields.io/github/license/tjira/acorn?style=for-the-badge"/>
     </a>
-    <a href="https://github.com/tjira/acorn/stargazers">
-        <img src="https://img.shields.io/github/stars/tjira/acorn?style=for-the-badge"/>
-    </a>
-    <br>
     <a href="https://github.com/tjira/acorn">
         <img src="https://img.shields.io/github/languages/code-size/tjira/acorn?style=for-the-badge"/>
+    </a>
+    <br>
+    <a href="https://github.com/tjira/acorn/stargazers">
+        <img src="https://img.shields.io/github/stars/tjira/acorn?style=for-the-badge"/>
     </a>
     <a href="https://github.com/tjira/acorn/releases/latest">
         <img src="https://img.shields.io/github/v/release/tjira/acorn?display_name=tag&style=for-the-badge"/>
@@ -76,6 +80,10 @@ cmake --build build
 ```
 
 After the compilation the bin folder will be created along with the executable.
+
+## Examples
+
+All the example inputs are located in the `example/input` folder. They are meant to be kept there due to the relative paths to the molecules. If you are in the project root directory, you can run one of the examples as `./bin/acorn example/input/rhf.json` and the calculation should start. Feel free to explore all the examples. 
 
 ## Credits
 
