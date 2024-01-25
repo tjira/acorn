@@ -72,13 +72,14 @@ int main(int argc, char** argv) {
     // parse the default options
     auto rmpopt = nlohmann::json::parse(rmpoptstr), orcopt = nlohmann::json::parse(orcoptstr);
     auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr);
-    auto msvopt = nlohmann::json::parse(msvoptstr);
+    auto msvopt = nlohmann::json::parse(msvoptstr), mdlopt = nlohmann::json::parse(mdloptstr);
 
     // assign the interface input path
     orcopt["folder"] = inputpath;
 
     // patch the input json file and apply defaults
     if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
+    if (input.contains("model")) mdlopt.merge_patch(input.at("model"));
     if (input.contains("solve")) msvopt.merge_patch(input.at("solve"));
     if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
@@ -151,10 +152,10 @@ int main(int argc, char** argv) {
             }
         }
     } else if (input.contains("model")) {
-        ModelSystem model(input.at("model").at("potential"), input.at("model").at("limits"), input.at("model").at("ngrid"));
+        ModelSystem model(mdlopt.at("mass"), mdlopt.at("potential"), mdlopt.at("limits"), mdlopt.at("ngrid"));
         if (input.contains("solve")) {
-            ModelSolver msv(msvopt); res = msv.run(model); Printer::Print(res.msv.E, "ENERGIES");
-            Matrix<> U(res.msv.r.size(), 2); U << res.msv.r, res.msv.U; EigenWrite("U.mat", U);
+            ModelSolver msv(msvopt); res = msv.run(model); if (!msvopt.at("real")) Printer::Print(res.msv.opten, "ENERGIES");
+            Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite("U.mat", U);
         }
     }
 

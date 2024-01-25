@@ -8,7 +8,7 @@ public:
     Expression(const std::string& expr) : exprstr(expr) {}
 
     // methods
-    Vector<> eval(const Vector<>& r) const;
+    double eval(double r) const; Vector<> eval(const Vector<>& r) const;
 
 private:
     std::string exprstr;

@@ -7,6 +7,10 @@ inline std::string intoptstr = R"({
     "print" : {"kinetic" : false, "nuclear" : false, "overlap" : false, "coulomb" : false}
 })";
 
+inline std::string mdloptstr = R"({
+    "mass" : 1, "ngrid" : 512, "limits" : [[-16, 16]]
+})";
+
 inline std::string msvoptstr = R"({
     "real" : false, "step" : 0.1, "optimize" : true, "nstate" : 3, "iters" : 1000, "thresh" : 1e-12, "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}
 })";

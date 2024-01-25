@@ -3,6 +3,24 @@
 // include the exprtk
 #include <exprtk.hpp>
 
+double Expression::eval(double r) const {
+    // define the exprtk symbol table and expression
+    exprtk::symbol_table<double> symbol_table;
+    exprtk::expression<double> expression;
+
+    // add variables and constants to the expression
+    double x1_exprtk; symbol_table.add_variable("x", x1_exprtk); symbol_table.add_constants();
+
+    // register the symbol table with the expression
+    expression.register_symbol_table(symbol_table);
+
+    // parse the expression
+    exprtk::parser<double>().compile(exprstr, expression);
+
+    // return the value
+    x1_exprtk = r; return expression.value();
+}
+
 Vector<> Expression::eval(const Vector<>& r) const {
     // define the exprtk symbol table and expression
     exprtk::symbol_table<double> symbol_table;

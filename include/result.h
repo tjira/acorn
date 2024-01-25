@@ -10,7 +10,8 @@ struct Result {
         double Ecorr; Matrix<> G, H;
     } rmp;
     struct ModelSolver {
-        std::vector<Vector<std::complex<double>>> states; Vector<> E, U, r, k;
+        std::vector<Vector<std::complex<double>>> optstates; 
+        Vector<> opten; Vector<> r, k; Matrix<> U;
     } msv;
     double Etot; Matrix<> G, H;
 };

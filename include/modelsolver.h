@@ -20,5 +20,9 @@ public:
     Result run(const ModelSystem& system, Result res = {}, bool print = true);
 
 private:
+    Result runnad(const ModelSystem& system, Result res = {}, bool print = true);
+    Result runad(const ModelSystem& system, Result res = {}, bool print = true);
+
+private:
     Options opt;
 };

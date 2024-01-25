@@ -1,0 +1,16 @@
+{
+    "model" : {
+        "potential" : [
+            ["0.01*tanh(0.6*x)", "0.001*exp(-x^2)"],
+            ["0.001*exp(-x^2)", "-0.01*tanh(0.6*x)"]
+        ],
+        "limits" : [[-32, 32]],
+        "ngrid" : 1024,
+        "mass" : 2048
+    },
+    "solve" : {
+        "real" : true,
+        "iters" : 512,
+        "step" : 32
+    }
+}
