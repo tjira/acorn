@@ -29,12 +29,14 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Hessian, st
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, output);
 
 // option structures loaders for model method
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::Options::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, output);
 
 // option loaders
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::Options, dynamics, real, step, iters, nstate, thresh, optimize);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, method, folder);
 
 int main(int argc, char** argv) {
@@ -72,7 +74,8 @@ int main(int argc, char** argv) {
     // parse the default options
     auto rmpopt = nlohmann::json::parse(rmpoptstr), orcopt = nlohmann::json::parse(orcoptstr);
     auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr);
-    auto msvopt = nlohmann::json::parse(msvoptstr), mdlopt = nlohmann::json::parse(mdloptstr);
+    auto msaopt = nlohmann::json::parse(msaoptstr), mdlopt = nlohmann::json::parse(mdloptstr);
+    auto msnopt = nlohmann::json::parse(msnoptstr);
 
     // assign the interface input path
     orcopt["folder"] = inputpath;
@@ -80,10 +83,13 @@ int main(int argc, char** argv) {
     // patch the input json file and apply defaults
     if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
     if (input.contains("model")) mdlopt.merge_patch(input.at("model"));
-    if (input.contains("solve")) msvopt.merge_patch(input.at("solve"));
     if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
+
+    // patch the inputs for the modelsolver
+    if (input.contains("solve") && mdlopt.at("potential").size() == 1) msaopt.merge_patch(input.at("solve"));
+    if (input.contains("solve") && mdlopt.at("potential").size() != 1) msnopt.merge_patch(input.at("solve"));
 
     if (input.contains("molecule")) {
         // get the path of the system file
@@ -154,7 +160,11 @@ int main(int argc, char** argv) {
     } else if (input.contains("model")) {
         ModelSystem model(mdlopt.at("mass"), mdlopt.at("potential"), mdlopt.at("limits"), mdlopt.at("ngrid"));
         if (input.contains("solve")) {
-            ModelSolver msv(msvopt); res = msv.run(model); if (!msvopt.at("real")) Printer::Print(res.msv.opten, "ENERGIES");
+            ModelSolver msv(msaopt.get<ModelSolver::OptionsAdiabatic>());
+            if (mdlopt.at("potential").size() > 1) {
+                msv = ModelSolver(msnopt.get<ModelSolver::OptionsNonadiabatic>());
+            } res = msv.run(model); 
+            if (!msaopt.at("real") && mdlopt.at("potential").size() == 1) Printer::Print(res.msv.opten, "ENERGIES");
             Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite("U.mat", U);
         }
     }

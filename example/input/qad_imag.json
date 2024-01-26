@@ -5,6 +5,7 @@
         "ngrid" : 512
     },
     "solve" : {
+        "guess" : "exp(-(x-1)^2)",
         "real" : false
     }
 }

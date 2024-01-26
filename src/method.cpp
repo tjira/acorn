@@ -84,7 +84,7 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
     res.G = Matrix<>(system.getAtoms().size(), 3);
 
     // define the step
-    double step; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.gradient.step;
+    double step = 0; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.gradient.step;
 
     // print the header
     if (print) std::printf("\n  ELEM      dE [Eh/Bohr]        TIME\n");
@@ -127,7 +127,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     res.H = Matrix<>(3 * system.getAtoms().size(), 3 * system.getAtoms().size());
 
     // define the step
-    double step; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.hessian.step;
+    double step = 0; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.hessian.step;
 
     // print the header
     if (print) std::printf("\n  ELEM      dE [Eh/Bohr]        TIME\n");

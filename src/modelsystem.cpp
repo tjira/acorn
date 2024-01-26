@@ -7,7 +7,7 @@ void ModelSystem::SaveWavefunction(const std::string& fname, const Vector<>& r, 
     std::ofstream file(fname);
 
     // write the wavefunction
-    for (int i = 0; i < wfns.size(); i++) {
+    for (size_t i = 0; i < wfns.size(); i++) {
         // set the precision and print the independent variable value header
         file << std::fixed << std::setprecision(14) << "#" << std::setw(7) << std::setfill('0') << i
              << " r1                  real                 imag         E=" << energy.at(i) << "\n";
