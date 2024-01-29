@@ -223,7 +223,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         chis.push_back(psimat); energies.push_back(0);
 
         // calculate the errors
-        double E = std::sqrt(psi.array().abs2().sum() * dx), Eerr = 0, Derr = (psi.array().abs2() - psiprev.array().abs2()).abs2().sum();
+        double E = 0, Eerr = 0, Derr = (psi.array().abs2() - psiprev.array().abs2()).abs2().sum();
 
         // print the iteration
         if (print) std::printf("%6d %20.14f %.2e %.2e\n", i + 1, E, Eerr, Derr);
