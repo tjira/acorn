@@ -40,6 +40,7 @@ add_library(acorn
     src/method.cpp
     src/modelsolver.cpp
     src/modelsystem.cpp
+    src/numpy.cpp
     src/orca.cpp
     src/printer.cpp
     src/restrictedconfigurationinteraction.cpp

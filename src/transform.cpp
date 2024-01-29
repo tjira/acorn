@@ -1,5 +1,37 @@
 #include "transform.h"
 
+Matrix<> Transform::Single(const Matrix<>& A, const Matrix<>& C) {
+    // create the transformed matrix
+    Matrix<> Amo(A.rows(), A.cols());
+
+    // perform the transformation
+    #pragma omp parallel for num_threads(nthread)
+    for (int i = 0; i < A.rows(); i++) {
+        for (int j = 0; j < A.cols(); j++) {
+            for (int a = 0; a < Amo.rows(); a++) {
+                for (int b = 0; b < Amo.cols(); b++) {
+                    Amo(i, j) += A(a, b) * C(a, i) * C(b, j);
+                }
+            }
+        }
+    }
+
+    // return the transformed matrix
+    return Amo;
+}
+
+Matrix<> Transform::SingleSpin(const Matrix<>& A, const Matrix<>& C) {
+    // expand the dimentsions of the MO basis matrix
+    Matrix<> Ams = Numpy::Repeat(Numpy::Repeat(Transform::Single(A, C), 2, 0), 2, 1);
+
+    // create repeating zeros and ones and tile it to a matrix
+    Vector<double> ind(Ams.rows()); std::iota(ind.begin(), ind.end(), 0); ind = ind.unaryExpr([](auto s) {return double(int(s) % 2);});
+    Matrix<bool> indm(ind.size(), ind.size()); for (size_t i = 0; i < ind.size(); i++) indm.row(i) = ind.transpose().array() == ind(i);
+
+    // element wise multiply and return
+    return Ams.array() * indm.cast<double>().array();
+}
+
 Tensor<> Transform::Coulomb(const Tensor<>& J, const Matrix<>& C) {
     // declare the Coulomb integral in molecular orbital basis and tensors of partial transform
     Tensor<4> J01(J.dimension(0), J.dimension(1), J.dimension(2), J.dimension(3)); J01.setZero();

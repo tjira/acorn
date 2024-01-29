@@ -11,6 +11,7 @@ cat \
     include/method.h  \
     include/restrictedmethod.h  \
     include/restrictedhartreefock.h  \
+    include/numpy.h \
     include/transform.h \
     include/restrictedconfigurationinteraction.h  \
     include/restrictedmollerplesset.h  \

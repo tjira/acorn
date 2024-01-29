@@ -152,7 +152,6 @@ int main(int argc, char** argv) {
             } else if (input.at("rhf").contains("gradient")) {
                 res = rhf.gradient(system, ints, res); Printer::Print(res.rhf.G, "RHF GRADIENT");;
             }
-            EigenWrite("C.mat", res.rhf.C);
             if (input.contains("rci")) {
                 RestrictedConfigurationInteraction rci(rhfopt, rciopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
                 res = rci.run(system, ints, res); Printer::Print(res.Etot, "RESTRICTED CONFIGURATION INTERACTION ENERGY");
