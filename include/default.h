@@ -2,6 +2,10 @@
 
 #include <string>
 
+inline std::string rcioptstr = R"({
+    "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5}
+})";
+
 inline std::string intoptstr = R"({
     "export" : {"kinetic" : false, "nuclear" : false, "overlap" : false, "coulomb" : false},
     "print" : {"kinetic" : false, "nuclear" : false, "overlap" : false, "coulomb" : false}

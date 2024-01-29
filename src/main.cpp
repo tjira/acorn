@@ -1,5 +1,5 @@
 // include the methods
-#include "restrictedmollerplesset.h"
+#include "restrictedconfigurationinteraction.h"
 
 // model system and solver
 #include "modelsolver.h"
@@ -20,6 +20,11 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Dynamics, ite
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Hessian, step);
 
+// option structures loaders for RCI
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Gradient, step);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Hessian, step);
+
 // option structures loaders for RMP
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Dynamics, iters, step, output);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Gradient, step);
@@ -35,6 +40,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iter
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, method, folder);
@@ -75,7 +81,7 @@ int main(int argc, char** argv) {
     auto rmpopt = nlohmann::json::parse(rmpoptstr), orcopt = nlohmann::json::parse(orcoptstr);
     auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr);
     auto msaopt = nlohmann::json::parse(msaoptstr), mdlopt = nlohmann::json::parse(mdloptstr);
-    auto msnopt = nlohmann::json::parse(msnoptstr);
+    auto msnopt = nlohmann::json::parse(msnoptstr), rciopt = nlohmann::json::parse(rcioptstr);
 
     // assign the interface input path
     orcopt["folder"] = inputpath;
@@ -85,6 +91,7 @@ int main(int argc, char** argv) {
     if (input.contains("model")) mdlopt.merge_patch(input.at("model"));
     if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
+    if (input.contains("rci")) rciopt.merge_patch(input.at("rci"));
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
     // patch the inputs for the modelsolver
@@ -101,6 +108,7 @@ int main(int argc, char** argv) {
         // make all the input and output paths absolute
         orcopt.at("dynamics").at("output") = inputpath / orcopt.at("dynamics").at("output");
         rhfopt.at("dynamics").at("output") = inputpath / rhfopt.at("dynamics").at("output");
+        rciopt.at("dynamics").at("output") = inputpath / rciopt.at("dynamics").at("output");
         rmpopt.at("dynamics").at("output") = inputpath / rmpopt.at("dynamics").at("output");
         orcopt.at("interface") = inputpath / orcopt.at("interface");
 
@@ -144,7 +152,19 @@ int main(int argc, char** argv) {
             } else if (input.at("rhf").contains("gradient")) {
                 res = rhf.gradient(system, ints, res); Printer::Print(res.rhf.G, "RHF GRADIENT");;
             }
-            if (input.contains("rmp")) {
+            EigenWrite("C.mat", res.rhf.C);
+            if (input.contains("rci")) {
+                RestrictedConfigurationInteraction rci(rhfopt, rciopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+                res = rci.run(system, ints, res); Printer::Print(res.Etot, "RESTRICTED CONFIGURATION INTERACTION ENERGY");
+                if (input.at("rci").contains("dynamics")) {
+                    rci.dynamics(system, ints, res);
+                } else if (input.at("rci").contains("hessian")) {
+                    res = rci.hessian(system, ints, res); Printer::Print(res.rci.H, "RESTRICTED CONFIGURATION INTERACTION HESSIAN"); std::cout << std::endl;
+                    Printer::Print(Method<RestrictedConfigurationInteraction>::frequency(system, res.rci.H), "RESTRICTED CONFIGURATION INTERACTION FREQUENSIES");
+                } else if (input.at("rci").contains("gradient")) {
+                    res = rci.gradient(system, ints, res); Printer::Print(res.rci.G, "RESTRICTED CONFIGURATION INTERACTION GRADIENT");
+                }
+            } else if (input.contains("rmp")) {
                 RestrictedMollerPlesset rmp(rhfopt, rmpopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
                 res = rmp.run(system, ints, res); Printer::Print(res.Etot, "RESTRICTED MOLLER-PLESSET ENERGY");
                 if (input.at("rmp").contains("dynamics")) {

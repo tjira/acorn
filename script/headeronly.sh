@@ -12,6 +12,7 @@ cat \
     include/restrictedmethod.h  \
     include/restrictedhartreefock.h  \
     include/transform.h \
+    include/restrictedconfigurationinteraction.h  \
     include/restrictedmollerplesset.h  \
     include/expression.h \
     include/modelsystem.h \

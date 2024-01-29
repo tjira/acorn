@@ -6,6 +6,9 @@ struct Result {
     struct RestrictedHartreeFock {
         double E; Vector<> eps; Matrix<> C, D, G, H;
     } rhf;
+    struct RestrictedConfigurationInteraction {
+        Matrix<> G, H;
+    } rci;
     struct RestrictedMollerPlesset {
         double Ecorr; Matrix<> G, H;
     } rmp;

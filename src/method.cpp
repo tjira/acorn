@@ -1,4 +1,4 @@
-#include "restrictedmollerplesset.h"
+#include "restrictedconfigurationinteraction.h"
 
 // include interfaces
 #include "orca.h"
@@ -114,6 +114,7 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
     }
 
     // assign the gradient to the correct method variable
+    if constexpr (std::is_same_v<M, RestrictedConfigurationInteraction>) res.rci.G = res.G;
     if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.G = res.G;
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.G = res.G;
 
@@ -162,6 +163,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     }
 
     // assign the hessian to the correct method variable
+    if constexpr (std::is_same_v<M, RestrictedConfigurationInteraction>) res.rci.H = res.H;
     if constexpr (std::is_same_v<M, RestrictedMollerPlesset>) res.rmp.H = res.H;
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) res.rhf.H = res.H;
 
@@ -170,6 +172,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
 }
 
 // method definitions
+template class Method<RestrictedConfigurationInteraction>;
 template class Method<RestrictedMollerPlesset>;
 template class Method<RestrictedHartreeFock>;
 
