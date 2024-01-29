@@ -3,7 +3,9 @@
 #include <string>
 
 inline std::string rcioptstr = R"({
-    "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5}
+    "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
+    "export" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false},
+    "print" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false}
 })";
 
 inline std::string intoptstr = R"({
@@ -16,7 +18,8 @@ inline std::string mdloptstr = R"({
 })";
 
 inline std::string msaoptstr = R"({
-    "real" : false, "step" : 0.1, "optimize" : true, "guess" : "-x^2", "nstate" : 3, "iters" : 1000, "thresh" : 1e-12, "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}
+    "real" : false, "step" : 0.1, "optimize" : true, "guess" : "-x^2", "nstate" : 3, "iters" : 1000, "thresh" : 1e-12,
+    "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}
 })";
 
 inline std::string msnoptstr = R"({
@@ -24,11 +27,17 @@ inline std::string msnoptstr = R"({
 })";
 
 inline std::string rmpoptstr = R"({
-    "order" : 2, "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5}
+    "order" : 2,
+    "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
+    "export" : {"coulombmo" : false},
+    "print" : {"coulombmo" : false}
 })";
 
 inline std::string rhfoptstr = R"({
-    "maxiter" : 1000, "thresh" : 1e-12, "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5}
+    "maxiter" : 1000, "thresh" : 1e-12,
+    "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
+    "export" : {"coef" : false, "density" : false, "orben" : false, "hcore" : false},
+    "print" : {"coef" : false, "density" : false, "orben" : false, "hcore" : false}
 })";
 
 inline std::string orcoptstr = R"({

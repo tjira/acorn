@@ -130,8 +130,7 @@ int main(int argc, char** argv) {
                 if (intopt.at("print").at("kinetic")) std::cout << "\n", Printer::Print(ints.T, "KINETIC INTEGRALS");
                 if (intopt.at("print").at("nuclear")) std::cout << "\n", Printer::Print(ints.V, "NUCLEAR INTEGRALS");
                 if (intopt.at("print").at("coulomb")) std::cout << "\n", Printer::Print(ints.J, "COULOMB INTEGRALS");
-            }
-            if (input.at("integral").contains("export")) {
+            } if (input.at("integral").contains("export")) {
                 if (intopt.at("export").at("overlap")) EigenWrite(inputpath / "S.mat", ints.S);
                 if (intopt.at("export").at("kinetic")) EigenWrite(inputpath / "T.mat", ints.T);
                 if (intopt.at("export").at("nuclear")) EigenWrite(inputpath / "V.mat", ints.V);
@@ -139,53 +138,159 @@ int main(int argc, char** argv) {
             }
         }
 
+        // if the ORCA calculation is requested
         if (input.contains("orca")) {
+            // if dynamics block is specified, run it else throw an error
             if (input.at("orca").contains("dynamics")) Orca(orcopt).dynamics(system, ints, res);
+            else throw std::runtime_error("YOU HAVE TO DO DYNAMICS WITH ORCA");
+
+        // if RHF calculation is requested
         } else if (input.contains("rhf")) {
+            // create the RHF object and run the calculation
             RestrictedHartreeFock rhf(rhfopt); res = rhf.run(system, ints);
+
+            // print and export the RHF results
+            if (input.at("rhf").contains("print")) {
+                if (rhfopt.at("print").at("hcore")) Printer::Print(ints.T + ints.V, "CORE HAMILTONIAN MATRIX"), std::cout << "\n";
+                if (rhfopt.at("print").at("coef")) Printer::Print(res.rhf.C, "COEFFICIENT MATRIX"), std::cout << "\n";
+                if (rhfopt.at("print").at("density")) Printer::Print(res.rhf.D, "DENSITY MATRIX"), std::cout << "\n";
+                if (rhfopt.at("print").at("orben")) Printer::Print(res.rhf.eps, "ORBITAL ENERGIES"), std::cout << "\n";
+            } if (input.at("rhf").contains("export")) {
+                if (rhfopt.at("export").at("hcore")) EigenWrite(inputpath / "H.mat", Matrix<>(ints.T + ints.V));
+                if (rhfopt.at("export").at("coef")) EigenWrite(inputpath / "C.mat", res.rhf.C);
+                if (rhfopt.at("export").at("density")) EigenWrite(inputpath / "D.mat", res.rhf.D);
+                if (rhfopt.at("export").at("orben")) EigenWrite(inputpath / "EPS.mat", res.rhf.eps);
+            }
+
+            // print the total energy
             Printer::Print(res.Etot, "RESTRICTED HARTREE-FOCK ENERGY");
+
+            // if the RHF dynamic block is used
             if (input.at("rhf").contains("dynamics")) {
+                // run the dynamics from the created object
                 rhf.dynamics(system, ints, res);
+
+            // if the RHF hessian is requested
             } else if (input.at("rhf").contains("hessian")) {
+                // calculate the hessian and print it
                 res = rhf.hessian(system, ints, res); Printer::Print(res.rhf.H, "RESTRICTED HARTREE-FOCK HESSIAN"); std::cout << std::endl;
+
+                // calculate the vibrational frequencies from the hessian and print them
                 Printer::Print(Method<RestrictedHartreeFock>::frequency(system, res.rhf.H), "RESTRICTED HARTREE-FOCK FREQUENCIES");
+
+            // if the RHF gradient is requested
             } else if (input.at("rhf").contains("gradient")) {
+                // calculate and print the gradient
                 res = rhf.gradient(system, ints, res); Printer::Print(res.rhf.G, "RHF GRADIENT");;
             }
+
+            // if configuratio interaction was requested
             if (input.contains("rci")) {
-                RestrictedConfigurationInteraction rci(rhfopt, rciopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
-                res = rci.run(system, ints, res); Printer::Print(res.Etot, "RESTRICTED CONFIGURATION INTERACTION ENERGY");
+                // create the CI object and transform the integrals in the MS basis
+                RestrictedConfigurationInteraction rci(rhfopt, rciopt); ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
+                ints.Tms = Transform::SingleSpin(ints.T, res.rhf.C), ints.Vms = Transform::SingleSpin(ints.V, res.rhf.C);
+
+                // perform the calculation and print newline
+                res = rci.run(system, ints, res); std::cout << std::endl;
+
+                // print and export the RHF results
+                if (input.at("rci").contains("print")) {
+                    if (rciopt.at("print").at("kineticms")) Printer::Print(ints.Tms, "KINETIC INTEGRALS IN MS BASIS"), std::cout << "\n";
+                    if (rciopt.at("print").at("nuclearms")) Printer::Print(ints.Vms, "NUCLEAR INTEGRALS IN MS BASIS"), std::cout << "\n";
+                    if (rciopt.at("print").at("hcorems")) Printer::Print(ints.Tms + ints.Vms, "CORE HAMILTONIAN MATRIX IN MS BASIS"), std::cout << "\n";
+                    if (rciopt.at("print").at("coulombms")) Printer::Print(ints.Jms, "COULOMB INTEGRALS IN MS BASIS"), std::cout << "\n";
+                } if (input.at("rci").contains("export")) {
+                    if (rciopt.at("export").at("kineticms")) EigenWrite(inputpath / "TMS.mat", ints.Tms);
+                    if (rciopt.at("export").at("nuclearms")) EigenWrite(inputpath / "VMS.mat", ints.Vms);
+                    if (rciopt.at("export").at("hcorems")) EigenWrite(inputpath / "HMS.mat", Matrix<>(ints.Tms + ints.Vms));
+                    if (rciopt.at("export").at("coulombms")) EigenWrite(inputpath / "JMS.mat", ints.Jms);
+                }
+                
+                // print the resulting CI energy
+                Printer::Print(res.Etot, "RESTRICTED CONFIGURATION INTERACTION ENERGY");
+
+                // if the dynamics block is specified
                 if (input.at("rci").contains("dynamics")) {
+                    // perform the dynamics
                     rci.dynamics(system, ints, res);
+
+                // if the hessian is requested
                 } else if (input.at("rci").contains("hessian")) {
+                    // calculate and print the hessian matrix
                     res = rci.hessian(system, ints, res); Printer::Print(res.rci.H, "RESTRICTED CONFIGURATION INTERACTION HESSIAN"); std::cout << std::endl;
+
+                    // calculate and print the CI vibrational frequencies
                     Printer::Print(Method<RestrictedConfigurationInteraction>::frequency(system, res.rci.H), "RESTRICTED CONFIGURATION INTERACTION FREQUENSIES");
+
+                // if gradient calculation was requested
                 } else if (input.at("rci").contains("gradient")) {
+                    // calculate and print the gradient matrix
                     res = rci.gradient(system, ints, res); Printer::Print(res.rci.G, "RESTRICTED CONFIGURATION INTERACTION GRADIENT");
                 }
+
+            // if MP calculation was requested
             } else if (input.contains("rmp")) {
+                // create the MP object and transform the coulomb tensor to MO basis
                 RestrictedMollerPlesset rmp(rhfopt, rmpopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
-                res = rmp.run(system, ints, res); Printer::Print(res.Etot, "RESTRICTED MOLLER-PLESSET ENERGY");
+
+                // run the calculation and print the new line
+                res = rmp.run(system, ints, res); std::cout << std::endl;
+
+                // print and export the RHF results
+                if (input.at("rmp").contains("print")) {
+                    if (rmpopt.at("print").at("coulombmo")) Printer::Print(ints.Jmo, "COULOMB INTEGRALS IN MO BASIS"), std::cout << "\n";
+                } if (input.at("rmp").contains("export")) {
+                    if (rmpopt.at("export").at("coulombmo")) EigenWrite(inputpath / "JMO.mat", ints.Jmo);
+                }
+
+                // print the total energy
+                Printer::Print(res.Etot, "RESTRICTED MOLLER-PLESSET ENERGY");
+
+                // if the MP dynamics was requested
                 if (input.at("rmp").contains("dynamics")) {
+                    // run the dynamics
                     rmp.dynamics(system, ints, res);
+
+                // if the hessian calculation was requested
                 } else if (input.at("rmp").contains("hessian")) {
+                    // calculate the hessian and print the matrix
                     res = rmp.hessian(system, ints, res); Printer::Print(res.rmp.H, "RESTRICTED MOLLER-PLESSET HESSIAN"); std::cout << std::endl;
+
+                    // calculate and print the RMP vibrational frequencies
                     Printer::Print(Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H), "RESTRICTED MOLLER-PLESSET FREQUENSIES");
+
+                // if the RMP calculation was requested
                 } else if (input.at("rmp").contains("gradient")) {
+                    // perform the gradient calculation and print the matrix
                     res = rmp.gradient(system, ints, res); Printer::Print(res.rmp.G, "RESTRICTED MOLLER-PLESSET GRADIENT");
                 }
             }
         }
+
+    // if the exact calculation was requested
     } else if (input.contains("model")) {
+        // create the model system
         ModelSystem model(mdlopt.at("mass"), mdlopt.at("potential"), mdlopt.at("limits"), mdlopt.at("ngrid"));
+
+        // if the solving was requested
         if (input.contains("solve")) {
+            // create the adianatic solver object
             ModelSolver msv(msaopt.get<ModelSolver::OptionsAdiabatic>());
-            if (mdlopt.at("potential").size() > 1) {
-                msv = ModelSolver(msnopt.get<ModelSolver::OptionsNonadiabatic>());
-            } res = msv.run(model); 
+
+            // if nonadiabatic model was specified assign to the solver the nonadiabatic version
+            if (mdlopt.at("potential").size() > 1) msv = ModelSolver(msnopt.get<ModelSolver::OptionsNonadiabatic>());
+            
+            // run the calculation
+            res = msv.run(model); 
+
+            // if the optimization was performed print the resulting energies
             if (!msaopt.at("real") && mdlopt.at("potential").size() == 1) Printer::Print(res.msv.opten, "ENERGIES");
+
+            // extract and save the potential points
             Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite("U.mat", U);
-        }
+
+        // throw error if nothing was specified for the model
+        } else throw std::runtime_error("YOU HAVE TO DO SOMETHING WITH THE MODEL");
     }
 
     // finalize the integral engine and print the elapsed time

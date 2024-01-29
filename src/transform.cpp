@@ -98,3 +98,7 @@ Tensor<> Transform::Coulomb(const Tensor<>& J, const Matrix<>& C) {
     // return the integral in molecular orbital basis
     return Jmo;
 }
+
+Tensor<> Transform::CoulombSpin(const Tensor<>& J, const Matrix<>& C) {
+    return J;
+}

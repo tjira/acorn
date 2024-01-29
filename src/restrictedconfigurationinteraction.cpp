@@ -11,8 +11,10 @@ Result RestrictedConfigurationInteraction::run(const System& system, Result res,
     // perform the RHF method
     res = RestrictedHartreeFock(rhfopt).run(system, ints, res, false);
 
-    // transform the Coulomb integral to the MO basis
-    ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+    // transform the all needed integrals to the MS basis
+    ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
+    ints.Tms = Transform::SingleSpin(ints.T, res.rhf.C);
+    ints.Vms = Transform::SingleSpin(ints.V, res.rhf.C);
 
     // run the RCI and return the total energy
     return run(system, ints, res, print);
