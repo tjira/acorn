@@ -14,45 +14,71 @@ density = lambda re, im: re * re + im * im
 
 if __name__ == "__main__":
     # create the argument parser
-    parser = ap.ArgumentParser(prog="Acorn Wavefunction Plotter", description="Wavefunction plotting script for the Quantum Acorn package.")
+    parser = ap.ArgumentParser(prog="Acorn Wavefunction Plotter", description="Wavefunction plotting script for the Quantum Acorn package.", add_help=False)
+
+    # add help argument
+    parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
 
     # add file arguments
-    parser.add_argument("wfns", nargs="+"); parser.add_argument("-p", "--potential", default="U.mat")
+    parser.add_argument("wfns", nargs="+", help="The wavefunction files to plot.")
+    parser.add_argument("-p", default="U.mat", help="The potential file to plot.")
 
     # add plot arguments
-    parser.add_argument("--absv", action="store_true"); parser.add_argument("--dens", action="store_true")
-    parser.add_argument("--imag", action="store_true"); parser.add_argument("--real", action="store_true")
+    parser.add_argument("--absv", action="store_true", help="Plot the wavefunction absolute value.")
+    parser.add_argument("--imag", action="store_true", help="Plot the wavefunction imaginary part.")
+    parser.add_argument("--real", action="store_true", help="Plot the wavefunction real part.")
+    parser.add_argument("--dens", action="store_true", help="Plot the wavefunction density.")
 
     # add mode arguments
-    parser.add_argument("--scale", action="store_true")
+    parser.add_argument("--align", action="store_true", help="Align the wavefunctions to the potential.")
+    parser.add_argument("--scale", action="store_true", help="Scale the potential to the wfn maximum.")
+
+    # add limit arguments
+    parser.add_argument("--minpt", action="store_true", help="Include the minimum of the potential.")
+    parser.add_argument("--maxpt", action="store_true", help="Include the maximum of the potential.")
 
     # parse arguments, load potential and define the data
-    args = parser.parse_args(); data, U = [], np.loadtxt(args.potential)
+    args = parser.parse_args(); data, U = [], np.loadtxt(args.p)
 
     # parse the wavefunctions
     for line in [line for line in sum([open(wfn).readlines() for wfn in args.wfns], []) if line]:
         data.append([]) if line[0] == "#" else data[-1].append([float(entry) for entry in line.split()])
 
+    # extract the energy from the wavefunction file
+    energy = list(re.findall("E=(.*)", "".join([open(wfn).read() for wfn in args.wfns])))
+
+    # extract wavefunction lengths and make them equal
+    lengths = [len(open(wfn).readlines()) // (len(data[0]) + 1) for wfn in args.wfns]
+
+    # make the wavefunctions and energies equal length
+    energy = [energy[min(i * max(lengths) + j, sum(lengths[:i]) + lengths[i] - 1)] for i in range(len(args.wfns)) for j in range(max(lengths))]
+    data = [data[min(i * max(lengths) + j, sum(lengths[:i]) + lengths[i] - 1)] for i in range(len(args.wfns)) for j in range(max(lengths))]
+
     # split the data into the different wavefunctions
     data = np.array(data).reshape(len(args.wfns), len(data) // len(args.wfns), len(data[0]), len(data[0][0]))
 
-    # extract the energy from the wavefunction file
-    energy = np.array(re.findall("E=(.*)", "".join([open(wfn).read() for wfn in args.wfns])), dtype=float)
-
     # split the energy into the different wavefunctions
-    energy = energy.reshape(len(args.wfns), len(energy) // len(args.wfns))
+    energy = np.array(energy, dtype=float).reshape(len(args.wfns), len(energy) // len(args.wfns))
 
     # scale the potential
     if args.scale: U.T[1:] *= np.max(data[:, :, :, 1:]) / np.max(U.T[1:])
 
-    # create the figure and convert the data array
-    [fig, ax], data = plt.subplots(), np.array(data)
+    # align the wavefunctions to the potential
+    if args.align: energy = np.repeat(U.T[1:1 + len(args.wfns)].mean(axis=1), len(energy[0])).reshape(len(args.wfns), len(energy[0])) - energy
+
+    # create the figure and set the title
+    [fig, ax] = plt.subplots(); fig.canvas.manager.set_window_title("Wavefunction Plotter") # type: ignore
 
     # plot the potential
     for col in U.T[1:]: plt.plot(U.T[0], col)
 
     # calculate the Y axis minimum
-    ymin, ymax = np.min(np.array([np.min(data[:, :, :, 1:]) + np.min(energy), np.min(U[:, 1:])])), np.max(data[:, :, :, 1:]) + np.max(energy)
+    ymin = np.min(np.min(data[:, :, :, 1:], axis=(1, 2, 3)) + np.min(energy, axis=1))
+    ymax = np.max(np.max(data[:, :, :, 1:], axis=(1, 2, 3)) + np.max(energy, axis=1))
+
+    # include the minimum and maximum of the potential
+    if args.minpt: ymin = min(ymin, np.min(U[:, 1:]))
+    if args.maxpt: ymax = max(ymax, np.max(U[:, 1:]))
 
     # set the plot limits
     plt.axis((*minmax(data[np.logical_or(np.abs(data[:, :, :, 1]) > 1e-3, np.abs(data[:, :, :, 2]) > 1e-3)]), ymin - 0.02 * (ymax - ymin), ymax + 0.02 * (ymax - ymin)))
@@ -74,7 +100,7 @@ if __name__ == "__main__":
             else: [plots[2 * k + j].set_ydata(data[k][i].T[j + 1] + energy[k][i]) for j in range(2)]
 
     # create the animation
-    ani = anm.FuncAnimation(fig, update, frames=len(data[0]), interval=30);
+    ani = anm.FuncAnimation(fig, update, frames=len(data[0]), interval=30); # type: ignore
 
     # show the plot
     plt.tight_layout(); plt.show(); plt.close("all")
