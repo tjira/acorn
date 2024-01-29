@@ -117,6 +117,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     return res;
 }
 
+#include <iostream>
+
 Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // define the real space
     res.msv.r = Vector<>(system.ngrid), res.msv.U = Matrix<>(system.ngrid, system.potential.size());
@@ -190,7 +192,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // calculate DVR expansion coeficients
     Vector<std::complex<double>> ci(psi.size());
     for (int j = 0; j < psi.size(); j++) {
-        ci(j) = (psi.transpose() * eigf.col(j))(0, 0) * dx;
+        ci(j) = (psi.transpose() * eigf.col(j))(0, 0);
     }
 
     // print the iteration header
@@ -204,9 +206,6 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         for (int j = 0; j < psi.size(); j++) {
             nextpsi += ci(j) * eigf.col(j) * std::exp(-I * eigv(j) * std::complex<double>(i, 0) * optn.step);
         } psi = nextpsi;
-
-        // normalize the wavefunction
-        psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dx);
 
         // prepare the matrices for the adiabatic transform
         Matrix<std::complex<double>> psimat(system.ngrid, system.potential.size());
@@ -224,7 +223,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         chis.push_back(psimat); energies.push_back(0);
 
         // calculate the errors
-        double E = 0, Eerr = 0, Derr = (psi.array().abs2() - psiprev.array().abs2()).abs2().sum();
+        double E = std::sqrt(psi.array().abs2().sum() * dx), Eerr = 0, Derr = (psi.array().abs2() - psiprev.array().abs2()).abs2().sum();
 
         // print the iteration
         if (print) std::printf("%6d %20.14f %.2e %.2e\n", i + 1, E, Eerr, Derr);
