@@ -1,29 +1,6 @@
 #include "determinant.h"
 
-std::vector<int> Common(const std::vector<int>& first, const std::vector<int>& second) {
-    // create the container
-    std::vector<int> common;
-
-    // fill the container
-    for (size_t i = 0; i < first.size(); i++) if (first.at(i) == second.at(i)) common.push_back(first.at(i));
-
-    // return the container
-    return common;
-}
-
 bool VectorContains(const std::vector<int>& v, const int& e) {return std::find(v.begin(), v.end(), e) != v.end();}
-
-std::vector<int> Unique(const std::vector<int>& first, const std::vector<int>& second) {
-    // create the container
-    std::vector<int> unique;
-
-    // fill the container
-    for (size_t i = 0; i < second.size(); i++) if (!VectorContains(first, second.at(i))) unique.push_back(second.at(i));
-    for (size_t i = 0; i < first.size(); i++) if (!VectorContains(second, first.at(i))) unique.push_back(first.at(i));
-
-    // return the container
-    return unique;
-}
 
 Determinant::Determinant(int norb, const std::vector<int>& a, const std::vector<int>& b) : a(a), b(b), norb(norb) {}
 
@@ -61,18 +38,6 @@ std::tuple<Determinant, int> Determinant::align(const Determinant& second) const
     return std::tuple<Determinant, int>{first, swaps};
 }
 
-int Determinant::differences(const Determinant& second) const {
-    // define the count
-    int count = 0;
-
-    // count the differences
-    for (size_t i = 0; i < a.size(); i++) if (a.at(i) != second.a.at(i)) count++;
-    for (size_t i = 0; i < b.size(); i++) if (b.at(i) != second.b.at(i)) count++;
-
-    // return the count
-    return count;
-}
-
 std::vector<Determinant> Determinant::full() const {
     // define the vector of determinants
     std::vector<Determinant> full;
@@ -88,15 +53,27 @@ std::vector<Determinant> Determinant::full() const {
     return full;
 }
 
-#include <iostream>
-
 double Determinant::hamilton(const Determinant& second, const Matrix<>& Hms, const Tensor<4>& Jms) const {
-    // align this determinant, number of swaps and differences and the matrix element
-    auto[first, swaps] = align(second); int diff = first.differences(second); double elem = 0;
-    std::vector<int> firstso = first.spinorbitals(), secondso = second.spinorbitals();
+    // align this determinant and define differences and element variable
+    auto[first, swaps] = align(second); int diff = 0; double elem = 0;
 
-    // get the common and unique  spinorbitals
-    std::vector<int> common = Common(firstso, secondso), unique = Unique(firstso, secondso);
+    // define all needed vectors of spinorbitals
+    std::vector<int> firstso(a.size() + b.size()), secondso(a.size() + b.size()), common, unique;
+
+    // calculate the number of differences
+    for (size_t i = 0; i < a.size(); i++) if (first.a.at(i) != second.a.at(i)) diff++;
+    for (size_t i = 0; i < b.size(); i++) if (first.b.at(i) != second.b.at(i)) diff++;
+
+    // fill the spinorbitals of first and second determinant
+    for (size_t i = 0; i < a.size(); i++) secondso.at(i) = 2 * second.a.at(i), secondso.at(second.a.size() + i) = 2 * second.b.at(i) + 1;
+    for (size_t i = 0; i < a.size(); i++) firstso.at(i) = 2 * first.a.at(i), firstso.at(first.a.size() + i) = 2 * first.b.at(i) + 1;
+
+    // fill the common spinorbitals vector
+    for (size_t i = 0; i < firstso.size(); i++) if (firstso.at(i) == secondso.at(i)) common.push_back(firstso.at(i));
+
+    // fill the unique spinorbitals vector
+    for (size_t i = 0; i < firstso.size(); i++) if (!VectorContains(firstso, secondso.at(i))) unique.push_back(secondso.at(i));
+    for (size_t i = 0; i < firstso.size(); i++) if (!VectorContains(secondso, firstso.at(i))) unique.push_back(firstso.at(i));
 
     // assign the matrix element
     if (diff == 0) {
@@ -117,16 +94,4 @@ double Determinant::hamilton(const Determinant& second, const Matrix<>& Hms, con
 
     // return element
     return std::pow(-1, swaps) * elem;
-}
-
-std::vector<int> Determinant::spinorbitals() const {
-    // create the vector to hold all spinorbitals
-    std::vector<int> spinorbitals(a.size() + b.size());
-
-    // fill the spinorbitals
-    for (size_t i = 0; i < a.size(); i++) spinorbitals.at(i) = 2 * a.at(i);
-    for (size_t i = 0; i < b.size(); i++) spinorbitals.at(a.size() + i) = 2 * b.at(i) + 1;
-
-    // return the spinorbital vector
-    return spinorbitals;
 }
