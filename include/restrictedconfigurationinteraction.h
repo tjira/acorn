@@ -1,6 +1,7 @@
 #pragma once
 
 #include "restrictedmollerplesset.h"
+#include "determinant.h"
 
 class RestrictedConfigurationInteraction : public RestrictedMethod<RestrictedConfigurationInteraction> {
     friend class Method<RestrictedConfigurationInteraction>;

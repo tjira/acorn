@@ -13,6 +13,7 @@ cat \
     include/restrictedhartreefock.h  \
     include/numpy.h \
     include/transform.h \
+    include/determinant.h \
     include/restrictedconfigurationinteraction.h  \
     include/restrictedmollerplesset.h  \
     include/expression.h \

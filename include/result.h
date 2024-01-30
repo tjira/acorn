@@ -7,7 +7,7 @@ struct Result {
         double E; Vector<> eps; Matrix<> C, D, G, H;
     } rhf;
     struct RestrictedConfigurationInteraction {
-        Matrix<> G, H;
+        Vector<> eps; Matrix<> C, F, G, H;
     } rci;
     struct RestrictedMollerPlesset {
         double Ecorr; Matrix<> G, H;

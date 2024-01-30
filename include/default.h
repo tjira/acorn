@@ -4,8 +4,8 @@
 
 inline std::string rcioptstr = R"({
     "dynamics" : {"iters" : 100, "output" : "trajectory.xyz", "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
-    "export" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false},
-    "print" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false}
+    "export" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false, "hamiltonian" : false, "energies" : false},
+    "print" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false, "hamiltonian" : false, "energies" : false}
 })";
 
 inline std::string intoptstr = R"({

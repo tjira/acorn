@@ -1,24 +1,29 @@
 {
     "molecule" : {
-        "file" : "../molecule/H2.xyz",
+        "file" : "../molecule/HCl.xyz",
         "basis" : "sto-3g"
+    },
+    "integral" : {
+        "export" : {
+            "overlap" : true,
+            "kinetic" : true,
+            "nuclear" : true,
+            "coulomb" : true
+        }
     },
     "rhf" : {
         "export" : {
-            "coef" : true
-        },
-        "print" : {
             "coef" : true
         }
     },
     "rci" : {
         "export" : {
             "hcorems" : true,
-            "coulombms" : true
+            "coulombms" : true,
+            "hamiltonian" : true
         },
         "print" : {
-            "hcorems" : true,
-            "coulombms" : true
+            "hamiltonian" : true
         }
     }
 }

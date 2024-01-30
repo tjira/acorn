@@ -20,6 +20,43 @@ Result RestrictedConfigurationInteraction::run(const System& system, Result res,
     return run(system, ints, res, print);
 }
 
-Result RestrictedConfigurationInteraction::run(const System& system, const Integrals& ints, Result res, bool) const {
-    return res;
+Result RestrictedConfigurationInteraction::run(const System& system, const Integrals& ints, Result res, bool print) const {
+    // start the timer
+    Timer::Timepoint start = Timer::Now();
+
+    // generate all possible determinants
+    std::vector<Determinant> dets = Determinant(ints.S.rows(), system.nocc(), system.nocc()).full();
+
+    // print the elapsed time
+    if (print) std::cout << "GENERATED " << dets.size() << " DETERMINANTS: " << std::flush;
+    if (print) std::cout << Timer::Format(Timer::Elapsed(start)) << std::endl;
+
+    // print the number of determinants
+    if (print) std::cout << "\nFILLING RCI HAMILTONIAN: " << std::flush;
+
+    // create the CI Hamiltonian and reset the timer
+    res.rci.F = Matrix<>(dets.size(), dets.size()); start = Timer::Now();
+
+    // fill the CI Hamiltonian
+    #pragma omp parallel for num_threads(nthread)
+    for (int i = 0; i < res.rci.F.rows(); i++) {
+        for (int j = 0; j < i + 1; j++) {
+            res.rci.F(i, j) = dets.at(i).hamilton(dets.at(j), ints.Tms + ints.Vms, ints.Jms); res.rci.F(j, i) = res.rci.F(i, j);
+        }
+    }
+
+    // print the matrix creation time and reset the timer
+    if (print) {std::cout << Timer::Format(Timer::Elapsed(start)) << "\nFINDING THE EIGENVALUES: " << std::flush;} start = Timer::Now();
+
+    // create the eigenvalue solver
+    Eigen::SelfAdjointEigenSolver<Matrix<>> solver(res.rci.F);
+
+    // extract the eigenvectors and eigenvalues
+    res.rci.C = solver.eigenvectors(); res.rci.eps = solver.eigenvalues().array() + system.repulsion();
+
+    // print the eigenproblem time
+    if (print) std::cout << Timer::Format(Timer::Elapsed(start)) << std::endl << std::endl;
+
+    // assign energy and return results
+    res.Etot = res.rci.eps(0); return res;
 }

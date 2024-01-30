@@ -99,36 +99,33 @@ Tensor<> Transform::Coulomb(const Tensor<>& J, const Matrix<>& C) {
     return Jmo;
 }
 
-#include <iostream>
-
 Tensor<> Transform::CoulombSpin(const Tensor<>& J, const Matrix<>& C) {
-    Tensor<4> Jmot = Coulomb(J, C);
-    Matrix<> Jmo = Eigen::Map<Matrix<>>(Jmot.data(), 2 * C.cols() * C.cols(), 2 * C.cols() * C.cols());
+    // calculate the integrals in the MO basis
+    Matrix<> Jmo = Eigen::Map<Matrix<>>(Coulomb(J, C).data(), C.rows() * C.rows(), C.rows() * C.rows());
+
+    // create the MS masis integrals container
     Matrix<> Jms(4 * C.cols() * C.cols(), 4 * C.rows() * C.rows()); Jms.setZero();
 
-    int n1 = C.rows();
-    int n2 = C.cols();
-    int n12 = n1 * 2;
-    int n22 = n2 * 2;
+    // perform the transform
+    for (int i = 0; i < 2 * C.rows(); i++) {
+        for (int j = 0; j < 2 * C.rows(); j++) {
+            for (int k = 0; k < 2 * C.rows(); k++) {
+                for (int l = 0; l < 2 * C.rows(); l++) {
+                    // define spin masks
+                    int mask1 = (i % 2 == k % 2) * (j % 2 == l % 2);
+                    int mask2 = (i % 2 == l % 2) * (j % 2 == k % 2);
 
-    double first, second;
-    int mask1, mask2;
+                    // define all the contributions
+                    double int1 = Jmo(i / 2 * C.rows() + k / 2, j / 2 * C.rows() + l / 2);
+                    double int2 = Jmo(i / 2 * C.rows() + l / 2, j / 2 * C.rows() + k / 2);
 
-    for (int i = 0; i < n12; i++) {
-            for (int j = 0; j < n12; j++) {
-                for (int k = 0; k < n22; k++) {
-                    for (int l = 0; l < n22; l++) {
-                        mask1 = (i % 2 == k % 2) * (j % 2 == l % 2);
-                        mask2 = (i % 2 == l % 2) * (j % 2 == k % 2);
-
-                        first = Jmo(i / 2 * n2 + k / 2, j / 2 * n2 + l / 2);
-                        second = Jmo(i / 2 * n2 + l / 2, j / 2 * n2 + k / 2);
-                        Jms(i * n12 + j, k * n22 + l) = first * mask1 - second * mask2;
-                    }
+                    // assign the value
+                    Jms(i * 2 * C.rows() + j, k * 2 * C.rows() + l) = int1 * mask1 - int2 * mask2;
                 }
             }
         }
+    }
 
-    std::cout << Jms << std::endl;
-    return Eigen::TensorMap<Tensor<4>>(Jms.data(), 2 * C.cols(), 2 * C.cols(), 2 * C.cols(), 2 * C.cols()).shuffle(Eigen::array<int, 4>{3, 2, 1, 0});
+    // return the resulting integrals in the MS basis
+    return Eigen::TensorMap<Tensor<4>>(Jms.data(), 2 * C.rows(), 2 * C.rows(), 2 * C.rows(), 2 * C.rows()).shuffle(Eigen::array<int, 4>{3, 2, 1, 0});
 }

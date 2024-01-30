@@ -199,22 +199,26 @@ int main(int argc, char** argv) {
                 RestrictedConfigurationInteraction rci(rhfopt, rciopt); ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
                 ints.Tms = Transform::SingleSpin(ints.T, res.rhf.C), ints.Vms = Transform::SingleSpin(ints.V, res.rhf.C);
 
+                // perform the calculation
+                res = rci.run(system, ints, res);
+
                 // print and export the RCI prerequisities results
                 if (input.at("rci").contains("print")) {
                     if (rciopt.at("print").at("kineticms")) Printer::Print(ints.Tms, "KINETIC INTEGRALS IN MS BASIS"), std::cout << "\n";
                     if (rciopt.at("print").at("nuclearms")) Printer::Print(ints.Vms, "NUCLEAR INTEGRALS IN MS BASIS"), std::cout << "\n";
                     if (rciopt.at("print").at("hcorems")) Printer::Print(ints.Tms + ints.Vms, "CORE HAMILTONIAN MATRIX IN MS BASIS"), std::cout << "\n";
                     if (rciopt.at("print").at("coulombms")) Printer::Print(ints.Jms, "COULOMB INTEGRALS IN MS BASIS"), std::cout << "\n";
+                    if (rciopt.at("print").at("hamiltonian")) Printer::Print(res.rci.F, "CI HAMILTONIAN"), std::cout << "\n";
+                    if (rciopt.at("print").at("energies")) Printer::Print(res.rci.eps, "EXCITED STATE ENERGIES"), std::cout << "\n";
                 } if (input.at("rci").contains("export")) {
                     if (rciopt.at("export").at("kineticms")) EigenWrite(inputpath / "TMS.mat", ints.Tms);
                     if (rciopt.at("export").at("nuclearms")) EigenWrite(inputpath / "VMS.mat", ints.Vms);
                     if (rciopt.at("export").at("hcorems")) EigenWrite(inputpath / "HMS.mat", Matrix<>(ints.Tms + ints.Vms));
                     if (rciopt.at("export").at("coulombms")) EigenWrite(inputpath / "JMS.mat", ints.Jms);
+                    if (rciopt.at("export").at("hamiltonian")) EigenWrite(inputpath / "HCI.mat", res.rci.F);
+                    if (rciopt.at("export").at("energies")) EigenWrite(inputpath / "ECI.mat", res.rci.eps);
                 }
 
-                // perform the calculation
-                res = rci.run(system, ints, res);
-                
                 // print the resulting RCI energy
                 Printer::Print(res.Etot, "RESTRICTED CONFIGURATION INTERACTION ENERGY"), std::cout << std::endl;
 

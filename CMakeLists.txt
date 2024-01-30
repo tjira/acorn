@@ -34,6 +34,7 @@ find_package(OpenMP REQUIRED)
 
 # add acorn library
 add_library(acorn
+    src/determinant.cpp
     src/eigen.cpp
     src/expression.cpp
     src/integral.cpp

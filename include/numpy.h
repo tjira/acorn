@@ -4,7 +4,9 @@
 
 namespace Numpy {
     // useful math functions
+    std::vector<std::vector<int>> Combinations(int n, int k);
     Matrix<> Repeat(const Matrix<>& A, int count, int axis);
+    long Factorial(long n);
 
     // templated functions
     template <size_t D> Tensor<D> Kron(const Matrix<>& A, const Tensor<D>& B);

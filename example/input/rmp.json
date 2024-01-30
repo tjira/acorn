@@ -4,12 +4,5 @@
         "basis" : "sto-3g"
     },
     "rhf" : {},
-    "rmp" : {
-        "print" : {
-            "coulombmo" : true
-        },
-        "export" : {
-            "coulombmo" : true
-        }
-    }
+    "rmp" : {}
 }

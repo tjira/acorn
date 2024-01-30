@@ -43,6 +43,12 @@ symmetry c1
 # symmetry c1
 # """)
 
+mol = psi4.geometry("""
+ H -0.15666749621684  0.00000000000000  0.00000000000000
+Cl  1.15666749621684  0.00000000000000  0.00000000000000
+symmetry c1
+""")
+
 
 psi4.set_options({'basis': 'sto-3g',
                   'scf_type': 'pk',
@@ -74,7 +80,8 @@ if H_Size > numpy_memory:
 # Integral generation from Psi4's MintsHelper
 t = time.time()
 mints = psi4.core.MintsHelper(wfn.basisset())
-H = np.asarray(mints.ao_kinetic()) + np.asarray(mints.ao_potential())
+# H = np.asarray(mints.ao_kinetic()) + np.asarray(mints.ao_potential())
+H = np.loadtxt("example/input/T.mat") + np.loadtxt("example/input/V.mat")
 
 print('\nTotal time taken for ERI integrals: %.3f seconds.\n' % (time.time() - t))
 
@@ -93,10 +100,8 @@ H = np.repeat(H, 2, axis=1)
 spin_ind = np.arange(H.shape[0], dtype=int) % 2
 H *= (spin_ind.reshape(-1, 1) == spin_ind)
 
-print(MO.reshape(MO.shape[0]**2, MO.shape[1]**2))
-print(np.loadtxt("example/input/JMS.mat"))
-
-print((H - np.loadtxt("example/input/HMS.mat")).sum())
+print("Hms", ((H - np.loadtxt("example/input/HMS.mat"))**2).sum())
+print("Jms", ((MO.reshape(MO.shape[0]**2, MO.shape[1]**2) - np.loadtxt("example/input/JMS.mat"))**2).sum())
 
 # print(C)
 # print(np.loadtxt("JMS.mat"))
@@ -121,6 +126,10 @@ print('Generating Hamiltonian Matrix...')
 t = time.time()
 Hamiltonian_generator = HamiltonianGenerator(H, MO)
 Hamiltonian_matrix = Hamiltonian_generator.generateMatrix(detList)
+
+print(Hamiltonian_matrix)
+print(np.loadtxt("example/input/HCI.mat"))
+print((Hamiltonian_matrix - np.loadtxt("example/input/HCI.mat")).sum())
 
 print('..finished generating Matrix in %.3f seconds.\n' % (time.time() - t))
 
