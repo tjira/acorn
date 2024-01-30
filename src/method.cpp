@@ -6,7 +6,7 @@
 template <class M>
 void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool print) const {
     // print the header
-    if (print) std::printf("\n ITER  TIME [fs]        E [Eh]              KIN [Eh]              TK [K]         |GRAD|      TIME\n");
+    if (print) std::printf(" ITER  TIME [fs]        E [Eh]              KIN [Eh]              TK [K]         |GRAD|      TIME\n");
 
     // create position, velocity and mass matrices
     Matrix<> v(system.getAtoms().size(), 3), a(system.getAtoms().size(), 3), m(system.getAtoms().size(), 3);
@@ -87,7 +87,7 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
     double step = 0; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.gradient.step;
 
     // print the header
-    if (print) std::printf("\n  ELEM      dE [Eh/Bohr]        TIME\n");
+    if (print) std::printf("  ELEM      dE [Eh/Bohr]        TIME\n");
 
     #pragma omp parallel for num_threads(nthread) collapse(2)
     for (int i = 0; i < res.G.rows(); i++) {
@@ -131,7 +131,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     double step = 0; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.hessian.step;
 
     // print the header
-    if (print) std::printf("\n  ELEM      dE [Eh/Bohr]        TIME\n");
+    if (print) std::printf("  ELEM      dE [Eh/Bohr]        TIME\n");
 
     #pragma omp parallel for num_threads(nthread)
     for (int i = 0; i < res.H.rows(); i++) {

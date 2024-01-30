@@ -47,9 +47,6 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         }
     }
 
-    // print the newline
-    if (print) std::printf("\n");
-
     // loop over all states
     for (int i = 0; i < opta.nstate; i++) {
         // print the iteration header
@@ -116,8 +113,6 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     // return the results
     return res;
 }
-
-#include <iostream>
 
 Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // define the real space
@@ -196,7 +191,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     }
 
     // print the iteration header
-    if (print) std::printf("\n ITER        Eel [Eh]         |dE|     |dD|\n");
+    if (print) std::printf(" ITER        Eel [Eh]         |dE|     |dD|\n");
 
     for (int i = 0; i < optn.iters; i++) {
         // define the next wavefunction

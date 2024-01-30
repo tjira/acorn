@@ -4,9 +4,5 @@
         "basis" : "sto-3g"
     },
     "rhf" : {},
-    "rci" : {
-        "print" : {
-            "hcorems" : true
-        }
-    }
+    "rci" : {}
 }
