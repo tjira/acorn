@@ -13,5 +13,5 @@ void Printer::Print(const Tensor<>& A, const std::string& title) {
 }
 
 void Printer::Title(const std::string& title, bool newline) {
-    std::cout << std::string(209, '-') + "\n" << title << "\n" << std::string(209, '-') << std::endl; if (newline) std::cout << std::endl;
+    std::cout << std::string(146, '-') + "\n" << title << "\n" << std::string(146, '-') << std::endl; if (newline) std::cout << std::endl;
 }

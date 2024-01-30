@@ -1,8 +1,15 @@
 {
     "molecule" : {
-        "file" : "../molecule/water.xyz",
+        "file" : "../molecule/H2.xyz",
         "basis" : "sto-3g"
     },
     "rhf" : {},
-    "rmp" : {}
+    "rmp" : {
+        "print" : {
+            "coulombmo" : true
+        },
+        "export" : {
+            "coulombmo" : true
+        }
+    }
 }

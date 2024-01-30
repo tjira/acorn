@@ -1,8 +1,24 @@
 {
     "molecule" : {
-        "file" : "../molecule/water.xyz",
+        "file" : "../molecule/H2.xyz",
         "basis" : "sto-3g"
     },
-    "rhf" : {},
-    "rci" : {}
+    "rhf" : {
+        "export" : {
+            "coef" : true
+        },
+        "print" : {
+            "coef" : true
+        }
+    },
+    "rci" : {
+        "export" : {
+            "hcorems" : true,
+            "coulombms" : true
+        },
+        "print" : {
+            "hcorems" : true,
+            "coulombms" : true
+        }
+    }
 }

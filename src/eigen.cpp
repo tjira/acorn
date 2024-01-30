@@ -3,7 +3,7 @@
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& A) {
     // print the dimensions
-    os << "(" << A.rows() << "x" << A.cols() << "): "; int maxcols = 10;
+    os << "(" << A.rows() << "x" << A.cols() << "): "; int maxcols = 7;
 
     // for every printed range of columns
     for (int i = 0; i < A.cols() / maxcols + !!(A.cols() % maxcols); i++) {
