@@ -16,7 +16,7 @@ Tensor<D> Numpy::Kron(const Matrix<>& A, const Tensor<D>& B) {
     // define the resulting tensor
     Tensor<D> C(B.dimension(0), B.dimension(1), A.rows() * B.dimension(2), A.cols() * B.dimension(3));
 
-    // perform the cronecker product
+    // perform the Kronecker product
     for (int i = 0; i < C.dimension(0); i++) {
         for (int j = 0; j < C.dimension(1); j++) {
             for (int k = 0; k < C.dimension(2); k++) {
