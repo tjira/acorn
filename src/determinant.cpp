@@ -78,16 +78,16 @@ double Determinant::hamilton(const Determinant& det2, const Matrix<>& Hms, const
         for (int so : so1) elem += Hms(so, so);
         for (size_t i = 0; i < so1.size() - 1; i++) {
             for (size_t j = i + 1; j < so1.size(); j++) {
-                elem += Jms(so1.at(i), so1.at(j), so1.at(i), so1.at(j)) - Jms(so1.at(i), so1.at(j), so1.at(j), so1.at(i));
+                elem += Jms(so1.at(i), so1.at(i), so1.at(j), so1.at(j)) - Jms(so1.at(i), so1.at(j), so1.at(j), so1.at(i));
             }
         }
     } else if (diff == 1) {
         elem += Hms(unique.at(0), unique.at(1));
         for (int so : common) {
-            elem += Jms(unique.at(0), so, unique.at(1), so) - Jms(unique.at(0), unique.at(1), so, so);
+            elem += Jms(unique.at(0), unique.at(1), so, so) - Jms(unique.at(0), so, unique.at(1), so);
         }
     } else if (diff == 2) {
-        elem = Jms(unique.at(0), unique.at(3), unique.at(2), unique.at(1)) - Jms(unique.at(0), unique.at(2), unique.at(1), unique.at(3));
+        elem = Jms(unique.at(0), unique.at(2), unique.at(1), unique.at(3)) - Jms(unique.at(0), unique.at(3), unique.at(2), unique.at(1));
     }
 
     // return element

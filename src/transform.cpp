@@ -100,24 +100,14 @@ Tensor<> Transform::Coulomb(const Tensor<>& J, const Matrix<>& C) {
 }
 
 Tensor<> Transform::CoulombSpin(const Tensor<>& J, const Matrix<>& C) {
-    // calculate the integrals in the MO basis
-    Matrix<> Jmo = Eigen::Map<Matrix<>>(Coulomb(J, C).data(), C.rows() * C.rows(), C.rows() * C.rows());
+    // create the spin indices
+    Vector<> ind(2 * C.rows()); std::iota(ind.begin(), ind.end(), 0); ind = ind.unaryExpr([](auto s) {return double(int(s) % 2);});
+    Matrix<bool> indm(ind.size(), ind.size()); for (int i = 0; i < ind.size(); i++) indm.row(i) = ind.transpose().array() == ind(i);
 
-    // create the MS masis integrals container
-    Matrix<> Jms(4 * C.cols() * C.cols(), 4 * C.rows() * C.rows()); Jms.setZero();
+    // coefficients in MS and coulomb tensor in AS basis
+    Matrix<> Cs = Numpy::Repeat(C, 2, 1).replicate<2, 1>().array() * Numpy::Repeat(indm.cast<double>(), C.rows(), 0).topRows(indm.rows()).array();
+    Tensor<4> Js = Numpy::Kron<4>(Matrix<>::Identity(2, 2), Numpy::Kron<4>(Matrix<>::Identity(2, 2), J).shuffle(Eigen::array<int, 4>{3, 2, 1, 0}));
 
-    // perform the transform
-    #pragma omp parallel for num_threads(nthread)
-    for (int i = 0; i < 2 * C.rows(); i++) {
-        for (int j = 0; j < 2 * C.rows(); j++) {
-            for (int k = 0; k < 2 * C.rows(); k++) {
-                for (int l = 0; l < 2 * C.rows(); l++) {
-                    Jms(i * 2 * C.rows() + j, k * 2 * C.rows() + l) = Jmo(i / 2 * C.rows() + k / 2, j / 2 * C.rows() + l / 2) * (i % 2 == k % 2) * (j % 2 == l % 2);
-                }
-            }
-        }
-    }
-
-    // return the resulting integrals in the MS basis
-    return Eigen::TensorMap<Tensor<4>>(Jms.data(), 2 * C.rows(), 2 * C.rows(), 2 * C.rows(), 2 * C.rows()).shuffle(Eigen::array<int, 4>{3, 2, 1, 0});
+    // return coulomb tensor in MS
+    return Coulomb(Js, Cs);
 }
