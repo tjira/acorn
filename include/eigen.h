@@ -35,5 +35,8 @@ template <typename T> T EigenConj(const T& A) {return A.unaryExpr([](auto x) {re
 // function to fourier transform a complex vector
 inline Vector<std::complex<double>> EigenFourier(const Vector<std::complex<double>>& A, bool inv = false) {Eigen::FFT<double> fft; Vector<std::complex<double>> B(A.size()); inv ? fft.inv(B, A) : fft.fwd(B, A); return B;}
 
+// complamentary functions
+inline bool VectorContains(const std::vector<int>& v, const int& e) {return std::find(v.begin(), v.end(), e) != v.end();}
+
 #include <fstream>
 #include <iomanip>

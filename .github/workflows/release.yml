@@ -59,8 +59,8 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v3
 
-      - name: Create Library Directory
-        run: mkdir library
+      - name: Create Library Directory and Delete Redundant Scripts
+        run: mkdir library && rm example/generate.sh
 
       - name: Generate the Header Only Library
         run: ./script/headeronly.sh > library/acorn.h

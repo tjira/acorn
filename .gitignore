@@ -11,13 +11,11 @@ molecule.xyz
 *.mat
 *.out
 
-# specific exts
-/python/*.json
-
 # folders
-/.cache/
-/build/
-/bin/
+.cache/
+build/
+temp/
+bin/
 
 # interface folders
 .orca.[0-9]*

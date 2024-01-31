@@ -1,29 +1,8 @@
 {
     "molecule" : {
-        "file" : "../molecule/HCl.xyz",
+        "file" : "../molecule/water.xyz",
         "basis" : "sto-3g"
     },
-    "integral" : {
-        "export" : {
-            "overlap" : true,
-            "kinetic" : true,
-            "nuclear" : true,
-            "coulomb" : true
-        }
-    },
-    "rhf" : {
-        "export" : {
-            "coef" : true
-        }
-    },
-    "rci" : {
-        "export" : {
-            "hcorems" : true,
-            "coulombms" : true,
-            "hamiltonian" : true
-        },
-        "print" : {
-            "hamiltonian" : true
-        }
-    }
+    "rhf" : {},
+    "rci" : {}
 }

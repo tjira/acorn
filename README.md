@@ -46,6 +46,7 @@ Below are all the important features of Acorn divided into categories.
 
 * Hartree-Fock Method
 * Møller–Plesset Perturbation Theory
+* Configuration Interaction
 * Numerically Exact Quantum Dynamics
 
 ### Additional Calculations

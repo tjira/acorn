@@ -1,25 +1,18 @@
 #include "numpy.h"
 
 std::vector<std::vector<int>> Numpy::Combinations(int n, int k) {
-    // get the number of combinations and create resulting array
-    std::vector<std::vector<int>> combs(Factorial(n) / (Factorial(k) * Factorial(n - k)));
-
-    // create the bitmask that will get permuted
-    std::string bitmask(k, 1); bitmask.resize(n, 0);
+    // create the bitmask that will get permuted and the resulting vector
+    std::string bitmask(k, 1); bitmask.resize(n, 0); std::vector<std::vector<int>> combs;
  
     // generate the combinations
-    for (size_t i = 0; i < combs.size(); i++) {
+    do {std::vector<int> comb; comb.reserve(k);
         for (int j = 0; j < n; j++) {
-            if (bitmask[j]) combs.at(i).push_back(j);
-        } std::prev_permutation(bitmask.begin(), bitmask.end());
-    }
+            if (bitmask[j]) comb.push_back(j);
+        } combs.push_back(comb);
+    } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
 
     // return the result
     return combs;
-}
-
-long Numpy::Factorial(long n) {
-    return n > 1 ? n * Factorial(n - 1) : 1;
 }
 
 Matrix<> Numpy::Repeat(const Matrix<>& A, int count, int axis) {

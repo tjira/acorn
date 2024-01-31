@@ -1,41 +1,39 @@
 #include "determinant.h"
 
-bool VectorContains(const std::vector<int>& v, const int& e) {return std::find(v.begin(), v.end(), e) != v.end();}
-
 Determinant::Determinant(int norb, const std::vector<int>& a, const std::vector<int>& b) : a(a), b(b), norb(norb) {}
 
 Determinant::Determinant(int norb, int nocca, int noccb) : a(nocca), b(noccb), norb(norb) {
     std::iota(a.begin(), a.end(), 0), std::iota(b.begin(), b.end(), 0);
 }
 
-std::tuple<Determinant, int> Determinant::align(const Determinant& second) const {
+std::tuple<Determinant, int> Determinant::align(const Determinant& det2) const {
     // define the temporary determinant and swaps variable
-    Determinant first(*this); int swaps = 0;
+    Determinant det1(*this); int swaps = 0;
     
     // align the alpha electrons
-    for (size_t i = 0; i < first.a.size(); i++) {
-        if (first.a.at(i) != second.a.at(i)) {
+    for (size_t i = 0; i < det1.a.size(); i++) {
+        if (det1.a.at(i) != det2.a.at(i)) {
             for (size_t j = 0; j < a.size(); j++) {
-                if (first.a.at(i) == second.a.at(j)) {
-                    std::swap(first.a.at(i), first.a.at(j)), swaps++;
+                if (det1.a.at(i) == det2.a.at(j)) {
+                    std::swap(det1.a.at(i), det1.a.at(j)), swaps++;
                 }
             }
         }
     }
 
     // align the beta electrons
-    for (size_t i = 0; i < first.b.size(); i++) {
-        if (first.b.at(i) != second.b.at(i)) {
+    for (size_t i = 0; i < det1.b.size(); i++) {
+        if (det1.b.at(i) != det2.b.at(i)) {
             for (size_t j = 0; j < b.size(); j++) {
-                if (first.b.at(i) == second.b.at(j)) {
-                    std::swap(first.b.at(i), first.b.at(j)), swaps++;
+                if (det1.b.at(i) == det2.b.at(j)) {
+                    std::swap(det1.b.at(i), det1.b.at(j)), swaps++;
                 }
             }
         }
     }
 
     // return the aligned determinant
-    return std::tuple<Determinant, int>{first, swaps};
+    return std::tuple<Determinant, int>{det1, swaps};
 }
 
 std::vector<Determinant> Determinant::full() const {
@@ -53,43 +51,43 @@ std::vector<Determinant> Determinant::full() const {
     return full;
 }
 
-double Determinant::hamilton(const Determinant& second, const Matrix<>& Hms, const Tensor<4>& Jms) const {
+double Determinant::hamilton(const Determinant& det2, const Matrix<>& Hms, const Tensor<4>& Jms) const {
     // align this determinant and define differences and element variable
-    auto[first, swaps] = align(second); int diff = 0; double elem = 0;
+    auto[det1, swaps] = align(det2); int diff = 0; double elem = 0;
 
     // define all needed vectors of spinorbitals
-    std::vector<int> firstso(a.size() + b.size()), secondso(a.size() + b.size()), common, unique;
+    std::vector<int> so1(a.size() + b.size()), so2(a.size() + b.size()), common, unique;
 
     // calculate the number of differences
-    for (size_t i = 0; i < a.size(); i++) if (first.a.at(i) != second.a.at(i)) diff++;
-    for (size_t i = 0; i < b.size(); i++) if (first.b.at(i) != second.b.at(i)) diff++;
+    for (size_t i = 0; i < a.size(); i++) if (det1.a.at(i) != det2.a.at(i)) diff++;
+    for (size_t i = 0; i < b.size(); i++) if (det1.b.at(i) != det2.b.at(i)) diff++;
 
-    // fill the spinorbitals of first and second determinant
-    for (size_t i = 0; i < a.size(); i++) secondso.at(i) = 2 * second.a.at(i), secondso.at(second.a.size() + i) = 2 * second.b.at(i) + 1;
-    for (size_t i = 0; i < a.size(); i++) firstso.at(i) = 2 * first.a.at(i), firstso.at(first.a.size() + i) = 2 * first.b.at(i) + 1;
+    // fill the spinorbitals of det1 and det2 determinant
+    for (size_t i = 0; i < a.size(); i++) so2.at(i) = 2 * det2.a.at(i), so2.at(det2.a.size() + i) = 2 * det2.b.at(i) + 1;
+    for (size_t i = 0; i < a.size(); i++) so1.at(i) = 2 * det1.a.at(i), so1.at(det1.a.size() + i) = 2 * det1.b.at(i) + 1;
 
     // fill the common spinorbitals vector
-    for (size_t i = 0; i < firstso.size(); i++) if (firstso.at(i) == secondso.at(i)) common.push_back(firstso.at(i));
+    for (size_t i = 0; i < so1.size(); i++) if (so1.at(i) == so2.at(i)) common.push_back(so1.at(i));
 
     // fill the unique spinorbitals vector
-    for (size_t i = 0; i < firstso.size(); i++) if (!VectorContains(firstso, secondso.at(i))) unique.push_back(secondso.at(i));
-    for (size_t i = 0; i < firstso.size(); i++) if (!VectorContains(secondso, firstso.at(i))) unique.push_back(firstso.at(i));
+    for (size_t i = 0; i < so1.size(); i++) if (!VectorContains(so1, so2.at(i))) unique.push_back(so2.at(i));
+    for (size_t i = 0; i < so1.size(); i++) if (!VectorContains(so2, so1.at(i))) unique.push_back(so1.at(i));
 
-    // assign the matrix element
+    // assign the matrix element according to Slater-Condon rules
     if (diff == 0) {
-        for (int so : firstso) elem += Hms(so, so);
-        for (size_t i = 0; i < firstso.size() - 1; i++) {
-            for (size_t j = i + 1; j < firstso.size(); j++) {
-                elem += Jms(firstso.at(i), firstso.at(j), firstso.at(i), firstso.at(j));
+        for (int so : so1) elem += Hms(so, so);
+        for (size_t i = 0; i < so1.size() - 1; i++) {
+            for (size_t j = i + 1; j < so1.size(); j++) {
+                elem += Jms(so1.at(i), so1.at(j), so1.at(i), so1.at(j)) - Jms(so1.at(i), so1.at(j), so1.at(j), so1.at(i));
             }
         }
     } else if (diff == 1) {
         elem += Hms(unique.at(0), unique.at(1));
         for (int so : common) {
-            elem += Jms(unique.at(0), so, unique.at(1), so);
+            elem += Jms(unique.at(0), so, unique.at(1), so) - Jms(unique.at(0), unique.at(1), so, so);
         }
     } else if (diff == 2) {
-        elem = Jms(unique.at(0), unique.at(3), unique.at(2), unique.at(1));
+        elem = Jms(unique.at(0), unique.at(3), unique.at(2), unique.at(1)) - Jms(unique.at(0), unique.at(2), unique.at(1), unique.at(3));
     }
 
     // return element

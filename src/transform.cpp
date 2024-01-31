@@ -107,20 +107,12 @@ Tensor<> Transform::CoulombSpin(const Tensor<>& J, const Matrix<>& C) {
     Matrix<> Jms(4 * C.cols() * C.cols(), 4 * C.rows() * C.rows()); Jms.setZero();
 
     // perform the transform
+    #pragma omp parallel for num_threads(nthread)
     for (int i = 0; i < 2 * C.rows(); i++) {
         for (int j = 0; j < 2 * C.rows(); j++) {
             for (int k = 0; k < 2 * C.rows(); k++) {
                 for (int l = 0; l < 2 * C.rows(); l++) {
-                    // define spin masks
-                    int mask1 = (i % 2 == k % 2) * (j % 2 == l % 2);
-                    int mask2 = (i % 2 == l % 2) * (j % 2 == k % 2);
-
-                    // define all the contributions
-                    double int1 = Jmo(i / 2 * C.rows() + k / 2, j / 2 * C.rows() + l / 2);
-                    double int2 = Jmo(i / 2 * C.rows() + l / 2, j / 2 * C.rows() + k / 2);
-
-                    // assign the value
-                    Jms(i * 2 * C.rows() + j, k * 2 * C.rows() + l) = int1 * mask1 - int2 * mask2;
+                    Jms(i * 2 * C.rows() + j, k * 2 * C.rows() + l) = Jmo(i / 2 * C.rows() + k / 2, j / 2 * C.rows() + l / 2) * (i % 2 == k % 2) * (j % 2 == l % 2);
                 }
             }
         }
