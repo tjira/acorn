@@ -15,6 +15,9 @@
 #include <argparse/argparse.hpp>
 #include <nlohmann/json.hpp>
 
+// useful defines for printing and timing
+#define MEASURE(T, F) std::cout << T << std::flush; {auto t = Timer::Now(); F; std::printf("%s\n", Timer::Format(Timer::Elapsed(t)).c_str());}
+
 // option structures loaders for RHF
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Dynamics, iters, step, output);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Gradient, step);
@@ -120,10 +123,10 @@ int main(int argc, char** argv) {
 
         // calculate all the atomic integrals
         if (!input.contains("orca")) {
-            std::printf("OVERLAP INTEGRALS: "); auto stimer = Timer::Now(); ints.S = Integral::Overlap(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(stimer)).c_str());
-            std::printf("KINETIC INTEGRALS: "); auto ttimer = Timer::Now(); ints.T = Integral::Kinetic(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(ttimer)).c_str());
-            std::printf("NUCLEAR INTEGRALS: "); auto vtimer = Timer::Now(); ints.V = Integral::Nuclear(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(vtimer)).c_str());
-            std::printf("COULOMB INTEGRALS: "); auto jtimer = Timer::Now(); ints.J = Integral::Coulomb(system), std::printf("%s\n", Timer::Format(Timer::Elapsed(jtimer)).c_str());
+            MEASURE("OVERLAP INTEGRALS: ", ints.S = Integral::Overlap(system))
+            MEASURE("KINETIC INTEGRALS: ", ints.T = Integral::Kinetic(system))
+            MEASURE("NUCLEAR INTEGRALS: ", ints.V = Integral::Nuclear(system))
+            MEASURE("COULOMB INTEGRALS: ", ints.J = Integral::Coulomb(system))
         } std::cout << std::endl;
 
         // print and export the atomic integrals
@@ -195,26 +198,40 @@ int main(int argc, char** argv) {
                 // print the title
                 Printer::Title("RESTRICTED CONFIGURATION INTERACTION");
 
-                // create the RCI object and transform the integrals in the MS basis
-                RestrictedConfigurationInteraction rci(rhfopt, rciopt); ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
-                ints.Tms = Transform::SingleSpin(ints.T, res.rhf.C), ints.Vms = Transform::SingleSpin(ints.V, res.rhf.C);
+                // create the RCI object
+                RestrictedConfigurationInteraction rci(rhfopt, rciopt);
 
-                // perform the calculation
-                res = rci.run(system, ints, res);
+                // transform one-electron integrals to MS basis
+                MEASURE("KINETIC INTEGRALS IN MS BASIS: ", ints.Tms = Transform::SingleSpin(ints.T, res.rhf.C))
+                MEASURE("NUCLEAR INTEGRALS IN MS BASIS: ", ints.Vms = Transform::SingleSpin(ints.V, res.rhf.C))
 
-                // print and export the RCI prerequisities results
+                // transform the Coulomb integrals to MS basis
+                MEASURE("COULOMB INTEGRALS IN MS BASIS: ", ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C))
+
+                // newline
+                std::cout << std::endl;
+
+                // print and export the integrals in MS basis
                 if (input.at("rci").contains("print")) {
                     if (rciopt.at("print").at("kineticms")) Printer::Print(ints.Tms, "KINETIC INTEGRALS IN MS BASIS"), std::cout << "\n";
                     if (rciopt.at("print").at("nuclearms")) Printer::Print(ints.Vms, "NUCLEAR INTEGRALS IN MS BASIS"), std::cout << "\n";
                     if (rciopt.at("print").at("hcorems")) Printer::Print(ints.Tms + ints.Vms, "CORE HAMILTONIAN MATRIX IN MS BASIS"), std::cout << "\n";
                     if (rciopt.at("print").at("coulombms")) Printer::Print(ints.Jms, "COULOMB INTEGRALS IN MS BASIS"), std::cout << "\n";
-                    if (rciopt.at("print").at("hamiltonian")) Printer::Print(res.rci.F, "CI HAMILTONIAN"), std::cout << "\n";
-                    if (rciopt.at("print").at("energies")) Printer::Print(res.rci.eps, "EXCITED STATE ENERGIES"), std::cout << "\n";
                 } if (input.at("rci").contains("export")) {
                     if (rciopt.at("export").at("kineticms")) EigenWrite(inputpath / "TMS.mat", ints.Tms);
                     if (rciopt.at("export").at("nuclearms")) EigenWrite(inputpath / "VMS.mat", ints.Vms);
                     if (rciopt.at("export").at("hcorems")) EigenWrite(inputpath / "HMS.mat", Matrix<>(ints.Tms + ints.Vms));
                     if (rciopt.at("export").at("coulombms")) EigenWrite(inputpath / "JMS.mat", ints.Jms);
+                }
+
+                // perform the calculation
+                res = rci.run(system, ints, res);
+
+                // print and export the RCI results
+                if (input.at("rci").contains("print")) {
+                    if (rciopt.at("print").at("hamiltonian")) Printer::Print(res.rci.F, "CI HAMILTONIAN"), std::cout << "\n";
+                    if (rciopt.at("print").at("energies")) Printer::Print(res.rci.eps, "EXCITED STATE ENERGIES"), std::cout << "\n";
+                } if (input.at("rci").contains("export")) {
                     if (rciopt.at("export").at("hamiltonian")) EigenWrite(inputpath / "HCI.mat", res.rci.F);
                     if (rciopt.at("export").at("energies")) EigenWrite(inputpath / "ECI.mat", res.rci.eps);
                 }
@@ -241,15 +258,18 @@ int main(int argc, char** argv) {
                     res = rci.gradient(system, ints, res); Printer::Print(res.rci.G, "RESTRICTED CONFIGURATION INTERACTION GRADIENT"); std::cout << std::endl;
                 }
 
-            // if MP calculation was requested
+            // if RMP calculation was requested
             } else if (input.contains("rmp")) {
                 // print the title
                 Printer::Title("RESTRICTED MOLLER-PLESSET");
 
-                // create the MP object and transform the coulomb tensor to MO basis
-                RestrictedMollerPlesset rmp(rhfopt, rmpopt); ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+                // create the RMP object
+                RestrictedMollerPlesset rmp(rhfopt, rmpopt);
 
-                // print and export the RMP prerequisities
+                // transform the coulomb tensor to MO basis
+                MEASURE("COULOMB INTEGRALS IN MO BASIS: ", ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C)) std::cout << std::endl;
+
+                // print and export the Coulomb integrals in MO
                 if (input.at("rmp").contains("print")) {
                     if (rmpopt.at("print").at("coulombmo")) Printer::Print(ints.Jmo, "COULOMB INTEGRALS IN MO BASIS"), std::cout << "\n";
                 } if (input.at("rmp").contains("export")) {
@@ -262,7 +282,7 @@ int main(int argc, char** argv) {
                 // print the total energy
                 Printer::Print(res.Etot, "RESTRICTED MOLLER-PLESSET ENERGY"); std::cout << std::endl;
 
-                // if the MP dynamics was requested
+                // if the RMP dynamics was requested
                 if (input.at("rmp").contains("dynamics")) {
                     // run the dynamics and print newline
                     rmp.dynamics(system, ints, res); std::cout << std::endl;

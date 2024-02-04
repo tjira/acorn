@@ -1,6 +1,6 @@
 {
     "molecule" : {
-        "file" : "../molecule/H2.xyz",
+        "file" : "../molecule/water.xyz",
         "basis" : "sto-3g"
     },
     "rhf" : {},
