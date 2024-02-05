@@ -104,7 +104,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         if (!opta.real) res.msv.optstates.at(i) = psi, res.msv.opten(i) = E;
 
         // save the state wavefunction
-        ModelSystem::SaveWavefunction("state" + std::to_string(i) + ".dat", res.msv.r, wfns, energies);
+        ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", res.msv.r, wfns, energies);
     }
 
     // print the newline
@@ -227,7 +227,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // save the wfn dynamics
     for (size_t i = 0; i < system.potential.size(); i++) {
         std::vector<Vector<std::complex<double>>> state; for (auto chi : chis) state.push_back(chi.col(i));
-        ModelSystem::SaveWavefunction("state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
+        ModelSystem::SaveWavefunction(optn.folder + "/state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
     }
 
     // return

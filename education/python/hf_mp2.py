@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy as np
 
 A2BOHR = 1.8897259886

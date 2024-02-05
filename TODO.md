@@ -2,7 +2,6 @@
 
 - [ ] Implement the analytical gradient for RHF
 - [ ] Implement the unrestricted Hartree-Fock
-- [ ] Make the exact dynamic save files to the input folder
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
 - [x] Check the correct working of the library before merging the fci branch
@@ -11,6 +10,8 @@
 - [x] Implement MP2 method
 - [x] Implement passing of the density matrix to HF method
 - [x] Implements general gradients
+- [x] Make the exact dynamic save files to the input folder
 - [x] Make the exported library independent of libint
 - [x] Make the matrix printing at the point of calculation not at the end
+- [x] Make the output print the input and molecule specification
 - [x] Remove the python folder before merging the fci branch

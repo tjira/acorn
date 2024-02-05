@@ -3,8 +3,6 @@
 #include "modelsystem.h"
 #include "result.h"
 
-class ModelSystem;
-
 class ModelSolver {
 public:
     struct OptionsAdiabatic {OptionsAdiabatic(){};
@@ -13,14 +11,14 @@ public:
 
         // variables
         int nstate=3, iters=1000; bool real=false, optimize=false;
-        std::string guess; double step=0.1, thresh=1e-8;
+        std::string folder, guess; double step=0.1, thresh=1e-8;
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};
         // structures
         struct Dynamics {int iters=100; double step=1.0; std::string output="trajectory.xyz";} dynamics={};
 
         // variables
-        std::vector<std::string> guess; double step=0.1; int iters=1000;
+        std::vector<std::string> guess; std::string folder; double step=0.1; int iters=1000;
     };
 public:
     // constructors and destructors

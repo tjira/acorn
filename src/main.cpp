@@ -15,7 +15,7 @@
 #include <argparse/argparse.hpp>
 #include <nlohmann/json.hpp>
 
-// useful defines for printing and timing
+// code measuring define
 #define MEASURE(T, F) std::cout << T << std::flush; {auto t = Timer::Now(); F; std::printf("%s\n", Timer::Format(Timer::Elapsed(t)).c_str());}
 
 // option structures loaders for RHF
@@ -41,11 +41,11 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, i
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, output);
 
 // option loaders
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess, folder);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, folder);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, method, folder);
 
 int main(int argc, char** argv) {
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 
     // parse the command line arguments and print help if requested
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
-        std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);
+        if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // set path to the basis function folder if not set
@@ -80,14 +80,17 @@ int main(int argc, char** argv) {
     // open the input file and parse the input
     std::ifstream istream(program.get("input")); nlohmann::json input = nlohmann::json::parse(istream); istream.close();
 
+    // print the input file
+    Printer::Title("INPUT FILE"); std::cout << input.dump(4) << std::endl << std::endl;
+
     // parse the default options
     auto rmpopt = nlohmann::json::parse(rmpoptstr), orcopt = nlohmann::json::parse(orcoptstr);
     auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr);
     auto msaopt = nlohmann::json::parse(msaoptstr), mdlopt = nlohmann::json::parse(mdloptstr);
     auto msnopt = nlohmann::json::parse(msnoptstr), rciopt = nlohmann::json::parse(rcioptstr);
 
-    // assign the interface input path
-    orcopt["folder"] = inputpath;
+    // assign the output paths to some method options that output files
+    orcopt["folder"] = inputpath, msaopt["folder"] = inputpath, msnopt["folder"] = inputpath;
 
     // patch the input json file and apply defaults
     if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
@@ -118,16 +121,16 @@ int main(int argc, char** argv) {
         // create the system from the system file
         std::ifstream mstream(syspath); System system(mstream, input.at("molecule").at("basis")); mstream.close();
 
-        // print the integral title
-        Printer::Title("INTEGRALS OVER ATOMIC ORBITALS");
+        // print the molecule specification
+        Printer::Title("ATOM COORDINATE FILE AND BASIS"); std::cout << system << std::endl << std::endl;
 
         // calculate all the atomic integrals
-        if (!input.contains("orca")) {
+        if (!input.contains("orca")) {Printer::Title("INTEGRALS OVER ATOMIC ORBITALS");
             MEASURE("OVERLAP INTEGRALS: ", ints.S = Integral::Overlap(system))
             MEASURE("KINETIC INTEGRALS: ", ints.T = Integral::Kinetic(system))
             MEASURE("NUCLEAR INTEGRALS: ", ints.V = Integral::Nuclear(system))
             MEASURE("COULOMB INTEGRALS: ", ints.J = Integral::Coulomb(system))
-        } std::cout << std::endl;
+        std::cout << std::endl;}
 
         // print and export the atomic integrals
         if (input.contains("integral")) {
@@ -145,9 +148,9 @@ int main(int argc, char** argv) {
         }
 
         // if the ORCA calculation is requested
-        if (input.contains("orca")) {
+        if (input.contains("orca")) {Printer::Title("ORCA DYNAMICS");
             // if dynamics block is specified, run it else throw an error
-            if (input.at("orca").contains("dynamics")) Orca(orcopt).dynamics(system, ints, res);
+            if (input.at("orca").contains("dynamics")) {Orca(orcopt).dynamics(system, ints, res); std::cout << std::endl;}
             else throw std::runtime_error("YOU HAVE TO DO DYNAMICS WITH ORCA");
 
         // if RHF calculation is requested
@@ -250,7 +253,7 @@ int main(int argc, char** argv) {
                     res = rci.hessian(system, ints, res); Printer::Print(res.rci.H, "RESTRICTED CONFIGURATION INTERACTION HESSIAN"); std::cout << std::endl;
 
                     // calculate and print the RCI vibrational frequencies
-                    Printer::Print(Method<RestrictedConfigurationInteraction>::frequency(system, res.rci.H), "RESTRICTED CONFIGURATION INTERACTION FREQUENSIES"); std::cout << std::endl;
+                    Printer::Print(Method<RestrictedConfigurationInteraction>::frequency(system, res.rci.H), "RESTRICTED CONFIGURATION INTERACTION FREQUENCIES"); std::cout << std::endl;
 
                 // if gradient calculation was requested
                 } else if (input.at("rci").contains("gradient")) {
@@ -293,7 +296,7 @@ int main(int argc, char** argv) {
                     res = rmp.hessian(system, ints, res); Printer::Print(res.rmp.H, "RESTRICTED MOLLER-PLESSET HESSIAN"); std::cout << std::endl;
 
                     // calculate and print the RMP vibrational frequencies
-                    Printer::Print(Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H), "RESTRICTED MOLLER-PLESSET FREQUENSIES"); std::cout << std::endl;
+                    Printer::Print(Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H), "RESTRICTED MOLLER-PLESSET FREQUENCIES"); std::cout << std::endl;
 
                 // if the RMP calculation was requested
                 } else if (input.at("rmp").contains("gradient")) {
@@ -329,7 +332,7 @@ int main(int argc, char** argv) {
             std::cout << std::endl;
 
             // extract and save the potential points
-            Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite("U.mat", U);
+            Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(inputpath / "U.mat", U);
 
         // throw error if nothing was specified for the model
         } else throw std::runtime_error("YOU HAVE TO DO SOMETHING WITH THE MODEL");

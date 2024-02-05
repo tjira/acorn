@@ -33,6 +33,22 @@ System::System(std::ifstream& stream, std::string basis, int charge, int multi) 
     electrons -= charge; for (const auto& atom : atoms) electrons += atom.atomic_number;
 }
 
+std::ostream& operator<<(std::ostream& os, const System& system) {
+    // print the number of atoms and the basis
+    os << system.atoms.size() << "\n" << system.lnxbasis << "\n";
+
+    // print all the atom coordinates
+    for (size_t i = 0; i < system.atoms.size(); i++) {
+        os << std::setw(2) << an2sm.at(system.atoms.at(i).atomic_number) << " ";
+        os << std::setw(20) << BOHR2A * system.atoms.at(i).x << " ";
+        os << std::setw(20) << BOHR2A * system.atoms.at(i).y << " ";
+        os << std::setw(20) << BOHR2A * system.atoms.at(i).z;
+        if (i < system.atoms.size() - 1) os << "\n";
+    }
+
+    // return the output stream
+    return os;
+}
 
 void System::move(const Matrix<>& dir) {
     // move the system
@@ -72,7 +88,7 @@ void System::save(std::string fname, std::ios::openmode mode) const {
 
     // print all the atom coordinates
     for (size_t i = 0; i < atoms.size(); i++) {
-        file << an2sm.at(atoms.at(i).atomic_number) << " ";
+        file << std::setw(2) << an2sm.at(atoms.at(i).atomic_number) << " ";
         file << std::setw(20) << BOHR2A * atoms.at(i).x << " ";
         file << std::setw(20) << BOHR2A * atoms.at(i).y << " ";
         file << std::setw(20) << BOHR2A * atoms.at(i).z << "\n";

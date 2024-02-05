@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # import plotting and animating functions
 import matplotlib.animation as anm
 import matplotlib.pyplot as plt
