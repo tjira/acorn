@@ -38,5 +38,9 @@ inline Vector<std::complex<double>> EigenFourier(const Vector<std::complex<doubl
 // complamentary functions
 inline bool VectorContains(const std::vector<int>& v, const int& e) {return std::find(v.begin(), v.end(), e) != v.end();}
 
+// include necessities
 #include <fstream>
 #include <iomanip>
+
+// number of threads
+inline int nthread = 1;

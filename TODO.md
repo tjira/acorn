@@ -2,6 +2,8 @@
 
 - [ ] Implement the analytical gradient for RHF
 - [ ] Implement the unrestricted Hartree-Fock
+- [ ] Modify restricted calculations to account for charge and multiplicity
+- [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
 - [x] Check the correct working of the library before merging the fci branch

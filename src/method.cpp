@@ -133,7 +133,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     // print the header
     if (print) std::printf("  ELEM      dE [Eh/Bohr]        TIME\n");
 
-    #pragma omp parallel for num_threads(nthread)
+    #pragma omp parallel for num_threads(nthread) collapse(2)
     for (int i = 0; i < res.H.rows(); i++) {
         for (int j = i; j < res.H.cols(); j++) {
             // start the timer

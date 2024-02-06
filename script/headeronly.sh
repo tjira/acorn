@@ -1,7 +1,17 @@
 #!/bin/bash
 
+cat << EndOfMessage
+#pragma once
+#define EIGEN_INITIALIZE_MATRICES_BY_ZERO
+#include <unsupported/Eigen/MatrixFunctions>
+#include <unsupported/Eigen/CXX11/Tensor>
+#include <unsupported/Eigen/FFT>
+#include <bits/stdc++.h>
+EndOfMessage
+
+tail -n +3 include/constant.h
+
 cat \
-    include/constant.h \
     include/eigen.h \
     include/table.h \
     include/system.h \
@@ -20,5 +30,4 @@ cat \
     include/modelsystem.h \
     include/modelsolver.h \
     include/orca.h \
-    include/default.h \
-| sed '/#pragma once/d ; /#include "/d'
+| sed '/#pragma once/d ; /#include/d ; /\/\//d ; /^$/d'

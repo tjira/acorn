@@ -17,6 +17,12 @@ int main(int argc, char** argv) {
     // run the restricted Hartree-Fock calculation
     Result res = RestrictedHartreeFock().run(system, ints, {}, false);
 
+    // transform the coulomb integrals to the MO basis
+    ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+
+    // perform the MP2 calculation
+    res = RestrictedMollerPlesset().run(system, ints, res, false);
+
     // print the total energy
     std::printf("%.8f\n", res.Etot);
 }

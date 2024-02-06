@@ -13,7 +13,7 @@ public:
     };
 public:
     // constructors and destructors
-    RestrictedConfigurationInteraction(const RestrictedHartreeFock::Options& rhfopt, const Options& opt) : opt(opt), rhfopt(rhfopt) {}
+    RestrictedConfigurationInteraction(const RestrictedHartreeFock::Options& rhfopt = {}, const Options& opt = {}) : opt(opt), rhfopt(rhfopt) {}
 
     // overriden virtual methods
     Result run(const System& system, const Integrals& ints, Result res, bool print = true) const override;

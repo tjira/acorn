@@ -1,14 +1,17 @@
-#include "acorn.h"
+#include "../bin/acorn.h"
 
 int main(int argc, char** argv) {
+    // throw an error if the number of arguments is incorrect
+    if (argc != 3) throw std::runtime_error("INCORRECT NUMBER OF ARGUMENTS");
+
     // get executable path for the executable to run from anywhere
     auto path = std::filesystem::weakly_canonical(argv[0]).parent_path();
 
     // create the molecule stream
-    std::ifstream mstream(path / "../molecule/water.xyz");
+    std::ifstream mstream(path / "../../example/molecule" / (argv[1] + std::string(".xyz")));
 
     // create the molecule and integral container
-    System system(mstream, "sto-3g"); Integrals ints(true);
+    System system(mstream, argv[2]); Integrals ints(true);
 
     // calculate all the atomic integrals
     ints.S = Integral::Overlap(system); ints.T = Integral::Kinetic(system);
@@ -16,6 +19,12 @@ int main(int argc, char** argv) {
 
     // run the restricted Hartree-Fock calculation
     Result res = RestrictedHartreeFock().run(system, ints, {}, false);
+
+    // transform the coulomb integrals to the MO basis
+    ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+
+    // perform the MP2 calculation
+    res = RestrictedMollerPlesset().run(system, ints, res, false);
 
     // print the total energy
     std::printf("%.8f\n", res.Etot);

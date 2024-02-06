@@ -5,5 +5,3 @@
 #define BOHR2A 0.529177210903
 #define BOLTZMANN 3.166811429e-6
 #define CFREQ 5140.486777894163
-
-inline int nthread = 1;

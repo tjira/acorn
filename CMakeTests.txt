@@ -1,0 +1,8 @@
+add_test(NAME water_0-1_mini_rhf_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_rhf water sto-3g)
+set_tests_properties(water_0-1_mini_rhf_energy PROPERTIES PASS_REGULAR_EXPRESSION "-74.96590119")
+
+add_test(NAME water_0-1_mini_mp2_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_mp2 water sto-3g)
+set_tests_properties(water_0-1_mini_mp2_energy PROPERTIES PASS_REGULAR_EXPRESSION "-75.00485492")
+
+add_test(NAME water_0-1_mini_fci_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_fci water sto-3g)
+set_tests_properties(water_0-1_mini_fci_energy PROPERTIES PASS_REGULAR_EXPRESSION "-75.02041033")

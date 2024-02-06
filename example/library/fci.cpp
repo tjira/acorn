@@ -17,6 +17,16 @@ int main(int argc, char** argv) {
     // run the restricted Hartree-Fock calculation
     Result res = RestrictedHartreeFock().run(system, ints, {}, false);
 
+    // transform the one electron integrals to the MS basis
+    ints.Tms = Transform::SingleSpin(ints.T, res.rhf.C);
+    ints.Vms = Transform::SingleSpin(ints.V, res.rhf.C);
+
+    // transform the coulomb integrals to the MS basis
+    ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
+
+    // perform the FCI calculation
+    res = RestrictedConfigurationInteraction().run(system, ints, res, false);
+
     // print the total energy
     std::printf("%.8f\n", res.Etot);
 }

@@ -65,3 +65,28 @@ set_target_properties(acorn-exe PROPERTIES OUTPUT_NAME "acorn")
 
 # create the header library
 execute_process(COMMAND /bin/bash ${PROJECT_SOURCE_DIR}/script/headeronly.sh OUTPUT_FILE ${PROJECT_SOURCE_DIR}/bin/acorn.h)
+
+# TESTING ==========================================================================================
+
+# enable testing
+enable_testing()
+
+if (BUILD_TESTING)
+    # add test executables
+    add_executable(test_rhf test/rhf.cpp)
+    add_executable(test_mp2 test/mp2.cpp)
+    add_executable(test_fci test/fci.cpp)
+
+    # link the test executables to the library
+    target_link_libraries(test_rhf acorn)
+    target_link_libraries(test_mp2 acorn)
+    target_link_libraries(test_fci acorn)
+
+    # change the output folder for the test executables
+    set_target_properties(test_rhf PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
+    set_target_properties(test_mp2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
+    set_target_properties(test_fci PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
+endif()
+
+# include test file
+include(CMakeTests.txt)
