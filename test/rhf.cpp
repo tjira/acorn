@@ -1,4 +1,4 @@
-#include "../bin/acorn.h"
+#include "acorn.h"
 
 int main(int argc, char** argv) {
     // throw an error if the number of arguments is incorrect

@@ -26,7 +26,7 @@ FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GI
 FetchContent_MakeAvailable(argparse exprtk json)
 
 # include directories
-include_directories(include ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
+include_directories(include ${PROJECT_SOURCE_DIR}/bin ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
 
 # find OpenMP
 find_package(Eigen3 REQUIRED)
@@ -73,19 +73,19 @@ enable_testing()
 
 if (BUILD_TESTING)
     # add test executables
+    add_executable(test_rmp2 test/rmp2.cpp)
+    add_executable(test_rfci test/rfci.cpp)
     add_executable(test_rhf test/rhf.cpp)
-    add_executable(test_mp2 test/mp2.cpp)
-    add_executable(test_fci test/fci.cpp)
 
     # link the test executables to the library
+    target_link_libraries(test_rmp2 acorn)
+    target_link_libraries(test_rfci acorn)
     target_link_libraries(test_rhf acorn)
-    target_link_libraries(test_mp2 acorn)
-    target_link_libraries(test_fci acorn)
 
     # change the output folder for the test executables
+    set_target_properties(test_rmp2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
+    set_target_properties(test_rfci PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
     set_target_properties(test_rhf PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
-    set_target_properties(test_mp2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
-    set_target_properties(test_fci PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
 endif()
 
 # include test file

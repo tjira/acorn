@@ -17,7 +17,7 @@ void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool 
     }
 
     // get the degrees of freedom and write the initial geometry
-    double Nf = system.getAtoms().size() * 3 - 6; system.save(get()->opt.dynamics.output) ;
+    double Nf = system.getAtoms().size() * 3 - 6; system.save(get()->opt.dynamics.folder / std::filesystem::path("trajectory.xyz")) ;
 
     // start the timer
     auto start = Timer::Now();
@@ -49,7 +49,7 @@ void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool 
         system.move(get()->opt.dynamics.step * (v + 0.5 * a * get()->opt.dynamics.step));
 
         // write the current geometry
-        system.save(get()->opt.dynamics.output, std::ios::app);
+        system.save(get()->opt.dynamics.folder / std::filesystem::path("trajectory.xyz"), std::ios::app);
 
         // calculate the next energy with gradient
         if constexpr (std::is_same_v<M, Orca>) {
@@ -133,7 +133,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     // print the header
     if (print) std::printf("  ELEM      dE [Eh/Bohr]        TIME\n");
 
-    #pragma omp parallel for num_threads(nthread) collapse(2)
+    #pragma omp parallel for num_threads(nthread)
     for (int i = 0; i < res.H.rows(); i++) {
         for (int j = i; j < res.H.cols(); j++) {
             // start the timer

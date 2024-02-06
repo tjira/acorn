@@ -19,26 +19,26 @@
 #define MEASURE(T, F) std::cout << T << std::flush; {auto t = Timer::Now(); F; std::printf("%s\n", Timer::Format(Timer::Elapsed(t)).c_str());}
 
 // option structures loaders for RHF
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Dynamics, iters, step, folder);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Hessian, step);
 
 // option structures loaders for RCI
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Dynamics, iters, step, folder);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Hessian, step);
 
 // option structures loaders for RMP
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Dynamics, iters, step, folder);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Hessian, step);
 
 // option structures loaders for ORCA
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, folder);
 
 // option structures loaders for model method
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, output);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, output);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, folder);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, folder);
 
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess, folder);
@@ -88,11 +88,16 @@ int main(int argc, char** argv) {
     auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr);
     auto msaopt = nlohmann::json::parse(msaoptstr), mdlopt = nlohmann::json::parse(mdloptstr);
     auto msnopt = nlohmann::json::parse(msnoptstr), rciopt = nlohmann::json::parse(rcioptstr);
+    auto molopt = nlohmann::json::parse(moloptstr);
 
     // assign the output paths to some method options that output files
     orcopt["folder"] = inputpath, msaopt["folder"] = inputpath, msnopt["folder"] = inputpath;
+    rhfopt["dynamics"]["folder"] = inputpath, rciopt["dynamics"]["folder"] = inputpath;
+    msnopt["dynamics"]["folder"] = inputpath, msaopt["dynamics"]["folder"] = inputpath;
+    rmpopt["dynamics"]["folder"] = inputpath, orcopt["dynamics"]["folder"] = inputpath;
 
     // patch the input json file and apply defaults
+    if (input.contains("molecule")) molopt.merge_patch(input.at("molecule"));
     if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
     if (input.contains("model")) mdlopt.merge_patch(input.at("model"));
     if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
@@ -111,15 +116,11 @@ int main(int argc, char** argv) {
         // define the integral container
         Integrals ints(true);
 
-        // make all the input and output paths absolute
-        orcopt.at("dynamics").at("output") = inputpath / orcopt.at("dynamics").at("output");
-        rhfopt.at("dynamics").at("output") = inputpath / rhfopt.at("dynamics").at("output");
-        rciopt.at("dynamics").at("output") = inputpath / rciopt.at("dynamics").at("output");
-        rmpopt.at("dynamics").at("output") = inputpath / rmpopt.at("dynamics").at("output");
+        // make all the interface paths absolute
         orcopt.at("interface") = inputpath / orcopt.at("interface");
 
         // create the system from the system file
-        std::ifstream mstream(syspath); System system(mstream, input.at("molecule").at("basis")); mstream.close();
+        std::ifstream mstream(syspath); System system(mstream, molopt.at("basis"), molopt.at("charge"), molopt.at("multiplicity")); mstream.close();
 
         // print the molecule specification
         Printer::Title("ATOM COORDINATE FILE AND BASIS"); std::cout << system << std::endl << std::endl;

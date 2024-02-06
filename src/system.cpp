@@ -19,6 +19,13 @@ System::System(std::ifstream& stream, std::string basis, int charge, int multi) 
     // check for the input geometry file existence
     if (!stream.good()) throw std::runtime_error("SYSTEM FILE DOES NOT EXIST");
 
+    // throw an error if impossible combination of charge and multiplicity
+    if (std::abs(charge) % 2 == 0 && multi % 2 == 0) {
+        throw std::runtime_error("MOLECULE CAN'T HAVE AN EVEN CHARGE AND MULTIPLICITY AT THE SAME TIME.");
+    } else if (std::abs(charge) % 2 == 1 && multi % 2 == 1) {
+        throw std::runtime_error("MOLECULE CAN'T HAVE AN ODD CHARGE AND MULTIPLICITY AT THE SAME TIME.");
+    }
+
     // replace the basis placeholders
     std::replace(this->basis.begin(), this->basis.end(), '*', 's'), std::replace(this->basis.begin(), this->basis.end(), '+', 'p');
 

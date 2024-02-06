@@ -7,7 +7,7 @@ class Orca : public Method<Orca> {
 public:
     struct Options {Options(){};
         // structures
-        struct Dynamics {int iters=100; double step=1.0; std::string output="trajectory.xyz";} dynamics={};
+        struct Dynamics {int iters=100; double step=1.0; std::string folder;} dynamics={};
 
         // variables
         std::string method; std::filesystem::path interface, folder;

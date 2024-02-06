@@ -8,8 +8,8 @@ class RestrictedConfigurationInteraction : public RestrictedMethod<RestrictedCon
 public:
     struct Options {Options(){};
         // structure of the options
-        struct Dynamics {int iters=100; double step=1.0; std::string output="trajectory.xyz";} dynamics;
         struct Gradient {double step=1e-5;} gradient; struct Hessian {double step=1e-5;} hessian;
+        struct Dynamics {int iters=100; double step=1.0; std::string folder;} dynamics;
     };
 public:
     // constructors and destructors

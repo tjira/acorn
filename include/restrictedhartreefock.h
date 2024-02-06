@@ -7,8 +7,8 @@ class RestrictedHartreeFock : public RestrictedMethod<RestrictedHartreeFock> {
 public:
     struct Options {Options(){};
         // structures
-        struct Dynamics {int iters=100; double step=1.0; std::string output="trajectory.xyz";} dynamics={};
         struct Gradient {double step=1e-5;} gradient={}; struct Hessian {double step=1e-5;} hessian={};
+        struct Dynamics {int iters=100; double step=1.0; std::string folder;} dynamics={};
 
         // variables
         int maxiter=100; double thresh=1e-8;
