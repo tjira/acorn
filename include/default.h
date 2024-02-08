@@ -45,5 +45,5 @@ inline std::string rhfoptstr = R"({
 })";
 
 inline std::string orcoptstr = R"({
-    "interface" : "orca.sh", "method" : "hf", "dynamics" : {"iters" : 100, "step" : 1}
+    "interface" : "orca.sh", "dynamics" : {"iters" : 100, "step" : 1}
 })";

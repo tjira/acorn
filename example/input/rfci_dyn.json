@@ -7,7 +7,7 @@
     "rci" : {
         "dynamics" : {
             "iters" : 100,
-            "step" : 1
+            "step" : 20
         },
         "gradient" : {
             "step" : 1e-5

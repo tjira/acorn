@@ -5,10 +5,9 @@
     },
     "orca" : {
         "interface" : "../../interface/orca.sh",
-        "method" : "hf",
         "dynamics" : {
             "iters" : 100,
-            "step" : 1
+            "step" : 20
         }
     }
 }

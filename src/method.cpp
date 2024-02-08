@@ -6,21 +6,21 @@
 template <class M>
 void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) const {
     // print the header
-    if (print) std::printf(" ITER  TIME [fs]        E [Eh]              KIN [Eh]              TK [K]         |GRAD|      TIME\n");
+    if (print) std::printf(" ITER  TIME [fs]    POT [Eh]       KIN [Eh]        E [Eh]         TK [K]      |GRAD|      TIME\n");
 
     // create position, velocity and mass matrices
     Matrix<> v(system.getAtoms().size(), 3), a(system.getAtoms().size(), 3), m(system.getAtoms().size(), 3);
 
     // fill the mass matrix
     for(size_t i = 0; i < system.getAtoms().size(); i++) {
-        m.row(i) = [](double m) {return Vector<>::Constant(3, m);}(an2m.at(system.getAtoms().at(i).atomic_number));
+        m.row(i) = [](double m) {return Vector<>::Constant(3, m);}(an2m.at(system.getAtoms().at(i).atomic_number) * AMU);
     }
 
     // get the degrees of freedom and write the initial geometry
     double Nf = system.getAtoms().size() * 3 - 6; system.save(get()->opt.dynamics.folder / std::filesystem::path("trajectory.xyz")) ;
 
-    // start the timer
-    auto start = Timer::Now();
+    // get the dynamics step and start the timer
+    double step = get()->opt.dynamics.step; auto start = Timer::Now();
 
     // calculate the initial energy with gradient
     if constexpr (std::is_same_v<M, Orca>) {
@@ -38,20 +38,20 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
     double Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); double T = 2 * Ekin / Nf;
 
     // print the zeroth iteration
-    if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", 0, 0.0, res.Etot, Ekin, T / BOLTZMANN, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+    if (print) std::printf("%6d %9.4f %14.8f %14.8f %14.8f %14.8f %.2e %s\n", 0, 0.0, res.Etot, Ekin, res.Etot + Ekin, T * AU2K, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
 
     for (int i = 0; i < get()->opt.dynamics.iters; i++) {
         // start the timer and store the previous v and a
         start = Timer::Now(); Matrix<> vp = v, ap = a;
 
         // calculate the velocity and accceleration
-        a = -res.G.array() / m.array(); v = vp + (ap + a) * get()->opt.dynamics.step / 2;
+        a = -res.G.array() / m.array(); v = vp + 0.5 * (ap + a) * step;
 
         // calculate the kinetic energy and temperature
         Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); T = 2 * Ekin / Nf;
 
         // move the system
-        system.move(get()->opt.dynamics.step * (v + 0.5 * a * get()->opt.dynamics.step));
+        system.move(step * (v + 0.5 * a * step));
 
         // write the current geometry
         system.save(get()->opt.dynamics.folder / std::filesystem::path("trajectory.xyz"), std::ios::app);
@@ -69,9 +69,8 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         }
 
         // print the iteration info
-        if (print) std::printf("%6d %9.4f %20.14f %20.14f %20.14f %.2e %s\n", i + 1, AU2FS * get()->opt.dynamics.step * (i + 1), res.Etot, Ekin, T / BOLTZMANN, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+        if (print) std::printf("%6d %9.4f %14.8f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, AU2FS * step * (i + 1), res.Etot, Ekin, res.Etot + Ekin, T * AU2K, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
     }
-
 }
 
 template <class M>
