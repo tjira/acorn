@@ -1,6 +1,6 @@
 #pragma once
 
-namespace{}
+#include <iostream>
 
 #define A2BOHR 1.889726124626
 #define AU2FS 0.02418884254
