@@ -23,7 +23,7 @@ public:
     libint2::BasisSet getShells() const; void move(const Matrix<>& dir); int nocc() const {return electrons / 2;}
 
     // molecule exporter and nuclear repulsion getter
-    void save(std::string fname, std::ios::openmode mode = std::ios::out) const; double repulsion() const;
+    void save(std::string fname, std::ios::openmode mode = std::ios::out) const; double repulsion() const; Matrix<> drepulsion() const;
 
 private:
     int electrons, charge, multi; std::string basis, lnxbasis;

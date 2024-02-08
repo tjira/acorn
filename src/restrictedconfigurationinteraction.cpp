@@ -1,6 +1,6 @@
 #include "restrictedconfigurationinteraction.h"
 
-Result RestrictedConfigurationInteraction::run(const System& system, Result res, bool print) const {
+std::tuple<Result, Integrals> RestrictedConfigurationInteraction::run(const System& system, Result res, bool print) const {
     // define the integral struct
     Integrals ints;
 
@@ -11,13 +11,15 @@ Result RestrictedConfigurationInteraction::run(const System& system, Result res,
     // perform the RHF method
     res = RestrictedHartreeFock(rhfopt).run(system, ints, res, false);
 
-    // transform the all needed integrals to the MS basis
-    ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
+    // transform the one-electron integrals to the MS basis
     ints.Tms = Transform::SingleSpin(ints.T, res.rhf.C);
     ints.Vms = Transform::SingleSpin(ints.V, res.rhf.C);
 
+    // transform the Coulomb integral to the MS basis
+    ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
+
     // run the RCI and return the total energy
-    return run(system, ints, res, print);
+    return {run(system, ints, res, print), ints};
 }
 
 Result RestrictedConfigurationInteraction::run(const System& system, const Integrals& ints, Result res, bool print) const {
@@ -38,7 +40,9 @@ Result RestrictedConfigurationInteraction::run(const System& system, const Integ
     res.rci.F = Matrix<>(dets.size(), dets.size()); start = Timer::Now();
 
     // fill the CI Hamiltonian
+    #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < res.rci.F.rows(); i++) {
         for (int j = 0; j < i + 1; j++) {
             res.rci.F(i, j) = dets.at(i).hamilton(dets.at(j), ints.Tms + ints.Vms, ints.Jms); res.rci.F(j, i) = res.rci.F(i, j);

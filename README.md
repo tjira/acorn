@@ -19,18 +19,21 @@
     <a href="https://github.com/tjira/acorn/blob/master/LICENSE.md">
         <img src="https://img.shields.io/github/license/tjira/acorn?style=for-the-badge"/>
     </a>
-    <a href="https://github.com/tjira/acorn">
-        <img src="https://img.shields.io/github/languages/code-size/tjira/acorn?style=for-the-badge"/>
-    </a>
-    <br>
     <a href="https://github.com/tjira/acorn/stargazers">
         <img src="https://img.shields.io/github/stars/tjira/acorn?style=for-the-badge"/>
     </a>
     <a href="https://github.com/tjira/acorn/releases/latest">
-        <img src="https://img.shields.io/github/v/release/tjira/acorn?display_name=tag&style=for-the-badge"/>
+        <img src="https://img.shields.io/github/downloads/tjira/acorn/total?style=for-the-badge"/>
+    </a>
+    <br>
+    <a href="https://github.com/tjira/acorn">
+        <img src="https://tokei.rs/b1/github/tjira/acorn?category=code&style=for-the-badge"/>
+    </a>
+    <a href="https://github.com/tjira/acorn">
+        <img src="https://img.shields.io/github/languages/code-size/tjira/acorn?style=for-the-badge"/>
     </a>
     <a href="https://github.com/tjira/acorn/releases/latest">
-        <img src="https://img.shields.io/github/downloads/tjira/acorn/total?style=for-the-badge"/>
+        <img src="https://img.shields.io/github/v/release/tjira/acorn?display_name=tag&style=for-the-badge"/>
     </a>
 </p>
 

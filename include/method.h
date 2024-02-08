@@ -8,7 +8,7 @@ template <class M>
 class Method {
 public:
     // general methods
-    void dynamics(System system, const Integrals& ints, Result res, bool print = true) const;
+    void dynamics(System system, Integrals ints, Result res, bool print = true) const;
 
     // static methods
     static Vector<> frequency(const System& system, const Matrix<>& H);
@@ -24,5 +24,5 @@ public:
     const M* get() const {return static_cast<const M*>(this);}
 
 private:
-    virtual Result run(const System&, Result res, bool) const {return res;};
+    virtual std::tuple<Result, Integrals> run(const System&, Result res, bool) const {return {res, {}};};
 };

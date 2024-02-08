@@ -14,7 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
 # set compiler flags
-set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3")
 
 # declare libraries
@@ -26,7 +26,7 @@ FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GI
 FetchContent_MakeAvailable(argparse exprtk json)
 
 # include directories
-include_directories(include ${PROJECT_SOURCE_DIR}/bin ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
+include_directories(include ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
 
 # find OpenMP
 find_package(Eigen3 REQUIRED)
@@ -51,7 +51,12 @@ add_library(acorn
     src/timer.cpp
     src/transform.cpp
 )
-target_link_libraries(acorn int2.a Eigen3::Eigen OpenMP::OpenMP_CXX)
+target_link_libraries(acorn int2.a Eigen3::Eigen)
+
+# link OpenMP if release specified
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_link_libraries(acorn OpenMP::OpenMP_CXX)
+endif()
 
 # add acorn executable
 add_executable(acorn-exe src/main.cpp)
@@ -62,9 +67,6 @@ target_compile_definitions(acorn-exe PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
 # set the executable name
 set_target_properties(acorn-exe PROPERTIES OUTPUT_NAME "acorn")
-
-# create the header library
-execute_process(COMMAND /bin/bash ${PROJECT_SOURCE_DIR}/script/headeronly.sh OUTPUT_FILE ${PROJECT_SOURCE_DIR}/bin/acorn.h)
 
 # TESTING ==========================================================================================
 

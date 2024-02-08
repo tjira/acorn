@@ -5,7 +5,9 @@ Matrix<> Transform::Single(const Matrix<>& A, const Matrix<>& C) {
     Matrix<> Amo(A.rows(), A.cols());
 
     // perform the transformation
+    #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < A.rows(); i++) {
         for (int j = 0; j < A.cols(); j++) {
             for (int a = 0; a < Amo.rows(); a++) {
@@ -26,7 +28,7 @@ Matrix<> Transform::SingleSpin(const Matrix<>& A, const Matrix<>& C) {
 
     // create repeating zeros and ones and tile it to a matrix
     Vector<double> ind(Ams.rows()); std::iota(ind.begin(), ind.end(), 0); ind = ind.unaryExpr([](auto s) {return double(int(s) % 2);});
-    Matrix<bool> indm(ind.size(), ind.size()); for (size_t i = 0; i < ind.size(); i++) indm.row(i) = ind.transpose().array() == ind(i);
+    Matrix<bool> indm(ind.size(), ind.size()); for (long i = 0; i < ind.size(); i++) indm.row(i) = ind.transpose().array() == ind(i);
 
     // element wise multiply and return
     return Ams.array() * indm.cast<double>().array();
@@ -40,7 +42,9 @@ Tensor<> Transform::Coulomb(const Tensor<>& J, const Matrix<>& C) {
     Tensor<4> Jmo(J.dimension(0), J.dimension(1), J.dimension(2), J.dimension(3)); Jmo.setZero();
 
     // first 5th order partial transform
+    #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < J.dimension(0); i++) {
         for (int a = 0; a < J.dimension(0); a++) {
             for (int b = 0; b < J.dimension(1); b++) {
@@ -54,7 +58,9 @@ Tensor<> Transform::Coulomb(const Tensor<>& J, const Matrix<>& C) {
     }
 
     // second 5th order partial transform
+    #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < J.dimension(0); i++) {
         for (int j = 0; j < J.dimension(1); j++) {
             for (int b = 0; b < J.dimension(1); b++) {
@@ -68,7 +74,9 @@ Tensor<> Transform::Coulomb(const Tensor<>& J, const Matrix<>& C) {
     }
 
     // third 5th order partial transform
+    #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < J.dimension(0); i++) {
         for (int j = 0; j < J.dimension(1); j++) {
             for (int k = 0; k < J.dimension(2); k++) {
@@ -82,7 +90,9 @@ Tensor<> Transform::Coulomb(const Tensor<>& J, const Matrix<>& C) {
     }
 
     // fourth 5th order partial transform
+    #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < J.dimension(0); i++) {
         for (int j = 0; j < J.dimension(1); j++) {
             for (int k = 0; k < J.dimension(2); k++) {

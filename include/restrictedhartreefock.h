@@ -18,10 +18,11 @@ public:
     RestrictedHartreeFock(const Options& opt = {}) : opt(opt) {}
 
     // overriden virtual methods
+    Result gradient(const System& system, const Integrals& ints, Result res = {}, bool print = true) const override;
     Result run(const System& system, const Integrals& ints, Result res = {}, bool print = true) const override;
 
 private:
-    Result run(const System& system, Result res = {}, bool print = true) const override;
+    std::tuple<Result, Integrals> run(const System& system, Result res = {}, bool print = true) const override;
 
 private:
     Options opt;

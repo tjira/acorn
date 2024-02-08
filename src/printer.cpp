@@ -8,8 +8,16 @@ void Printer::Print(const Matrix<>& A, const std::string& title) {
     std::cout << title << ":\n" << A; std::printf("\n%s NORM: %.2e\n", title.c_str(), A.norm());
 }
 
-void Printer::Print(const Tensor<>& A, const std::string& title) {
+void Printer::Print(const Tensor<3>& A, const std::string& title) {
+    Print(Eigen::Map<const Matrix<>>(A.data(), A.dimension(0) * A.dimension(2), A.dimension(1)), title);
+}
+
+void Printer::Print(const Tensor<4>& A, const std::string& title) {
     Print(Eigen::Map<const Matrix<>>(A.data(), A.dimension(0) * A.dimension(2), A.dimension(1) * A.dimension(3)), title);
+}
+
+void Printer::Print(const Tensor<5>& A, const std::string& title) {
+    Print(Eigen::Map<const Matrix<>>(A.data(), A.dimension(0) * A.dimension(2) * A.dimension(4), A.dimension(1) * A.dimension(3)), title);
 }
 
 void Printer::Title(const std::string& title, bool newline) {

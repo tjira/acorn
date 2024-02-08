@@ -3,7 +3,7 @@
 // include DIIS from libint
 #include <libint2/diis.h>
 
-Result RestrictedHartreeFock::run(const System& system, Result res, bool print) const {
+std::tuple<Result, Integrals> RestrictedHartreeFock::run(const System& system, Result res, bool print) const {
     // define the integral struct
     Integrals ints;
 
@@ -11,8 +11,8 @@ Result RestrictedHartreeFock::run(const System& system, Result res, bool print) 
     ints.S = Integral::Overlap(system), ints.T = Integral::Kinetic(system);
     ints.V = Integral::Nuclear(system), ints.J = Integral::Coulomb(system);
 
-    // run the restricted Hartree-Fock method and return the result struct
-    return run(system, ints, res, print);
+    // run the restricted Hartree-Fock method and return
+    return {run(system, ints, res, print), ints};
 }
 
 Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, Result res, bool print) const {
@@ -72,4 +72,53 @@ Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, R
 
     // assign total energy and return the struct
     res.Etot = res.rhf.E + system.repulsion(); return res;
+}
+
+Result RestrictedHartreeFock::gradient(const System& system, const Integrals& ints, Result res, bool) const {
+    // extract the useful stuff from the calculated integrals, define all the contraction axes and create the gradient matrix
+    Tensor<3> dS1 = ints.dS.slice<Eigen::array<Eigen::Index, 3>, Eigen::array<Eigen::Index, 3>>({0, 0, 0}, {ints.dS.dimension(0), ints.dS.dimension(1), 3});
+    Tensor<3> dT1 = ints.dT.slice<Eigen::array<Eigen::Index, 3>, Eigen::array<Eigen::Index, 3>>({0, 0, 0}, {ints.dT.dimension(0), ints.dT.dimension(1), 3});
+    Tensor<3> dV1 = ints.dV.slice<Eigen::array<Eigen::Index, 3>, Eigen::array<Eigen::Index, 3>>({0, 0, 0}, {ints.dV.dimension(0), ints.dV.dimension(1), 3});
+    Eigen::IndexPair<int> first(2, 0), second(3, 1), third(0, 0), fourth(1, 1); int nocc = system.nocc(); res.rhf.G = Matrix<>(system.getAtoms().size(), 3);
+
+    // get the atom to shell map
+    auto atom2shell = system.getShells().atom2shell(system.getAtoms<libint2::Atom>());
+
+    // define the energy weighted density matrix
+    Tensor<2> W(res.rhf.C.rows(), res.rhf.C.cols());
+
+    // fill the energy weighted density matrix
+    for (int i = 0; i < W.dimension(0); i++) {
+        for (int j = 0; j < W.dimension(1); j++) {
+            W(i, j) = 2 * res.rhf.C.leftCols(nocc).row(i).cwiseProduct(res.rhf.C.leftCols(nocc).row(j)) * res.rhf.eps.topRows(nocc);
+        }
+    }
+
+    // calculate the derivative of the ERI
+    Tensor<3> dERI = (ints.dJ - 0.5 * ints.dJ.shuffle(Eigen::array<int, 5>{0, 3, 2, 1, 4})).contract(toTensor(res.rhf.D), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
+
+    // for every gradient row (atom)
+    for (int i = 0, si = 0, ss = 0; i < res.rhf.G.rows(); i++, si += ss, ss = 0) {
+        // calculate number of shells for current atom
+        for (long shell : atom2shell.at(i)) ss += system.getShells().at(shell).size();
+
+        // define the core Hamiltonian derivative, atomic slices for overlap tensor and density matrix
+        Eigen::array<Eigen::Index, 3> Soff = {si, 0, 0}, Sext = {ss, res.rhf.D.cols(), 3}; Eigen::array<Eigen::Index, 2> Doff = {si, 0}, Dext = {ss, res.rhf.D.cols()};
+        Tensor<3> dHcore = ints.dV.slice<Eigen::array<Eigen::Index, 3>, Eigen::array<Eigen::Index, 3>>({0, 0, 6 + i * 3}, {res.rhf.D.rows(), res.rhf.D.cols(), 3});
+
+        // get the slice to add to the core Hamiltonian derivative
+        auto HS = (dT1 + dV1).slice<Eigen::array<Eigen::Index, 3>, Eigen::array<Eigen::Index, 3>>(Soff, Sext);
+
+        // add the slices to the core Hamiltonian derivative
+        dHcore.slice<Eigen::array<Eigen::Index, 3>, Eigen::array<Eigen::Index, 3>>({0, si, 0}, {res.rhf.D.rows(), ss, 3}) += HS.shuffle(Eigen::array<Eigen::Index, 3>{1, 0, 2});
+        dHcore.slice<Eigen::array<Eigen::Index, 3>, Eigen::array<Eigen::Index, 3>>({si, 0, 0}, {ss, res.rhf.D.cols(), 3}) += HS.shuffle(Eigen::array<Eigen::Index, 3>{0, 1, 2});
+
+        // contract the tensors and add them to the gradient
+        res.rhf.G.row(i) += 2 * toVector(dERI.slice(Soff, Sext).contract(toTensor(res.rhf.D).slice(Doff, Dext), Eigen::array<Eigen::IndexPair<int>, 2>{third, fourth}));
+        res.rhf.G.row(i) -= 2 * toVector(dS1.slice(Soff, Sext).contract(W.slice(Doff, Dext), Eigen::array<Eigen::IndexPair<int>, 2>{third, fourth}));
+        res.rhf.G.row(i) += toVector(dHcore.contract(toTensor(res.rhf.D), Eigen::array<Eigen::IndexPair<int>, 2>{third, fourth}));
+    }
+
+    // add nuclear contribution and return the gradient
+    res.rhf.G += system.drepulsion(), res.G = res.rhf.G; return res;
 }

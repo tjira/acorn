@@ -84,30 +84,49 @@ int main(int argc, char** argv) {
     Printer::Title("INPUT FILE"); std::cout << input.dump(4) << std::endl << std::endl;
 
     // parse the default options
-    auto rmpopt = nlohmann::json::parse(rmpoptstr), orcopt = nlohmann::json::parse(orcoptstr);
-    auto intopt = nlohmann::json::parse(intoptstr), rhfopt = nlohmann::json::parse(rhfoptstr);
-    auto msaopt = nlohmann::json::parse(msaoptstr), mdlopt = nlohmann::json::parse(mdloptstr);
-    auto msnopt = nlohmann::json::parse(msnoptstr), rciopt = nlohmann::json::parse(rcioptstr);
+    auto intopt = nlohmann::json::parse(intoptstr);
+    auto mdlopt = nlohmann::json::parse(mdloptstr);
     auto molopt = nlohmann::json::parse(moloptstr);
+    auto msaopt = nlohmann::json::parse(msaoptstr);
+    auto msnopt = nlohmann::json::parse(msnoptstr);
+    auto orcopt = nlohmann::json::parse(orcoptstr);
+    auto rciopt = nlohmann::json::parse(rcioptstr);
+    auto rhfopt = nlohmann::json::parse(rhfoptstr);
+    auto rmpopt = nlohmann::json::parse(rmpoptstr);
 
-    // assign the output paths to some method options that output files
-    orcopt["folder"] = inputpath, msaopt["folder"] = inputpath, msnopt["folder"] = inputpath;
-    rhfopt["dynamics"]["folder"] = inputpath, rciopt["dynamics"]["folder"] = inputpath;
-    msnopt["dynamics"]["folder"] = inputpath, msaopt["dynamics"]["folder"] = inputpath;
-    rmpopt["dynamics"]["folder"] = inputpath, orcopt["dynamics"]["folder"] = inputpath;
+    // assign the dynamics output folder to the method options
+    msaopt["dynamics"]["folder"] = inputpath;
+    msnopt["dynamics"]["folder"] = inputpath;
+    orcopt["dynamics"]["folder"] = inputpath;
+    rciopt["dynamics"]["folder"] = inputpath;
+    rhfopt["dynamics"]["folder"] = inputpath;
+    rmpopt["dynamics"]["folder"] = inputpath;
+
+    // assign the output paths to methods
+    orcopt["folder"] = inputpath;
+    msaopt["folder"] = inputpath;
+    msnopt["folder"] = inputpath;
 
     // patch the input json file and apply defaults
-    if (input.contains("molecule")) molopt.merge_patch(input.at("molecule"));
     if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
+    if (input.contains("molecule")) molopt.merge_patch(input.at("molecule"));
     if (input.contains("model")) mdlopt.merge_patch(input.at("model"));
     if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
-    if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
     if (input.contains("rci")) rciopt.merge_patch(input.at("rci"));
+    if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
     // patch the inputs for the modelsolver
     if (input.contains("solve") && mdlopt.at("potential").size() == 1) msaopt.merge_patch(input.at("solve"));
     if (input.contains("solve") && mdlopt.at("potential").size() != 1) msnopt.merge_patch(input.at("solve"));
+
+    // throw an error if restricted calculation cannot be performed due to multiplicity
+    if (molopt.at("multiplicity") != 1 && input.contains("rci")) throw std::runtime_error("RESTRICTED CONFIGURATION INTERACTION CAN ONLY BE PERFORMED FOR SINGLET STATES");
+    if (molopt.at("multiplicity") != 1 && input.contains("rmp")) throw std::runtime_error("RESTRICTED MOLLER-PLESSET CAN ONLY BE PERFORMED FOR SINGLET STATES");
+    if (molopt.at("multiplicity") != 1 && input.contains("rhf")) throw std::runtime_error("RESTRICTED HARTREE-FOCK CAN ONLY BE PERFORMED FOR SINGLET STATES");
+
+    // make all the interface paths absolute
+    orcopt.at("interface") = inputpath / orcopt.at("interface");
 
     if (input.contains("molecule")) {
         // get the path of the system file
@@ -115,9 +134,6 @@ int main(int argc, char** argv) {
 
         // define the integral container
         Integrals ints(true);
-
-        // make all the interface paths absolute
-        orcopt.at("interface") = inputpath / orcopt.at("interface");
 
         // create the system from the system file
         std::ifstream mstream(syspath); System system(mstream, molopt.at("basis"), molopt.at("charge"), molopt.at("multiplicity")); mstream.close();
@@ -131,7 +147,13 @@ int main(int argc, char** argv) {
             MEASURE("KINETIC INTEGRALS: ", ints.T = Integral::Kinetic(system))
             MEASURE("NUCLEAR INTEGRALS: ", ints.V = Integral::Nuclear(system))
             MEASURE("COULOMB INTEGRALS: ", ints.J = Integral::Coulomb(system))
-        std::cout << std::endl;}
+            if (input.contains("rhf") && input.at("rhf").contains("gradient")) {std::cout << std::endl;
+                MEASURE("OVERLAP INTEGRAL DERIVATIVES: ", ints.dS = Integral::dOverlap(system))
+                MEASURE("KINETIC INTEGRAL DERIVATIVES: ", ints.dT = Integral::dKinetic(system))
+                MEASURE("NUCLEAR INTEGRAL DERIVATIVES: ", ints.dV = Integral::dNuclear(system))
+                MEASURE("COULOMB INTEGRAL DERIVATIVES: ", ints.dJ = Integral::dCoulomb(system))
+            } std::cout << std::endl;
+        }
 
         // print and export the atomic integrals
         if (input.contains("integral")) {
@@ -140,25 +162,29 @@ int main(int argc, char** argv) {
                 if (intopt.at("print").at("kinetic")) Printer::Print(ints.T, "KINETIC INTEGRALS"), std::cout << "\n";
                 if (intopt.at("print").at("nuclear")) Printer::Print(ints.V, "NUCLEAR INTEGRALS"), std::cout << "\n";
                 if (intopt.at("print").at("coulomb")) Printer::Print(ints.J, "COULOMB INTEGRALS"), std::cout << "\n";
+                if (intopt.at("print").at("doverlap")) Printer::Print(ints.dS, "OVERLAP INTEGRAL DERIVATIVES"), std::cout << "\n";
+                if (intopt.at("print").at("dkinetic")) Printer::Print(ints.dT, "KINETIC INTEGRAL DERIVATIVES"), std::cout << "\n";
+                if (intopt.at("print").at("dnuclear")) Printer::Print(ints.dV, "NUCLEAR INTEGRAL DERIVATIVES"), std::cout << "\n";
+                if (intopt.at("print").at("dcoulomb")) Printer::Print(ints.dJ, "COULOMB INTEGRAL DERIVATIVES"), std::cout << "\n";
             } if (input.at("integral").contains("export")) {
                 if (intopt.at("export").at("overlap")) EigenWrite(inputpath / "S.mat", ints.S);
                 if (intopt.at("export").at("kinetic")) EigenWrite(inputpath / "T.mat", ints.T);
                 if (intopt.at("export").at("nuclear")) EigenWrite(inputpath / "V.mat", ints.V);
                 if (intopt.at("export").at("coulomb")) EigenWrite(inputpath / "J.mat", ints.J);
+                if (intopt.at("export").at("doverlap")) EigenWrite(inputpath / "dS.mat", ints.dS);
+                if (intopt.at("export").at("dkinetic")) EigenWrite(inputpath / "dT.mat", ints.dT);
+                if (intopt.at("export").at("dnuclear")) EigenWrite(inputpath / "dV.mat", ints.dV);
+                if (intopt.at("export").at("dcoulomb")) EigenWrite(inputpath / "dJ.mat", ints.dJ);
             }
         }
 
-        // if the ORCA calculation is requested
+        // choose what calculation to run
         if (input.contains("orca")) {Printer::Title("ORCA DYNAMICS");
             // if dynamics block is specified, run it else throw an error
             if (input.at("orca").contains("dynamics")) {Orca(orcopt).dynamics(system, ints, res); std::cout << std::endl;}
             else throw std::runtime_error("YOU HAVE TO DO DYNAMICS WITH ORCA");
 
-        // if RHF calculation is requested
-        } else if (input.contains("rhf")) {
-            // print the title
-            Printer::Title("RESTRICTED HARTREE-FOCK");
-
+        } else if (input.contains("rhf")) {Printer::Title("RESTRICTED HARTREE-FOCK");
             // create the RHF object and run the calculation
             RestrictedHartreeFock rhf(rhfopt); res = rhf.run(system, ints);
 
@@ -179,29 +205,21 @@ int main(int argc, char** argv) {
             Printer::Print(res.Etot, "RESTRICTED HARTREE-FOCK ENERGY"), std::cout << "\n";
 
             // if the RHF dynamic block is used
-            if (input.at("rhf").contains("dynamics")) {
-                // run the dynamics from the created object and print newline
+            if (input.at("rhf").contains("dynamics")) {Printer::Title("RESTRICTED HARTREE-FOCK DYNAMICS");
                 rhf.dynamics(system, ints, res); std::cout << std::endl;
 
             // if the RHF hessian is requested
-            } else if (input.at("rhf").contains("hessian")) {
-                // calculate the hessian and print it
+            } else if (input.at("rhf").contains("hessian")) {Printer::Title("RESTRICTED HARTREE-FOCK FREQUENCY CALCULATION");
                 res = rhf.hessian(system, ints, res); Printer::Print(res.rhf.H, "RESTRICTED HARTREE-FOCK HESSIAN"); std::cout << std::endl;
-
-                // calculate the vibrational frequencies from the hessian and print them
-                Printer::Print(Method<RestrictedHartreeFock>::frequency(system, res.rhf.H), "RESTRICTED HARTREE-FOCK FREQUENCIES"); std::cout << std::endl;
+                Printer::Print(rhf.frequency(system, res.rhf.H), "RESTRICTED HARTREE-FOCK FREQUENCIES"); std::cout << std::endl;
 
             // if the RHF gradient is requested
-            } else if (input.at("rhf").contains("gradient")) {
-                // calculate and print the gradient
+            } else if (input.at("rhf").contains("gradient")) {Printer::Title("RESTRICTED HARTREE-FOCK GRADIENT CALCULATION");
                 res = rhf.gradient(system, ints, res); Printer::Print(res.rhf.G, "RESTRICTED HARTREE-FOCK GRADIENT"); std::cout << std::endl;
             }
 
-            // if configuratio interaction was requested
-            if (input.contains("rci")) {
-                // print the title
-                Printer::Title("RESTRICTED CONFIGURATION INTERACTION");
-
+            // if configuration interaction was requested
+            if (input.contains("rci")) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION");
                 // create the RCI object
                 RestrictedConfigurationInteraction rci(rhfopt, rciopt);
 
@@ -244,29 +262,21 @@ int main(int argc, char** argv) {
                 Printer::Print(res.Etot, "RESTRICTED CONFIGURATION INTERACTION ENERGY"), std::cout << std::endl;
 
                 // if the dynamics block is specified
-                if (input.at("rci").contains("dynamics")) {
-                    // perform the dynamics and print newline
+                if (input.at("rci").contains("dynamics")) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION DYNAMICS");
                     rci.dynamics(system, ints, res); std::cout << std::endl;
 
                 // if the hessian is requested
-                } else if (input.at("rci").contains("hessian")) {
-                    // calculate and print the hessian matrix
+                } else if (input.at("rci").contains("hessian")) {Printer::Title("RESTRICTED CONFIGURATION FREQUENCY CALCULATION");
                     res = rci.hessian(system, ints, res); Printer::Print(res.rci.H, "RESTRICTED CONFIGURATION INTERACTION HESSIAN"); std::cout << std::endl;
-
-                    // calculate and print the RCI vibrational frequencies
-                    Printer::Print(Method<RestrictedConfigurationInteraction>::frequency(system, res.rci.H), "RESTRICTED CONFIGURATION INTERACTION FREQUENCIES"); std::cout << std::endl;
+                    Printer::Print(rci.frequency(system, res.rci.H), "RESTRICTED CONFIGURATION INTERACTION FREQUENCIES"); std::cout << std::endl;
 
                 // if gradient calculation was requested
-                } else if (input.at("rci").contains("gradient")) {
-                    // calculate and print the gradient matrix
+                } else if (input.at("rci").contains("gradient")) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION GRADIENT CALCULATION");
                     res = rci.gradient(system, ints, res); Printer::Print(res.rci.G, "RESTRICTED CONFIGURATION INTERACTION GRADIENT"); std::cout << std::endl;
                 }
 
             // if RMP calculation was requested
-            } else if (input.contains("rmp")) {
-                // print the title
-                Printer::Title("RESTRICTED MOLLER-PLESSET");
-
+            } else if (input.contains("rmp")) {Printer::Title("RESTRICTED MOLLER-PLESSET");
                 // create the RMP object
                 RestrictedMollerPlesset rmp(rhfopt, rmpopt);
 
@@ -287,21 +297,16 @@ int main(int argc, char** argv) {
                 Printer::Print(res.Etot, "RESTRICTED MOLLER-PLESSET ENERGY"); std::cout << std::endl;
 
                 // if the RMP dynamics was requested
-                if (input.at("rmp").contains("dynamics")) {
-                    // run the dynamics and print newline
+                if (input.at("rmp").contains("dynamics")) {Printer::Title("RESTRICTED MOLLER-PLESSET DYNAMICS");
                     rmp.dynamics(system, ints, res); std::cout << std::endl;
 
                 // if the hessian calculation was requested
-                } else if (input.at("rmp").contains("hessian")) {
-                    // calculate the hessian and print the matrix
+                } else if (input.at("rmp").contains("hessian")) {Printer::Title("RESTRICTED MOLLER-PLESSET FREQUENCY CALCULATION");
                     res = rmp.hessian(system, ints, res); Printer::Print(res.rmp.H, "RESTRICTED MOLLER-PLESSET HESSIAN"); std::cout << std::endl;
-
-                    // calculate and print the RMP vibrational frequencies
-                    Printer::Print(Method<RestrictedMollerPlesset>::frequency(system, res.rmp.H), "RESTRICTED MOLLER-PLESSET FREQUENCIES"); std::cout << std::endl;
+                    Printer::Print(rmp.frequency(system, res.rmp.H), "RESTRICTED MOLLER-PLESSET FREQUENCIES"); std::cout << std::endl;
 
                 // if the RMP calculation was requested
-                } else if (input.at("rmp").contains("gradient")) {
-                    // perform the gradient calculation and print the matrix
+                } else if (input.at("rmp").contains("gradient")) {Printer::Title("RESTRICTED MOLLER-PLESSET GRADIENT CALCULATION");
                     res = rmp.gradient(system, ints, res); Printer::Print(res.rmp.G, "RESTRICTED MOLLER-PLESSET GRADIENT"); std::cout << std::endl;
                 }
             }
@@ -313,9 +318,7 @@ int main(int argc, char** argv) {
         ModelSystem model(mdlopt.at("mass"), mdlopt.at("potential"), mdlopt.at("limits"), mdlopt.at("ngrid"));
 
         // if the solving was requested
-        if (input.contains("solve")) {
-            // print the title
-            Printer::Title("EXACT QUANTUM DYNAMICS");
+        if (input.contains("solve")) {Printer::Title("EXACT QUANTUM DYNAMICS");
 
             // create the adianatic solver object
             ModelSolver msv(msaopt.get<ModelSolver::OptionsAdiabatic>());
@@ -334,9 +337,7 @@ int main(int argc, char** argv) {
 
             // extract and save the potential points
             Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(inputpath / "U.mat", U);
-
-        // throw error if nothing was specified for the model
-        } else throw std::runtime_error("YOU HAVE TO DO SOMETHING WITH THE MODEL");
+        }
     }
 
     // finalize the integral engine and print the elapsed time

@@ -1,6 +1,6 @@
 #include "restrictedmollerplesset.h"
 
-Result RestrictedMollerPlesset::run(const System& system, Result res, bool print) const {
+std::tuple<Result, Integrals> RestrictedMollerPlesset::run(const System& system, Result res, bool print) const {
     // define the integral struct
     Integrals ints;
 
@@ -15,7 +15,7 @@ Result RestrictedMollerPlesset::run(const System& system, Result res, bool print
     ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
 
     // run the RMP and return the total energy
-    return run(system, ints, res, print);
+    return {run(system, ints, res, print), ints};
 }
 
 Result RestrictedMollerPlesset::run(const System& system, const Integrals& ints, Result res, bool) const {

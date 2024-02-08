@@ -4,7 +4,7 @@
 #include "orca.h"
 
 template <class M>
-void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool print) const {
+void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) const {
     // print the header
     if (print) std::printf(" ITER  TIME [fs]        E [Eh]              KIN [Eh]              TK [K]         |GRAD|      TIME\n");
 
@@ -25,8 +25,13 @@ void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool 
     // calculate the initial energy with gradient
     if constexpr (std::is_same_v<M, Orca>) {
         res = gradient(system, ints, res, false);
+    } else if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
+        std::tie(res, ints) = run(system, res, false);
+        ints.dS = Integral::dOverlap(system), ints.dT = Integral::dKinetic(system);
+        ints.dV = Integral::dNuclear(system), ints.dJ = Integral::dCoulomb(system);
+        res = gradient(system, ints, res, false);
     } else {
-        res = run(system, res, false); res = gradient(system, ints, res, false);
+        std::tie(res, ints) = run(system, res, false); res = gradient(system, ints, res, false);
     }
 
     // calculate the initial kinetic energy and temperature
@@ -54,8 +59,13 @@ void Method<M>::dynamics(System system, const Integrals& ints, Result res, bool 
         // calculate the next energy with gradient
         if constexpr (std::is_same_v<M, Orca>) {
             res = gradient(system, ints, res, false);
+        } else if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
+            std::tie(res, ints) = run(system, res, false);
+            ints.dS = Integral::dOverlap(system), ints.dT = Integral::dKinetic(system);
+            ints.dV = Integral::dNuclear(system), ints.dJ = Integral::dCoulomb(system);
+            res = gradient(system, ints, res, false);
         } else {
-            res = run(system, res, false); res = gradient(system, ints, res, false);
+            std::tie(res, ints) = run(system, res, false); res = gradient(system, ints, res, false);
         }
 
         // print the iteration info
@@ -89,7 +99,9 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
     // print the header
     if (print) std::printf("  ELEM      dE [Eh/Bohr]        TIME\n");
 
+    #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread) collapse(2)
+    #endif
     for (int i = 0; i < res.G.rows(); i++) {
         for (int j = 0; j < res.G.cols(); j++) {
             // start the timer
@@ -106,7 +118,7 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
             sysMinus.move(dirMinus), sysPlus.move(dirPlus);
 
             // calculate and assign the derivative
-            res.G(i, j) = BOHR2A * (run(sysPlus, res, false).Etot - run(sysMinus, res, false).Etot) / step / 2;
+            res.G(i, j) = BOHR2A * (std::get<0>(run(sysPlus, res, false)).Etot - std::get<0>(run(sysMinus, res, false)).Etot) / step / 2;
 
             // print the iteration info
             if (print) std::printf("(%2d, %2d) %18.14f %s\n", i + 1, j + 1, res.G(i, j), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -133,7 +145,9 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     // print the header
     if (print) std::printf("  ELEM      dE [Eh/Bohr]        TIME\n");
 
+    #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < res.H.rows(); i++) {
         for (int j = i; j < res.H.cols(); j++) {
             // start the timer
@@ -151,8 +165,8 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
             sysPlusMinus.move(dir1 - dir2), sysPlusPlus.move(dir1 + dir2);
 
             // calculate the energies
-            double energyMinusMinus = run(sysMinusMinus, res, false).Etot, energyMinusPlus = run(sysMinusPlus, res, false).Etot;
-            double energyPlusMinus = run(sysPlusMinus, res, false).Etot, energyPlusPlus = run(sysPlusPlus, res, false).Etot;
+            double energyMinusMinus = std::get<0>(run(sysMinusMinus, res, false)).Etot, energyMinusPlus = std::get<0>(run(sysMinusPlus, res, false)).Etot;
+            double energyPlusMinus = std::get<0>(run(sysPlusMinus, res, false)).Etot, energyPlusPlus = std::get<0>(run(sysPlusPlus, res, false)).Etot;
 
             // calculate and assign the derivative
             res.H(i, j) = BOHR2A * BOHR2A * (energyPlusPlus - energyMinusPlus - energyPlusMinus + energyMinusMinus) / step / step / 4; res.H(j, i) = res.H(i, j);

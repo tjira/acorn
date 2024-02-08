@@ -42,8 +42,18 @@ void EigenWrite(const std::string& fname, const Matrix<T>& A) {
 }
 
 template <typename T>
+std::ostream& operator<<(std::ostream& os, const Tensor<3, T>& A) {
+    os << Matrix<T>(Eigen::Map<const Matrix<T>>(A.data(), A.dimension(0) * A.dimension(2), A.dimension(1))); return os;
+}
+
+template <typename T>
 std::ostream& operator<<(std::ostream& os, const Tensor<4, T>& A) {
     os << Matrix<T>(Eigen::Map<const Matrix<T>>(A.data(), A.dimension(0) * A.dimension(2), A.dimension(1) * A.dimension(3))); return os;
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Tensor<5, T>& A) {
+    os << Matrix<T>(Eigen::Map<const Matrix<T>>(A.data(), A.dimension(0) * A.dimension(2) * A.dimension(4), A.dimension(1) * A.dimension(3))); return os;
 }
 
 template <typename T>
@@ -52,8 +62,18 @@ std::ostream& operator<<(std::ostream& os, const Vector<T>& A) {
 }
 
 template <typename T>
+void EigenWrite(const std::string& fname, const Tensor<3, T>& A) {
+    EigenWrite(fname, Matrix<T>(Eigen::Map<const Matrix<T>>(A.data(), A.dimension(0) * A.dimension(2), A.dimension(1))));
+}
+
+template <typename T>
 void EigenWrite(const std::string& fname, const Tensor<4, T>& A) {
     EigenWrite(fname, Matrix<T>(Eigen::Map<const Matrix<T>>(A.data(), A.dimension(0) * A.dimension(2), A.dimension(1) * A.dimension(3))));
+}
+
+template <typename T>
+void EigenWrite(const std::string& fname, const Tensor<5, T>& A) {
+    EigenWrite(fname, Matrix<T>(Eigen::Map<const Matrix<T>>(A.data(), A.dimension(0) * A.dimension(2) * A.dimension(4), A.dimension(1) * A.dimension(3))));
 }
 
 template <typename T>
@@ -61,10 +81,14 @@ void EigenWrite(const std::string& fname, const Vector<T>& A) {
     EigenWrite(fname, Matrix<T>(Eigen::Map<const Matrix<T>>(A.data(), A.rows(), 1)));
 }
 
+template std::ostream& operator<<(std::ostream& os, const Tensor<3, double>& A);
 template std::ostream& operator<<(std::ostream& os, const Tensor<4, double>& A);
+template std::ostream& operator<<(std::ostream& os, const Tensor<5, double>& A);
 template std::ostream& operator<<(std::ostream& os, const Matrix<double>& A);
 template std::ostream& operator<<(std::ostream& os, const Vector<double>& A);
 
+template void EigenWrite(const std::string& fname, const Tensor<3, double>& A);
 template void EigenWrite(const std::string& fname, const Tensor<4, double>& A);
+template void EigenWrite(const std::string& fname, const Tensor<5, double>& A);
 template void EigenWrite(const std::string& fname, const Matrix<double>& A);
 template void EigenWrite(const std::string& fname, const Vector<double>& A);

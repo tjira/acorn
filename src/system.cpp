@@ -71,13 +71,35 @@ double System::repulsion() const {
     // create the variable
     double repulsion = 0;
 
+    // loop over every nuclear pair exactly once
     for (size_t i = 0; i < atoms.size(); i++) {
         for (size_t j = 0; j < i; j++) {
-            // extract the atoms at position i and j and calculate their distance
+            // extract the atoms at position i and j and calculate the vector
             auto a = atoms.at(i), b = atoms.at(j); double x = a.x - b.x, y = a.y - b.y, z = a.z - b.z;
 
             // add the value to the repulsion
             repulsion += a.atomic_number * b.atomic_number / std::sqrt(x * x + y * y + z * z);
+        }
+    }
+
+    // return the repulsion
+    return repulsion;
+}
+
+Matrix<> System::drepulsion() const {
+    // create nuclear repulsion variable
+    Matrix<> repulsion(atoms.size(), 3);
+
+    // loop over every nuclear pair
+    for (size_t i = 0; i < atoms.size(); i++) {
+        for (size_t j = 0; j < atoms.size(); j++) {
+            // extract the atoms and the vector
+            if (i == j) {continue;} Atom a = atoms.at(i), b = atoms.at(j); double x = a.x - b.x, y = a.y - b.y, z = a.z - b.z;
+
+            // add the value to the repulsion
+            repulsion(i, 0) -= x * a.atomic_number * b.atomic_number / std::pow(std::sqrt(x * x + y * y + z * z), 3);
+            repulsion(i, 1) -= y * a.atomic_number * b.atomic_number / std::pow(std::sqrt(x * x + y * y + z * z), 3);
+            repulsion(i, 2) -= z * a.atomic_number * b.atomic_number / std::pow(std::sqrt(x * x + y * y + z * z), 3);
         }
     }
 
