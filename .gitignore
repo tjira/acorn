@@ -8,8 +8,10 @@ molecule.xyz
 # exts
 *.lock
 *.dat
+*.gif
 *.mat
 *.out
+*.png
 
 # folders
 .cache/
