@@ -1,5 +1,7 @@
 #pragma once
 
+namespace{}
+
 #define A2BOHR 1.889726124626
 #define AU2FS 0.02418884254
 #define BOHR2A 0.529177210903
