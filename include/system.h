@@ -12,8 +12,8 @@ public:
     // constructors and destructors
     ~System(); System(const System& system); System(std::ifstream& stream, std::string basis, int charge = 0, int multi = 1);
 
-    // printer operator
-    friend std::ostream& operator<<(std::ostream& os, const System& system);
+    // printer operator and electron getter
+    friend std::ostream& operator<<(std::ostream& os, const System& system); int getElectrons() const {return electrons;}
 
     // atom container getter and charge, multi and basis getters
     int getCharge() const {return charge;} int getMulti() const {return multi;} std::string getBasis() const {return lnxbasis;}

@@ -47,3 +47,10 @@ inline std::string rhfoptstr = R"({
 inline std::string orcoptstr = R"({
     "interface" : "orca.sh", "dynamics" : {"iters" : 100, "step" : 1}
 })";
+
+inline std::string uhfoptstr = R"({
+    "maxiter" : 1000, "thresh" : 1e-12,
+    "dynamics" : {"iters" : 100, "step" : 1}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
+    "export" : {"coefa" : false, "coefb" : false, "densitya" : false, "densityb" : false, "orbena" : false, "orbenb" : false, "hcore" : false},
+    "print" : {"coefa" : false, "coefb" : false, "densitya" : false, "densityb" : false, "orbena" : false, "orbenb" : false, "hcore" : false}
+})";

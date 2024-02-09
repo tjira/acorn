@@ -1,5 +1,6 @@
 // include the methods
 #include "restrictedconfigurationinteraction.h"
+#include "unrestrictedhartreefock.h"
 
 // model system and solver
 #include "modelsolver.h"
@@ -33,6 +34,11 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Dynamics, i
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Hessian, step);
 
+// option structures loaders for UHF
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Dynamics, iters, step, folder);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Gradient, step);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Hessian, step);
+
 // option structures loaders for ORCA
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, folder);
 
@@ -42,6 +48,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iter
 
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess, folder);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, folder);
@@ -50,7 +57,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, folder);
 
 int main(int argc, char** argv) {
     // create the argument parser and the program timer
-    argparse::ArgumentParser program("acorn", "0.0.1", argparse::default_arguments::none); auto programtimer = Timer::Now();
+    argparse::ArgumentParser program("acorn", "0.2.0", argparse::default_arguments::none); auto programtimer = Timer::Now();
 
     // add the command line arguments arguments
     program.add_argument("input").help("-- Input file to specify the calculation.");
@@ -93,6 +100,7 @@ int main(int argc, char** argv) {
     auto rciopt = nlohmann::json::parse(rcioptstr);
     auto rhfopt = nlohmann::json::parse(rhfoptstr);
     auto rmpopt = nlohmann::json::parse(rmpoptstr);
+    auto uhfopt = nlohmann::json::parse(uhfoptstr);
 
     // assign the dynamics output folder to the method options
     msaopt["dynamics"]["folder"] = inputpath;
@@ -100,6 +108,7 @@ int main(int argc, char** argv) {
     orcopt["dynamics"]["folder"] = inputpath;
     rciopt["dynamics"]["folder"] = inputpath;
     rhfopt["dynamics"]["folder"] = inputpath;
+    uhfopt["dynamics"]["folder"] = inputpath;
     rmpopt["dynamics"]["folder"] = inputpath;
 
     // assign the output paths to methods
@@ -114,6 +123,7 @@ int main(int argc, char** argv) {
     if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
     if (input.contains("rci")) rciopt.merge_patch(input.at("rci"));
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
+    if (input.contains("uhf")) uhfopt.merge_patch(input.at("uhf"));
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
     // patch the inputs for the modelsolver
@@ -129,11 +139,8 @@ int main(int argc, char** argv) {
     orcopt.at("interface") = inputpath / orcopt.at("interface");
 
     if (input.contains("molecule")) {
-        // get the path of the system file
-        std::filesystem::path syspath = inputpath / std::filesystem::path(input.at("molecule").at("file"));
-
-        // define the integral container
-        Integrals ints(true);
+        // get the path of the system file and initialize integrals
+        std::filesystem::path syspath = inputpath / std::filesystem::path(input.at("molecule").at("file")); Integrals ints(true);
 
         // create the system from the system file
         std::ifstream mstream(syspath); System system(mstream, molopt.at("basis"), molopt.at("charge"), molopt.at("multiplicity")); mstream.close();
@@ -309,6 +316,46 @@ int main(int argc, char** argv) {
                 } else if (input.at("rmp").contains("gradient")) {Printer::Title("RESTRICTED MOLLER-PLESSET GRADIENT CALCULATION");
                     res = rmp.gradient(system, ints, res); Printer::Print(res.rmp.G, "RESTRICTED MOLLER-PLESSET GRADIENT"); std::cout << std::endl;
                 }
+            }
+
+        } else if (input.contains("uhf")) {Printer::Title("UNRESTRICTED HARTREE-FOCK");
+            // create the RHF object and run the calculation
+            UnrestrictedHartreeFock uhf(uhfopt); res = uhf.run(system, ints);
+
+            // print and export the RHF results
+            if (input.at("uhf").contains("print")) {
+                if (uhfopt.at("print").at("hcore")) Printer::Print(ints.T + ints.V, "CORE HAMILTONIAN MATRIX"), std::cout << "\n";
+                if (uhfopt.at("print").at("coefa")) Printer::Print(res.uhf.Ca, "ALPHA COEFFICIENT MATRIX"), std::cout << "\n";
+                if (uhfopt.at("print").at("coefb")) Printer::Print(res.uhf.Cb, "BETA COEFFICIENT MATRIX"), std::cout << "\n";
+                if (uhfopt.at("print").at("densitya")) Printer::Print(res.uhf.Da, "ALPHA DENSITY MATRIX"), std::cout << "\n";
+                if (uhfopt.at("print").at("densityb")) Printer::Print(res.uhf.Db, "BETA DENSITY MATRIX"), std::cout << "\n";
+                if (uhfopt.at("print").at("orbena")) Printer::Print(res.uhf.epsa, "ALPHA ORBITAL ENERGIES"), std::cout << "\n";
+                if (uhfopt.at("print").at("orbenb")) Printer::Print(res.uhf.epsb, "BETA ORBITAL ENERGIES"), std::cout << "\n";
+            } if (input.at("uhf").contains("export")) {
+                if (uhfopt.at("export").at("hcore")) EigenWrite(inputpath / "H.mat", Matrix<>(ints.T + ints.V));
+                if (uhfopt.at("export").at("coefa")) EigenWrite(inputpath / "CA.mat", res.uhf.Ca);
+                if (uhfopt.at("export").at("coefb")) EigenWrite(inputpath / "CB.mat", res.uhf.Cb);
+                if (uhfopt.at("export").at("densitya")) EigenWrite(inputpath / "DA.mat", res.uhf.Da);
+                if (uhfopt.at("export").at("densityb")) EigenWrite(inputpath / "DB.mat", res.uhf.Db);
+                if (uhfopt.at("export").at("orbena")) EigenWrite(inputpath / "EPSA.mat", res.uhf.epsa);
+                if (uhfopt.at("export").at("orbenb")) EigenWrite(inputpath / "EPSB.mat", res.uhf.epsb);
+            }
+
+            // print the total energy
+            Printer::Print(res.Etot, "UNRESTRICTED HARTREE-FOCK ENERGY"), std::cout << "\n";
+
+            // if the UHF dynamic block is used
+            if (input.at("uhf").contains("dynamics")) {Printer::Title("UNRESTRICTED HARTREE-FOCK DYNAMICS");
+                uhf.dynamics(system, ints, res); std::cout << std::endl;
+
+            // if the UHF hessian is requested
+            } else if (input.at("uhf").contains("hessian")) {Printer::Title("UNRESTRICTED HARTREE-FOCK FREQUENCY CALCULATION");
+                res = uhf.hessian(system, ints, res); Printer::Print(res.uhf.H, "UNRESTRICTED HARTREE-FOCK HESSIAN"); std::cout << std::endl;
+                Printer::Print(uhf.frequency(system, res.uhf.H), "UNRESTRICTED HARTREE-FOCK FREQUENCIES"); std::cout << std::endl;
+
+            // if the UHF gradient is requested
+            } else if (input.at("uhf").contains("gradient")) {Printer::Title("UNRESTRICTED HARTREE-FOCK GRADIENT CALCULATION");
+                res = uhf.gradient(system, ints, res); Printer::Print(res.uhf.G, "UNRESTRICTED HARTREE-FOCK GRADIENT"); std::cout << std::endl;
             }
         }
 

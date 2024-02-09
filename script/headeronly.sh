@@ -9,7 +9,7 @@ cat << EndOfMessage
 #include <bits/stdc++.h>
 EndOfMessage
 
-tail -n +3 include/constant.h
+tail -n +5 include/constant.h
 
 cat \
     include/eigen.h \
@@ -20,7 +20,9 @@ cat \
     include/result.h \
     include/method.h  \
     include/restrictedmethod.h  \
+    include/unrestrictedmethod.h  \
     include/restrictedhartreefock.h  \
+    include/unrestrictedhartreefock.h  \
     include/numpy.h \
     include/transform.h \
     include/determinant.h \

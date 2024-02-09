@@ -1,6 +1,5 @@
 # TODO List
 
-- [ ] Implement the unrestricted Hartree-Fock
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
@@ -10,6 +9,7 @@
 - [x] Implement MP2 method
 - [x] Implement passing of the density matrix to HF method
 - [x] Implement the analytical gradient for RHF
+- [x] Implement the unrestricted Hartree-Fock
 - [x] Implements general gradients
 - [x] Make the exact dynamic save files to the input folder
 - [x] Make the exported library independent of libint

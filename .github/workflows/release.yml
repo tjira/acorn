@@ -38,6 +38,7 @@ jobs:
 
       - name: Rename Binaries
         run: |
+          mv bin/acorn_centerxyz bin/acorn_centerxyz_linux_x86-64
           mv bin/libacorn.a bin/libacorn_linux_x86-64.a
           mv bin/acorn bin/acorn_linux_x86-64
 
@@ -45,6 +46,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           path: |
+            bin/acorn_centerxyz_linux_x86-64
             bin/libacorn_linux_x86-64.a
             bin/libint_linux_x86-64.a
             bin/acorn_linux_x86-64
@@ -59,7 +61,7 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v3
 
-      - name: Create Library Directory and Delete Redundant Scripts
+      - name: Create Library Directory and Remove Redundant Scripts
         run: mkdir library && rm example/generate.sh
 
       - name: Generate the Header Only Library
@@ -67,13 +69,14 @@ jobs:
 
       - name: Copy x86-64 Binaries and Headers to the Root Folder
         run: |
+          cp artifact/acorn_centerxyz_linux_x86-64 acorn_centerxyz
           cp artifact/libacorn_linux_x86-64.a library/libacorn.a
           cp artifact/libint_linux_x86-64.a library/libint.a
           cp artifact/acorn_linux_x86-64 acorn
 
       - name: Create x86-64 Packages
         run: |
-          tar -czf acorn_linux_x86-64.tar.gz acorn basis example interface library script/plotwfn.py LICENSE.md
+          tar -czf acorn_linux_x86-64.tar.gz acorn acorn_centerxyz basis example interface library script/plotwfn.py LICENSE.md
 
       - name: Release linux_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2

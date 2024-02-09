@@ -50,6 +50,7 @@ add_library(acorn
     src/system.cpp
     src/timer.cpp
     src/transform.cpp
+    src/unrestrictedhartreefock.cpp
 )
 target_link_libraries(acorn int2.a Eigen3::Eigen)
 
@@ -59,14 +60,17 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 # add acorn executable
-add_executable(acorn-exe src/main.cpp)
-target_link_libraries(acorn-exe acorn)
+add_executable(acorn_exe src/main.cpp)
+target_link_libraries(acorn_exe acorn)
 
 # set the folder where the basis set files are located
-target_compile_definitions(acorn-exe PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
+target_compile_definitions(acorn_exe PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
 # set the executable name
-set_target_properties(acorn-exe PROPERTIES OUTPUT_NAME "acorn")
+set_target_properties(acorn_exe PROPERTIES OUTPUT_NAME "acorn")
+
+# add tools
+add_executable(acorn_centerxyz tool/centerxyz.cpp)
 
 # TESTING ==========================================================================================
 
@@ -78,16 +82,19 @@ if (BUILD_TESTING)
     add_executable(test_rmp2 test/rmp2.cpp)
     add_executable(test_rfci test/rfci.cpp)
     add_executable(test_rhf test/rhf.cpp)
+    add_executable(test_uhf test/uhf.cpp)
 
     # link the test executables to the library
     target_link_libraries(test_rmp2 acorn)
     target_link_libraries(test_rfci acorn)
     target_link_libraries(test_rhf acorn)
+    target_link_libraries(test_uhf acorn)
 
     # change the output folder for the test executables
     set_target_properties(test_rmp2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
     set_target_properties(test_rfci PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
     set_target_properties(test_rhf PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
+    set_target_properties(test_uhf PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
 endif()
 
 # include test file

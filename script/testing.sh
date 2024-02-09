@@ -60,7 +60,7 @@ for BASIS in basis/*.g94; do
     # extract the system name and basis set name
     SYSTEM=$(basename "$SYSTEM" .xyz); BASIS=$(basename "$BASIS" .g94 | sed 's/augmentation/aug/g')
 
-    # create the tests
+    # create the tests of the restricted methods
     create "$SYSTEM" 0 1 "$BASIS" "RHF"; create "$SYSTEM" 0 1 "$BASIS" "RMP2"; create "$SYSTEM" 0 1 "$BASIS" "RFCI"
 done
 done
