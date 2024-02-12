@@ -6,9 +6,14 @@ class UnrestrictedHartreeFock : public UnrestrictedMethod<UnrestrictedHartreeFoc
     friend class Method<UnrestrictedHartreeFock>;
 public:
     struct Options {Options(){};
-        // structures
+        // gradient and hessian structrures
         struct Gradient {double step=1e-5;} gradient={}; struct Hessian {double step=1e-5;} hessian={};
-        struct Dynamics {int iters=100; double step=1.0; std::string folder;} dynamics={};
+
+        // dynamics structure
+        struct Dynamics {
+            struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
+            int iters=100; double step=1.0; std::string folder;
+        } dynamics={};
 
         // variables
         int maxiter=100; double thresh=1e-8;

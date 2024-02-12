@@ -2,12 +2,14 @@
 
 - [ ] Add BAGEL interface with excited state dynamics
 - [ ] Add Mulliken analysis
+- [ ] Add excitation specifications to FCI
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
 - [x] Check the correct working of the library before merging the fci branch
 - [x] Fix gradient calculation
 - [x] Fix the shells variable in system class that reads the basis each time the system is created
+- [x] Implement Berendsen thermostat
 - [x] Implement MP2 method
 - [x] Implement passing of the density matrix to HF method
 - [x] Implement the analytical gradient for RHF

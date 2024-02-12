@@ -6,7 +6,10 @@
     "rhf" : {
         "dynamics" : {
             "iters" : 100,
-            "step" : 20
+            "step" : 20,
+            "berendsen" : {
+                "temp" : 298.15
+            }
         },
         "gradient" : {}
     }

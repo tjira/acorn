@@ -1,0 +1,16 @@
+{
+    "molecule" : {
+        "file" : "../molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "orca" : {
+        "interface" : "../../interface/orca.sh",
+        "dynamics" : {
+            "iters" : 100,
+            "step" : 20,
+            "berendsen" : {
+                "temp" : 298.15
+            }
+        }
+    }
+}

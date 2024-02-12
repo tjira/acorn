@@ -6,16 +6,22 @@
 class ModelSolver {
 public:
     struct OptionsAdiabatic {OptionsAdiabatic(){};
-        // structures
-        struct Dynamics {int iters=100; double step=1.0; std::string folder;} dynamics={};
+        // dynamics structure
+        struct Dynamics {
+            struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
+            int iters=100; double step=1.0; std::string folder;
+        } dynamics={};
 
         // variables
         int nstate=3, iters=1000; bool real=false, optimize=false;
         std::string folder, guess; double step=0.1, thresh=1e-8;
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};
-        // structures
-        struct Dynamics {int iters=100; double step=1.0; std::string folder;} dynamics={};
+        // dynamics structure
+        struct Dynamics {
+            struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
+            int iters=100; double step=1.0; std::string folder;
+        } dynamics={};
 
         // variables
         std::vector<std::string> guess; std::string folder; double step=0.1; int iters=1000;

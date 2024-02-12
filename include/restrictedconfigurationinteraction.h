@@ -7,9 +7,14 @@ class RestrictedConfigurationInteraction : public RestrictedMethod<RestrictedCon
     friend class Method<RestrictedConfigurationInteraction>;
 public:
     struct Options {Options(){};
-        // structure of the options
+        // gradient and hessian structures
         struct Gradient {double step=1e-5;} gradient; struct Hessian {double step=1e-5;} hessian;
-        struct Dynamics {int iters=100; double step=1.0; std::string folder;} dynamics;
+
+        // dynamics structure
+        struct Dynamics {
+            struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
+            int iters=100; double step=1.0; std::string folder;
+        } dynamics={};
     };
 public:
     // constructors and destructors

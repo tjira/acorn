@@ -6,8 +6,11 @@ class Orca : public Method<Orca> {
     friend class Method<Orca>;
 public:
     struct Options {Options(){};
-        // structures
-        struct Dynamics {int iters=100; double step=1.0; std::string folder;} dynamics={};
+        // dynamics structure
+        struct Dynamics {
+            struct Berendsen {bool enabled=false; double tau = 1, temp=298.15, timeout=10;} berendsen={};
+            int iters=100; double step=1.0; std::string folder;
+        } dynamics={};
 
         // variables
         std::string method; std::filesystem::path interface, folder;

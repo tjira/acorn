@@ -48,7 +48,15 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         // calculate the velocity and accceleration
         a = -res.G.array() / m.array(); v = vp + 0.5 * (ap + a) * step;
 
-        // calculate the kinetic energy and temperature
+        // calculate the kinetic energy and temperature before thermostatting
+        Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); T = 2 * Ekin / Nf;
+
+        // apply the berendsen thermostat
+        if (get()->opt.dynamics.berendsen.temp > 0 && AU2FS * step * i < get()->opt.dynamics.berendsen.timeout) {
+            v.array() *= std::sqrt(1 + (get()->opt.dynamics.berendsen.temp / T / AU2K - 1) * step / get()->opt.dynamics.berendsen.tau);
+        }
+
+        // calculate the kinetic energy and temperature after thermostatting
         Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); T = 2 * Ekin / Nf;
 
         // move the system
