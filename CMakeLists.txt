@@ -43,6 +43,7 @@ add_library(acorn
     src/modelsystem.cpp
     src/numpy.cpp
     src/orca.cpp
+    src/population.cpp
     src/printer.cpp
     src/restrictedconfigurationinteraction.cpp
     src/restrictedhartreefock.cpp

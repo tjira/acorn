@@ -55,6 +55,7 @@ Below are all the important features of Acorn divided into categories.
 ### Additional Calculations
 
 * Gradients, Hessians and Frequency Analysis
+* Mulliken Population Analysis
 
 ## Compilation
 

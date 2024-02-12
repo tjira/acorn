@@ -1,8 +1,9 @@
 # TODO List
 
 - [ ] Add BAGEL interface with excited state dynamics
-- [ ] Add Mulliken analysis
 - [ ] Add excitation specifications to FCI
+- [ ] Create a compare script that compares results with ORCA
+- [x] Add Mulliken analysis
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
@@ -11,10 +12,10 @@
 - [x] Fix the shells variable in system class that reads the basis each time the system is created
 - [x] Implement Berendsen thermostat
 - [x] Implement MP2 method
+- [x] Implement general gradients
 - [x] Implement passing of the density matrix to HF method
 - [x] Implement the analytical gradient for RHF
 - [x] Implement the unrestricted Hartree-Fock
-- [x] Implements general gradients
 - [x] Make the exact dynamic save files to the input folder
 - [x] Make the exported library independent of libint
 - [x] Make the matrix printing at the point of calculation not at the end

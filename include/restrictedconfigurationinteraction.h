@@ -15,6 +15,9 @@ public:
             struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
             int iters=100; double step=1.0; std::string folder;
         } dynamics={};
+
+        // RCI options
+        std::vector<int> excitations;
     };
 public:
     // constructors and destructors

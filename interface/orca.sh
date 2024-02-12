@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# ARGUMENTS: $1 = charge, $2 = multiplicity, $3 = basis
+# USAGE: wraporca.sh CHARGE MULT BASIS
+if [ "$#" -ne 3 ]; then
+    echo "USAGE: wraporca.sh CHARGE MULT BASIS"; exit 1
+fi
 
 # specify the input file
 cat << EOT > orca.inp

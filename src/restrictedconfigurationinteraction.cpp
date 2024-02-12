@@ -23,11 +23,12 @@ std::tuple<Result, Integrals> RestrictedConfigurationInteraction::run(const Syst
 }
 
 Result RestrictedConfigurationInteraction::run(const System& system, const Integrals& ints, Result res, bool print) const {
-    // start the timer
-    Timer::Timepoint start = Timer::Now();
+    // start the timer and define the determinant vector
+    Timer::Timepoint start = Timer::Now(); std::vector<Determinant> dets;
 
-    // generate all possible determinants
-    std::vector<Determinant> dets = Determinant(ints.S.rows(), system.nocc(), system.nocc()).full();
+    // generate the determinants
+    if (opt.excitations.size() == 0) dets = Determinant(ints.S.rows(), system.nocc(), system.nocc()).full();
+    else throw std::runtime_error("RCI EXCITATIONS NOT IMPLEMENTED YET");
 
     // print the elapsed time
     if (print) std::cout << "GENERATED " << dets.size() << " DETERMINANTS: " << std::flush;

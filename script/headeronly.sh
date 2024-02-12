@@ -16,6 +16,7 @@ cat \
     include/table.h \
     include/system.h \
     include/integral.h \
+    include/population.h \
     include/timer.h \
     include/result.h \
     include/method.h  \

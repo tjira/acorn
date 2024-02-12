@@ -81,10 +81,8 @@ Result UnrestrictedHartreeFock::run(const System& system, const Integrals& ints,
         // calculate the E and D errors
         double Eerr = std::abs(res.uhf.E - Ep), Daerr = (res.uhf.Da - Dap).norm(), Dberr = (res.uhf.Db - Dbp).norm();
 
-        std::string elapsed = Timer::Format(Timer::Elapsed(start));
-
         // print the iteration info line
-        if (print) std::printf("%4d %20.14f %.2e %.2e %.2e %s\n", i, res.uhf.E, Eerr, Daerr, Dberr, elapsed.c_str());
+        if (print) std::printf("%4d %20.14f %.2e %.2e %.2e %s\n", i, res.uhf.E, Eerr, Daerr, Dberr, Timer::Format(Timer::Elapsed(start)).c_str());
 
         // finish if covergence reached
         if (Eerr < opt.thresh && Daerr < opt.thresh && Dberr < opt.thresh) {if (print) std::cout << std::endl; break;}

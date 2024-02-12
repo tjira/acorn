@@ -2,8 +2,9 @@
 #include "restrictedconfigurationinteraction.h"
 #include "unrestrictedhartreefock.h"
 
-// model system and solver
+// model solver and populations
 #include "modelsolver.h"
+#include "population.h"
 
 // interfaces
 #include "orca.h"
@@ -55,9 +56,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iter
 
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess, folder);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian, excitations);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, folder);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, folder);
@@ -215,8 +216,11 @@ int main(int argc, char** argv) {
                 if (rhfopt.at("export").at("orben")) EigenWrite(inputpath / "EPS.mat", res.rhf.eps);
             }
 
+            // print the mulliken charges
+            if (rhfopt.at("mulliken")) Printer::Print(Population::Mulliken(system, ints, res.rhf.D), "MULLIKEN CHARGES"), std::cout << std::endl;
+
             // print the total energy
-            Printer::Print(res.Etot, "RESTRICTED HARTREE-FOCK ENERGY"), std::cout << "\n";
+            Printer::Print(res.Etot, "RESTRICTED HARTREE-FOCK ENERGY"), std::cout << std::endl;
 
             // if the RHF dynamic block is used
             if (input.at("rhf").contains("dynamics")) {Printer::Title("RESTRICTED HARTREE-FOCK DYNAMICS");

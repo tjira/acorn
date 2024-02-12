@@ -5,7 +5,7 @@ void Printer::Print(double a, const std::string& title) {
 }
 
 void Printer::Print(const Matrix<>& A, const std::string& title) {
-    std::cout << title << ":\n" << A; std::printf("\n%s NORM: %.2e\n", title.c_str(), A.norm());
+    std::cout << title << ":\n" << A; std::printf("\n%s NORM AND SUM: %.2e %.2e\n", title.c_str(), A.norm(), A.sum());
 }
 
 void Printer::Print(const Tensor<3>& A, const std::string& title) {
