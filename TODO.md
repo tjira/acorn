@@ -1,5 +1,7 @@
 # TODO List
 
+- [ ] Add BAGEL interface with excited state dynamics
+- [ ] Add Mulliken analysis
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics

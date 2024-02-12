@@ -297,7 +297,7 @@ int main(int argc, char** argv) {
                     if (rmpopt.at("export").at("coulombmo")) EigenWrite(inputpath / "JMO.mat", ints.Jmo);
                 }
 
-                // run the calculation and print the new line
+                // run the calculation
                 res = rmp.run(system, ints, res);
 
                 // print the total energy
@@ -359,15 +359,12 @@ int main(int argc, char** argv) {
             }
         }
 
-    // if the exact calculation was requested
     } else if (input.contains("model")) {
         // create the model system
         ModelSystem model(mdlopt.at("mass"), mdlopt.at("potential"), mdlopt.at("limits"), mdlopt.at("ngrid"));
 
-        // if the solving was requested
         if (input.contains("solve")) {Printer::Title("EXACT QUANTUM DYNAMICS");
-
-            // create the adianatic solver object
+            // create the adiabatic solver object
             ModelSolver msv(msaopt.get<ModelSolver::OptionsAdiabatic>());
 
             // if nonadiabatic model was specified assign to the solver the nonadiabatic version
@@ -387,6 +384,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    // finalize the integral engine and print the elapsed time
+    // print the elapsed time
     std::stringstream ess; ess << "ELAPSED TIME: " << Timer::Format(Timer::Elapsed(programtimer)); Printer::Title(ess.str(), false);
 }

@@ -4,6 +4,9 @@ int main(int argc, char** argv) {
     // get executable path for the executable to run from anywhere
     auto path = std::filesystem::weakly_canonical(argv[0]).parent_path();
 
+    // set the basis folder path to the project root
+    setenv("LIBINT_DATA_PATH", path.parent_path().parent_path().c_str(), true);
+
     // create the molecule stream
     std::ifstream mstream(path / "../molecule/water.xyz");
 

@@ -14,7 +14,7 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
 
     // fill the mass matrix
     for(size_t i = 0; i < system.getAtoms().size(); i++) {
-        m.row(i) = [](double m) {return Vector<>::Constant(3, m);}(an2m.at(system.getAtoms().at(i).atomic_number) * AMU);
+        m.row(i) = [](double m) {return Vector<>::Constant(3, m);}(an2m.at(system.getAtoms().at(i).atomic_number) * AMU2AU);
     }
 
     // get the degrees of freedom and write the initial geometry
@@ -82,9 +82,12 @@ Vector<> Method<M>::frequency(const System& system, const Matrix<>& H) {
         MM(i, i) = std::sqrt(1 / an2m.at(system.getAtoms().at(i / 3).atomic_number));
     }
 
+    // frequency conversion factor
+    constexpr double convert = 5140.486777894163;
+
     // calculate the frequencies in atomic units, convert them, exract them and return
     Eigen::EigenSolver<Matrix<>> solver(MM * H * MM); auto eval = solver.eigenvalues();
-    Vector<> freqs = (eval.cwiseSqrt() - eval.cwiseSqrt().imag()).real() * CFREQ;
+    Vector<> freqs = (eval.cwiseSqrt() - eval.cwiseSqrt().imag()).real() * convert;
     std::sort(freqs.begin(), freqs.end(), std::greater<>()); return freqs;
 }
 
