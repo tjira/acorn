@@ -69,9 +69,35 @@ if __name__ == "__main__":
 
     # tile the coefficient matrix to accound for different spins
     Cms = np.block([[C, np.zeros_like(C)], [np.zeros_like(C), C]])
+    Cms[:, [1, 2]] = Cms[:, [2, 1]]
 
     # transform the coulomb integral tensor to the MS basis
     Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)
+
+    # generate all possible determinants
+    dets = [np.concatenate((2 * np.array(alpha), 2 * np.array(beta) + 1)) for alpha, beta in it.product(it.combinations(range(nbf), nocc), it.combinations(range(nbf), nocc))]
+
+    # define the CI Hamiltonian
+    Hci = np.zeros([len(dets), len(dets)])
+
+    for i in range(Hci.shape[0]):
+        for j in range(Hci.shape[1]):
+            unique = [k for k in dets[i] if k not in dets[j]] + [k for k in dets[j] if k not in dets[i]]
+            common = [dets[i][k] for k in range(len(dets[i])) if dets[i][k] == dets[j][k]]
+            if (dets[i] - dets[j] != 0).sum() == 0:
+                for k in dets[i]: Hci[i, j] += Hms[k, k]
+                for k in dets[i]:
+                    for l in dets[j]:
+                        Hci[i, j] += 0.5 * (Jms[k, k, l, l] - Jms[k, l, l, k])
+            elif (dets[i] - dets[j] != 0).sum() == 1:
+                Hci[i, j] += Hms[unique[0], unique[1]]
+                for k in common:
+                    Hci[i, j] += Jms[unique[0], unique[1], k, k] - Jms[unique[0], k, k, unique[1]]
+            elif (dets[i] - dets[j] != 0).sum() == 2:
+                Hci[i, j] += Jms[unique[0], unique[2], unique[1], unique[3]] - Jms[unique[0], unique[3], unique[1], unique[2]]
+
+    # solve the eigensystem and assign energy
+    eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 
     # NUCLEAR REPULSION AND OTHER RESULTS ==============================================================================================================================================================
 
@@ -80,5 +106,6 @@ if __name__ == "__main__":
         VNN += 0.5 * atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :]) / A2BOHR if i != j else 0
 
     # print the results
-    print("HF ENERGY:", E_HF + VNN)
+    print("RHF ENERGY:", E_HF + VNN)
     print("MP2 ENERGY:", E_HF + E_MP2 + VNN)
+    print("FCI ENERGY:", E_HF + E_FCI + VNN)
