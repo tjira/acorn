@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import numpy as np
+import itertools as it, numpy as np
 
 A2BOHR = 1.8897259886
 
@@ -9,30 +9,30 @@ ATOM = {
     "O": 8,
 }
 
-def ints():
-    T, V, S = np.loadtxt("T.mat"), np.loadtxt("V.mat"), np.loadtxt("S.mat")
-    J = np.loadtxt("J.mat").reshape(4 * [S.shape[1]]); return T, V, S, J
-
-def mol(filename="molecule.xyz"):
-    with open(filename) as M:
-        lines = np.array([line.split() for line in M.readlines()[2:]])
-    return [ATOM[S] for S in lines[:, 0]], lines[:, 1:].astype(float)
-
 if __name__ == "__main__":
-    # load the integrals and define the convergence threshold
-    [T, V, S, J], [atoms, coords], thresh = ints(), mol(), 1e-12
+    # define some variables
+    molfile, thresh = "molecule.xyz", 1e-12
 
-    # define energies and number of occupied orbitals
-    E_HF, E_MP2, E_HF_P, VNN, nocc = 0, 0, 1, 0, sum(atoms) // 2
+    # get the atomic numbers and coordinates of all atoms
+    atoms = np.array([ATOM[line.split()[0]] for line in open(molfile).readlines()[2:]], dtype=int)
+    coords = np.array([line.split()[1:] for line in open(molfile).readlines()[2:]], dtype=float)
+
+    # load one-electron integrals
+    S, T, V = np.loadtxt("S.mat"), np.loadtxt("T.mat"), np.loadtxt("V.mat")
+
+    # load two-electron integrals
+    J = np.loadtxt("J.mat").reshape(4 * [S.shape[1]])
+
+    # define energies, number of occupied orbitals and nbf
+    E_HF, E_MP2, E_HF_P, VNN, nocc, nbf = 0, 0, 1, 0, sum(atoms) // 2, S.shape[0]
 
     # calculate nuclear-nuclear repulsion
-    for i in range(len(atoms)):
-        for j in range(i):
-            VNN += atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :]) / A2BOHR
+    for i, j in it.product(range(len(atoms)), range(len(atoms))):
+        VNN += 0.5 * atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :]) / A2BOHR if i != j else 0
 
     # define some matrices and tensors
-    H, D = T + V, np.zeros_like(S)
-    K = J.transpose(0, 3, 2, 1)
+    H, D, C = T + V, np.zeros_like(S), np.array([])
+    K, eps = J.transpose(0, 3, 2, 1), np.array([])
 
     # calculate the X matrix which is the inverse of the square root of the overlap matrix
     SEP = np.linalg.eigh(S); X = np.linalg.inv(SEP[1] * np.sqrt(SEP[0]) @ np.linalg.inv(SEP[1]))
@@ -54,11 +54,8 @@ if __name__ == "__main__":
     Jmo = np.einsum("ip,jq,ijkl,kr,ls", C, C, J, C, C, optimize=True)
 
     # calculate the MP2 correlation
-    for i in range(nocc):
-        for j in range(nocc):
-            for a in range(nocc, len(H)):
-                for b in range(nocc, len(H)):
-                    E_MP2 += Jmo[i, a, j, b] * (2 * Jmo[i, a, j, b] - Jmo[i, b, j, a]) / (eps[i] + eps[j] - eps[a] - eps[b]);
+    for i, j, a, b in it.product(range(nocc), range(nocc), range(nocc, nbf), range(nocc, nbf)):
+        E_MP2 += Jmo[i, a, j, b] * (2 * Jmo[i, a, j, b] - Jmo[i, b, j, a]) / (eps[i] + eps[j] - eps[a] - eps[b]);
 
     # print the results
     print("HF ENERGY:", E_HF + VNN)
