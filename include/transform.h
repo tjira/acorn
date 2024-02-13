@@ -10,4 +10,7 @@ namespace Transform {
     // double electron transforms
     Tensor<> CoulombSpin(const Tensor<>& J, const Matrix<>& C);
     Tensor<> Coulomb(const Tensor<>& J, const Matrix<>& C);
+
+    // unrestricted coulomb transforms
+    Tensor<> Coulomb(const Tensor<>& J, const Matrix<>& Ca, const Matrix<>& Cb);
 }

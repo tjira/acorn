@@ -43,3 +43,22 @@ Matrix<> Numpy::Repeat(const Matrix<>& A, int count, int axis) {
     // return result
     return B;
 }
+
+Tensor<> Numpy::Kron(const Matrix<>& A, const Tensor<>& B) {
+    // define the resulting tensor
+    Tensor<> C(B.dimension(0), B.dimension(1), A.rows() * B.dimension(2), A.cols() * B.dimension(3));
+
+    // perform the Kronecker product
+    for (int i = 0; i < C.dimension(0); i++) {
+        for (int j = 0; j < C.dimension(1); j++) {
+            for (int k = 0; k < C.dimension(2); k++) {
+                for (int l = 0; l < C.dimension(3); l++) {
+                    C(i, j, k, l) = A(k / B.dimension(2), l / B.dimension(3)) * B(i, j, k % B.dimension(2), l % B.dimension(3));
+                }
+            }
+        }
+    }
+
+    // return the result
+    return C;
+}

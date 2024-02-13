@@ -15,6 +15,9 @@ struct Result {
     struct UnrestrictedHartreeFock {
         double E; Vector<> epsa, epsb; Matrix<> Ca, Cb, Da, Db, G, H;
     } uhf;
+    struct UnrestrictedMollerPlesset {
+        double Ecorr; Matrix<> G, H;
+    } ump;
     struct ModelSolver {
         std::vector<Vector<std::complex<double>>> optstates; 
         Vector<> opten; Vector<> r, k; Matrix<> U;

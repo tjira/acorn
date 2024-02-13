@@ -10,7 +10,7 @@ mkdir -p .orca
 
 # specify the input file
 cat << EOT > .orca/orca.inp
-! ${1^^} ${3^^}
+! ${1^^} ${3^^} HCORE NOFROZENCORE
 
 *xyzfile $4 $5 ../$2
 EOT
