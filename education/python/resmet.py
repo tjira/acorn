@@ -43,11 +43,8 @@ if __name__ == "__main__":
 
     # load the integrals from the Psi4 package or from the files
     if args.psi:
-        import psi4 as psi; psi.core.be_quiet() 
-        V = np.array(psi.core.MintsHelper(psi.core.Wavefunction.build(psi.geometry(open(args.molecule).read()), args.psi)).ao_potential())
-        S = np.array(psi.core.MintsHelper(psi.core.Wavefunction.build(psi.geometry(open(args.molecule).read()), args.psi)).ao_overlap())
-        T = np.array(psi.core.MintsHelper(psi.core.Wavefunction.build(psi.geometry(open(args.molecule).read()), args.psi)).ao_kinetic())
-        J = np.array(psi.core.MintsHelper(psi.core.Wavefunction.build(psi.geometry(open(args.molecule).read()), args.psi)).ao_eri())
+        import psi4; psi4.core.be_quiet(); mintegrals = psi4.core.MintsHelper(psi4.core.Wavefunction.build(psi4.geometry(open(args.molecule).read()), args.psi))
+        S, T, V, J = np.array(mintegrals.ao_overlap()), np.array(mintegrals.ao_kinetic()), np.array(mintegrals.ao_potential()), np.array(mintegrals.ao_eri())
     else: S, T, V = np.loadtxt(args.int[0]), np.loadtxt(args.int[1]), np.loadtxt(args.int[2]); J = np.loadtxt(args.int[3]).reshape(4 * [S.shape[1]])
 
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
