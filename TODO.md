@@ -2,7 +2,7 @@
 
 - [ ] Add BAGEL interface with excited state dynamics
 - [ ] Add excitation specifications to FCI
-- [ ] Create a compare script that compares results with ORCA
+- [ ] Create a compare script that compares results with ORCA or Psi4
 - [x] Add Mulliken analysis
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals

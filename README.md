@@ -43,7 +43,7 @@ Quantum Acorn, a dynamic collection of electronic structure methods, effortlessl
 
 ## Features
 
-Below are all the important features of Acorn divided into categories.
+Below are all the important features of Acorn divided into categories. If you are looking for the educational scripts, you can find them in the education folder.
 
 ### Quantum Mechanical Methods
 

@@ -6,6 +6,7 @@ trajectory.xyz
 molecule.xyz
 
 # exts
+*.clean
 *.lock
 *.dat
 *.gif

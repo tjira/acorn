@@ -5,16 +5,26 @@ import argparse as ap, itertools as it, numpy as np
 A2BOHR = 1.8897259886
 
 ATOM = {
-    "H": 1,
-    "O": 8,
-    "F": 9,
+    "H" :  1,                                                                                                                                                                 "He":  2,
+    "Li":  3, "Be":  4,                                                                                                     "B" :  5, "C" :  6, "N" :  7, "O" :  8, "F" :  9, "Ne": 10,
+    "Na": 11, "Mg": 12,                                                                                                     "Al": 13, "Si": 14, "P" : 15, "S" : 16, "Cl": 17, "Ar": 18,
+    "K" : 19, "Ca": 20, "Sc": 21, "Ti": 22, "V" : 23, "Cr": 24, "Mn": 25, "Fe": 26, "Co": 27, "Ni": 28, "Cu": 29, "Zn": 30, "Ga": 31, "Ge": 32, "As": 33, "Se": 34, "Br": 35, "Kr": 36,
+    "Rb": 37, "Sr": 38, "Y" : 39, "Zr": 40, "Nb": 41, "Mo": 42, "Tc": 43, "Ru": 44, "Rh": 45, "Pd": 46, "Ag": 47, "Cd": 48, "In": 49, "Sn": 50, "Sb": 51, "Te": 52, "I" : 53, "Xe": 54,
+    "Cs": 55, "Ba": 56, "La": 57, "Hf": 72, "Ta": 73, "W" : 74, "Re": 75, "Os": 76, "Ir": 77, "Pt": 78, "Au": 79, "Hg": 80, "Tl": 81, "Pb": 82, "Bi": 83, "Po": 84, "At": 85, "Rn": 86,
+    "Fr": 87, "Ra": 88, "Ac": 89, "Rf":104, "Db":105, "Sg":106, "Bh":107, "Hs":108, "Mt":109, "Ds":110, "Rg":111, "Cn":112, "Nh":113, "Fl":114, "Mc":115, "Lv":116, "Ts":117, "Og":118,
+
+                                  "Ce": 58, "Pr": 59, "Nd": 60, "Pm": 61, "Sm": 62, "Eu": 63, "Gd": 64, "Tb": 65, "Dy": 66, "Ho": 67, "Er": 68, "Tm": 69, "Yb": 70, "Lu": 71,
+                                  "Th": 90, "Pa": 91, "U" : 92, "Np": 93, "Pu": 94, "Am": 95, "Cm": 96, "Bk": 97, "Cf": 98, "Es": 99, "Fm":100, "Md":101, "No":102, "Lr":103,
 }
 
 if __name__ == "__main__":
     # SECTION FOR PARSING COMMAND LINE ARGUMENTS =======================================================================================================================================================
 
     # create the parser
-    parser = ap.ArgumentParser(prog="resmet.py", description="Restricted Electronic Structure Methods Educational Toolkit", add_help=False, formatter_class=lambda prog: ap.HelpFormatter(prog, max_help_position=128))
+    parser = ap.ArgumentParser(
+        prog="resmet.py", description="Restricted Electronic Structure Methods Educational Toolkit",
+        add_help=False, formatter_class=lambda prog: ap.HelpFormatter(prog, max_help_position=128)
+    )
 
     # add the arguments
     parser.add_argument("-m", "--molecule", help="Molecule file in the .xyz format. (default: %(default)s)", type=str, default="molecule.xyz")
@@ -35,7 +45,7 @@ if __name__ == "__main__":
     # print the help message if the flag is set
     if args.help: parser.print_help(); exit()
 
-    # OBTAIN THE MOLECULE ANS ATOMIC INTEGRALS =========================================================================================================================================================
+    # OBTAIN THE MOLECULE AND ATOMIC INTEGRALS =========================================================================================================================================================
 
     # get the atomic numbers and coordinates of all atoms
     atoms = np.array([ATOM[line.split()[0]] for line in open(args.molecule).readlines()[2:]], dtype=int)
@@ -77,7 +87,7 @@ if __name__ == "__main__":
         VNN += 0.5 * atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :]) / A2BOHR if i != j else 0
 
     # print the results
-    print("RHF ENERGY:", E_HF + VNN)
+    print("RHF ENERGY: {:.8f}".format(E_HF + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("scf/{}".format(args.psi))) if args.psi else "")) # type: ignore
 
     # MOLLER-PLESSET PERTRUBATION THEORY OF 2ND ORDER ==================================================================================================================================================
     if args.mp2:
@@ -90,7 +100,7 @@ if __name__ == "__main__":
             E_MP2 += Jmo[i, a, j, b] * (2 * Jmo[i, a, j, b] - Jmo[i, b, j, a]) / (eps[i] + eps[j] - eps[a] - eps[b]);
 
         # print the results
-        print("MP2 ENERGY:", E_HF + E_MP2 + VNN)
+        print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("mp2/{}".format(args.psi))) if args.psi else "")) # type: ignore
 
     # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
     if args.fci:
@@ -113,7 +123,7 @@ if __name__ == "__main__":
         # define the CI Hamiltonian
         Hci = np.zeros([len(dets), len(dets)])
 
-        # define two-electron part of the Slater-Condon rules, so is array of unique and common spinorbitals [unique, common]
+        # define the Slater-Condon rules, "so" is an array of unique and common spinorbitals [unique, common]
         slater0 = lambda so: sum([Hms[m, m] for m in so]) + sum([0.5 * (Jms[m, m, n, n] - Jms[m, n, n, m]) for m, n in it.product(so, so)])
         slater1 = lambda so: Hms[so[0], so[1]] + sum([Jms[so[0], so[1], m, m] - Jms[so[0], m, m, so[1]] for m in so[2:]])
         slater2 = lambda so: Jms[so[0], so[2], so[1], so[3]] - Jms[so[0], so[3], so[1], so[2]]
@@ -121,7 +131,7 @@ if __name__ == "__main__":
         # fill the CI Hamiltonian
         for i in range(Hci.shape[0]):
             for j in range(Hci.shape[1]):
-                # copy the determinants so they are not modified
+                # copy the determinant and define sign
                 aligned, sign = dets[i].copy(), 1
 
                 # align the first determinant to the second and calculate the sign
@@ -145,4 +155,4 @@ if __name__ == "__main__":
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 
         # print the results
-        print("FCI ENERGY:", E_HF + E_FCI + VNN)
+        print("FCI ENERGY: {:.8f}".format(E_HF + E_FCI + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("fci/{}".format(args.psi))) if args.psi else "")) # type: ignore
