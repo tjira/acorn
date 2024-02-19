@@ -16,6 +16,7 @@ molecule.xyz
 
 # folders
 .cache/
+_site/
 build/
 temp/
 bin/

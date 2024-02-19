@@ -1,5 +1,5 @@
 ---
-title: Møller–Plesset PT
+title: Møller–Plesset Pertrubation Theory
 parent: Electronic Structure Methods
 layout: default
 nav_order: 2
