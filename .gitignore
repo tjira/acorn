@@ -4,6 +4,8 @@
 # files
 trajectory.xyz
 molecule.xyz
+bagel.json
+orca.inp
 
 # exts
 *.clean
@@ -22,4 +24,5 @@ temp/
 bin/
 
 # interface folders
+.bagel.[0-9]*
 .orca.[0-9]*

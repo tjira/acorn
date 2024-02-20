@@ -7,6 +7,7 @@
 #include "population.h"
 
 // interfaces
+#include "bagel.h"
 #include "orca.h"
 
 // include specific
@@ -44,6 +45,10 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Dynamics, i
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Hessian, step);
 
+// option structures loaders for BAGEL
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options::Dynamics::Berendsen, tau, temp, timeout);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options::Dynamics, iters, step, folder, berendsen);
+
 // option structures loaders for ORCA
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics::Berendsen, tau, temp, timeout);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, folder, berendsen);
@@ -61,6 +66,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options, dynamics, g
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, folder);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options, dynamics, interface, folder);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, folder);
 
 int main(int argc, char** argv) {
@@ -105,6 +111,7 @@ int main(int argc, char** argv) {
     auto msaopt = nlohmann::json::parse(msaoptstr);
     auto msnopt = nlohmann::json::parse(msnoptstr);
     auto orcopt = nlohmann::json::parse(orcoptstr);
+    auto bglopt = nlohmann::json::parse(bgloptstr);
     auto rciopt = nlohmann::json::parse(rcioptstr);
     auto rhfopt = nlohmann::json::parse(rhfoptstr);
     auto rmpopt = nlohmann::json::parse(rmpoptstr);
@@ -113,6 +120,7 @@ int main(int argc, char** argv) {
     // assign the dynamics output folder to the method options
     msaopt["dynamics"]["folder"] = inputpath;
     msnopt["dynamics"]["folder"] = inputpath;
+    bglopt["dynamics"]["folder"] = inputpath;
     orcopt["dynamics"]["folder"] = inputpath;
     rciopt["dynamics"]["folder"] = inputpath;
     rhfopt["dynamics"]["folder"] = inputpath;
@@ -121,6 +129,7 @@ int main(int argc, char** argv) {
 
     // assign the output paths to methods
     orcopt["folder"] = inputpath;
+    bglopt["folder"] = inputpath;
     msaopt["folder"] = inputpath;
     msnopt["folder"] = inputpath;
 
@@ -128,6 +137,7 @@ int main(int argc, char** argv) {
     if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
     if (input.contains("molecule")) molopt.merge_patch(input.at("molecule"));
     if (input.contains("model")) mdlopt.merge_patch(input.at("model"));
+    if (input.contains("bagel")) bglopt.merge_patch(input.at("bagel"));
     if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
     if (input.contains("rci")) rciopt.merge_patch(input.at("rci"));
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
@@ -144,6 +154,7 @@ int main(int argc, char** argv) {
     if (molopt.at("multiplicity") != 1 && input.contains("rhf")) throw std::runtime_error("RESTRICTED HARTREE-FOCK CAN ONLY BE PERFORMED FOR SINGLET STATES");
 
     // make all the interface paths absolute
+    bglopt.at("interface") = inputpath / bglopt.at("interface");
     orcopt.at("interface") = inputpath / orcopt.at("interface");
 
     if (input.contains("molecule")) {
@@ -194,7 +205,12 @@ int main(int argc, char** argv) {
         }
 
         // choose what calculation to run
-        if (input.contains("orca")) {Printer::Title("ORCA DYNAMICS");
+        if (input.contains("bagel")) {Printer::Title("BAGEL DYNAMICS");
+            // if dynamics block is specified, run it else throw an error
+            if (input.at("bagel").contains("dynamics")) {Bagel(bglopt).dynamics(system, ints, res); std::cout << std::endl;}
+            else throw std::runtime_error("YOU HAVE TO DO DYNAMICS WITH BAGEL");
+
+        } else if (input.contains("orca")) {Printer::Title("ORCA DYNAMICS");
             // if dynamics block is specified, run it else throw an error
             if (input.at("orca").contains("dynamics")) {Orca(orcopt).dynamics(system, ints, res); std::cout << std::endl;}
             else throw std::runtime_error("YOU HAVE TO DO DYNAMICS WITH ORCA");

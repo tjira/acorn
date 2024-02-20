@@ -2,6 +2,7 @@
 #include "unrestrictedhartreefock.h"
 
 // include interfaces
+#include "bagel.h"
 #include "orca.h"
 
 template <class M>
@@ -24,7 +25,7 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
     double step = get()->opt.dynamics.step; auto start = Timer::Now();
 
     // calculate the initial energy with gradient
-    if constexpr (std::is_same_v<M, Orca>) {
+    if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, Orca>) {
         res = gradient(system, ints, res, false);
     } else if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
         std::tie(res, ints) = run(system, res, false);
@@ -66,7 +67,7 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         system.save(get()->opt.dynamics.folder / std::filesystem::path("trajectory.xyz"), std::ios::app);
 
         // calculate the next energy with gradient
-        if constexpr (std::is_same_v<M, Orca>) {
+        if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, Orca>) {
             res = gradient(system, ints, res, false);
         } else if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
             std::tie(res, ints) = run(system, res, false);
@@ -105,7 +106,7 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
     res.G = Matrix<>(system.getAtoms().size(), 3);
 
     // define the step
-    double step = 0; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.gradient.step;
+    double step = 0; if constexpr (!std::is_same_v<M, Bagel> && ! std::is_same_v<M, Orca>) step = get()->opt.gradient.step;
 
     // print the header
     if (print) std::printf("  ELEM      dE [Eh/Bohr]        TIME\n");
@@ -152,7 +153,7 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
     res.H = Matrix<>(3 * system.getAtoms().size(), 3 * system.getAtoms().size());
 
     // define the step
-    double step = 0; if constexpr (!std::is_same_v<M, Orca>) step = get()->opt.hessian.step;
+    double step = 0; if constexpr (!std::is_same_v<M, Bagel> && ! std::is_same_v<M, Orca>) step = get()->opt.hessian.step;
 
     // print the header
     if (print) std::printf("  ELEM      dE [Eh/Bohr]        TIME\n");
@@ -207,4 +208,5 @@ template class Method<RestrictedHartreeFock>;
 template class Method<UnrestrictedHartreeFock>;
 
 // interface definitions
+template class Method<Bagel>;
 template class Method<Orca>;

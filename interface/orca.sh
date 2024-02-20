@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# USAGE: wraporca.sh CHARGE MULT BASIS
+# USAGE: orca.sh CHARGE MULT BASIS
 if [ "$#" -ne 3 ]; then
-    echo "USAGE: wraporca.sh CHARGE MULT BASIS"; exit 1
+    echo "USAGE: orca.sh CHARGE MULT BASIS"; exit 1
 fi
 
 # specify the input file

@@ -46,11 +46,6 @@ inline std::string rhfoptstr = R"({
     "print" : {"coef" : false, "density" : false, "orben" : false, "hcore" : false}
 })";
 
-inline std::string orcoptstr = R"({
-    "interface" : "orca.sh",
-    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
-})";
-
 inline std::string uhfoptstr = R"({
     "maxiter" : 1000, "thresh" : 1e-12,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
@@ -63,4 +58,14 @@ inline std::string umpoptstr = R"({
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coulombmo" : false},
     "print" : {"coulombmo" : false}
+})";
+
+inline std::string bgloptstr = R"({
+    "interface" : "orca.sh",
+    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
+})";
+
+inline std::string orcoptstr = R"({
+    "interface" : "orca.sh",
+    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";

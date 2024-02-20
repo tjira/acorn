@@ -5,7 +5,7 @@ Result Orca::gradient(const System& system, const Integrals&, Result res, bool) 
     std::filesystem::path orcadir = opt.folder / (".orca." + std::to_string(Timer::Now().time_since_epoch().count())); res.G = Matrix<>(system.getAtoms().size(), 3);
 
     // define the execution command and create the execution directory
-    std::stringstream cmd; cmd << "./orca.sh " << system.getCharge() << " " << system.getMulti() << " " << system.getBasis(), std::filesystem::create_directory(orcadir);
+    std::stringstream cmd; cmd << "./orca.sh " << system.getCharge() << " " << system.getMulti() << " " << system.getBasis() << " > /dev/null 2>&1", std::filesystem::create_directory(orcadir);
 
     // save the system and copy the interface
     system.save(orcadir / "molecule.xyz"), std::filesystem::copy_file(opt.interface, orcadir / "orca.sh", std::filesystem::copy_options::overwrite_existing);
