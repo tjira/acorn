@@ -16,6 +16,7 @@ if __name__ == "__main__":
     )
 
     # add the arguments
+    parser.add_argument("-g", "--guess", help="Wavefunction guess. (default: %(default)s)", type=str, default="exp(-(x-0.5)**2)")
     parser.add_argument("-h", "--help", help="Print this help message.", action="store_true")
     parser.add_argument("-i", "--iters", help="Maximum number of iterations. (default: %(default)s)", type=int, default=1000)
     parser.add_argument("-n", "--nstate", help="Number of states to consider. (default: %(default)s)", type=int, default=3)
@@ -23,8 +24,10 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--range", help="Range for the calculated wavefunction. (default: %(default)s)", nargs=2, type=float, default=[-16, 16])
     parser.add_argument("-s", "--tstep", help="Time step of the propagation. (default: %(default)s)", type=float, default=0.1)
     parser.add_argument("-t", "--threshold", help="Convergence threshold for the wavefunction. (default: %(default)s)", type=float, default=1e-12)
+    parser.add_argument("-v", "--potential", help="Model potential. (default: %(default)s)", type=str, default="0.5*x**2")
 
     # add the flags
+    parser.add_argument("--optimize", help="Enable initial optimization for real time propagation.", action="store_true")
     parser.add_argument("--real", help="Perform the real time propagation.", action="store_true")
 
     # parse the arguments
@@ -42,7 +45,7 @@ if __name__ == "__main__":
     x, k = np.linspace(args.range[0], args.range[1], args.points), 2 * np.pi * np.fft.fftfreq(args.points, dx)
 
     # define initial wavefunction and potential
-    psi0, V = np.exp(-(x - 0.5)**2), 0.5 * x**2
+    psi0, V = eval(args.guess.replace("exp", "np.exp")), eval(args.potential.replace("exp", "np.exp"))
 
     # define R and K operators for real and imaginary time propagation
     Rr, Kr = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * k**2 * args.tstep)
@@ -56,7 +59,10 @@ if __name__ == "__main__":
         psi = [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dx)]
 
         # loop over imaginary and real time
-        for R, K in zip([Ri, Rr], [Ki, Kr]):
+        for R, K in list(zip([Ri, Rr], [Ki, Kr])):
+            # break if imaginary time propagation is not required
+            if args.real and not args.optimize and np.array_equal(R, Ri) and np.array_equal(K, Ki): continue
+
             # break if real time propagation is not required
             if not args.real and np.array_equal(R, Rr) and np.array_equal(K, Kr): break
 
