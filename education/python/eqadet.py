@@ -44,6 +44,9 @@ if __name__ == "__main__":
     # define x and k space
     x, k = np.linspace(args.range[0], args.range[1], args.points), 2 * np.pi * np.fft.fftfreq(args.points, dx)
 
+    # define the time axis
+    t = np.linspace(0, args.iters * args.tstep, args.iters + 1)
+
     # define initial wavefunction and potential
     psi0, V = eval(args.guess.replace("exp", "np.exp")), eval(args.potential.replace("exp", "np.exp"))
 
@@ -93,7 +96,7 @@ if __name__ == "__main__":
     D = [[energy(psi) + np.abs(psi)**2 for psi in state] for state in states]
 
     # create the figure and definte tight layout
-    [fig, ax] = plt.subplots(); plt.tight_layout()
+    [fig, ax] = plt.subplots(1, 2, figsize=(12, 5)); plt.tight_layout()
 
     # define minimum and maximum x values for plotting
     xmin = np.min([np.min([np.min(x[np.abs(psi)**2 > 1e-8]) for psi in Si]) for Si in states])
@@ -108,10 +111,10 @@ if __name__ == "__main__":
     yminimag = min([min([energy(psi) + np.imag(psi).min() for psi in state]) for state in states])
 
     # set limits of the plot
-    ax.set_xlim(xmin, xmax); ax.set_ylim(np.block([V, yminreal, yminimag]).min(), max([ymaxreal, ymaximag]))
+    ax[0].set_xlim(xmin, xmax); ax[0].set_ylim(np.block([V, yminreal, yminimag]).min(), max([ymaxreal, ymaximag]))
 
     # plot the potential and initial wavefunctions
-    ax.plot(x, V); plots = [[ax.plot(x, np.real(state[0]))[0], ax.plot(x, np.imag(state[0]))[0]] for state in states]
+    ax[0].plot(x, V); plots = [[ax[0].plot(x, np.real(state[0]))[0], ax[0].plot(x, np.imag(state[0]))[0]] for state in states]
 
     # animation update function
     def update(j):
@@ -119,4 +122,13 @@ if __name__ == "__main__":
         for i in range(len(plots)): plots[i][1].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.imag(states[i][j if j < len(states[i]) else -1]))
 
     # animate the wavefunction
-    ani = anm.FuncAnimation(fig, update, frames=np.max([len(state) for state in states]), interval=30); plt.show(); plt.close("all") # type: ignore
+    ani = anm.FuncAnimation(fig, update, frames=np.max([len(state) for state in states]), interval=30) # type: ignore
+
+    # calculate the autocorrelation function of a specified state
+    G = np.array([np.sum(np.conj(states[0][0]) * psi) * dx for psi in states[0]])
+
+    # calculate and plot the spectrum
+    ax[1].plot(np.fft.fftfreq(len(t), args.tstep), np.abs(np.fft.fftshift(np.fft.fft(G))))
+
+    # shot the plots
+    plt.show(); plt.close("all")
