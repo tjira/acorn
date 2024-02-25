@@ -38,8 +38,8 @@ if __name__ == "__main__":
 
     # VARIABLE INITIALIZATION ==========================================================================================================================================================================
 
-    # define the discretization step and state array
-    dx, states = (args.range[1] - args.range[0]) / (args.points - 1), list()
+    # define the discretization step, state array and iteration break flag
+    dx, states, nobreak = (args.range[1] - args.range[0]) / (args.points - 1), list(), False
 
     # define x and k space
     x, k = np.linspace(args.range[0], args.range[1], args.points), 2 * np.pi * np.fft.fftfreq(args.points, dx)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
             if not args.real and np.array_equal(R, Rr) and np.array_equal(K, Kr): break
 
             # reset the wavefunction guess for real time propagation
-            if np.array_equal(R, Rr) and np.array_equal(K, Kr): psi = [psi[-1]]
+            if np.array_equal(R, Rr) and np.array_equal(K, Kr): psi, nobreak = [psi[-1]], True
             
             # propagate the wavefunction
             for _ in range(args.iters):
@@ -85,10 +85,15 @@ if __name__ == "__main__":
                 psi[-1] /= np.sqrt(np.sum(np.abs(psi[-1])**2) * dx)
 
                 # break if wavefunction has converged
-                if np.sum(np.abs(psi[-1] - psi[-2])**2) < args.threshold or np.abs(energy(psi[-1]) - energy(psi[-2])) < args.threshold: break
+                if np.sum(np.abs(psi[-1] - psi[-2])**2) < args.threshold or np.abs(energy(psi[-1]) - energy(psi[-2])) < args.threshold and not nobreak: break
 
         # append wavefunction to list of states and print energy
         states.append(psi); print("E_{}:".format(i), energy(psi[-1]))
+
+    # calculate the autocorrelation function of a ground state
+    G = np.array([np.sum(np.conj(states[0][0]) * psi) * dx for psi in states[0]])
+    F = np.fft.fftshift(np.fft.fft(G))
+    f = np.fft.fftshift(np.fft.fftfreq(len(t), args.tstep))
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
@@ -124,11 +129,8 @@ if __name__ == "__main__":
     # animate the wavefunction
     ani = anm.FuncAnimation(fig, update, frames=np.max([len(state) for state in states]), interval=30) # type: ignore
 
-    # calculate the autocorrelation function of a specified state
-    G = np.array([np.sum(np.conj(states[0][0]) * psi) * dx for psi in states[0]])
-
-    # calculate and plot the spectrum
-    ax[1].plot(np.fft.fftfreq(len(t), args.tstep), np.abs(np.fft.fftshift(np.fft.fft(G))))
+    # plot the spectrum
+    ax[1].plot(f, np.abs(F))
 
     # shot the plots
     plt.show(); plt.close("all")
