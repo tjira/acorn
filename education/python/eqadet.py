@@ -44,8 +44,8 @@ if __name__ == "__main__":
     # define x and k space
     x, k = np.linspace(args.range[0], args.range[1], args.points), 2 * np.pi * np.fft.fftfreq(args.points, dx)
 
-    # define the time axis
-    t = np.linspace(0, args.iters * args.tstep, args.iters + 1)
+    # define the time and frequency axis
+    t, f = np.linspace(0, args.iters * args.tstep, args.iters + 1), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(args.iters + 1, args.tstep))
 
     # define initial wavefunction and potential
     psi0, V = eval(args.guess.replace("exp", "np.exp")), eval(args.potential.replace("exp", "np.exp"))
@@ -90,10 +90,8 @@ if __name__ == "__main__":
         # append wavefunction to list of states and print energy
         states.append(psi); print("E_{}:".format(i), energy(psi[-1]))
 
-    # calculate the autocorrelation function of a ground state
-    G = np.array([np.sum(np.conj(states[0][0]) * psi) * dx for psi in states[0]])
-    F = np.fft.fftshift(np.fft.fft(G))
-    f = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(t), args.tstep))
+    # calculate the autocorrelation function of a ground state and it's Fourier transform
+    if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dx for psi in states[0]]); F = np.fft.fftshift(np.fft.fft(G))
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
@@ -130,7 +128,7 @@ if __name__ == "__main__":
     ani = anm.FuncAnimation(fig, update, frames=np.max([len(state) for state in states]), interval=30) # type: ignore
 
     # plot the spectrum
-    ax[1].plot(f, np.abs(F))
+    if args.real: ax[1].plot(f, np.abs(F)) # type: ignore
 
     # shot the plots
     plt.show(); plt.close("all")
