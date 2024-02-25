@@ -93,7 +93,7 @@ if __name__ == "__main__":
     # calculate the autocorrelation function of a ground state
     G = np.array([np.sum(np.conj(states[0][0]) * psi) * dx for psi in states[0]])
     F = np.fft.fftshift(np.fft.fft(G))
-    f = np.fft.fftshift(np.fft.fftfreq(len(t), args.tstep))
+    f = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(t), args.tstep))
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
