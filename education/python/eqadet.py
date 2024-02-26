@@ -2,7 +2,7 @@
 
 import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np
 
-def energy(wfn):
+def energy(wfn, V):
     Ek = 0.5 * np.conj(wfn) * np.fft.ifft(k**2 * np.fft.fft(wfn))
     Er = np.conj(wfn) * V * wfn; return np.sum(Ek + Er).real * dx
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--range", help="Range for the calculated wavefunction. (default: %(default)s)", nargs=2, type=float, default=[-16, 16])
     parser.add_argument("-s", "--tstep", help="Time step of the propagation. (default: %(default)s)", type=float, default=0.1)
     parser.add_argument("-t", "--threshold", help="Convergence threshold for the wavefunction. (default: %(default)s)", type=float, default=1e-12)
-    parser.add_argument("-v", "--potential", help="Model potential. (default: %(default)s)", type=str, default="0.5*x**2")
+    parser.add_argument("-v", "--potential", help="Model potential. (default: %(default)s)", nargs="+", type=str, default=["0.5*x**2"])
 
     # add the flags
     parser.add_argument("--optimize", help="Enable initial optimization for real time propagation.", action="store_true")
@@ -48,84 +48,93 @@ if __name__ == "__main__":
     t, f = np.linspace(0, args.iters * args.tstep, args.iters + 1), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(args.iters + 1, args.tstep))
 
     # define initial wavefunction and potential
-    psi0, V = eval(args.guess.replace("exp", "np.exp")), eval(args.potential.replace("exp", "np.exp"))
-
-    # define R and K operators for real and imaginary time propagation
-    Rr, Kr = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * k**2 * args.tstep)
-    Ri, Ki = np.exp(-0.5 * V * args.tstep), np.exp(-0.5 * k**2 * args.tstep)
+    psi0, V = eval(args.guess.replace("exp", "np.exp")), [eval(V.replace("exp", "np.exp")) for V in args.potential]
 
     # WAVEFUNCTION PROPAGATION =========================================================================================================================================================================
 
-    # propagate each state
-    for i in range(args.nstate):
-        # define initial wavefunction
-        psi = [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dx)]
+    # loop through potentials
+    for U in V:
+        # define R and K operators for real and imaginary time propagation
+        Rr, Kr = np.exp(-0.5j * U * args.tstep), np.exp(-0.5j * k**2 * args.tstep)
+        Ri, Ki = np.exp(-0.5 * U * args.tstep), np.exp(-0.5 * k**2 * args.tstep)
 
-        # loop over imaginary and real time
-        for R, K in list(zip([Ri, Rr], [Ki, Kr])):
-            # break if imaginary time propagation is not required
-            if args.real and not args.optimize and np.array_equal(R, Ri) and np.array_equal(K, Ki): continue
+        # propagate each state
+        for i in range(args.nstate):
+            # define initial wavefunction
+            psi = [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dx)]
 
-            # break if real time propagation is not required
-            if not args.real and np.array_equal(R, Rr) and np.array_equal(K, Kr): break
+            # loop over imaginary and real time
+            for R, K in list(zip([Ri, Rr], [Ki, Kr])):
+                # break if imaginary time propagation is not required
+                if args.real and not args.optimize and np.array_equal(R, Ri) and np.array_equal(K, Ki): continue
 
-            # reset the wavefunction guess for real time propagation
-            if np.array_equal(R, Rr) and np.array_equal(K, Kr): psi, nobreak = [psi[-1]], True
-            
-            # propagate the wavefunction
-            for _ in range(args.iters):
-                # apply R and K operators and append to wavefunction list
-                psi.append(R * np.fft.ifft(K * np.fft.fft(R * psi[-1])));
+                # break if real time propagation is not required
+                if not args.real and np.array_equal(R, Rr) and np.array_equal(K, Kr): break
 
-                # apply Gram-Schmidt orthogonalization
-                for j in (j for j in range(i)):
-                    psi[-1] -= np.sum(np.conj(states[j][-1]) * psi[-1]) * states[j][-1] * dx
+                # reset the wavefunction guess for real time propagation
+                if np.array_equal(R, Rr) and np.array_equal(K, Kr): psi, nobreak = [psi[-1]], True
+                
+                # propagate the wavefunction
+                for _ in range(args.iters):
+                    # apply R and K operators and append to wavefunction list
+                    psi.append(R * np.fft.ifft(K * np.fft.fft(R * psi[-1])));
 
-                # normalize wavefunction
-                psi[-1] /= np.sqrt(np.sum(np.abs(psi[-1])**2) * dx)
+                    # apply Gram-Schmidt orthogonalization
+                    for j in (j for j in range(i)):
+                        psi[-1] -= np.sum(np.conj(states[len(states) // args.nstate * args.nstate + j][0][-1]) * psi[-1]) * states[len(states) // args.nstate * args.nstate + j][0][-1] * dx
 
-                # break if wavefunction has converged
-                if np.sum(np.abs(psi[-1] - psi[-2])**2) < args.threshold or np.abs(energy(psi[-1]) - energy(psi[-2])) < args.threshold and not nobreak: break
+                    # normalize wavefunction
+                    psi[-1] /= np.sqrt(np.sum(np.abs(psi[-1])**2) * dx)
 
-        # append wavefunction to list of states and print energy
-        states.append(psi); print("E_{}:".format(i), energy(psi[-1]))
+                    # break if wavefunction has converged
+                    if np.sum(np.abs(psi[-1] - psi[-2])**2) < args.threshold or np.abs(energy(psi[-1], U) - energy(psi[-2], U)) < args.threshold and not nobreak: break
+
+            # append wavefunction to list of states and print energy
+            states.append((psi, U)); print("E_{}:".format(i), energy(psi[-1], U))
 
     # calculate the autocorrelation function of a ground state and it's Fourier transform
-    if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dx for psi in states[0]]); F = np.fft.fftshift(np.fft.fft(G))
+    if args.real: G = np.array([np.sum((states[0][0][0]) * np.conj(psi)) * dx for psi in states[0][0]]); F = np.fft.fftshift(np.fft.fft(G))
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
-    # define probability density
-    D = [[energy(psi) + np.abs(psi)**2 for psi in state] for state in states]
+    # create the figure and define tight layout
+    [fig, ax] = plt.subplots(1, 2 if args.real else 1, figsize=(12 if args.real else 6, 5)); ax = ax if args.real else [ax]; plt.tight_layout()
 
-    # create the figure and definte tight layout
-    [fig, ax] = plt.subplots(1, 2, figsize=(12, 5)); plt.tight_layout()
+    # set the plot title
+    fig.canvas.manager.set_window_title("Exact Quantum Adiabatic Dynamics Plotter") # type: ignore
+
+    # define probability density
+    D = [[energy(psi, U) + np.abs(psi)**2 for psi in state] for state, U in states]
 
     # define minimum and maximum x values for plotting
-    xmin = np.min([np.min([np.min(x[np.abs(psi)**2 > 1e-8]) for psi in Si]) for Si in states])
-    xmax = np.max([np.max([np.max(x[np.abs(psi)**2 > 1e-8]) for psi in Si]) for Si in states])
+    xmin = np.min([np.min([np.min(x[np.abs(psi)**2 > 1e-8]) for psi in Si]) for Si, _ in states])
+    xmax = np.max([np.max([np.max(x[np.abs(psi)**2 > 1e-8]) for psi in Si]) for Si, _ in states])
 
     # define maximum y values for plotting
-    ymaxreal = max([max([energy(psi) + np.real(psi).max() for psi in state]) for state in states])
-    ymaximag = max([max([energy(psi) + np.imag(psi).max() for psi in state]) for state in states])
+    ymaxreal = max([max([energy(psi, U) + np.real(psi).max() for psi in state]) for state, U in states])
+    ymaximag = max([max([energy(psi, U) + np.imag(psi).max() for psi in state]) for state, U in states])
+
+    # for optimization noone needs to see the absolutely wrong energy of the first guess
+    ymaxreal = ymaxreal if args.real else max([max([energy(psi, U) + np.real(psi).max() for psi in state[-1:]]) for state, U in states])
+    ymaximag = ymaxreal if args.real else max([max([energy(psi, U) + np.imag(psi).max() for psi in state[-1:]]) for state, U in states])
 
     # define the minimum y values for plotting
-    yminreal = min([min([energy(psi) + np.real(psi).min() for psi in state]) for state in states])
-    yminimag = min([min([energy(psi) + np.imag(psi).min() for psi in state]) for state in states])
+    yminreal = min([min([energy(psi, U) + np.real(psi).min() for psi in state]) for state, U in states])
+    yminimag = min([min([energy(psi, U) + np.imag(psi).min() for psi in state]) for state, U in states])
 
     # set limits of the plot
-    ax[0].set_xlim(xmin, xmax); ax[0].set_ylim(np.block([V, yminreal, yminimag]).min(), max([ymaxreal, ymaximag]))
+    ax[0].set_xlim(xmin, xmax); ax[0].set_ylim(np.block([V[0], yminreal, yminimag]).min(), max([ymaxreal, ymaximag]))
 
     # plot the potential and initial wavefunctions
-    ax[0].plot(x, V); plots = [[ax[0].plot(x, np.real(state[0]))[0], ax[0].plot(x, np.imag(state[0]))[0]] for state in states]
+    [ax[0].plot(x, U) for U in V]; plots = [[ax[0].plot(x, np.real(state[0]))[0], ax[0].plot(x, np.imag(state[0]))[0]] for state, _ in states]
 
     # animation update function
     def update(j):
-        for i in range(len(plots)): plots[i][0].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.real(states[i][j if j < len(states[i]) else -1]))
-        for i in range(len(plots)): plots[i][1].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.imag(states[i][j if j < len(states[i]) else -1]))
+        for i in range(len(plots)): plots[i][0].set_ydata(energy(states[i][0][j if j < len(states[i][0]) else -1], states[i][1]) + np.real(states[i][0][j if j < len(states[i][0]) else -1]))
+        for i in range(len(plots)): plots[i][1].set_ydata(energy(states[i][0][j if j < len(states[i][0]) else -1], states[i][1]) + np.imag(states[i][0][j if j < len(states[i][0]) else -1]))
 
     # animate the wavefunction
-    ani = anm.FuncAnimation(fig, update, frames=np.max([len(state) for state in states]), interval=30) # type: ignore
+    ani = anm.FuncAnimation(fig, update, frames=np.max([len(state) for state, _ in states]), interval=30) # type: ignore
 
     # plot the spectrum
     if args.real: ax[1].plot(f, np.abs(F)) # type: ignore

@@ -6,6 +6,7 @@
     },
     "solve" : {
         "guess" : "exp(-(x-1)^2)",
+        "spectrum" : true,
         "real" : true
     }
 }

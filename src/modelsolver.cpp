@@ -9,22 +9,26 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
 }
 
 Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
-    // define the real and Fourier space
-    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid);
+    // define the real and Fourier space along with time and frequency domains
+    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(opta.iters + 1), res.msv.f = Vector<>(opta.iters + 1);
 
     // fill the real space and calculate dx
     for (int i = 0; i < system.ngrid; i++) {
         res.msv.r(i) = system.limits.at(0).at(0) + (system.limits.at(0).at(1) - system.limits.at(0).at(0)) * i / (system.ngrid - 1);
     } double dx = res.msv.r(1) - res.msv.r(0);
 
-    // fill the Fourier space
+    // fill the time domain
+    for (int i = 0; i <= opta.iters; i++) res.msv.t(i) = i * opta.step;
+
+    // fill the frequency and momentum domain
+    res.msv.f.fill(2 * M_PI / res.msv.f.size() / opta.step); for (int i = 0; i < res.msv.f.size(); i++) res.msv.f(i) *= i - (i < res.msv.f.size() / 2 ? 0 : res.msv.f.size());
     res.msv.k.fill(2 * M_PI / res.msv.k.size() / dx); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
 
     // calculate the potential function values
     res.msv.U = Expression(system.potential.at(0).at(0)).eval(res.msv.r);
 
-    // define the initial wavefunction
-    Vector<std::complex<double>> psi = Expression(opta.guess).eval(res.msv.r);
+    // define the initial wavefunction and normalize it
+    Vector<std::complex<double>> psi = Expression(opta.guess).eval(res.msv.r); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dx);
 
     // define the vector of optimal wavefunction and energies if imaginary time is selected
     if (!opta.real) res.msv.optstates = std::vector<Vector<std::complex<double>>>(opta.nstate, psi), res.msv.opten = Vector<>(opta.nstate); 
@@ -102,6 +106,20 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
         // assign the energy and wavefunction
         if (!opta.real) res.msv.optstates.at(i) = psi, res.msv.opten(i) = E;
+
+        // block to calculate spectrum
+        if (opta.real && opta.spectrum) {
+            // initialize the autocorrelation function
+            Vector<std::complex<double>> acf(wfns.size());
+
+            // calculate the autocorrelation function
+            for (size_t j = 0; j < wfns.size(); j++) {
+                acf(j) = (wfns.at(0).array() * EigenConj(wfns.at(j)).array()).sum() * dx;
+            }
+
+            // append and perform the fourier transform
+            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(EigenFourier(acf));
+        }
 
         // save the state wavefunction
         ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", res.msv.r, wfns, energies);

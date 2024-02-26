@@ -60,7 +60,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics::Bere
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, folder, berendsen);
 
 // option loaders
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess, folder);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, thresh, optimize, guess, folder, spectrum);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian, excitations);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
@@ -408,6 +408,14 @@ int main(int argc, char** argv) {
 
             // extract and save the potential points
             Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(inputpath / "U.mat", U);
+
+            // save the spectral analysis results if available
+            if (res.msv.spectra.size()) {
+                for (size_t i = 0; i < res.msv.spectra.size(); i++) {
+                    Matrix<> F(res.msv.f.size(), 2); F << res.msv.f, res.msv.spectra.at(i).cwiseAbs(); EigenWrite(inputpath / ("spectrum" + std::to_string(i) + ".mat"), F);
+                    Matrix<> A(res.msv.f.size(), 2); A << res.msv.t, res.msv.acfs.at(i).cwiseAbs(); EigenWrite(inputpath / ("acf" + std::to_string(i) + ".mat"), A);
+                }
+            }
         }
     }
 
