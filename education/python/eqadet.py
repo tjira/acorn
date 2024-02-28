@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # VARIABLE INITIALIZATION ==========================================================================================================================================================================
 
     # define the discretization step, state array and iteration break flag
-    dx, states, nobreak = (args.range[1] - args.range[0]) / (args.points - 1), list(), False
+    dx, states = (args.range[1] - args.range[0]) / (args.points - 1), [[] for _ in range(args.nstate)]
 
     # define x and k space
     x, k = np.linspace(args.range[0], args.range[1], args.points), 2 * np.pi * np.fft.fftfreq(args.points, dx)
@@ -50,47 +50,57 @@ if __name__ == "__main__":
     # define initial wavefunction and potential
     psi0, V = eval(args.guess.replace("exp", "np.exp")), eval(args.potential[0].replace("exp", "np.exp"))
 
-    # define R and K operators for real and imaginary time propagation
-    Rr, Kr = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * k**2 * args.tstep)
-    Ri, Ki = np.exp(-0.5 * V * args.tstep), np.exp(-0.5 * k**2 * args.tstep)
-
     # WAVEFUNCTION PROPAGATION =========================================================================================================================================================================
 
-    # propagate each state
-    for i in range(args.nstate):
+    # define R and K operators for imaginary time propagation
+    R, K = np.exp(-0.5 * V * args.tstep), np.exp(-0.5 * k**2 * args.tstep)
+
+    # propagate each state in imaginary time if requested
+    for i in (i for i in range(args.nstate) if not args.real or (args.real and args.optimize)):
         # define initial wavefunction
         psi = [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dx)]
 
-        # loop over imaginary and real time
-        for R, K in list(zip([Ri, Rr], [Ki, Kr])):
-            # break if imaginary time propagation is not required
-            if args.real and not args.optimize and np.array_equal(R, Ri) and np.array_equal(K, Ki): continue
+        # propagate the wavefunction
+        for _ in range(args.iters):
+            # apply R and K operators and append to wavefunction list
+            psi.append(R * np.fft.ifft(K * np.fft.fft(R * psi[-1])));
 
-            # break if real time propagation is not required
-            if not args.real and np.array_equal(R, Rr) and np.array_equal(K, Kr): break
+            # apply Gram-Schmidt orthogonalization
+            for j in (j for j in range(i)):
+                psi[-1] -= np.sum(np.conj(states[j][-1]) * psi[-1]) * states[j][-1] * dx
 
-            # reset the wavefunction guess for real time propagation
-            if np.array_equal(R, Rr) and np.array_equal(K, Kr): psi, nobreak = [psi[-1]], True
-            
-            # propagate the wavefunction
-            for _ in range(args.iters):
-                # apply R and K operators and append to wavefunction list
-                psi.append(R * np.fft.ifft(K * np.fft.fft(R * psi[-1])));
+            # normalize wavefunction
+            psi[-1] /= np.sqrt(np.sum(np.abs(psi[-1])**2) * dx)
 
-                # apply Gram-Schmidt orthogonalization
-                for j in (j for j in range(i)):
-                    psi[-1] -= np.sum(np.conj(states[j][-1]) * psi[-1]) * states[j][-1] * dx
-
-                # normalize wavefunction
-                psi[-1] /= np.sqrt(np.sum(np.abs(psi[-1])**2) * dx)
-
-                # break if wavefunction has converged
-                if np.sum(np.abs(psi[-1] - psi[-2])**2) < args.threshold or np.abs(energy(psi[-1]) - energy(psi[-2])) < args.threshold and not nobreak: break
+            # break if wavefunction has converged
+            if np.sum(np.abs(psi[-1] - psi[-2])**2) < args.threshold or np.abs(energy(psi[-1]) - energy(psi[-2])) < args.threshold: break
 
         # append wavefunction to list of states and print energy
-        states.append(psi); print("E_{}:".format(i), energy(psi[-1]))
+        states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
 
-    # calculate the autocorrelation function of a ground state and it's Fourier transform
+    # change the potential if multiple potentials provided
+    if len(args.potential) > 1: V = eval(args.potential[1].replace("exp", "np.exp"))
+
+    # define R and K operators for real time propagation
+    R, K = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * k**2 * args.tstep)
+
+    # propagate each state in real time if requested
+    for i in (i for i in range(args.nstate) if args.real):
+        # define initial wavefunction
+        psi = [states[i][-1]] if args.optimize else [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dx)]
+
+        # propagate the wavefunction
+        for _ in range(args.iters):
+            # apply R and K operators and append to wavefunction list
+            psi.append(R * np.fft.ifft(K * np.fft.fft(R * psi[-1])));
+
+            # normalize wavefunction
+            psi[-1] /= np.sqrt(np.sum(np.abs(psi[-1])**2) * dx)
+
+        # append wavefunction to list of states and print energy
+        states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
+
+    # calculate the autocorrelation function of a ground state and it Fourier transform
     if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dx for psi in states[0]]); F = np.fft.fftshift(np.fft.fft(G))
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
