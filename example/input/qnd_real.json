@@ -4,14 +4,13 @@
             ["0.01*tanh(0.6*x)", "0.001*exp(-x^2)"],
             ["0.001*exp(-x^2)", "-0.01*tanh(0.6*x)"]
         ],
-        "limits" : [[-16, 16]],
-        "ngrid" : 256,
+        "limits" : [-16, 32],
+        "ngrid" : 1024,
         "mass" : 2048
     },
     "solve" : {
         "guess" : ["exp(-(x+10)^2)"],
         "real" : true,
-        "iters" : 200,
-        "step" : 30
+        "step" : 16
     }
 }

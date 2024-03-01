@@ -64,7 +64,7 @@ if __name__ == "__main__":
     if args.scale: U.T[1:] *= np.max(data[:, :, :, 1:]) / np.max(U.T[1:])
 
     # align the wavefunctions to the potential
-    if args.align: energy = np.repeat(U.T[1:1 + len(args.wfns)].mean(axis=1), len(energy[0])).reshape(len(args.wfns), len(energy[0])) - energy
+    if args.align: energy = np.repeat([U[0, 1], U[0, 2]], len(energy[0])).reshape(len(args.wfns), len(energy[0])) - energy
 
     # create the figure and set the title
     [fig, ax] = plt.subplots(); fig.canvas.manager.set_window_title("Wavefunction Plotter") # type: ignore

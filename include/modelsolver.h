@@ -15,7 +15,7 @@ public:
         // variables
         int nstate=3, iters=1000; double step=0.1, thresh=1e-8;
         bool real=false, optimize=false, spectrum=false;
-        std::string folder, guess;
+        std::string folder, guess; double mass=1;
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};
         // dynamics structure
@@ -25,7 +25,7 @@ public:
         } dynamics={};
 
         // variables
-        std::vector<std::string> guess; std::string folder; double step=0.1; int iters=1000;
+        std::vector<std::string> guess; std::string folder; double mass=2048, step=0.1; int iters=1000;
     };
 public:
     // constructors and destructors

@@ -14,7 +14,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
     // fill the real space and calculate dx
     for (int i = 0; i < system.ngrid; i++) {
-        res.msv.r(i) = system.limits.at(0).at(0) + (system.limits.at(0).at(1) - system.limits.at(0).at(0)) * i / (system.ngrid - 1);
+        res.msv.r(i) = system.limits.at(0) + (system.limits.at(1) - system.limits.at(0)) * i / (system.ngrid - 1);
     } double dx = res.msv.r(1) - res.msv.r(0);
 
     // fill the time domain
@@ -34,12 +34,12 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     if (!opta.real) res.msv.optstates = std::vector<Vector<std::complex<double>>>(opta.nstate, psi), res.msv.opten = Vector<>(opta.nstate); 
 
     // define the real and imaginary space operators
-    Vector<std::complex<double>> K = (-0.5 * res.msv.k.array().pow(2) * opta.step).exp();
+    Vector<std::complex<double>> K = (-0.5 * res.msv.k.array().pow(2) * opta.step / opta.mass).exp();
     Vector<std::complex<double>> R = (-0.5 * res.msv.U.array() * opta.step).exp();
 
     // real time dynamics operators
     if (opta.real) {
-        K = (-0.5 * I * res.msv.k.array().pow(2) * opta.step).exp();
+        K = (-0.5 * I * res.msv.k.array().pow(2) * opta.step / opta.mass).exp();
         R = (-0.5 * I * res.msv.U.array() * opta.step).exp();
 
         if (opta.optimize) {
@@ -133,110 +133,75 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 }
 
 Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
-    // define the real space
-    res.msv.r = Vector<>(system.ngrid), res.msv.U = Matrix<>(system.ngrid, system.potential.size());
+    // define the real and momentum space
+    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid);
 
-    // energies container, wfn vector and wfn container and transformation matrix container
-    std::vector<double> energies; Vector<std::complex<double>> psi(2 * system.ngrid);
-    std::vector<Matrix<std::complex<double>>> chis; std::vector<Matrix<>> transform;
+    // energies container, wfn vector and wfn array
+    std::vector<double> energies; Matrix<std::complex<double>> psi(system.ngrid, 2); std::vector<Matrix<std::complex<double>>> psis;
 
     // fill the real space and calculate dx
     for (int i = 0; i < system.ngrid; i++) {
-        res.msv.r(i) = system.limits.at(0).at(0) + (system.limits.at(0).at(1) - system.limits.at(0).at(0)) * i / (system.ngrid - 1);
+        res.msv.r(i) = system.limits.at(0) + (system.limits.at(1) - system.limits.at(0)) * i / (system.ngrid - 1);
     } double dx = res.msv.r(1) - res.msv.r(0);
 
-    // define the adiabatic kinetic matrix and Hamiltonian
-    Matrix<std::complex<double>> T(system.ngrid, system.ngrid), H(2 * system.ngrid, 2 * system.ngrid);
+    // fill the momentum space
+    res.msv.k.fill(2 * M_PI / res.msv.k.size() / dx); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
 
-    // fill the kinetic matrix
-    for (int i = 0; i < system.ngrid; i++) {
-        for (int j = 0; j < system.ngrid; j++) {
-            T(i, j) = 1.0 / (2 * system.m * dx * dx) * std::pow(-1, i + j);
-            T(i, j) *= i == j ? M_PI * M_PI / 3 : 2.0 / (i - j) / (i - j);
-        }
+    // fill in the initial wavefunction
+    for (size_t i = 0; i < optn.guess.size(); i++) {
+        psi.block(0, i, system.ngrid, 1) = (Expression(optn.guess.at(i)).eval(res.msv.r).array() * (I * std::sqrt(0.06 * system.m) * res.msv.r.array()).exp());
     }
 
-    // fill the Hamiltonian with the kinetic matrix
-    H.block(0, 0, system.ngrid, system.ngrid) = T, H.block(system.ngrid, system.ngrid, system.ngrid, system.ngrid) = T;
+    // normalize the wavefunction
+    psi.block(0, 0, system.ngrid, 1) = psi.block(0, 0, system.ngrid, 1).array() / std::sqrt(psi.block(0, 0, system.ngrid, 1).array().abs2().sum() * dx);
 
     // create the potential energy expressions
     std::vector<std::vector<Expression>> uexpr = {
         {Expression(system.potential.at(0).at(0)), Expression(system.potential.at(0).at(1))},
         {Expression(system.potential.at(1).at(0)), Expression(system.potential.at(1).at(1))}
-    };
+    }; res.msv.U = Matrix<>(system.ngrid, system.potential.size());
 
-    for (int i = 0; i < system.ngrid; i++) {
-        // define the potential matrix
-        Matrix<std::complex<double>> V(system.potential.size(), system.potential.size());
+    // fill the potential
+    res.msv.U.col(0) = uexpr.at(0).at(0).eval(res.msv.r);
+    res.msv.U.col(1) = uexpr.at(1).at(1).eval(res.msv.r);
 
-        // fill the potential matrix
-        for (int j = 0; j < V.rows(); j++) {
-            for (int k = 0; k < V.cols(); k++) {
-                V(j, k) = uexpr.at(j).at(k).eval(res.msv.r(i));
-                
-            }
-        }
+    // append the first wfn and energy
+    psis.push_back(psi), energies.push_back(0);
 
-        // add the potential energy to the Hamiltonian
-        H(i, i) += V(0, 0), H(i + system.ngrid, i + system.ngrid) += V(1, 1);
-        H(i, i + system.ngrid) += V(0, 1), H(i + system.ngrid, i) += V(1, 0);
+    // define the real and imaginary space operators
+    std::vector<std::vector<Vector<std::complex<double>>>> K(2, std::vector<Vector<std::complex<double>>>(2)); auto R = K;
 
-        // find the adiabatic basis
-        Eigen::SelfAdjointEigenSolver<Matrix<>> solver(V.real()); res.msv.U.row(i) = solver.eigenvalues();
+    // fill the kinetic propagator
+    K.at(0).at(0) = (-0.5 * I * res.msv.k.array().pow(2) * optn.step / optn.mass).exp();
+    K.at(1).at(1) = (-0.5 * I * res.msv.k.array().pow(2) * optn.step / optn.mass).exp();
 
-        // push back the transformation matrix
-        transform.push_back(solver.eigenvectors());
-    }
-
-    // create the hamiltonian solver in DVR basis
-    Eigen::SelfAdjointEigenSolver<Matrix<std::complex<double>>> solver(H);
-
-    // extract the eigenvalues and eigenvectors
-    Vector<std::complex<double>> eigv = solver.eigenvalues(); Matrix<std::complex<double>> eigf = solver.eigenvectors();
-
-    // fill in the initial wavefunction
-    for (size_t i = 0; i < optn.guess.size(); i++) {
-        psi.block(i * system.ngrid, 0, system.ngrid, 1) = Expression(optn.guess.at(i)).eval(res.msv.r).array() * (I * std::sqrt(0.06 * system.m) * res.msv.r.array()).exp();
-    }
-
-    // normalize the wavefunction
-    psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dx);
-
-    // calculate DVR expansion coeficients
-    Vector<std::complex<double>> ci(psi.size());
-    for (int j = 0; j < psi.size(); j++) {
-        ci(j) = (psi.transpose() * eigf.col(j))(0, 0);
-    }
+    // fill the potential propagator
+    Vector<std::complex<double>> D = 4 * uexpr.at(1).at(0).eval(res.msv.r).array().abs().pow(2) + (uexpr.at(0).at(0).eval(res.msv.r) - uexpr.at(1).at(1).eval(res.msv.r)).array().pow(2);
+    Vector<std::complex<double>> a = (-0.25 * I * (uexpr.at(0).at(0).eval(res.msv.r) + uexpr.at(1).at(1).eval(res.msv.r)) * optn.step).array().exp();
+    Vector<std::complex<double>> b = (0.25 * D.array().sqrt() * optn.step).cos();
+    Vector<std::complex<double>> c = I * (0.25 * D.array().sqrt() * optn.step).sin() / D.array().sqrt();
+    R.at(0).at(0) = a.array() * (b.array() + c.array() * (uexpr.at(1).at(1).eval(res.msv.r) - uexpr.at(0).at(0).eval(res.msv.r)).array());
+    R.at(0).at(1) = -2 * a.array() * c.array() * uexpr.at(0).at(1).eval(res.msv.r).array();
+    R.at(1).at(0) = -2 * a.array() * c.array() * uexpr.at(0).at(1).eval(res.msv.r).array();
+    R.at(1).at(1) = a.array() * (b.array() + c.array() * (uexpr.at(0).at(0).eval(res.msv.r) - uexpr.at(1).at(1).eval(res.msv.r)).array());
 
     // print the iteration header
     if (print) std::printf(" ITER        Eel [Eh]         |dE|     |dD|\n");
 
+    // propagate the wavefunction
     for (int i = 0; i < optn.iters; i++) {
-        // define the next wavefunction
-        Vector<std::complex<double>> nextpsi(psi.size()), psiprev = psi;
-
-        // propagate the wavefunction
-        for (int j = 0; j < psi.size(); j++) {
-            nextpsi += ci(j) * eigf.col(j) * std::exp(-I * eigv(j) * std::complex<double>(i, 0) * optn.step);
-        } psi = nextpsi;
-
-        // prepare the matrices for the adiabatic transform
-        Matrix<std::complex<double>> psimat(system.ngrid, system.potential.size());
-        Matrix<std::complex<double>> chi(system.ngrid, system.potential.size());
-
-        // fill the matrix of wavefunction states as columns
-        psimat << psi.head(system.ngrid), psi.tail(system.ngrid);
-
-        // transform the wavefunction to adiabatic basis
-        for (int j = 0; j < system.ngrid; j++) {
-            chi.row(j) = transform.at(j).transpose() * psimat.row(j).transpose();
-        }
-
-        // save the wavefunction to the vector
-        chis.push_back(psimat); energies.push_back(0);
+        psi.col(0) = EigenFourier(R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
+        psi.col(1) = EigenFourier(R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
+        psi.col(0) = EigenFourier(K.at(0).at(0).array() * psi.col(0).array(), true);
+        psi.col(1) = EigenFourier(K.at(1).at(1).array() * psi.col(1).array(), true);
+        psi.col(0) = (R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
+        psi.col(1) = (R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
 
         // calculate the errors
-        double E = 0, Eerr = 0, Derr = (psi.array().abs2() - psiprev.array().abs2()).abs2().sum();
+        double E = 0, Eerr = 0, Derr = (psi.array().abs2() - psis.at(psis.size() - 1).array().abs2()).abs2().sum();
+
+        // append the wfn and energy
+        psis.push_back(psi), energies.push_back(0);
 
         // print the iteration
         if (print) std::printf("%6d %20.14f %.2e %.2e\n", i + 1, E, Eerr, Derr);
@@ -244,7 +209,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
 
     // save the wfn dynamics
     for (size_t i = 0; i < system.potential.size(); i++) {
-        std::vector<Vector<std::complex<double>>> state; for (auto chi : chis) state.push_back(chi.col(i));
+        std::vector<Vector<std::complex<double>>> state; for (auto psi : psis) state.push_back(psi.col(i));
         ModelSystem::SaveWavefunction(optn.folder + "/state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
     }
 
