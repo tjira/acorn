@@ -40,10 +40,13 @@ if __name__ == "__main__":
     # define x and k space
     x, k = np.linspace(args.range[0], args.range[1], args.points), 2 * np.pi * np.fft.fftfreq(args.points, dx)
 
+    # define the complex absorbing potential
+    CAP = 0.1j * (np.exp(-0.1 * (x - args.range[0])**2) + np.exp(-0.1 * (x - args.range[1])**2))
+
     # define the potential
     V = np.array([
-        [+0.01 * np.tanh(0.6 * x), 0.001 * np.exp(-x**2)],
-        [0.001 * np.exp(-x**2), -0.01 * np.tanh(0.6 * x)]
+        [+0.01 * np.tanh(0.6 * x) - CAP, 0.001 * np.exp(-x**2)],
+        [0.001 * np.exp(-x**2), -0.01 * np.tanh(0.6 * x) - CAP]
     ])
 
     # define initial wavefunction
@@ -67,8 +70,8 @@ if __name__ == "__main__":
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
     # scale the potential
-    V[0, 0] *= max([np.real(psi).max(), np.imag(psi).max()]) / V[0, 0].max()
-    V[1, 1] *= max([np.real(psi).max(), np.imag(psi).max()]) / V[1, 1].max()
+    V[0, 0] *= max([np.real(psi).max(), np.imag(psi).max()]) / np.real(V[0, 0]).max()
+    V[1, 1] *= max([np.real(psi).max(), np.imag(psi).max()]) / np.real(V[1, 1]).max()
 
     # create the figure and define tight layout
     [fig, ax] = plt.subplots(); plt.tight_layout()
@@ -77,33 +80,33 @@ if __name__ == "__main__":
     fig.canvas.manager.set_window_title("Exact Quantum Nonadiabatic Dynamics Educational Toolkit") # type: ignore
 
     # define maximum y values for plotting
-    ymaxreal = np.real(psi).max() + V[1, 1].max()
-    ymaximag = np.imag(psi).max() + V[1, 1].max()
+    ymaxreal = np.real(psi).max() + np.real(V[1, 1]).max()
+    ymaximag = np.imag(psi).max() + np.real(V[1, 1]).max()
 
     # define minimum y values for plotting
-    yminreal = np.real(psi).min() + V[0, 0].min()
-    yminimag = np.imag(psi).min() + V[0, 0].min()
+    yminreal = np.real(psi).min() + np.real(V[0, 0]).min()
+    yminimag = np.imag(psi).min() + np.real(V[0, 0]).min()
 
     # set limits of the plot
     ax.set_ylim(min([yminreal, yminimag]), max([ymaxreal, ymaximag]))
 
     # plot the potential
-    ax.plot(x, V[0, 0]); ax.plot(x, V[1, 1])
+    ax.plot(x, np.real(V[0, 0])); ax.plot(x, np.real(V[1, 1]))
 
     # plot the initial wavefunctions
     plots = [
-        ax.plot(x, np.real(psi[0][0]) + V[0, 0].min())[0],
-        ax.plot(x, np.imag(psi[0][0]) + V[0, 0].min())[0],
-        ax.plot(x, np.real(psi[0][1]) + V[1, 1].max())[0],
-        ax.plot(x, np.imag(psi[0][1]) + V[1, 1].max())[0]
+        ax.plot(x, np.real(psi[0][0]) + np.real(V[0, 0]).min())[0],
+        ax.plot(x, np.imag(psi[0][0]) + np.real(V[0, 0]).min())[0],
+        ax.plot(x, np.real(psi[0][1]) + np.real(V[1, 1]).max())[0],
+        ax.plot(x, np.imag(psi[0][1]) + np.real(V[1, 1]).max())[0]
     ]
 
     # animation update function
     def update(i):
-        plots[0].set_ydata(np.real(psi[i][0]) + V[0, 0].min())
-        plots[1].set_ydata(np.imag(psi[i][0]) + V[0, 0].min())
-        plots[2].set_ydata(np.real(psi[i][1]) + V[1, 1].max())
-        plots[3].set_ydata(np.imag(psi[i][1]) + V[1, 1].max())
+        plots[0].set_ydata(np.real(psi[i][0]) + np.real(V[0, 0]).min())
+        plots[1].set_ydata(np.imag(psi[i][0]) + np.real(V[0, 0]).min())
+        plots[2].set_ydata(np.real(psi[i][1]) + np.real(V[1, 1]).max())
+        plots[3].set_ydata(np.imag(psi[i][1]) + np.real(V[1, 1]).max())
 
     # animate the wavefunction
     ani = anm.FuncAnimation(fig, update, frames=len(psi), interval=30) # type: ignore

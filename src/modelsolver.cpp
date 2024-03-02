@@ -155,15 +155,22 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // normalize the wavefunction
     psi.block(0, 0, system.ngrid, 1) = psi.block(0, 0, system.ngrid, 1).array() / std::sqrt(psi.block(0, 0, system.ngrid, 1).array().abs2().sum() * dx);
 
-    // create the potential energy expressions
-    std::vector<std::vector<Expression>> uexpr = {
-        {Expression(system.potential.at(0).at(0)), Expression(system.potential.at(0).at(1))},
-        {Expression(system.potential.at(1).at(0)), Expression(system.potential.at(1).at(1))}
+    // create the potential
+    std::vector<std::vector<Vector<std::complex<double>>>> V = {
+        {Expression(system.potential.at(0).at(0)).eval(res.msv.r), Expression(system.potential.at(0).at(1)).eval(res.msv.r)},
+        {Expression(system.potential.at(1).at(0)).eval(res.msv.r), Expression(system.potential.at(1).at(1)).eval(res.msv.r)}
     }; res.msv.U = Matrix<>(system.ngrid, system.potential.size());
 
-    // fill the potential
-    res.msv.U.col(0) = uexpr.at(0).at(0).eval(res.msv.r);
-    res.msv.U.col(1) = uexpr.at(1).at(1).eval(res.msv.r);
+    // save the potential to results
+    res.msv.U.col(0) = Expression(system.potential.at(0).at(0)).eval(res.msv.r);
+    res.msv.U.col(1) = Expression(system.potential.at(1).at(1)).eval(res.msv.r);
+
+    // define the complex absorbing potential
+    Vector<std::complex<double>> CAP = 0.1 * I * ((-0.1 * (res.msv.r.array() - system.limits.at(0)).pow(2)).exp() + (-0.1 * (res.msv.r.array() - system.limits.at(1)).pow(2)).exp());
+
+    // subtract the complex absorbing potential
+    V.at(0).at(0) = V.at(0).at(0).array() - CAP.array();
+    V.at(1).at(1) = V.at(1).at(1).array() - CAP.array();
 
     // append the first wfn and energy
     psis.push_back(psi), energies.push_back(0);
@@ -176,20 +183,21 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     K.at(1).at(1) = (-0.5 * I * res.msv.k.array().pow(2) * optn.step / optn.mass).exp();
 
     // fill the potential propagator
-    Vector<std::complex<double>> D = 4 * uexpr.at(1).at(0).eval(res.msv.r).array().abs().pow(2) + (uexpr.at(0).at(0).eval(res.msv.r) - uexpr.at(1).at(1).eval(res.msv.r)).array().pow(2);
-    Vector<std::complex<double>> a = (-0.25 * I * (uexpr.at(0).at(0).eval(res.msv.r) + uexpr.at(1).at(1).eval(res.msv.r)) * optn.step).array().exp();
+    Vector<std::complex<double>> D = 4 * V.at(1).at(0).array().abs().pow(2) + (V.at(0).at(0) - res.msv.U.col(1)).array().pow(2);
+    Vector<std::complex<double>> a = (-0.25 * I * (V.at(0).at(0) + res.msv.U.col(1)) * optn.step).array().exp();
     Vector<std::complex<double>> b = (0.25 * D.array().sqrt() * optn.step).cos();
     Vector<std::complex<double>> c = I * (0.25 * D.array().sqrt() * optn.step).sin() / D.array().sqrt();
-    R.at(0).at(0) = a.array() * (b.array() + c.array() * (uexpr.at(1).at(1).eval(res.msv.r) - uexpr.at(0).at(0).eval(res.msv.r)).array());
-    R.at(0).at(1) = -2 * a.array() * c.array() * uexpr.at(0).at(1).eval(res.msv.r).array();
-    R.at(1).at(0) = -2 * a.array() * c.array() * uexpr.at(0).at(1).eval(res.msv.r).array();
-    R.at(1).at(1) = a.array() * (b.array() + c.array() * (uexpr.at(0).at(0).eval(res.msv.r) - uexpr.at(1).at(1).eval(res.msv.r)).array());
+    R.at(0).at(0) = a.array() * (b.array() + c.array() * (V.at(1).at(1) - V.at(0).at(0)).array());
+    R.at(0).at(1) = -2 * a.array() * c.array() * V.at(0).at(1).array();
+    R.at(1).at(0) = -2 * a.array() * c.array() * V.at(0).at(1).array();
+    R.at(1).at(1) = a.array() * (b.array() + c.array() * (V.at(0).at(0) - V.at(1).at(1)).array());
 
     // print the iteration header
     if (print) std::printf(" ITER        Eel [Eh]         |dE|     |dD|\n");
 
     // propagate the wavefunction
     for (int i = 0; i < optn.iters; i++) {
+        // apply the propagator
         psi.col(0) = EigenFourier(R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
         psi.col(1) = EigenFourier(R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
         psi.col(0) = EigenFourier(K.at(0).at(0).array() * psi.col(0).array(), true);
