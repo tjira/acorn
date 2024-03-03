@@ -31,6 +31,7 @@ include_directories(include ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include 
 # find OpenMP
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(FFTW3 REQUIRED)
 
 # add acorn library
 add_library(acorn
@@ -63,7 +64,7 @@ endif()
 
 # add acorn executable
 add_executable(acorn_exe src/main.cpp)
-target_link_libraries(acorn_exe acorn)
+target_link_libraries(acorn_exe acorn fftw3)
 
 # set the folder where the basis set files are located
 target_compile_definitions(acorn_exe PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")

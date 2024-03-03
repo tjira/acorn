@@ -2,8 +2,13 @@
 
 #include "constant.h"
 
+// initialize the eigen matrices by zero
 #define EIGEN_INITIALIZE_MATRICES_BY_ZERO
 
+// use the FFTW backent for FFT
+#define EIGEN_FFTW_DEFAULT
+
+// include basic Eigen features
 #include <unsupported/Eigen/MatrixFunctions>
 #include <unsupported/Eigen/CXX11/Tensor>
 
