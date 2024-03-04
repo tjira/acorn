@@ -1,8 +1,11 @@
 # TODO List
 
 - [ ] Add BAGEL interface with excited state dynamics
+- [ ] Add energy calculation for exact NAD
+- [ ] Add exact solver for 2D HO
 - [ ] Add excitation specifications to FCI
 - [ ] Create a compare script that compares results with ORCA or Psi4
+- [ ] Transform the NAD wavefunction to adiabatic basis
 - [x] Add Mulliken analysis
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals

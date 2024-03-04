@@ -31,7 +31,6 @@ include_directories(include ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include 
 # find OpenMP
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(FFTW3 REQUIRED)
 
 # add acorn library
 add_library(acorn
@@ -55,7 +54,7 @@ add_library(acorn
     src/transform.cpp
     src/unrestrictedhartreefock.cpp
 )
-target_link_libraries(acorn int2.a Eigen3::Eigen)
+target_link_libraries(acorn fftw3.a int2.a Eigen3::Eigen)
 
 # link OpenMP if release specified
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -64,7 +63,7 @@ endif()
 
 # add acorn executable
 add_executable(acorn_exe src/main.cpp)
-target_link_libraries(acorn_exe acorn fftw3)
+target_link_libraries(acorn_exe acorn)
 
 # set the folder where the basis set files are located
 target_compile_definitions(acorn_exe PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")

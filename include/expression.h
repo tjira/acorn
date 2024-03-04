@@ -1,6 +1,7 @@
 #pragma once
 
 #include "eigen.h"
+#include "numpy.h"
 
 class Expression {
 public:

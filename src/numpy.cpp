@@ -1,5 +1,8 @@
 #include "numpy.h"
 
+// include FFT library
+#include <fftw3.h>
+
 std::vector<std::vector<int>> Numpy::Combinations(int n, int k) {
     // create the bitmask that will get permuted and the resulting vector
     std::string bitmask(k, 1); bitmask.resize(n, 0); std::vector<std::vector<int>> combs;
@@ -61,4 +64,26 @@ Tensor<> Numpy::Kron(const Matrix<>& A, const Tensor<>& B) {
 
     // return the result
     return C;
+}
+
+Vector<std::complex<double>> Numpy::FFT(Vector<std::complex<double>> in, int sign) {
+    // define the output vector
+    Vector<std::complex<double>> out(in.size());
+
+    // plan the FFT
+    fftw_plan plan = fftw_plan_dft_1d(in.size(), reinterpret_cast<fftw_complex*>(in.data()), reinterpret_cast<fftw_complex*>(out.data()), sign, FFTW_ESTIMATE);
+
+    // execute the FFT and destroy the plan
+    fftw_execute(plan); fftw_destroy_plan(plan);
+
+    // return output
+    return out / (sign == 1 ? in.size() : 1);
+}
+
+Vector<std::complex<double>> Numpy::FFT(Vector<std::complex<double>> in) {
+    return FFT(in, FFTW_FORWARD);
+}
+
+Vector<std::complex<double>> Numpy::IFFT(Vector<std::complex<double>> in) {
+    return FFT(in, FFTW_BACKWARD);
 }

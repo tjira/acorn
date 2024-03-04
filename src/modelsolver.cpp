@@ -60,7 +60,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         if (res.msv.optstates.size()) {psi = res.msv.optstates.at(i);} std::vector<Vector<std::complex<double>>> wfns = {psi};
 
         // calculate the total energy of the guess function
-        Vector<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * EigenFourier(res.msv.k.array().pow(2) * EigenFourier(psi).array(), true).array();
+        Vector<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * Numpy::IFFT(res.msv.k.array().pow(2) * Numpy::FFT(psi).array()).array();
         Vector<std::complex<double>> Ep = EigenConj(psi).array() * res.msv.U.array() * psi.array(); double E = (Ek + Ep).sum().real() * dx;
 
         // vector of state energy evolution
@@ -73,7 +73,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
             // Trotter formula
             psi = R.array() * psi.array();
-            psi = EigenFourier(K.array() * EigenFourier(psi).array(), true);
+            psi = Numpy::IFFT(K.array() * Numpy::FFT(psi).array());
             psi = R.array() * psi.array();
 
             // subtract lower eigenstates
@@ -85,7 +85,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
             psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dx);
 
             // calculate the total energy
-            Ek = 0.5 * EigenConj(psi).array() * EigenFourier(res.msv.k.array().pow(2) * EigenFourier(psi).array(), true).array();
+            Ek = 0.5 * EigenConj(psi).array() * Numpy::IFFT(res.msv.k.array().pow(2) * Numpy::FFT(psi).array()).array();
             Ep = EigenConj(psi).array() * res.msv.U.array() * psi.array(); E = (Ek + Ep).sum().real() * dx;
 
             // calculate the errors
@@ -118,7 +118,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
             }
 
             // append and perform the fourier transform
-            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(EigenFourier(acf));
+            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::FFT(acf));
         }
 
         // save the state wavefunction
@@ -198,10 +198,10 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // propagate the wavefunction
     for (int i = 0; i < optn.iters; i++) {
         // apply the propagator
-        psi.col(0) = EigenFourier(R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
-        psi.col(1) = EigenFourier(R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
-        psi.col(0) = EigenFourier(K.at(0).at(0).array() * psi.col(0).array(), true);
-        psi.col(1) = EigenFourier(K.at(1).at(1).array() * psi.col(1).array(), true);
+        psi.col(0) = Numpy::FFT(R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
+        psi.col(1) = Numpy::FFT(R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
+        psi.col(0) = Numpy::IFFT(K.at(0).at(0).array() * psi.col(0).array());
+        psi.col(1) = Numpy::IFFT(K.at(1).at(1).array() * psi.col(1).array());
         psi.col(0) = (R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
         psi.col(1) = (R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
 
