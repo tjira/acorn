@@ -66,24 +66,17 @@ Tensor<> Numpy::Kron(const Matrix<>& A, const Tensor<>& B) {
     return C;
 }
 
-Vector<std::complex<double>> Numpy::FFT(Vector<std::complex<double>> in, int sign) {
-    // define the output vector
-    Vector<std::complex<double>> out(in.size());
-
-    // plan the FFT
-    fftw_plan plan = fftw_plan_dft_1d(in.size(), reinterpret_cast<fftw_complex*>(in.data()), reinterpret_cast<fftw_complex*>(out.data()), sign, FFTW_ESTIMATE);
-
-    // execute the FFT and destroy the plan
-    fftw_execute(plan); fftw_destroy_plan(plan);
-
-    // return output
-    return out / (sign == 1 ? in.size() : 1);
+void Numpy::FFT(std::complex<double>* in, std::complex<double>* out, const std::vector<int> sizes, int sign) {
+    fftw_plan plan = fftw_plan_dft(sizes.size(), sizes.data(), reinterpret_cast<fftw_complex*>(in), reinterpret_cast<fftw_complex*>(out), sign, FFTW_ESTIMATE); fftw_execute(plan); fftw_destroy_plan(plan);
 }
 
-Vector<std::complex<double>> Numpy::FFT(Vector<std::complex<double>> in) {
-    return FFT(in, FFTW_FORWARD);
-}
+Matrix<std::complex<double>> Numpy::FFT(Matrix<std::complex<double>> in, int sign) {
+    // extract dimension
+    int m = in.rows(), n = in.cols();
 
-Vector<std::complex<double>> Numpy::IFFT(Vector<std::complex<double>> in) {
-    return FFT(in, FFTW_BACKWARD);
+    // initialize the output vector and perform the FFT
+    std::vector<std::complex<double>> out(in.size()); Numpy::FFT(in.data(), out.data(), std::vector<int>{m, n}, sign);
+
+    // transform the output to the correct format and return
+    return Eigen::Map<Matrix<std::complex<double>>>(out.data(), in.rows(), in.cols()) / (sign == 1 ? out.size() : 1);
 }

@@ -13,8 +13,8 @@ public:
         } dynamics={};
 
         // variables
-        int nstate=3, iters=1000; double step=0.1, thresh=1e-8;
         bool real=false, optimize=false, spectrum=false;
+        int nstate=3, iters=1000; double step=0.1;
         std::string folder, guess; double mass=1;
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};

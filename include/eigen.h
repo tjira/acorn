@@ -36,6 +36,7 @@ template <typename T> T EigenConj(const T& A) {return A.unaryExpr([](auto x) {re
 
 // complamentary functions
 inline bool VectorContains(const std::vector<int>& v, const int& e) {return std::find(v.begin(), v.end(), e) != v.end();}
+inline bool StringContains(const std::string& s, const char& e) {return s.find(e) != std::string::npos;}
 
 // include necessities
 #include <fstream>

@@ -47,29 +47,33 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ### Quantum Mechanical Methods
 
+* Numerically Exact 1D and 2D Adiabatic Quantum Dynamics
+* Numerically Exact 1D Nonadiabatic Quantum Dynamics
 * Hartree-Fock Method (RHF & UHF)
 * Møller–Plesset Perturbation Theory
-* Configuration Interaction
-* Numerically Exact Quantum Dynamics
+* Full Configuration Interaction
 
 ### Additional Calculations
 
-* Gradients, Hessians and Frequency Analysis
-* Mulliken Population Analysis
+* Analytical Gradient for RHF and Numerical for Everything Else
+* Numerical Hessians and Frequency Analysis for Every Method
+* Molecular Dynamics With Calculated or Provided Gradients
+* Mulliken Population Analysis for RHF
+* Berendsen Thermostatting for MD
 
 ## Compilation
 
-The software requires the [libint](https://github.com/evaleev/libint) library. Before the library compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
+The software requires the [libint](https://github.com/evaleev/libint) and [fftw](https://www.fftw.org) libraries. Before the compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
 sudo apt install libboost-dev libeigen3-dev
 ```
 
-To compile the library execute `./script/libint.sh` from the project root directory. This command creates the `libint` folder with the compiled library. Now, we export the necessary environment variables.
+To compile the needed libraries execute `./script/libint.sh` and `./script/libfftw.sh` from the project root directory. This command creates the `libint` and `libfftw` folder with the compiled library. Now, we export the necessary environment variables.
 
 ```bash
-export CPLUS_INCLUDE_PATH="$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
-export LIBRARY_PATH="$PWD/libint/install/lib:$LIBRARY_PATH"
+export CPLUS_INCLUDE_PATH="$PWD/libfftw/install/include:$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
+export LIBRARY_PATH="$PWD/libfftw/install/lib:$PWD/libint/install/lib:$LIBRARY_PATH"
 ```
 
 After this, the project configuration should finish without errors.
@@ -100,5 +104,6 @@ The calculation should finish without errors. Feel free to explore all the examp
 
 * [argparse](https://github.com/p-ranav/argparse) - Argument Parser for Modern C++.
 * [exprtk](https://github.com/ArashPartow/exprtk) - C++ Mathematical Expression Parsing and Evaluation Library.
+* [fftw](https://www.fftw.org) - C Subroutine Library for Computing the Discrete Fourier Transform .
 * [json](https://github.com/nlohmann/json) - JSON for Modern C++.
 * [libint](https://github.com/evaleev/libint) - High-performance library for computing Gaussian integrals in quantum mechanics.

@@ -9,42 +9,66 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
 }
 
 Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
-    // define the real and Fourier space along with time and frequency domains
-    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(opta.iters + 1), res.msv.f = Vector<>(opta.iters + 1);
+    // obtain the simulation dimension
+    int dim; dim = StringContains(system.potential.at(0).at(0), 'y') ? 2 : 1;
 
-    // fill the real space and calculate dx
+    // define the real and Fourier space along with time and frequency domains and wavefunction
+    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(opta.iters + 1), res.msv.f = Vector<>(opta.iters + 1); Matrix<std::complex<double>> psi;
+
+    // fill the real space and calculate dr
     for (int i = 0; i < system.ngrid; i++) {
         res.msv.r(i) = system.limits.at(0) + (system.limits.at(1) - system.limits.at(0)) * i / (system.ngrid - 1);
-    } double dx = res.msv.r(1) - res.msv.r(0);
+    } double dr = std::pow(res.msv.r(1) - res.msv.r(0), dim);
 
     // fill the time domain
     for (int i = 0; i <= opta.iters; i++) res.msv.t(i) = i * opta.step;
 
-    // fill the frequency and momentum domain
+    // fill the momentum and frequency domain
+    res.msv.k.fill(2 * M_PI / res.msv.k.size() / (res.msv.r(1) - res.msv.r(0))); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
     res.msv.f.fill(2 * M_PI / res.msv.f.size() / opta.step); for (int i = 0; i < res.msv.f.size(); i++) res.msv.f(i) *= i - (i < res.msv.f.size() / 2 ? 0 : res.msv.f.size());
-    res.msv.k.fill(2 * M_PI / res.msv.k.size() / dx); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
 
-    // calculate the potential function values
-    res.msv.U = Expression(system.potential.at(0).at(0)).eval(res.msv.r);
+    // define the 2-dimensional variables and potential values
+    Matrix<> x(system.ngrid, system.ngrid), y(system.ngrid, system.ngrid), k(system.ngrid, system.ngrid), l(system.ngrid, system.ngrid), U;
+
+    // fill the 2-dimensional variables
+    for (int i = 0; i < system.ngrid; i++) {
+        y.col(i) = res.msv.r, l.col(i) = res.msv.k;
+    } x = y.transpose(), k = l.transpose();
+    
+    // initialize the potential matrix
+    res.msv.U = Matrix<>((int)std::pow(system.ngrid, dim), 1);
+
+    // calculate the potential values
+    if (dim == 1) U = Expression(system.potential.at(0).at(0)).eval(res.msv.r);
+    if (dim == 2) U = Expression(system.potential.at(0).at(0)).eval(x, y);
 
     // define the initial wavefunction and normalize it
-    Vector<std::complex<double>> psi = Expression(opta.guess).eval(res.msv.r); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dx);
+    if (dim == 1) {psi = Expression(opta.guess).eval(res.msv.r).col(0); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
+    if (dim == 2) {psi = Expression(opta.guess).eval(x, y); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
+
+    // assign correct variables for 1-dimensional model
+    if (dim == 1) x = res.msv.r, k = res.msv.k, y = Matrix<>::Zero(system.ngrid, 1), l = Matrix<>::Zero(system.ngrid, 1);
+
+    // fill the potential matrix
+    for (int i = 0; i < U.rows(); i++) {
+        res.msv.U(i, 0) = U(i / system.ngrid * system.ngrid + i % system.ngrid, i / system.ngrid);
+    }
 
     // define the vector of optimal wavefunction and energies if imaginary time is selected
-    if (!opta.real) res.msv.optstates = std::vector<Vector<std::complex<double>>>(opta.nstate, psi), res.msv.opten = Vector<>(opta.nstate); 
+    if (!opta.real) res.msv.optstates = std::vector<Matrix<std::complex<double>>>(opta.nstate, psi), res.msv.opten = Vector<>(opta.nstate); 
 
-    // define the real and imaginary space operators
-    Vector<std::complex<double>> K = (-0.5 * res.msv.k.array().pow(2) * opta.step / opta.mass).exp();
-    Vector<std::complex<double>> R = (-0.5 * res.msv.U.array() * opta.step).exp();
+    // define the imaginary time operators
+    Matrix<std::complex<double>> K = (-0.5 * (k.array().pow(2) + l.array().pow(2)) * opta.step / opta.mass).exp();
+    Matrix<std::complex<double>> R = (-0.5 * U.array() * opta.step).exp();
 
     // real time dynamics operators
     if (opta.real) {
-        K = (-0.5 * I * res.msv.k.array().pow(2) * opta.step / opta.mass).exp();
-        R = (-0.5 * I * res.msv.U.array() * opta.step).exp();
+        K = (-0.5 * I * k.array().pow(2) * opta.step / opta.mass).exp();
+        R = (-0.5 * I * U.array() * opta.step).exp();
 
         if (opta.optimize) {
-            // create imaginary options and set some necessary values
-            OptionsAdiabatic imopt = opta; imopt.real = false, imopt.iters = 100000;
+            // create imaginary options and with necessary values
+            OptionsAdiabatic imopt = opta; imopt.real = false;
 
             // optimize the wavefunctions
             res.msv.optstates = ModelSolver(imopt).run(system, res, false).msv.optstates;
@@ -57,11 +81,11 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         if (print) std::printf("%sSTATE %i %s\n ITER        Eel [Eh]         |dE|     |dD|\n", i ? "\n" : "", i, opta.real ? "(RT)" : "(IT)");
 
         // assign the guess to psi, create a vector that will hold the state dynamics and define vector of energies
-        if (res.msv.optstates.size()) {psi = res.msv.optstates.at(i);} std::vector<Vector<std::complex<double>>> wfns = {psi};
+        if (res.msv.optstates.size()) {psi = res.msv.optstates.at(i);} std::vector<Matrix<std::complex<double>>> wfns = {psi};
 
         // calculate the total energy of the guess function
-        Vector<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * Numpy::IFFT(res.msv.k.array().pow(2) * Numpy::FFT(psi).array()).array();
-        Vector<std::complex<double>> Ep = EigenConj(psi).array() * res.msv.U.array() * psi.array(); double E = (Ek + Ep).sum().real() * dx;
+        Matrix<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * Numpy::FFT((k.array().pow(2) + l.array().pow(2)) * Numpy::FFT(psi).array(), 1).array();
+        Matrix<std::complex<double>> Ep = EigenConj(psi).array() * U.array() * psi.array(); double E = (Ek + Ep).sum().real() * dr;
 
         // vector of state energy evolution
         std::vector<double> energies = {E};
@@ -69,24 +93,24 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         // propagate the current state
         for (int j = 1; j <= opta.iters; j++) {
             // save the previous values
-            Vector<std::complex<double>> Dprev = psi.array().abs2(); double Eprev = E;
+            Matrix<std::complex<double>> Dprev = psi.array().abs2(); double Eprev = E;
 
             // Trotter formula
             psi = R.array() * psi.array();
-            psi = Numpy::IFFT(K.array() * Numpy::FFT(psi).array());
+            psi = Numpy::FFT(K.array() * Numpy::FFT(psi).array(), 1);
             psi = R.array() * psi.array();
 
             // subtract lower eigenstates
             for (int k = 0; k < i && !opta.real; k++) {
-                psi = psi.array() - (EigenConj(res.msv.optstates.at(k)).array() * psi.array()).sum() * dx * res.msv.optstates.at(k).array();
+                psi = psi.array() - (EigenConj(res.msv.optstates.at(k)).array() * psi.array()).sum() * dr * res.msv.optstates.at(k).array();
             }
 
             // normalize the wavefunction
-            psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dx);
+            psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);
 
             // calculate the total energy
-            Ek = 0.5 * EigenConj(psi).array() * Numpy::IFFT(res.msv.k.array().pow(2) * Numpy::FFT(psi).array()).array();
-            Ep = EigenConj(psi).array() * res.msv.U.array() * psi.array(); E = (Ek + Ep).sum().real() * dx;
+            Ek = 0.5 * EigenConj(psi).array() * Numpy::FFT((k.array().pow(2) + l.array().pow(2)) * Numpy::FFT(psi).array(), 1).array();
+            Ep = EigenConj(psi).array() * U.array() * psi.array(); E = (Ek + Ep).sum().real() * dr;
 
             // calculate the errors
             double Eerr = std::abs(E - Eprev), Derr = (psi.array().abs2() - Dprev.array()).abs2().sum();
@@ -96,12 +120,6 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
             // push back the wfns and energies
             wfns.push_back(psi), energies.push_back(E);
-
-            // end the loop if converged
-            if (!opta.real && Eerr < opta.thresh && Derr < opta.thresh) break;
-            else if (j == opta.iters && !opta.real) {
-                throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN ITP REACHED.");
-            }
         }
 
         // assign the energy and wavefunction
@@ -114,7 +132,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
             // calculate the autocorrelation function
             for (size_t j = 0; j < wfns.size(); j++) {
-                acf(j) = (wfns.at(0).array() * EigenConj(wfns.at(j)).array()).sum() * dx;
+                acf(j) = (wfns.at(0).array() * EigenConj(wfns.at(j)).array()).sum() * dr;
             }
 
             // append and perform the fourier transform
@@ -122,7 +140,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         }
 
         // save the state wavefunction
-        ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", res.msv.r, wfns, energies);
+        if (dim == 2) ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", x.row(0), y.col(0), wfns, energies);
+        if (dim == 1) ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", x, wfns, energies);
     }
 
     // print the newline
@@ -139,13 +158,13 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // energies container, wfn vector and wfn array
     std::vector<double> energies; Matrix<std::complex<double>> psi(system.ngrid, 2); std::vector<Matrix<std::complex<double>>> psis;
 
-    // fill the real space and calculate dx
+    // fill the real space and calculate dr
     for (int i = 0; i < system.ngrid; i++) {
         res.msv.r(i) = system.limits.at(0) + (system.limits.at(1) - system.limits.at(0)) * i / (system.ngrid - 1);
-    } double dx = res.msv.r(1) - res.msv.r(0);
+    } double dr = res.msv.r(1) - res.msv.r(0);
 
     // fill the momentum space
-    res.msv.k.fill(2 * M_PI / res.msv.k.size() / dx); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
+    res.msv.k.fill(2 * M_PI / res.msv.k.size() / dr); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
 
     // fill in the initial wavefunction
     for (size_t i = 0; i < optn.guess.size(); i++) {
@@ -153,7 +172,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     }
 
     // normalize the wavefunction
-    psi.block(0, 0, system.ngrid, 1) = psi.block(0, 0, system.ngrid, 1).array() / std::sqrt(psi.block(0, 0, system.ngrid, 1).array().abs2().sum() * dx);
+    psi.block(0, 0, system.ngrid, 1) = psi.block(0, 0, system.ngrid, 1).array() / std::sqrt(psi.block(0, 0, system.ngrid, 1).array().abs2().sum() * dr);
 
     // create the potential
     std::vector<std::vector<Vector<std::complex<double>>>> V = {
@@ -200,8 +219,8 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         // apply the propagator
         psi.col(0) = Numpy::FFT(R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
         psi.col(1) = Numpy::FFT(R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
-        psi.col(0) = Numpy::IFFT(K.at(0).at(0).array() * psi.col(0).array());
-        psi.col(1) = Numpy::IFFT(K.at(1).at(1).array() * psi.col(1).array());
+        psi.col(0) = Numpy::FFT(K.at(0).at(0).array() * psi.col(0).array(), 1);
+        psi.col(1) = Numpy::FFT(K.at(1).at(1).array() * psi.col(1).array(), 1);
         psi.col(0) = (R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
         psi.col(1) = (R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
 
@@ -217,7 +236,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
 
     // save the wfn dynamics
     for (size_t i = 0; i < system.potential.size(); i++) {
-        std::vector<Vector<std::complex<double>>> state; for (auto psi : psis) state.push_back(psi.col(i));
+        std::vector<Matrix<std::complex<double>>> state; for (auto psi : psis) state.push_back(psi.col(i));
         ModelSystem::SaveWavefunction(optn.folder + "/state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
     }
 

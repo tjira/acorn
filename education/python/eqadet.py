@@ -53,6 +53,7 @@ if __name__ == "__main__":
     # redefine the variables for more dimensions
     if dim == 3: x, y, z = np.meshgrid(x, y, z); k, l, m = np.meshgrid(k, l, m)
     if dim == 2: x, y = np.meshgrid(x, y); k, l = np.meshgrid(k, l)
+    print(k)
 
     # define the time and frequency axis
     t, f = np.linspace(0, args.iters * args.tstep, args.iters + 1), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(args.iters + 1, args.tstep))

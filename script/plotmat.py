@@ -11,6 +11,7 @@ if __name__ == "__main__":
 
     # add help argument
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
+    parser.add_argument("-d", "--dimension", type=int, default=1, help="Potential dimension.")
 
     # add file arguments
     parser.add_argument("mats", nargs="+", help="The matrix files to plot.")
@@ -19,10 +20,13 @@ if __name__ == "__main__":
     args = parser.parse_args(); mats = [np.loadtxt(mat) for mat in args.mats]
 
     # sort by the first column
-    mats = [mat[mat[:, 0].argsort()] for mat in mats]
+    if args.dimension == 1: mats = [mat[mat[:, 0].argsort()] for mat in mats]
 
     # plot the matrices
-    for M in mats: plt.plot(M[:, 0], M[:, 1])
+    if args.dimension == 2:
+        for M in mats: plt.axes(projection="3d").plot_trisurf(M[:, 0], M[:, 1], M[:, 2])
+    else:
+        for M in mats: plt.plot(M[:, 0], M[:, 1])
 
     plt.gcf().canvas.manager.set_window_title("Matrix Plotter") # type: ignore
 
