@@ -50,8 +50,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     if (dim == 1) x = res.msv.r, k = res.msv.k, y = Matrix<>::Zero(system.ngrid, 1), l = Matrix<>::Zero(system.ngrid, 1);
 
     // fill the potential matrix
-    for (int i = 0; i < U.rows(); i++) {
-        res.msv.U(i, 0) = U(i / system.ngrid * system.ngrid + i % system.ngrid, i / system.ngrid);
+    for (int i = 0; i < res.msv.U.rows(); i++) {
+        res.msv.U(i, 0) = U(i % system.ngrid, i / system.ngrid);
     }
 
     // define the vector of optimal wavefunction and energies if imaginary time is selected

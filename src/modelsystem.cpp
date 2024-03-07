@@ -3,37 +3,58 @@
 ModelSystem::ModelSystem(int m, const std::vector<std::vector<std::string>>& potential, const std::vector<double> limits, int ngrid) : potential(potential), limits(limits), ngrid(ngrid), m(m) {}
 
 void ModelSystem::SaveWavefunction(const std::string& fname, const Vector<>& x, const std::vector<Matrix<std::complex<double>>>& wfns, const std::vector<double>& energy) {
-    // open the file
-    std::ofstream file(fname);
+    // open the file, write the header and set the precision
+    std::ofstream file(fname); file << "# 1 " << wfns.size() << " " << x.size() << " " << wfns.at(0).size() << std::endl << std::fixed << std::setprecision(12);
+
+    // write the independent coordinates
+    for (int i = 0; i < x.size(); i++) {file << (i ? " " : "") << x(i);} file << std::endl;
 
     // write the wavefunction
     for (size_t i = 0; i < wfns.size(); i++) {
-        // set the precision and print the independent variable value header
-        file << std::fixed << std::setprecision(14) << "#" << std::setw(7) << std::setfill('0') << i
-             << " r1                  real                 imag         E=" << energy.at(i) << "\n";
+        // the header
+        file << "#" << i << " E=" << energy.at(i) << std::endl;
 
-        // write the wavefunction values
-        for (long int j = 0; j < x.size(); j++) {
-            file << std::setw(20) << std::setfill(' ') << x(j) << " " << std::setw(20) << wfns.at(i)(j).real() << " " << std::setw(20) << wfns.at(i)(j).imag() << "\n";
-        }
+        // the real part
+        for (int j = 0; j < wfns.at(i).rows(); j++) {
+            for (int k = 0; k < wfns.at(i).cols(); k++) {
+                file << (j || k ? " " : "") << wfns.at(i)(j, k).real();
+            }
+        } file << std::endl;
+
+        // the imaginary part
+        for (int j = 0; j < wfns.at(i).rows(); j++) {
+            for (int k = 0; k < wfns.at(i).cols(); k++) {
+                file << (j || k ? " " : "") << wfns.at(i)(j, k).imag();
+            }
+        } file << std::endl;
     }
 }
 
 void ModelSystem::SaveWavefunction(const std::string& fname, const Vector<>& x, const Vector<>& y, const std::vector<Matrix<std::complex<double>>>& wfns, const std::vector<double>& energy) {
-    // open the file
-    std::ofstream file(fname);
+    // open the file, write the header and set the precision
+    std::ofstream file(fname); file << "# 2 " << wfns.size() << " " << x.size() << " " << y.size() << " " << wfns.at(0).size() << std::endl << std::fixed << std::setprecision(12);
+
+    // write the independent coordinates
+    for (int i = 0; i < x.size(); i++) {file << (i ? " " : "") << x(i);} file << std::endl;
+    for (int i = 0; i < y.size(); i++) {file << (i ? " " : "") << y(i);} file << std::endl;
 
     // write the wavefunction
     for (size_t i = 0; i < wfns.size(); i++) {
-        // set the precision and print the independent variable value header
-        file << std::fixed << std::setprecision(14) << "#" << std::setw(7) << std::setfill('0') << i
-             << " r1                   r2                   real                 imag         E=" << energy.at(i) << "\n";
+        // the header
+        file << "#" << i << " E=" << energy.at(i) << std::endl;
 
-        // write the wavefunction values
-        for (long int j = 0; j < x.size(); j++) {
-            for (long int k = 0; k < y.size(); k++) {
-                file << std::setw(20) << std::setfill(' ') << x(j) << " " << std::setw(20) << y(k) << std::setw(20) << wfns.at(i)(j, k).real() << " " << std::setw(20) << wfns.at(i)(j, k).imag() << "\n";
+        // the real part
+        for (int j = 0; j < wfns.at(i).rows(); j++) {
+            for (int k = 0; k < wfns.at(i).cols(); k++) {
+                file << (j || k ? " " : "") << wfns.at(i)(j, k).real();
             }
-        }
+        } file << std::endl;
+
+        // the imaginary part
+        for (int j = 0; j < wfns.at(i).rows(); j++) {
+            for (int k = 0; k < wfns.at(i).cols(); k++) {
+                file << (j || k ? " " : "") << wfns.at(i)(j, k).imag();
+            }
+        } file << std::endl;
     }
 }

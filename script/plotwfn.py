@@ -12,15 +12,24 @@ import mmap, re
 minmax = lambda df: [np.min(df), np.max(df)]
 density = lambda re, im: re * re + im * im
 
-# function to read the wavefunction file
-def read(wfnfile, static=False, data=list()):
-    with open(wfnfile, "r+b") as file:
-        filemap = mmap.mmap(file.fileno(), 0, prot=mmap.PROT_READ)
-    for line in iter(filemap.readline, b""):
-        if line[0] == 35:
-            data[0].clear() if static and len(data) else data.append(list())
-        else: data[-1].append(line.decode().split())
-    return np.array(data, dtype=float)
+def read(wfnfile, static=False):
+    # load and map the file
+    with open(wfnfile, "r+b") as file: data, filemap = [], mmap.mmap(file.fileno(), 0, prot=mmap.PROT_READ)
+
+
+    # extract the header with independent variables
+    info = np.array(filemap.readline().decode().split()[1:], dtype=int)
+    xyz = [filemap.readline().decode().split() for _ in range(info[0])]
+
+    # read the wavefunction values
+    for _ in iter(filemap.readline, b""):
+        re = np.array(filemap.readline().decode().split(), dtype=float)
+        im = np.array(filemap.readline().decode().split(), dtype=float)
+        data.append((re + 1j * im).reshape(*info[2:-1]))
+        if static: data = data[-1:]
+
+    # return the info, independent variables and wavefunction values
+    return info, np.array(np.meshgrid(*xyz), dtype=float), np.array(data, dtype=complex)
 
 if __name__ == "__main__":
     # create the argument parser
@@ -48,18 +57,18 @@ if __name__ == "__main__":
     args = parser.parse_args(); U = np.loadtxt(args.potential)
 
     # read the wavefunctions
-    data = np.array([read(wfnfile, args.static) for wfnfile in args.wfns])
+    wfndata = [read(wfnfile, args.static) for wfnfile in args.wfns]
 
     # extract the energies
-    energy = np.array([re.findall("E=(.*)", open(wfn).read()) for wfn in args.wfns], dtype=float)[:, -data.shape[1]:]
+    energy = np.array([re.findall("E=(.*)", open(wfn).read()) for wfn in args.wfns], dtype=float)[:, -wfndata[0][2].shape[0]:]
 
     # scale the potential
-    if args.scale: U.T[1:] *= np.max(data[:, :, :, 1:]) / np.max(U.T[1:])
+    if args.scale: U.T[1:] *= np.max([np.max(np.abs(entry[2])) for entry in wfndata]) / np.max(U.T[1:])
 
     # align the wavefunctions to the potential
     if args.align: energy = np.repeat([U[0, 1], U[0, 2]], len(energy[0])).reshape(len(args.wfns), len(energy[0])) - energy
 
-    if data.shape[3] == 3:
+    if wfndata[0][0][0] == 1:
         # create the figure
         [fig, ax] = plt.subplots()
 
@@ -67,49 +76,45 @@ if __name__ == "__main__":
         for col in U.T[1:]: plt.plot(U.T[0], col)
 
         # calculate the Y axis minimum
-        ymin = np.min(np.min(data[:, :, :, 1:], axis=(1, 2, 3)) + np.min(energy, axis=1))
-        ymax = np.max(np.max(data[:, :, :, 1:], axis=(1, 2, 3)) + np.max(energy, axis=1))
+        ymin = np.min([np.min([np.real(entry[2]), np.imag(entry[2])]) for entry in wfndata] + np.min(energy, axis=1))
+        ymax = np.max([np.max([np.real(entry[2]), np.imag(entry[2])]) for entry in wfndata] + np.max(energy, axis=1))
 
         # include the minimum and maximum of the potential
         if args.minpt: ymin = min(ymin, np.min(U[:, 1:]))
         if args.maxpt: ymax = max(ymax, np.max(U[:, 1:]))
 
+        # extract the effective function domain
+        domain = [minmax(wfndata[i][1][0][(np.abs(wfndata[i][2]) > 1e-3).any(axis=0)]) for i in range(len(args.wfns))]
+
         # set the plot limits
-        plt.axis((*minmax(data[np.logical_or(np.abs(data[:, :, :, 1]) > 1e-3, np.abs(data[:, :, :, 2]) > 1e-3)]), ymin - 0.02 * (ymax - ymin), ymax + 0.02 * (ymax - ymin)))
+        plt.axis((np.min(domain), np.max(domain), ymin - 0.02 * (ymax - ymin), ymax + 0.02 * (ymax - ymin)))
 
         # define the plots and animation update function
-        plots = [plt.plot(data[i][0].T[0], data[i][0].T[j + 1] + energy[i][0])[0] for i in range(len(args.wfns)) for j in range(2)]
+        plots = [[plt.plot(wfndata[i][1][0], np.real(wfndata[i][2][-999]) + energy[i][0])[0], plt.plot(wfndata[i][1][0], np.imag(wfndata[i][2][0]) + energy[i][0])[0]] for i in range(len(args.wfns))]
 
         # define the animation update function
-        def update(i): # type: ignore
-            for k in range(len(args.wfns)): [plots[2 * k + j].set_ydata(data[k][i].T[j + 1] + energy[k][i]) for j in range(2)]
+        def update(j): # type: ignore
+            for i in range(len(plots)): plots[i][0].set_ydata(np.real(wfndata[i][2][j]) + energy[i][j]); plots[i][1].set_ydata(np.imag(wfndata[i][2][j]) + energy[i][j])
 
-    elif data.shape[3] == 4:
+    elif wfndata[0][0][0] == 2:
         # create the figure
         [fig, ax] = plt.subplots((len(args.wfns) - 1) // 5 + 1, min([5, len(args.wfns)]), figsize=(3.2 * min([5, len(args.wfns)]), ((len(args.wfns) - 1) // 5 + 1) * 3))
 
         # define spacing and modify axes if flat
         plt.subplots_adjust(wspace=0.15); ax = ax if len(args.wfns) > 1 else np.array([ax])
 
-        # get the number of gridpoints
-        ngrid = np.count_nonzero(data[0][0][:, 0] == data[0][0][0, 0])
-
         # define the plots
-        plots = [ax.pcolormesh(
-            data[i][0][:, 0].reshape(ngrid, ngrid),
-            data[i][0][:, 1].reshape(ngrid, ngrid),
-            np.abs(data[i][0][:, 2] + 1j * data[i][0][:, 3]).reshape(ngrid, ngrid)
-        ) for i, ax in enumerate(ax.flat) if i < len(args.wfns)]
+        plots = [ax.pcolormesh(wfndata[i][1][0], wfndata[i][1][1], np.abs(wfndata[i][2][0])) for i, ax in enumerate(ax.flat) if i < len(args.wfns)]
 
         # set axes limits
         [[ax.set_xlim(-6, 6), ax.set_ylim(-6, 6)] for _, ax in enumerate(ax.flat)]
 
         # animation update function
         def update(j):
-            for i in range(len(plots)): plots[i].set_array(np.abs(data[i][j if j < len(data[i]) else -1][:, 2] + 1j * data[i][j if j < len(data[i]) else -1][:, 3]).reshape(ngrid, ngrid))
+            for i in range(len(plots)): plots[i].set_array(np.abs(wfndata[i][2][j]))
 
     # create the animation
-    if not args.static: ani = anm.FuncAnimation(fig, update, frames=len(data[0]), interval=30); # type: ignore
+    if not args.static: ani = anm.FuncAnimation(fig, update, frames=wfndata[0][0][1], interval=30); # type: ignore
 
     # specify the figure name
     fig.canvas.manager.set_window_title("Wavefunction Plotter") # type: ignore
