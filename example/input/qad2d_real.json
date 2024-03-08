@@ -5,7 +5,7 @@
         "ngrid" : 128
     },
     "solve" : {
-        "guess" : "exp(-(x-1)^2)",
+        "guess" : "exp(-(x^2+y^2))",
         "spectrum" : true,
         "real" : true
     }

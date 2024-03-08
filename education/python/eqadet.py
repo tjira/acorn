@@ -53,7 +53,6 @@ if __name__ == "__main__":
     # redefine the variables for more dimensions
     if dim == 3: x, y, z = np.meshgrid(x, y, z); k, l, m = np.meshgrid(k, l, m)
     if dim == 2: x, y = np.meshgrid(x, y); k, l = np.meshgrid(k, l)
-    print(k)
 
     # define the time and frequency axis
     t, f = np.linspace(0, args.iters * args.tstep, args.iters + 1), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(args.iters + 1, args.tstep))
@@ -98,7 +97,7 @@ if __name__ == "__main__":
         psi = [states[i][-1]] if args.optimize else [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dr)]
 
         # propagate the wavefunction
-        for _ in range(args.iters): psi.append(R * np.fft.ifft(K * np.fft.fft(R * psi[-1])));
+        for _ in range(args.iters): psi.append(R * np.fft.ifft(K * np.fft.fft(R * psi[-1])))
 
         # append wavefunction to list of states and print energy
         states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))

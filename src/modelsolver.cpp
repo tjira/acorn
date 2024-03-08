@@ -63,7 +63,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
     // real time dynamics operators
     if (opta.real) {
-        K = (-0.5 * I * k.array().pow(2) * opta.step / opta.mass).exp();
+        K = (-0.5 * I * (k.array().pow(2) + l.array().pow(2)) * opta.step / opta.mass).exp();
         R = (-0.5 * I * U.array() * opta.step).exp();
 
         if (opta.optimize) {
