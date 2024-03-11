@@ -3,7 +3,7 @@
 import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np
 
 def energy(wfn):
-    Ek = 0.5 * np.conj(wfn) * np.fft.ifftn(sum([[k, l, m][i]**2 for i in range(dim)]) * np.fft.fftn(wfn))
+    Ek = 0.5 * np.conj(wfn) * np.fft.ifftn(sum([[k, l, m][i]**2 for i in range(dim)]) * np.fft.fftn(wfn) / args.mass)
     Er = np.conj(wfn) * V * wfn; return np.sum(Ek + Er).real * dr
 
 if __name__ == "__main__":
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     if args.excpotential: V = eval(args.excpotential.replace("exp", "np.exp"))
 
     # define R and K operators for real time propagation
-    R, K = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * k**2 * args.tstep / args.mass)
+    R, K = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * sum([[k, l, m][i]**2 for i in range(dim)]) * args.tstep / args.mass)
 
     # propagate each state in real time if requested
     for i in (i for i in range(args.nstate) if args.real):
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         psi = [states[i][-1]] if args.optimize else [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dr)]
 
         # propagate the wavefunction
-        for _ in range(args.iters): psi.append(R * np.fft.ifft(K * np.fft.fft(R * psi[-1])))
+        for _ in range(args.iters): psi.append(R * np.fft.ifftn(K * np.fft.fftn(R * psi[-1])))
 
         # append wavefunction to list of states and print energy
         states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     if dim == 1:
         # create the figure and definte tight layout
-        [fig, ax] = plt.subplots(1, 2 if args.real else 1, figsize=(12, 5) if args.real else (6, 5)); ax = ax if args.real else [ax]; plt.tight_layout()
+        [fig, ax] = plt.subplots(1, 3 if args.real else 1, figsize=(16, 5) if args.real else (6, 5)); ax = ax if args.real else [ax]; plt.tight_layout()
 
         # define minimum and maximum x values for plotting
         xmin = np.min([np.min([np.min(x[np.abs(psi)**2 > 1e-8]) for psi in Si]) for Si in states])
@@ -138,7 +138,8 @@ if __name__ == "__main__":
             for i in range(len(plots)): plots[i][1].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.imag(states[i][j if j < len(states[i]) else -1]))
 
         # plot the spectrum
-        if args.real: ax[1].plot(f, np.abs(F)) # type: ignore
+        if args.real: ax[1].plot(t, np.abs(G)) # type: ignore
+        if args.real: ax[2].plot(f, np.abs(F)) # type: ignore
 
     if dim == 2:
         # create the figure
