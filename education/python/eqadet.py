@@ -103,7 +103,7 @@ if __name__ == "__main__":
         states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
 
     # calculate the autocorrelation function of a ground state and it Fourier transform
-    if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.fft.fftn(G))
+    if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.hanning(args.iters + 1) * np.fft.fftn(G))
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
