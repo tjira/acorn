@@ -65,7 +65,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     if (opta.real) {
         if (opta.optimize) {
             // create imaginary options and with necessary values
-            OptionsAdiabatic imopt = opta; imopt.real = false, imopt.iters = 1000;
+            OptionsAdiabatic imopt = opta; imopt.real = false;
 
             // optimize the wavefunctions
             auto optres = ModelSolver(imopt).run(system, res, false); res.msv.optstates = optres.msv.optstates, res.msv.opten = optres.msv.opten;
