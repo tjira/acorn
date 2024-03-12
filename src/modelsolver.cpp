@@ -58,21 +58,26 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     if (!opta.real) res.msv.optstates = std::vector<Matrix<std::complex<double>>>(opta.nstate, psi), res.msv.opten = Vector<>(opta.nstate); 
 
     // define the imaginary time operators
-    Matrix<std::complex<double>> K = (-0.5 * (k.array().pow(2) + l.array().pow(2)) * opta.step / opta.mass).exp();
+    Matrix<std::complex<double>> K = (-0.5 * (k.array().pow(2) + l.array().pow(2)) * opta.step / system.mass()).exp();
     Matrix<std::complex<double>> R = (-0.5 * U.array() * opta.step).exp();
 
     // real time dynamics operators
     if (opta.real) {
-        K = (-0.5 * I * (k.array().pow(2) + l.array().pow(2)) * opta.step / opta.mass).exp();
-        R = (-0.5 * I * U.array() * opta.step).exp();
-
         if (opta.optimize) {
             // create imaginary options and with necessary values
             OptionsAdiabatic imopt = opta; imopt.real = false;
 
             // optimize the wavefunctions
-            res.msv.optstates = ModelSolver(imopt).run(system, res, false).msv.optstates;
+            auto optres = ModelSolver(imopt).run(system, res, false); res.msv.optstates = optres.msv.optstates, res.msv.opten = optres.msv.opten;
         }
+
+        // change the potential for te real time dynamics
+        if (dim == 1) U = Expression(opta.spectrum.potential).eval(res.msv.r);
+        if (dim == 2) U = Expression(opta.spectrum.potential).eval(x, y);
+
+        // define the real time operators
+        K = (-0.5 * I * (k.array().pow(2) + l.array().pow(2)) * opta.step / system.mass()).exp();
+        R = (-0.5 * I * U.array() * opta.step).exp();
     }
 
     // loop over all states
@@ -85,7 +90,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
         // calculate the total energy of the guess function
         Matrix<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * Numpy::FFT((k.array().pow(2) + l.array().pow(2)) * Numpy::FFT(psi).array(), 1).array();
-        Matrix<std::complex<double>> Ep = EigenConj(psi).array() * U.array() * psi.array(); double E = (Ek + Ep).sum().real() * dr;
+        Matrix<std::complex<double>> Ep = EigenConj(psi).array() * U.array() * psi.array(); double E = (Ek / system.mass() + Ep).sum().real() * dr;
 
         // vector of state energy evolution
         std::vector<double> energies = {E};
@@ -110,7 +115,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
             // calculate the total energy
             Ek = 0.5 * EigenConj(psi).array() * Numpy::FFT((k.array().pow(2) + l.array().pow(2)) * Numpy::FFT(psi).array(), 1).array();
-            Ep = EigenConj(psi).array() * U.array() * psi.array(); E = (Ek + Ep).sum().real() * dr;
+            Ep = EigenConj(psi).array() * U.array() * psi.array(); E = (Ek / system.mass() + Ep).sum().real() * dr;
 
             // calculate the errors
             double Eerr = std::abs(E - Eprev), Derr = (psi.array().abs2() - Dprev.array()).abs2().sum();
@@ -126,7 +131,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         if (!opta.real) res.msv.optstates.at(i) = psi, res.msv.opten(i) = E;
 
         // block to calculate spectrum
-        if (opta.real && opta.spectrum) {
+        if (opta.real && !opta.spectrum.potential.empty()) {
             // initialize the autocorrelation function
             Vector<std::complex<double>> acf(wfns.size());
 
@@ -135,8 +140,16 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
                 acf(j) = (wfns.at(0).array() * EigenConj(wfns.at(j)).array()).sum() * dr;
             }
 
-            // append and perform the fourier transform
-            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::FFT(acf));
+            // define the windowing function
+            auto wfun = (0.5 - 0.5 * (2 * M_PI * res.msv.t.array() / (wfns.size() - 1)).cos());
+
+            // append and perform the Fourier transform
+            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::FFT(wfun.array() * acf.array()));
+
+            // subtract the ground state energy to get the correct spectrum
+            if (res.msv.opten.size()) {
+                res.msv.f = res.msv.f.array() - res.msv.opten(0);
+            }
         }
 
         // save the state wavefunction
@@ -198,8 +211,8 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     std::vector<std::vector<Vector<std::complex<double>>>> K(2, std::vector<Vector<std::complex<double>>>(2)); auto R = K;
 
     // fill the kinetic propagator
-    K.at(0).at(0) = (-0.5 * I * res.msv.k.array().pow(2) * optn.step / optn.mass).exp();
-    K.at(1).at(1) = (-0.5 * I * res.msv.k.array().pow(2) * optn.step / optn.mass).exp();
+    K.at(0).at(0) = (-0.5 * I * res.msv.k.array().pow(2) * optn.step / system.mass()).exp();
+    K.at(1).at(1) = (-0.5 * I * res.msv.k.array().pow(2) * optn.step / system.mass()).exp();
 
     // fill the potential propagator
     Vector<std::complex<double>> D = 4 * V.at(1).at(0).array().abs().pow(2) + (V.at(0).at(0) - res.msv.U.col(1)).array().pow(2);

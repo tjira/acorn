@@ -3,8 +3,8 @@
 import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np
 
 def energy(wfn):
-    Ek = 0.5 * np.conj(wfn) * np.fft.ifftn(sum([[k, l, m][i]**2 for i in range(dim)]) * np.fft.fftn(wfn) / args.mass)
-    Er = np.conj(wfn) * V * wfn; return np.sum(Ek + Er).real * dr
+    Ek = 0.5 * np.conj(wfn) * np.fft.ifftn(sum([[k, l, m][i]**2 for i in range(dim)]) * np.fft.fftn(wfn))
+    Er = np.conj(wfn) * V * wfn; return np.sum(Ek / args.mass + Er).real * dr
 
 if __name__ == "__main__":
     # SECTION FOR PARSING COMMAND LINE ARGUMENTS =======================================================================================================================================================

@@ -58,6 +58,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics::B
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, folder, berendsen);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics::Berendsen, tau, temp, timeout);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential);
 
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, optimize, guess, folder, spectrum);
@@ -145,7 +146,12 @@ int main(int argc, char** argv) {
     if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
 
     // patch the inputs for the modelsolver
-    if (input.contains("solve") && mdlopt.at("potential").size() == 1) msaopt.merge_patch(input.at("solve"));
+    if (input.contains("solve") && mdlopt.at("potential").size() == 1) {
+        msaopt.merge_patch(input.at("solve"));
+        if (msaopt.at("spectrum").at("potential").get<std::string>().empty()) {
+            msaopt.at("spectrum").at("potential") = mdlopt.at("potential").at(0).at(0);
+        }
+    }
     if (input.contains("solve") && mdlopt.at("potential").size() != 1) msnopt.merge_patch(input.at("solve"));
 
     // throw an error if restricted calculation cannot be performed due to multiplicity

@@ -1,7 +1,6 @@
 # TODO List
 
 - [ ] Add BAGEL interface with excited state dynamics
-- [ ] Add QD spectrum calculation for excited states
 - [ ] Add energy calculation for exact NAD
 - [ ] Add exact solver for 2D HO
 - [ ] Add excitation specifications to FCI
@@ -12,6 +11,7 @@
 - [ ] Somehow specify the initial momentum for NAD
 - [ ] Transform the NAD wavefunction to adiabatic basis
 - [x] Add Mulliken analysis
+- [x] Add QD spectrum calculation for excited states
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
