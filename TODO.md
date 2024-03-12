@@ -1,10 +1,12 @@
 # TODO List
 
 - [ ] Add BAGEL interface with excited state dynamics
+- [ ] Add QD spectrum calculation for excited states
 - [ ] Add energy calculation for exact NAD
 - [ ] Add exact solver for 2D HO
 - [ ] Add excitation specifications to FCI
 - [ ] Add some compression for exact wavefunctions
+- [ ] Add windowing functions to FFT
 - [ ] Create a compare script that compares results with ORCA or Psi4
 - [ ] Make the plotwfn.py not read the whole file if static view specified
 - [ ] Somehow specify the initial momentum for NAD
