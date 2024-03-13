@@ -13,3 +13,7 @@ set_tests_properties(rfci_energy PROPERTIES PASS_REGULAR_EXPRESSION "-75.0204103
 # final unrestricted HF energy
 add_test(NAME uhf_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_uhf_energy water sto-3g 1 0)
 set_tests_properties(uhf_energy PROPERTIES PASS_REGULAR_EXPRESSION "-74.66228147")
+
+# adiabatic dynamics using harmonic oscillator
+add_test(NAME aqdyn_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_aqdyn_energy "0.5*x^2")
+set_tests_properties(aqdyn_energy PROPERTIES PASS_REGULAR_EXPRESSION "0.50000039")

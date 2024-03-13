@@ -16,7 +16,7 @@ public:
         } spectrum={};
 
         // variables
-        int nstate=3, iters=1000; double step=0.1;
+        int nstate=1, iters=1000; double step=0.1;
         bool real=false, optimize=false;
         std::string folder, guess;
     };
