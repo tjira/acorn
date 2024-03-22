@@ -1,0 +1,16 @@
+{
+    "molecule" : {
+        "file" : "../molecule/water.xyz",
+        "basis" : "cc-pvdz"
+    },
+    "bagel" : {
+        "interface" : "../../interface/bagel.sh",
+        "dynamics" : {
+            "iters" : 100,
+            "step" : 20,
+            "berendsen" : {
+                "temp" : 298.15
+            }
+        }
+    }
+}

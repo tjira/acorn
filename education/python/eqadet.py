@@ -47,6 +47,9 @@ if __name__ == "__main__":
     # define x and k spaces
     x, k = np.linspace(args.range[0], args.range[1], args.points), 2 * np.pi * np.fft.fftfreq(args.points, dx); y, z = x, x; l, m = k, k;
 
+    # define the time and frequency axis
+    t, f = np.linspace(0, args.iters * args.tstep, args.iters + 1), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(args.iters + 1, args.tstep));
+
     # define the number of dimensions and coordinate step
     dim = 3 if "z" in args.potential else (2 if "y" in args.potential else 1); dr = np.prod([[dx, dy, dz][i] for i in range(dim)])
 
@@ -54,16 +57,13 @@ if __name__ == "__main__":
     if dim == 3: x, y, z = np.meshgrid(x, y, z); k, l, m = np.meshgrid(k, l, m)
     if dim == 2: x, y = np.meshgrid(x, y); k, l = np.meshgrid(k, l)
 
-    # define the time and frequency axis
-    t, f = np.linspace(0, args.iters * args.tstep, args.iters + 1), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(args.iters + 1, args.tstep))
-
     # define initial wavefunction and potential
     psi0, V = eval(args.guess.replace("exp", "np.exp")), eval(args.potential.replace("exp", "np.exp"))
 
     # WAVEFUNCTION PROPAGATION =========================================================================================================================================================================
 
     # define R and K operators for imaginary time propagation
-    R, K = np.exp(-0.5 * V * args.tstep), np.exp(-0.5 * sum([[k, l, m][i]**2 for i in range(dim)]) * args.tstep / args.mass)
+    R, K = np.exp(-0.5 * V * 1), np.exp(-0.5 * sum([[k, l, m][i]**2 for i in range(dim)]) * 1 / args.mass)
 
     # propagate each state in imaginary time if requested
     for i in (i for i in range(args.nstate) if not args.real or (args.real and args.optimize)):
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         psi = [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dr)]
 
         # propagate the wavefunction
-        for _ in range(args.iters):
+        for _ in range(1000):
             # apply R and K operators and append to wavefunction list
             psi.append(R * np.fft.ifftn(K * np.fft.fftn(R * psi[-1])));
 
@@ -105,8 +105,10 @@ if __name__ == "__main__":
     # get the windowing function for FFT
     window = np.hanning(args.iters + 1)
 
-    # calculate the autocorrelation function of a ground state and it Fourier transform
-    if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.fft.fftn(window * G))
+    # calculate the autocorrelation function of a ground state and its Fourier transform
+    if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.fft.hfft(G, args.iters + 1));
+
+    f *= 219474.63; t *= 2.418884e-5
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 

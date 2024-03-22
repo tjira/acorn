@@ -7,6 +7,8 @@
     "solve" : {
         "guess" : "exp(-(x-1)^2)",
         "spectrum" : {},
-        "real" : true
+        "iters" : 10000,
+        "real" : true,
+        "savewfn" : true
     }
 }

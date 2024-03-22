@@ -12,12 +12,12 @@ public:
             int iters=100; double step=1.0; std::string folder;
         } dynamics={};
         struct Spectrum {
-            std::string potential="";
+            bool zpesub=false; std::string potential="", window="";
         } spectrum={};
 
         // variables
+        bool real=false, optimize=false, savewfn=false;
         int nstate=1, iters=1000; double step=0.1;
-        bool real=false, optimize=false;
         std::string folder, guess;
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};
@@ -28,7 +28,8 @@ public:
         } dynamics={};
 
         // variables
-        std::vector<std::string> guess; std::string folder; double step=0.1; int iters=1000;
+        bool savewfn=false; double step=0.1; int iters=1000;
+        std::vector<std::string> guess; std::string folder;
     };
 public:
     // constructors and destructors

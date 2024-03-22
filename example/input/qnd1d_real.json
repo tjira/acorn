@@ -11,6 +11,7 @@
     "solve" : {
         "guess" : ["exp(-(x+10)^2)"],
         "real" : true,
-        "step" : 16
+        "step" : 16,
+        "savewfn" : true
     }
 }

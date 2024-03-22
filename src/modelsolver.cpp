@@ -65,15 +65,15 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     if (opta.real) {
         if (opta.optimize) {
             // create imaginary options and with necessary values
-            OptionsAdiabatic imopt = opta; imopt.real = false;
+            OptionsAdiabatic imopt = opta; imopt.real = false, imopt.iters = 10000, imopt.step = 0.1, imopt.savewfn = false;
 
             // optimize the wavefunctions
             auto optres = ModelSolver(imopt).run(system, res, false); res.msv.optstates = optres.msv.optstates, res.msv.opten = optres.msv.opten;
         }
 
         // change the potential for te real time dynamics
-        if (dim == 1) U = Expression(opta.spectrum.potential).eval(res.msv.r);
-        if (dim == 2) U = Expression(opta.spectrum.potential).eval(x, y);
+        if (dim == 1) U = Expression(opta.spectrum.potential).eval(res.msv.r).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
+        if (dim == 2) U = Expression(opta.spectrum.potential).eval(x, y).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
 
         // define the real time operators
         K = (-0.5 * I * (k.array().pow(2) + l.array().pow(2)) * opta.step / system.mass()).exp();
@@ -83,17 +83,19 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     // loop over all states
     for (int i = 0; i < opta.nstate; i++) {
         // print the iteration header
-        if (print) std::printf("%sSTATE %i %s\n ITER        Eel [Eh]         |dE|     |dD|\n", i ? "\n" : "", i, opta.real ? "(RT)" : "(IT)");
+        if (print) std::printf("%sSTATE %i %s\n  ITER         Eel [Eh]         |dE|     |dD|\n", i ? "\n" : "", i, opta.real ? "(RT)" : "(IT)");
 
-        // assign the guess to psi, create a vector that will hold the state dynamics and define vector of energies
-        if (res.msv.optstates.size()) {psi = res.msv.optstates.at(i);} std::vector<Matrix<std::complex<double>>> wfns = {psi};
+        // assign the guess as the optimized state to psi
+        if (res.msv.optstates.size()) {psi = res.msv.optstates.at(i);}
 
         // calculate the total energy of the guess function
         Matrix<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * Numpy::FFT((k.array().pow(2) + l.array().pow(2)) * Numpy::FFT(psi).array(), 1).array();
         Matrix<std::complex<double>> Ep = EigenConj(psi).array() * U.array() * psi.array(); double E = (Ek / system.mass() + Ep).sum().real() * dr;
 
-        // vector of state energy evolution
-        std::vector<double> energies = {E};
+        // vector of state energy evolution, afn vector and acf
+        std::vector<Matrix<std::complex<double>>> wfns = {psi};
+        Vector<std::complex<double>> acf(opta.iters + 1);
+        std::vector<double> energies = {E}; acf(0) = 1;
 
         // propagate the current state
         for (int j = 1; j <= opta.iters; j++) {
@@ -117,14 +119,19 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
             Ek = 0.5 * EigenConj(psi).array() * Numpy::FFT((k.array().pow(2) + l.array().pow(2)) * Numpy::FFT(psi).array(), 1).array();
             Ep = EigenConj(psi).array() * U.array() * psi.array(); E = (Ek / system.mass() + Ep).sum().real() * dr;
 
+            // push back the energies and wfn
+            energies.push_back(E); if (opta.savewfn) wfns.push_back(psi);
+
+            // add the point to acf
+            if (opta.real && !opta.spectrum.potential.empty()) {
+                acf(j) = ((wfns.at(0).array() * EigenConj(psi).array()).sum() * dr);
+            }
+
             // calculate the errors
             double Eerr = std::abs(E - Eprev), Derr = (psi.array().abs2() - Dprev.array()).abs2().sum();
 
             // print the iteration
-            if (print) std::printf("%6d %20.14f %.2e %.2e\n", j, E, Eerr, Derr);
-
-            // push back the wfns and energies
-            wfns.push_back(psi), energies.push_back(E);
+            if (print) std::printf("%8d %20.14f %.2e %.2e\n", j, E, Eerr, Derr);
         }
 
         // assign the energy and wavefunction
@@ -132,29 +139,21 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
         // block to calculate spectrum
         if (opta.real && !opta.spectrum.potential.empty()) {
-            // initialize the autocorrelation function
-            Vector<std::complex<double>> acf(wfns.size());
+            // define the window
+            Vector<> window = Vector<>::Ones(opta.iters + 1);
 
-            // calculate the autocorrelation function
-            for (size_t j = 0; j < wfns.size(); j++) {
-                acf(j) = (wfns.at(0).array() * EigenConj(wfns.at(j)).array()).sum() * dr;
+            // assign the window
+            if (opta.spectrum.window == "hanning") {
+                window = 0.5 - 0.5 * (2 * M_PI * res.msv.t.array() / opta.iters).cos();
             }
-
-            // define the windowing function
-            auto wfun = (0.5 - 0.5 * (2 * M_PI * res.msv.t.array() / (wfns.size() - 1)).cos());
 
             // append and perform the Fourier transform
-            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::FFT(wfun.array() * acf.array()));
-
-            // subtract the ground state energy to get the correct spectrum
-            if (res.msv.opten.size()) {
-                res.msv.f = res.msv.f.array() - res.msv.opten(0);
-            }
+            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::FFT(window.array() * acf.array()).array());
         }
 
         // save the state wavefunction
-        if (dim == 2) ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", x.row(0), y.col(0), wfns, energies);
-        if (dim == 1) ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", x, wfns, energies);
+        if (opta.savewfn && dim == 2) ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", x.row(0), y.col(0), wfns, energies);
+        if (opta.savewfn && dim == 1) ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", x, wfns, energies);
     }
 
     // print the newline
@@ -205,7 +204,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     V.at(1).at(1) = V.at(1).at(1).array() - CAP.array();
 
     // append the first wfn and energy
-    psis.push_back(psi), energies.push_back(0);
+    double E = 0; energies.push_back(E), psis.push_back(psi);
 
     // define the real and imaginary space operators
     std::vector<std::vector<Vector<std::complex<double>>>> K(2, std::vector<Vector<std::complex<double>>>(2)); auto R = K;
@@ -229,6 +228,9 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
 
     // propagate the wavefunction
     for (int i = 0; i < optn.iters; i++) {
+        // save the previous values
+        Matrix<std::complex<double>> Dprev = psi.array().abs2(); double Eprev = E;
+
         // apply the propagator
         psi.col(0) = Numpy::FFT(R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
         psi.col(1) = Numpy::FFT(R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
@@ -238,17 +240,17 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         psi.col(1) = (R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
 
         // calculate the errors
-        double E = 0, Eerr = 0, Derr = (psi.array().abs2() - psis.at(psis.size() - 1).array().abs2()).abs2().sum();
+        double Eerr = 0, Derr = (psi.array().abs2() - Dprev.array()).abs2().sum();
 
         // append the wfn and energy
-        psis.push_back(psi), energies.push_back(0);
+        energies.push_back(0); if (optn.savewfn) psis.push_back(psi);
 
         // print the iteration
         if (print) std::printf("%6d %20.14f %.2e %.2e\n", i + 1, E, Eerr, Derr);
     }
 
     // save the wfn dynamics
-    for (size_t i = 0; i < system.potential.size(); i++) {
+    for (size_t i = 0; i < system.potential.size() && optn.savewfn; i++) {
         std::vector<Matrix<std::complex<double>>> state; for (auto psi : psis) state.push_back(psi.col(i));
         ModelSystem::SaveWavefunction(optn.folder + "/state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
     }
