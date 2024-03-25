@@ -23,52 +23,52 @@
 
 // option structures loaders for RHF
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Dynamics, iters, step, berendsen);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options::Hessian, step);
 
 // option structures loaders for RCI
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Dynamics, iters, step, berendsen);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options::Hessian, step);
 
 // option structures loaders for RMP
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Dynamics, iters, step, berendsen);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options::Hessian, step);
 
 // option structures loaders for UHF
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Dynamics, iters, step, berendsen);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Gradient, step);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options::Hessian, step);
 
 // option structures loaders for BAGEL
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options::Dynamics, iters, step, berendsen);
 
 // option structures loaders for ORCA
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, berendsen);
 
 // option structures loaders for model method
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, berendsen);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, folder, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, berendsen);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential, window, zpesub);
 
 // option loaders
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, optimize, guess, folder, savewfn, spectrum);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, optimize, guess, savewfn, spectrum);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian, excitations);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, folder, savewfn);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, savewfn);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options, dynamics, interface, folder);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, folder);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options, dynamics, interface);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface);
 
 int main(int argc, char** argv) {
     // create the argument parser and the program timer
@@ -76,6 +76,7 @@ int main(int argc, char** argv) {
 
     // add the command line arguments arguments
     program.add_argument("input").help("-- Input file to specify the calculation.");
+    program.add_argument("-d", "--defaults").help("-- Available options and defaults.").default_value(false).implicit_value(true);
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
     program.add_argument("-n", "--nthread").help("-- Number of threads.").default_value(1).scan<'i', int>();
 
@@ -90,7 +91,7 @@ int main(int argc, char** argv) {
     } nthread = program.get<int>("-n"); std::cout << std::fixed << std::setprecision(14); Result res;
 
     // get the path of the input
-    auto inputpath = std::filesystem::current_path() / std::filesystem::path(program.get("input")).parent_path();
+    ip = std::filesystem::current_path() / std::filesystem::path(program.get("input")).parent_path();
 
     // print program name and compiler version
     std::printf("QUANTUM ACORN (GCC %d.%d.%d, ", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
@@ -102,8 +103,8 @@ int main(int argc, char** argv) {
     // open the input file and parse the input
     std::ifstream istream(program.get("input")); nlohmann::json input = nlohmann::json::parse(istream); istream.close();
 
-    // print the input file
-    Printer::Title("INPUT FILE"); std::cout << input.dump(4) << std::endl << std::endl;
+    // print the input file and create the full input
+    Printer::Title("INPUT FILE"); std::cout << input.dump(4) << std::endl << std::endl; nlohmann::json fullinput;
 
     // parse the default options
     auto intopt = nlohmann::json::parse(intoptstr);
@@ -118,54 +119,34 @@ int main(int argc, char** argv) {
     auto rmpopt = nlohmann::json::parse(rmpoptstr);
     auto uhfopt = nlohmann::json::parse(uhfoptstr);
 
-    // assign the dynamics output folder to the method options
-    msaopt["dynamics"]["folder"] = inputpath;
-    msnopt["dynamics"]["folder"] = inputpath;
-    bglopt["dynamics"]["folder"] = inputpath;
-    orcopt["dynamics"]["folder"] = inputpath;
-    rciopt["dynamics"]["folder"] = inputpath;
-    rhfopt["dynamics"]["folder"] = inputpath;
-    uhfopt["dynamics"]["folder"] = inputpath;
-    rmpopt["dynamics"]["folder"] = inputpath;
-
-    // assign the output paths to methods
-    orcopt["folder"] = inputpath;
-    bglopt["folder"] = inputpath;
-    msaopt["folder"] = inputpath;
-    msnopt["folder"] = inputpath;
-
     // patch the input json file and apply defaults
-    if (input.contains("integral")) intopt.merge_patch(input.at("integral"));
-    if (input.contains("molecule")) molopt.merge_patch(input.at("molecule"));
-    if (input.contains("model")) mdlopt.merge_patch(input.at("model"));
-    if (input.contains("bagel")) bglopt.merge_patch(input.at("bagel"));
-    if (input.contains("orca")) orcopt.merge_patch(input.at("orca"));
-    if (input.contains("rci")) rciopt.merge_patch(input.at("rci"));
-    if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf"));
-    if (input.contains("uhf")) uhfopt.merge_patch(input.at("uhf"));
-    if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp"));
+    if (input.contains("integral")) intopt.merge_patch(input.at("integral")), fullinput["integral"] = intopt;
+    if (input.contains("molecule")) molopt.merge_patch(input.at("molecule")), fullinput["molecule"] = molopt;
+    if (input.contains("model")) mdlopt.merge_patch(input.at("model")), fullinput["model"] = mdlopt;
+    if (input.contains("rci")) rciopt.merge_patch(input.at("rci")), fullinput["rci"] = rciopt;
+    if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf")), fullinput["rhf"] = rhfopt;
+    if (input.contains("uhf")) uhfopt.merge_patch(input.at("uhf")), fullinput["uhf"] = uhfopt;
+    if (input.contains("rmp")) rmpopt.merge_patch(input.at("rmp")), fullinput["rmp"] = rmpopt;
 
     // patch the inputs for the modelsolver
     if (input.contains("solve") && mdlopt.at("potential").size() == 1) {
         msaopt.merge_patch(input.at("solve"));
         if (msaopt.at("spectrum").at("potential").get<std::string>().empty()) {
             msaopt.at("spectrum").at("potential") = mdlopt.at("potential").at(0).at(0);
-        }
-    }
-    if (input.contains("solve") && mdlopt.at("potential").size() != 1) msnopt.merge_patch(input.at("solve"));
+        } fullinput["solve"] = msaopt;
+    } else if (input.contains("solve") && mdlopt.at("potential").size() != 1) msnopt.merge_patch(input.at("solve")), fullinput["solve"] = msnopt;
 
     // throw an error if restricted calculation cannot be performed due to multiplicity
     if (molopt.at("multiplicity") != 1 && input.contains("rci")) throw std::runtime_error("RESTRICTED CONFIGURATION INTERACTION CAN ONLY BE PERFORMED FOR SINGLET STATES");
     if (molopt.at("multiplicity") != 1 && input.contains("rmp")) throw std::runtime_error("RESTRICTED MOLLER-PLESSET CAN ONLY BE PERFORMED FOR SINGLET STATES");
     if (molopt.at("multiplicity") != 1 && input.contains("rhf")) throw std::runtime_error("RESTRICTED HARTREE-FOCK CAN ONLY BE PERFORMED FOR SINGLET STATES");
 
-    // make all the interface paths absolute
-    bglopt.at("interface") = inputpath / bglopt.at("interface");
-    orcopt.at("interface") = inputpath / orcopt.at("interface");
+    // print the defaults if requested
+    if (program.get<bool>("-d")) Printer::Title("DEFAULTS"), std::cout << fullinput.dump(4) << std::endl << std::endl;
 
     if (input.contains("molecule")) {
         // get the path of the system file and initialize integrals
-        std::filesystem::path syspath = inputpath / std::filesystem::path(input.at("molecule").at("file")); Integrals ints(true);
+        std::filesystem::path syspath = ip / std::filesystem::path(input.at("molecule").at("file")); Integrals ints(true);
 
         // create the system from the system file
         std::ifstream mstream(syspath); System system(mstream, molopt.at("basis"), molopt.at("charge"), molopt.at("multiplicity")); mstream.close();
@@ -199,14 +180,14 @@ int main(int argc, char** argv) {
                 if (intopt.at("print").at("dnuclear")) Printer::Print(ints.dV, "NUCLEAR INTEGRAL DERIVATIVES"), std::cout << "\n";
                 if (intopt.at("print").at("dcoulomb")) Printer::Print(ints.dJ, "COULOMB INTEGRAL DERIVATIVES"), std::cout << "\n";
             } if (input.at("integral").contains("export")) {
-                if (intopt.at("export").at("overlap")) EigenWrite(inputpath / "S.mat", ints.S);
-                if (intopt.at("export").at("kinetic")) EigenWrite(inputpath / "T.mat", ints.T);
-                if (intopt.at("export").at("nuclear")) EigenWrite(inputpath / "V.mat", ints.V);
-                if (intopt.at("export").at("coulomb")) EigenWrite(inputpath / "J.mat", ints.J);
-                if (intopt.at("export").at("doverlap")) EigenWrite(inputpath / "dS.mat", ints.dS);
-                if (intopt.at("export").at("dkinetic")) EigenWrite(inputpath / "dT.mat", ints.dT);
-                if (intopt.at("export").at("dnuclear")) EigenWrite(inputpath / "dV.mat", ints.dV);
-                if (intopt.at("export").at("dcoulomb")) EigenWrite(inputpath / "dJ.mat", ints.dJ);
+                if (intopt.at("export").at("overlap")) EigenWrite(std::filesystem::path(ip) / "S.mat", ints.S);
+                if (intopt.at("export").at("kinetic")) EigenWrite(std::filesystem::path(ip) / "T.mat", ints.T);
+                if (intopt.at("export").at("nuclear")) EigenWrite(std::filesystem::path(ip) / "V.mat", ints.V);
+                if (intopt.at("export").at("coulomb")) EigenWrite(std::filesystem::path(ip) / "J.mat", ints.J);
+                if (intopt.at("export").at("doverlap")) EigenWrite(std::filesystem::path(ip) / "dS.mat", ints.dS);
+                if (intopt.at("export").at("dkinetic")) EigenWrite(std::filesystem::path(ip) / "dT.mat", ints.dT);
+                if (intopt.at("export").at("dnuclear")) EigenWrite(std::filesystem::path(ip) / "dV.mat", ints.dV);
+                if (intopt.at("export").at("dcoulomb")) EigenWrite(std::filesystem::path(ip) / "dJ.mat", ints.dJ);
             }
         }
 
@@ -232,10 +213,10 @@ int main(int argc, char** argv) {
                 if (rhfopt.at("print").at("density")) Printer::Print(res.rhf.D, "DENSITY MATRIX"), std::cout << "\n";
                 if (rhfopt.at("print").at("orben")) Printer::Print(res.rhf.eps, "ORBITAL ENERGIES"), std::cout << "\n";
             } if (input.at("rhf").contains("export")) {
-                if (rhfopt.at("export").at("hcore")) EigenWrite(inputpath / "H.mat", Matrix<>(ints.T + ints.V));
-                if (rhfopt.at("export").at("coef")) EigenWrite(inputpath / "C.mat", res.rhf.C);
-                if (rhfopt.at("export").at("density")) EigenWrite(inputpath / "D.mat", res.rhf.D);
-                if (rhfopt.at("export").at("orben")) EigenWrite(inputpath / "EPS.mat", res.rhf.eps);
+                if (rhfopt.at("export").at("hcore")) EigenWrite(std::filesystem::path(ip) / "H.mat", Matrix<>(ints.T + ints.V));
+                if (rhfopt.at("export").at("coef")) EigenWrite(std::filesystem::path(ip) / "C.mat", res.rhf.C);
+                if (rhfopt.at("export").at("density")) EigenWrite(std::filesystem::path(ip) / "D.mat", res.rhf.D);
+                if (rhfopt.at("export").at("orben")) EigenWrite(std::filesystem::path(ip) / "EPS.mat", res.rhf.eps);
             }
 
             // print the mulliken charges
@@ -280,10 +261,10 @@ int main(int argc, char** argv) {
                     if (rciopt.at("print").at("hcorems")) Printer::Print(ints.Tms + ints.Vms, "CORE HAMILTONIAN MATRIX IN MS BASIS"), std::cout << "\n";
                     if (rciopt.at("print").at("coulombms")) Printer::Print(ints.Jms, "COULOMB INTEGRALS IN MS BASIS"), std::cout << "\n";
                 } if (input.at("rci").contains("export")) {
-                    if (rciopt.at("export").at("kineticms")) EigenWrite(inputpath / "TMS.mat", ints.Tms);
-                    if (rciopt.at("export").at("nuclearms")) EigenWrite(inputpath / "VMS.mat", ints.Vms);
-                    if (rciopt.at("export").at("hcorems")) EigenWrite(inputpath / "HMS.mat", Matrix<>(ints.Tms + ints.Vms));
-                    if (rciopt.at("export").at("coulombms")) EigenWrite(inputpath / "JMS.mat", ints.Jms);
+                    if (rciopt.at("export").at("kineticms")) EigenWrite(std::filesystem::path(ip) / "TMS.mat", ints.Tms);
+                    if (rciopt.at("export").at("nuclearms")) EigenWrite(std::filesystem::path(ip) / "VMS.mat", ints.Vms);
+                    if (rciopt.at("export").at("hcorems")) EigenWrite(std::filesystem::path(ip) / "HMS.mat", Matrix<>(ints.Tms + ints.Vms));
+                    if (rciopt.at("export").at("coulombms")) EigenWrite(std::filesystem::path(ip) / "JMS.mat", ints.Jms);
                 }
 
                 // perform the calculation
@@ -294,8 +275,8 @@ int main(int argc, char** argv) {
                     if (rciopt.at("print").at("hamiltonian")) Printer::Print(res.rci.F, "CI HAMILTONIAN"), std::cout << "\n";
                     if (rciopt.at("print").at("energies")) Printer::Print(res.rci.eps, "EXCITED STATE ENERGIES"), std::cout << "\n";
                 } if (input.at("rci").contains("export")) {
-                    if (rciopt.at("export").at("hamiltonian")) EigenWrite(inputpath / "HCI.mat", res.rci.F);
-                    if (rciopt.at("export").at("energies")) EigenWrite(inputpath / "ECI.mat", res.rci.eps);
+                    if (rciopt.at("export").at("hamiltonian")) EigenWrite(std::filesystem::path(ip) / "HCI.mat", res.rci.F);
+                    if (rciopt.at("export").at("energies")) EigenWrite(std::filesystem::path(ip) / "ECI.mat", res.rci.eps);
                 }
 
                 // print the resulting RCI energy
@@ -327,7 +308,7 @@ int main(int argc, char** argv) {
                 if (input.at("rmp").contains("print")) {
                     if (rmpopt.at("print").at("coulombmo")) Printer::Print(ints.Jmo, "COULOMB INTEGRALS IN MO BASIS"), std::cout << "\n";
                 } if (input.at("rmp").contains("export")) {
-                    if (rmpopt.at("export").at("coulombmo")) EigenWrite(inputpath / "JMO.mat", ints.Jmo);
+                    if (rmpopt.at("export").at("coulombmo")) EigenWrite(std::filesystem::path(ip) / "JMO.mat", ints.Jmo);
                 }
 
                 // run the calculation
@@ -365,13 +346,13 @@ int main(int argc, char** argv) {
                 if (uhfopt.at("print").at("orbena")) Printer::Print(res.uhf.epsa, "ALPHA ORBITAL ENERGIES"), std::cout << "\n";
                 if (uhfopt.at("print").at("orbenb")) Printer::Print(res.uhf.epsb, "BETA ORBITAL ENERGIES"), std::cout << "\n";
             } if (input.at("uhf").contains("export")) {
-                if (uhfopt.at("export").at("hcore")) EigenWrite(inputpath / "H.mat", Matrix<>(ints.T + ints.V));
-                if (uhfopt.at("export").at("coefa")) EigenWrite(inputpath / "CA.mat", res.uhf.Ca);
-                if (uhfopt.at("export").at("coefb")) EigenWrite(inputpath / "CB.mat", res.uhf.Cb);
-                if (uhfopt.at("export").at("densitya")) EigenWrite(inputpath / "DA.mat", res.uhf.Da);
-                if (uhfopt.at("export").at("densityb")) EigenWrite(inputpath / "DB.mat", res.uhf.Db);
-                if (uhfopt.at("export").at("orbena")) EigenWrite(inputpath / "EPSA.mat", res.uhf.epsa);
-                if (uhfopt.at("export").at("orbenb")) EigenWrite(inputpath / "EPSB.mat", res.uhf.epsb);
+                if (uhfopt.at("export").at("hcore")) EigenWrite(std::filesystem::path(ip) / "H.mat", Matrix<>(ints.T + ints.V));
+                if (uhfopt.at("export").at("coefa")) EigenWrite(std::filesystem::path(ip) / "CA.mat", res.uhf.Ca);
+                if (uhfopt.at("export").at("coefb")) EigenWrite(std::filesystem::path(ip) / "CB.mat", res.uhf.Cb);
+                if (uhfopt.at("export").at("densitya")) EigenWrite(std::filesystem::path(ip) / "DA.mat", res.uhf.Da);
+                if (uhfopt.at("export").at("densityb")) EigenWrite(std::filesystem::path(ip) / "DB.mat", res.uhf.Db);
+                if (uhfopt.at("export").at("orbena")) EigenWrite(std::filesystem::path(ip) / "EPSA.mat", res.uhf.epsa);
+                if (uhfopt.at("export").at("orbenb")) EigenWrite(std::filesystem::path(ip) / "EPSB.mat", res.uhf.epsb);
             }
 
             // print the total energy
@@ -419,14 +400,14 @@ int main(int argc, char** argv) {
                     for (int j = 0; j < res.msv.r.size(); j++) {
                         U(i * res.msv.r.size() + j, 0) = res.msv.r(i), U(i * res.msv.r.size() + j, 1) = res.msv.r(j), U(i * res.msv.r.size() + j, 2) = res.msv.U(i * res.msv.r.size() + j);
                     }
-                } EigenWrite(inputpath / "U.mat", U);
-            } else {Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(inputpath / "U.mat", U);}
+                } EigenWrite(std::filesystem::path(ip) / "U.mat", U);
+            } else {Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(std::filesystem::path(ip) / "U.mat", U);}
 
             // save the spectral analysis results if available
             if (res.msv.spectra.size()) {
                 for (size_t i = 0; i < res.msv.spectra.size(); i++) {
-                    Matrix<> F(res.msv.f.size(), 2); F << res.msv.f, res.msv.spectra.at(i).cwiseAbs(); EigenWrite(inputpath / ("spectrum" + std::to_string(i) + ".mat"), F);
-                    Matrix<> A(res.msv.f.size(), 2); A << res.msv.t, res.msv.acfs.at(i).cwiseAbs(); EigenWrite(inputpath / ("acf" + std::to_string(i) + ".mat"), A);
+                    Matrix<> F(res.msv.f.size(), 2); F << res.msv.f, res.msv.spectra.at(i).cwiseAbs(); EigenWrite(std::filesystem::path(ip) / ("spectrum" + std::to_string(i) + ".mat"), F);
+                    Matrix<> A(res.msv.t.size(), 2); A << res.msv.t, res.msv.acfs.at(i).cwiseAbs(); EigenWrite(std::filesystem::path(ip) / ("acf" + std::to_string(i) + ".mat"), A);
                 }
             }
         }

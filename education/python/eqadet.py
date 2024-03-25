@@ -103,12 +103,10 @@ if __name__ == "__main__":
         states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
 
     # get the windowing function for FFT
-    window = np.hanning(args.iters + 1)
+    window = 0.5 - 0.5 * np.cos(2 * np.pi * (t + args.tstep * args.iters / 2.0) / args.iters)
 
     # calculate the autocorrelation function of a ground state and its Fourier transform
     if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.fft.hfft(G, args.iters + 1));
-
-    f *= 219474.63; t *= 2.418884e-5
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
@@ -143,7 +141,7 @@ if __name__ == "__main__":
             for i in range(len(plots)): plots[i][1].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.imag(states[i][j if j < len(states[i]) else -1]))
 
         # plot the spectrum
-        if args.real: ax[1].plot(t, np.abs(G)) # type: ignore
+        if args.real: ax[1].plot(t, window * np.abs(G)) # type: ignore
         if args.real: ax[2].plot(f, np.abs(F)) # type: ignore
 
     if dim == 2:

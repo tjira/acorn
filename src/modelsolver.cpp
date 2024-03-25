@@ -124,7 +124,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
             // add the point to acf
             if (opta.real && !opta.spectrum.potential.empty()) {
-                acf(j) = ((wfns.at(0).array() * EigenConj(psi).array()).sum() * dr);
+                acf(j) = ((EigenConj(wfns.at(0)).array() * psi.array()).sum() * dr);
             }
 
             // calculate the errors
@@ -144,16 +144,16 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
             // assign the window
             if (opta.spectrum.window == "hanning") {
-                window = 0.5 - 0.5 * (2 * M_PI * res.msv.t.array() / opta.iters).cos();
+                window = 0.5 - 0.5 * (2 * M_PI * (res.msv.t.array() + opta.step * opta.iters / 2.0) / opta.iters).cos();
             }
 
             // append and perform the Fourier transform
-            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::FFT(window.array() * acf.array()).array());
+            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::HFFT1D(window.array() * acf.array()).array());
         }
 
         // save the state wavefunction
-        if (opta.savewfn && dim == 2) ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", x.row(0), y.col(0), wfns, energies);
-        if (opta.savewfn && dim == 1) ModelSystem::SaveWavefunction(opta.folder + "/state" + std::to_string(i) + ".dat", x, wfns, energies);
+        if (opta.savewfn && dim == 2) ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", x.row(0), y.col(0), wfns, energies);
+        if (opta.savewfn && dim == 1) ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", x, wfns, energies);
     }
 
     // print the newline
@@ -252,7 +252,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // save the wfn dynamics
     for (size_t i = 0; i < system.potential.size() && optn.savewfn; i++) {
         std::vector<Matrix<std::complex<double>>> state; for (auto psi : psis) state.push_back(psi.col(i));
-        ModelSystem::SaveWavefunction(optn.folder + "/state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
+        ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
     }
 
     // return

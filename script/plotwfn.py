@@ -16,7 +16,6 @@ def read(wfnfile, static=False):
     # load and map the file
     with open(wfnfile, "r+b") as file: data, filemap = [], mmap.mmap(file.fileno(), 0, prot=mmap.PROT_READ)
 
-
     # extract the header with independent variables
     info = np.array(filemap.readline().decode().split()[1:], dtype=int)
     xyz = [filemap.readline().decode().split() for _ in range(info[0])]

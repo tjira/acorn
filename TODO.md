@@ -1,22 +1,21 @@
 # TODO List
 
 - [ ] Add BAGEL interface with excited state dynamics
-- [ ] Add Hermitian FFT for spectra calculation
 - [ ] Add energy calculation for exact NAD
-- [ ] Add exact solver for 2D HO
 - [ ] Add excitation specifications to FCI
 - [ ] Add some compression for exact wavefunctions
 - [ ] Add the options to specify optimization parameters when calculation excited state spectrum from GS
-- [ ] Add windowing functions to FFT
 - [ ] Create a compare script that compares results with ORCA or Psi4
-- [ ] Make the plotwfn.py not read the whole file if static view specified
 - [ ] Somehow specify the initial momentum for NAD
 - [ ] Transform the NAD wavefunction to adiabatic basis
+- [x] Add Hermitian FFT for spectra calculation
 - [x] Add Mulliken analysis
 - [x] Add QD spectrum calculation for excited states
+- [x] Add exact solver for 2D potentials
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
+- [x] Add windowing functions to FFT
 - [x] Check the correct working of the library before merging the fci branch
 - [x] Fix gradient calculation
 - [x] Fix the shells variable in system class that reads the basis each time the system is created
@@ -30,5 +29,6 @@
 - [x] Make the exported library independent of libint
 - [x] Make the matrix printing at the point of calculation not at the end
 - [x] Make the output print the input and molecule specification
+- [x] Make the plotwfn.py not read the whole file if static view specified
 - [x] Modify restricted calculations to account for charge and multiplicity
 - [x] Remove the python folder before merging the fci branch

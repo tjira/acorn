@@ -19,7 +19,7 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
     }
 
     // get the degrees of freedom and write the initial geometry
-    double Nf = system.getAtoms().size() * 3 - 6; system.save(get()->opt.dynamics.folder / std::filesystem::path("trajectory.xyz")) ;
+    double Nf = system.getAtoms().size() * 3 - 6; system.save(ip / std::filesystem::path("trajectory.xyz")) ;
 
     // get the dynamics step and start the timer
     double step = get()->opt.dynamics.step; auto start = Timer::Now();
@@ -64,7 +64,7 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         system.move(step * (v + 0.5 * a * step));
 
         // write the current geometry
-        system.save(get()->opt.dynamics.folder / std::filesystem::path("trajectory.xyz"), std::ios::app);
+        system.save(ip / std::filesystem::path("trajectory.xyz"), std::ios::app);
 
         // calculate the next energy with gradient
         if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, Orca>) {

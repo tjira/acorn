@@ -44,3 +44,4 @@ inline bool StringContains(const std::string& s, const char& e) {return s.find(e
 
 // number of threads
 inline int nthread = 1;
+inline std::string ip;

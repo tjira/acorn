@@ -9,7 +9,7 @@ public:
         // options structures
         struct Dynamics {
             struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
-            int iters=100; double step=1.0; std::string folder;
+            int iters=100; double step=1.0;
         } dynamics={};
         struct Spectrum {
             bool zpesub=false; std::string potential="", window="";
@@ -18,18 +18,18 @@ public:
         // variables
         bool real=false, optimize=false, savewfn=false;
         int nstate=1, iters=1000; double step=0.1;
-        std::string folder, guess;
+        std::string guess;
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};
         // dynamics structure
         struct Dynamics {
             struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
-            int iters=100; double step=1.0; std::string folder;
+            int iters=100; double step=1.0;
         } dynamics={};
 
         // variables
         bool savewfn=false; double step=0.1; int iters=1000;
-        std::vector<std::string> guess; std::string folder;
+        std::vector<std::string> guess;
     };
 public:
     // constructors and destructors
