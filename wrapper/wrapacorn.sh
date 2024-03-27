@@ -2,7 +2,7 @@
 
 # USAGE: wrapacorn.sh METHOD SYSTEM BASIS CHARGE MULT
 if [ "$#" -ne 5 ]; then
-    echo "USAGE: wrapacorn.sh METHOD SYSTEM BASIS CHARGE MULT"; exit 1
+    echo "USAGE: wrapacorn.sh SYSTEM BASIS CHARGE MULT METHOD"; exit 1
 fi
 
 read -d '' RHF << EOF
@@ -22,7 +22,7 @@ EOF
 
 create() {
     # extract the variables from the function arguments
-    METHOD="${1^^}"; SYSTEM="$2"; BASIS="${3^^}"; CHARGE="$4"; MULT="$5"
+    METHOD="${5^^}"; SYSTEM="$1"; BASIS="${2^^}"; CHARGE="$3"; MULT="$4"
 
     # create the molecule block
     jq -n --arg file "$SYSTEM" --arg basis "$BASIS" --argjson charge "$CHARGE" --argjson multiplicity "$MULT" '{molecule: $ARGS.named}' > molecule.json

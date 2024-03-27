@@ -2,7 +2,7 @@
 
 # USAGE: wraporca.sh METHOD SYSTEM BASIS CHARGE MULT
 if [ "$#" -ne 5 ]; then
-    echo "USAGE: wraporca.sh METHOD SYSTEM BASIS CHARGE MULT"; exit 1
+    echo "USAGE: wraporca.sh SYSTEM BASIS CHARGE MULT METHOD"; exit 1
 fi
 
 # create a folder
@@ -10,9 +10,9 @@ mkdir -p .orca
 
 # specify the input file
 cat << EOT > .orca/orca.inp
-! ${1^^} ${3^^} HCORE NOFROZENCORE
+! ${5^^} ${2^^} HCORE NOFROZENCORE
 
-*xyzfile $4 $5 ../$2
+*xyzfile $3 $4 ../$1
 EOT
 
 # run the calculation
