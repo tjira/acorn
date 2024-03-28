@@ -47,9 +47,6 @@ if __name__ == "__main__":
     # define x and k spaces
     x, k = np.linspace(args.range[0], args.range[1], args.points), 2 * np.pi * np.fft.fftfreq(args.points, dx); y, z = x, x; l, m = k, k;
 
-    # define the time and frequency axis
-    t, f = np.linspace(0, args.iters * args.tstep, args.iters + 1), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(args.iters + 1, args.tstep));
-
     # define the number of dimensions and coordinate step
     dim = 3 if "z" in args.potential else (2 if "y" in args.potential else 1); dr = np.prod([[dx, dy, dz][i] for i in range(dim)])
 
@@ -103,10 +100,12 @@ if __name__ == "__main__":
         states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
 
     # get the windowing function for FFT
-    window = 0.5 - 0.5 * np.cos(2 * np.pi * (t + args.tstep * args.iters / 2.0) / args.iters)
+    # window = 0.5 - 0.5 * np.cos(2 * np.pi * (t + args.tstep * args.iters / 2.0) / args.iters)
 
     # calculate the autocorrelation function of a ground state and its Fourier transform
-    if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.fft.hfft(G, args.iters + 1));
+    if args.real:
+        G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.fft.hfft(G, len(G)))
+        t, f = np.linspace(0, (len(G) - 1) * args.tstep, len(G)), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(G), args.tstep))
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
@@ -140,9 +139,9 @@ if __name__ == "__main__":
             for i in range(len(plots)): plots[i][0].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.real(states[i][j if j < len(states[i]) else -1]))
             for i in range(len(plots)): plots[i][1].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.imag(states[i][j if j < len(states[i]) else -1]))
 
-        # plot the spectrum
+        # plot the spectrum and acf
+        if args.real: ax[2].plot(f, f * np.abs(F)) # type: ignore
         if args.real: ax[1].plot(t, np.abs(G)) # type: ignore
-        if args.real: ax[2].plot(f, np.abs(F)) # type: ignore
 
     if dim == 2:
         # create the figure

@@ -148,7 +148,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
             }
 
             // append and perform the Fourier transform
-            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::HFFT1D(window.array() * acf.array()).array());
+            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(res.msv.f.array() * Numpy::HFFT1D(window.array() * acf.array()).array());
 
             // normalize the spectrum
             if (opta.spectrum.normalize) {
