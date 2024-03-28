@@ -396,8 +396,8 @@ int main(int argc, char** argv) {
             if (res.msv.spectra.size() && msaopt.at("spectrum").contains("moments")) {
                 for (size_t i = 0; i < res.msv.spectra.size(); i++) {
                     double M0 = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), 00, 0), M1 = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), 00, 1);
-                    if (msaopt.at("spectrum").at("moments") >= 0) std::printf("MOMENT #00 OF SPECTRUM #%d: %1.2e\n", (int)i + 1, M0);
-                    if (msaopt.at("spectrum").at("moments") >= 1) std::printf("MOMENT #01 OF SPECTRUM #%d: %1.2e\n", (int)i + 1, M1);
+                    if (msaopt.at("spectrum").at("moments") >= 0) std::printf("MOMENT #00 OF SPECTRUM #%d: % 2.2e\n", (int)i + 1, M0);
+                    if (msaopt.at("spectrum").at("moments") >= 1) std::printf("MOMENT #01 OF SPECTRUM #%d: % 2.2e\n", (int)i + 1, M1);
                     for (int j = 2; j <= msaopt.at("spectrum").at("moments"); j++) {
                         double MJ = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), M1, j); std::printf("MOMENT #%02d OF SPECTRUM #%d: % 2.2e\n", j, (int)i + 1, MJ);
                     }
