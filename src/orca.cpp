@@ -8,7 +8,7 @@ Result Orca::gradient(const System& system, const Integrals&, Result res, bool) 
     std::stringstream cmd; cmd << "./orca.sh " << system.getCharge() << " " << system.getMulti() << " " << system.getBasis() << " > /dev/null 2>&1", std::filesystem::create_directory(orcadir);
 
     // save the system and copy the interface
-    system.save(orcadir / "molecule.xyz"), std::filesystem::copy_file(opt.interface, orcadir / "orca.sh", std::filesystem::copy_options::overwrite_existing);
+    system.save(orcadir / "molecule.xyz"), std::filesystem::copy_file(ip / opt.interface, orcadir / "orca.sh", std::filesystem::copy_options::overwrite_existing);
 
     // run the calculation and check for the error code
     auto pipe = popen(("cd " + orcadir.string() + " && " + cmd.str()).c_str(), "r");

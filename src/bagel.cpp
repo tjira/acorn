@@ -8,7 +8,7 @@ Result Bagel::gradient(const System& system, const Integrals&, Result res, bool)
     std::stringstream cmd; cmd << "./bagel.sh " << system.getCharge() << " " << system.getMulti() << " " << system.getBasis() << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
 
     // save the system and copy the interface
-    system.save(bageldir / "molecule.xyz"), std::filesystem::copy_file(opt.interface, bageldir / "bagel.sh", std::filesystem::copy_options::overwrite_existing);
+    system.save(bageldir / "molecule.xyz"), std::filesystem::copy_file(ip / opt.interface, bageldir / "bagel.sh", std::filesystem::copy_options::overwrite_existing);
 
     // run the calculation and check for the error code
     auto pipe = popen(("cd " + bageldir.string() + " && " + cmd.str()).c_str(), "r");

@@ -122,7 +122,9 @@ int main(int argc, char** argv) {
     // patch the input json file and apply defaults
     if (input.contains("integral")) intopt.merge_patch(input.at("integral")), fullinput["integral"] = intopt;
     if (input.contains("molecule")) molopt.merge_patch(input.at("molecule")), fullinput["molecule"] = molopt;
+    if (input.contains("bagel")) bglopt.merge_patch(input.at("bagel")), fullinput["bagel"] = bglopt;
     if (input.contains("model")) mdlopt.merge_patch(input.at("model")), fullinput["model"] = mdlopt;
+    if (input.contains("orca")) orcopt.merge_patch(input.at("orca")), fullinput["orca"] = orcopt;
     if (input.contains("rci")) rciopt.merge_patch(input.at("rci")), fullinput["rci"] = rciopt;
     if (input.contains("rhf")) rhfopt.merge_patch(input.at("rhf")), fullinput["rhf"] = rhfopt;
     if (input.contains("uhf")) uhfopt.merge_patch(input.at("uhf")), fullinput["uhf"] = uhfopt;
