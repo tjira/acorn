@@ -54,6 +54,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics::Berendsen, tau, temp
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, berendsen);
 
 // option structures loaders for model methods
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Optimize, step, iters);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential, window, normalize, zpesub);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics::Berendsen, tau, temp, timeout);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, berendsen);
@@ -385,9 +386,16 @@ int main(int argc, char** argv) {
 
             // if nonadiabatic model was specified assign to the solver the nonadiabatic version
             if (mdlopt.at("potential").size() > 1) msv = ModelSolver(msnopt.get<ModelSolver::OptionsNonadiabatic>());
+
+            // run the optimization if requested
+            if (mdlopt.at("potential").size() == 1 && input.at("solve").contains("optimize")) {
+                auto opt = msaopt.get<ModelSolver::OptionsAdiabatic>(); opt.real = false;
+                opt.iters = opt.optimize.iters, opt.step = opt.optimize.step;
+                res = ModelSolver(opt).run(model);
+            }
             
             // run the calculation
-            res = msv.run(model); 
+            res = msv.run(model, res);
 
             // if the optimization was performed print the resulting energies
             if (!msaopt.at("real") && mdlopt.at("potential").size() == 1) Printer::Print(res.msv.opten, "ENERGIES"), std::cout << std::endl;

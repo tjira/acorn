@@ -7,6 +7,7 @@
     "solve" : {
         "guess" : "exp(-(x^2+y^2))",
         "real" : false,
-        "savewfn" : true
+        "savewfn" : true,
+        "iters" : 200
     }
 }

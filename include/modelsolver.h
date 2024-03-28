@@ -11,13 +11,16 @@ public:
             struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
             int iters=100; double step=1.0;
         } dynamics={};
+        struct Optimize {
+            double step=1; int iters=1000;
+        } optimize={};
         struct Spectrum {
             bool normalize=false, zpesub=false; std::string potential="", window="";
         } spectrum={};
 
         // variables
-        bool real=false, optimize=false, savewfn=false;
         int nstate=1, iters=1000; double step=0.1;
+        bool real=false, savewfn=false;
         std::string guess;
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};

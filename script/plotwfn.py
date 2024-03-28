@@ -89,7 +89,7 @@ if __name__ == "__main__":
         plt.axis((np.min(domain), np.max(domain), ymin - 0.02 * (ymax - ymin), ymax + 0.02 * (ymax - ymin)))
 
         # define the plots and animation update function
-        plots = [[plt.plot(wfndata[i][1][0], np.real(wfndata[i][2][-999]) + energy[i][0])[0], plt.plot(wfndata[i][1][0], np.imag(wfndata[i][2][0]) + energy[i][0])[0]] for i in range(len(args.wfns))]
+        plots = [[plt.plot(wfndata[i][1][0], np.real(wfndata[i][2][-1]) + energy[i][0])[0], plt.plot(wfndata[i][1][0], np.imag(wfndata[i][2][0]) + energy[i][0])[0]] for i in range(len(args.wfns))]
 
         # define the animation update function
         def update(j): # type: ignore

@@ -38,9 +38,12 @@ if __name__ == "__main__":
 
     # plot the matrices
     if args.dimension == 2:
-        for M in mats: plt.axes(projection="3d").plot_trisurf(M[:, 0], M[:, 1], M[:, 2])
+        for M in mats:
+            plt.axes(projection="3d").plot_trisurf(M[:, 0], M[:, 1], M[:, 2])
     else:
-        for M in mats: plt.plot(M[:, 0], M[:, 1])
+        for M in mats:
+            for C in M.T[1:]:
+                plt.plot(M[:, 0], C)
 
     # add legend, labels and limits if provided
     if args.legend: plt.legend(args.legend)

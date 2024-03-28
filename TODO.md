@@ -4,7 +4,6 @@
 - [ ] Add energy calculation for exact NAD
 - [ ] Add excitation specifications to FCI
 - [ ] Add some compression for exact wavefunctions
-- [ ] Add the options to specify optimization parameters when calculation excited state spectrum from GS
 - [ ] Create a compare script that compares results with ORCA or Psi4
 - [ ] Somehow specify the initial momentum for NAD
 - [ ] Transform the NAD wavefunction to adiabatic basis
@@ -15,6 +14,7 @@
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
+- [x] Add the options to specify optimization parameters when calculation excited state spectrum from GS
 - [x] Add windowing functions to FFT
 - [x] Check the correct working of the library before merging the fci branch
 - [x] Fix gradient calculation

@@ -36,7 +36,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     } x = y.transpose(), k = l.transpose();
     
     // initialize the potential matrix
-    res.msv.U = Matrix<>((int)std::pow(system.ngrid, dim), 1);
+    res.msv.U = Matrix<>((int)std::pow(system.ngrid, dim), opta.real ? 2 : 1);
 
     // calculate the potential values
     if (dim == 1) U = Expression(system.potential.at(0).at(0)).eval(res.msv.r);
@@ -49,7 +49,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     // assign correct variables for 1-dimensional model
     if (dim == 1) x = res.msv.r, k = res.msv.k, y = Matrix<>::Zero(system.ngrid, 1), l = Matrix<>::Zero(system.ngrid, 1);
 
-    // fill the potential matrix
+    // fill the ground state potential column
     for (int i = 0; i < res.msv.U.rows(); i++) {
         res.msv.U(i, 0) = U(i % system.ngrid, i / system.ngrid);
     }
@@ -63,17 +63,14 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
     // real time dynamics operators
     if (opta.real) {
-        if (opta.optimize) {
-            // create imaginary options and with necessary values
-            OptionsAdiabatic imopt = opta; imopt.real = false, imopt.iters = 10000, imopt.step = 0.1, imopt.savewfn = false;
-
-            // optimize the wavefunctions
-            auto optres = ModelSolver(imopt).run(system, res, false); res.msv.optstates = optres.msv.optstates, res.msv.opten = optres.msv.opten;
-        }
-
         // change the potential for te real time dynamics
         if (dim == 1) U = Expression(opta.spectrum.potential).eval(res.msv.r).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
         if (dim == 2) U = Expression(opta.spectrum.potential).eval(x, y).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
+
+        // fill the excited state potential column
+        for (int i = 0; i < res.msv.U.rows(); i++) {
+            res.msv.U(i, 1) = U(i % system.ngrid, i / system.ngrid);
+        }
 
         // define the real time operators
         K = (-0.5 * I * (k.array().pow(2) + l.array().pow(2)) * opta.step / system.mass()).exp();
