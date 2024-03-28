@@ -18,6 +18,14 @@ std::vector<std::vector<int>> Numpy::Combinations(int n, int k) {
     return combs;
 }
 
+double Numpy::Moment(const Vector<>& x, const Vector<>& f, double c, int n) {
+    // calculate the moment
+    double moment = 0; for (int i = 0; i < x.size(); i++) moment += std::pow(x(i) - c, n) * f(i);
+
+    // return the result
+    return moment / (n ? f.sum() : 1/(x(1) - x(0)));
+}
+
 Matrix<> Numpy::Repeat(const Matrix<>& A, int count, int axis) {
     // create the result matrix
     Matrix<> B(axis ? A.rows() : count * A.rows(), axis ? count * A.cols() : A.cols());

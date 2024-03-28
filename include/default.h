@@ -23,7 +23,8 @@ inline std::string moloptstr = R"({
 })";
 
 inline std::string msaoptstr = R"({
-    "real" : false, "step" : 0.1, "optimize" : false, "guess" : "-x^2", "nstate" : 1, "iters" : 1000, "savewfn" : false, "spectrum" : {"zpesub" : false, "potential" : "", "window" : ""},
+    "real" : false, "step" : 0.1, "optimize" : false, "guess" : "-x^2", "nstate" : 1, "iters" : 1000, "savewfn" : false,
+    "spectrum" : {"normalize" : false, "zpesub" : false, "potential" : "", "window" : ""},
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";
 

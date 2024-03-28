@@ -53,12 +53,12 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options::Dynamics, iters, step, berend
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics::Berendsen, tau, temp, timeout);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, berendsen);
 
-// option structures loaders for model method
+// option structures loaders for model methods
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential, window, normalize, zpesub);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics::Berendsen, tau, temp, timeout);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, berendsen);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics::Berendsen, tau, temp, timeout);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, berendsen);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential, window, zpesub);
 
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, optimize, guess, savewfn, spectrum);
@@ -390,10 +390,19 @@ int main(int argc, char** argv) {
             res = msv.run(model); 
 
             // if the optimization was performed print the resulting energies
-            if (!msaopt.at("real") && mdlopt.at("potential").size() == 1) Printer::Print(res.msv.opten, "ENERGIES");
+            if (!msaopt.at("real") && mdlopt.at("potential").size() == 1) Printer::Print(res.msv.opten, "ENERGIES"), std::cout << std::endl;
 
-            // print new line
-            std::cout << std::endl;
+            // print the spectral moments
+            if (res.msv.spectra.size() && msaopt.at("spectrum").contains("moments")) {
+                for (size_t i = 0; i < res.msv.spectra.size(); i++) {
+                    double M0 = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), 00, 0), M1 = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), 00, 1);
+                    if (msaopt.at("spectrum").at("moments") >= 0) std::printf("MOMENT #00 OF SPECTRUM #%d: %1.2e\n", (int)i + 1, M0);
+                    if (msaopt.at("spectrum").at("moments") >= 1) std::printf("MOMENT #01 OF SPECTRUM #%d: %1.2e\n", (int)i + 1, M1);
+                    for (int j = 2; j <= msaopt.at("spectrum").at("moments"); j++) {
+                        double MJ = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), M1, j); std::printf("MOMENT #%02d OF SPECTRUM #%d: % 2.2e\n", j, (int)i + 1, MJ);
+                    }
+                } std::cout << std::endl;
+            }
 
             // extract and save the potential points
             if (StringContains(mdlopt.at("potential").at(0).at(0), 'y')) {

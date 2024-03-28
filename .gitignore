@@ -6,6 +6,7 @@ trajectory.xyz
 molecule.xyz
 bagel.json
 orca.inp
+.replit
 
 # exts
 *.clean
@@ -13,10 +14,12 @@ orca.inp
 *.dat
 *.gif
 *.mat
+*.nix
 *.out
 *.png
 
 # folders
+.ccls-cache/
 .cache/
 _site/
 build/

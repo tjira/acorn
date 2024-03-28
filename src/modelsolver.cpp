@@ -149,6 +149,11 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
             // append and perform the Fourier transform
             res.msv.acfs.push_back(acf); res.msv.spectra.push_back(Numpy::HFFT1D(window.array() * acf.array()).array());
+
+            // normalize the spectrum
+            if (opta.spectrum.normalize) {
+                res.msv.spectra.back() = res.msv.spectra.back().array() / res.msv.spectra.back().array().abs().maxCoeff();
+            }
         }
 
         // save the state wavefunction
@@ -157,7 +162,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     }
 
     // print the newline
-    if (print && !opta.real) std::printf("\n");
+    if (print) std::printf("\n");
 
     // return the results
     return res;

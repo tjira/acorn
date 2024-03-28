@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np
+import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, scipy.stats as stats, scipy
 
 def energy(wfn):
     Ek = 0.5 * np.conj(wfn) * np.fft.ifftn(sum([[k, l, m][i]**2 for i in range(dim)]) * np.fft.fftn(wfn))
@@ -85,8 +85,16 @@ if __name__ == "__main__":
         # append wavefunction to list of states and print energy
         states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
 
+    # propagate each state in real time on ground state
+    ZPE = energy(states[0][-1]) * 219474.63
+    f *= 219474.63
+    R, K = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * sum([[k, l, m][i]**2 for i in range(dim)]) * args.tstep / args.mass)
+    for i in (i for i in range(args.nstate) if args.real):
+        psi_ground = [states[i][-1]] if args.optimize else [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dr)]
+        for _ in range(args.iters): psi_ground.append(R * np.fft.ifftn(K * np.fft.fftn(R * psi_ground[-1])))
+
     # change the potential to the excited one if provided
-    if args.excpotential: V = eval(args.excpotential.replace("exp", "np.exp")) - energy(states[0][-1])
+    if args.excpotential: V = eval(args.excpotential.replace("exp", "np.exp"))
 
     # define R and K operators for real time propagation
     R, K = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * sum([[k, l, m][i]**2 for i in range(dim)]) * args.tstep / args.mass)
@@ -107,6 +115,17 @@ if __name__ == "__main__":
 
     # calculate the autocorrelation function of a ground state and its Fourier transform
     if args.real: G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.fft.hfft(G, args.iters + 1));
+
+    def nmoment(x, counts, n=1):
+        return np.sum(counts*(x - (0 if n == 1 else nmoment(x, counts, 1)))**n) / np.sum(counts)
+    if args.real: G0 = np.array([np.sum((psi_ground[i]) * np.conj(states[0][i])) * dr for i in range(len(states[0]))]); F0 = np.fft.fftshift(np.fft.hfft(G0, args.iters + 1));
+    F /= np.max(np.abs(F)); F0 /= np.max(np.abs(F0))
+    plt.plot(f, np.abs(F0), label="fidelity"); plt.plot(f - ZPE, np.abs(F), label="autocorrelation"); plt.legend();
+    plt.text(0.05, 0.95, "MAXIMUM: {:.2f}\nINTEGRAL: {:.4f}\nFIRST MOMENT: {:.4f}\nSECOND MOMENT: {:.4f}\nTHIRD MOMENT: {:.4}\nROOT OF SECOND MOMENT: {:.4}\nFISHER SKEWNESS: {:.4}".format(
+    f[np.abs(F0).argmax()], np.trapz(np.abs(F0), f), nmoment(f, np.abs(F0), 1), nmoment(f, np.abs(F0), 2), nmoment(f, np.abs(F0), 3), np.sqrt(nmoment(f, np.abs(F0), 2)),
+    nmoment(f, np.abs(F0), 3) / nmoment(f, np.abs(F0), 2)**(3/2)),
+    horizontalalignment='left', transform=plt.gca().transAxes, fontsize=9, verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    plt.show(); plt.close("all")
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================
 
@@ -139,6 +158,9 @@ if __name__ == "__main__":
         def update(j):
             for i in range(len(plots)): plots[i][0].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.real(states[i][j if j < len(states[i]) else -1]))
             for i in range(len(plots)): plots[i][1].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.imag(states[i][j if j < len(states[i]) else -1]))
+            # V = V0
+            # for i in range(len(plots)): plots[i][0].set_ydata(energy(psi_ground[j if j < len(states[i]) else -1]) + np.real(psi_ground[j if j < len(states[i]) else -1]))
+            # for i in range(len(plots)): plots[i][1].set_ydata(energy(psi_ground[j if j < len(states[i]) else -1]) + np.imag(psi_ground[j if j < len(states[i]) else -1]))
 
         # plot the spectrum
         if args.real: ax[1].plot(t, np.abs(G)) # type: ignore

@@ -12,7 +12,7 @@ public:
             int iters=100; double step=1.0;
         } dynamics={};
         struct Spectrum {
-            bool zpesub=false; std::string potential="", window="";
+            bool normalize=false, zpesub=false; std::string potential="", window="";
         } spectrum={};
 
         // variables
