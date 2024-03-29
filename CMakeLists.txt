@@ -73,6 +73,7 @@ set_target_properties(acorn_exe PROPERTIES OUTPUT_NAME "acorn")
 
 # add tools
 add_executable(acorn_centerxyz tool/centerxyz.cpp)
+add_executable(acorn_makemov tool/makemov.cpp)
 
 # TESTING ==========================================================================================
 

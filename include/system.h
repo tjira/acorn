@@ -19,7 +19,7 @@ public:
     int getCharge() const {return charge;} int getMulti() const {return multi;} std::string getBasis() const {return lnxbasis;}
     template <typename T = Atom> std::vector<T> getAtoms() const {return *reinterpret_cast<const std::vector<T>*>(&atoms);}
 
-    // shell container and getter, molecule mover, number of occupied orbitals getter
+    // shell container and getter, system mover, number of occupied orbitals getter
     libint2::BasisSet getShells() const; void move(const Matrix<>& dir); int nocc() const {return electrons / 2;}
 
     // molecule exporter and nuclear repulsion getter

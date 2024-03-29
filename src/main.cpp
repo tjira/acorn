@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
         std::filesystem::path syspath = ip / std::filesystem::path(input.at("molecule").at("file")); Integrals ints(true);
 
         // create the system from the system file
-        std::ifstream mstream(syspath); System system(mstream, molopt.at("basis"), molopt.at("charge"), molopt.at("multiplicity")); mstream.close();
+        std::ifstream mstream(syspath); System system(mstream, molopt.at("basis"), molopt.at("charge"), molopt.at("multiplicity"));
 
         // print the molecule specification
         Printer::Title("ATOM COORDINATE FILE AND BASIS"); std::cout << system << std::endl << std::endl;
@@ -194,8 +194,18 @@ int main(int argc, char** argv) {
             }
         }
 
-        // choose what calculation to run
-        if (input.contains("bagel")) {Printer::Title("BAGEL DYNAMICS");
+        // perform scans if movies provided
+        if (input.contains("rmp") && mstream.peek() != EOF) {Printer::Title("RESTRICTED MOLLER-PLESSET SCAN");
+            RestrictedMollerPlesset rmp(rhfopt, rmpopt); rmp.scan(system, mstream, res); std::cout << std::endl;
+        } else if (input.contains("rci") && mstream.peek() != EOF) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION SCAN");
+            RestrictedConfigurationInteraction rci(rhfopt, rciopt); rci.scan(system, mstream, res); std::cout << std::endl;
+        } else if (input.contains("rhf") && mstream.peek() != EOF) {Printer::Title("RESTRICTED HARTREE-FOCK SCAN");
+            RestrictedHartreeFock rhf(rhfopt); rhf.scan(system, mstream, res); std::cout << std::endl;
+        } else if (input.contains("uhf") && mstream.peek() != EOF) {Printer::Title("UNRESTRICTED HARTREE-FOCK SCAN");
+            UnrestrictedHartreeFock uhf(uhfopt); uhf.scan(system, mstream, res); std::cout << std::endl;
+
+        // choose what calculation to run when not scanning
+        } else if (input.contains("bagel")) {Printer::Title("BAGEL DYNAMICS");
             // if dynamics block is specified, run it else throw an error
             if (input.at("bagel").contains("dynamics")) {Bagel(bglopt).dynamics(system, ints, res); std::cout << std::endl;}
             else throw std::runtime_error("YOU HAVE TO DO DYNAMICS WITH BAGEL");
