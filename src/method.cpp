@@ -200,12 +200,12 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
 }
 
 template<class M>
-Result Method<M>::scan(const System& system, std::ifstream& stream, Result res, bool print) const {
+Matrix<> Method<M>::scan(const System& system, std::ifstream& stream, Result res, bool print) const {
     // return the stream to start and define some variables
     stream.seekg(0, std::ios::beg); int i = 0; std::vector<double> energies;
 
     // print the header
-    if (print) std::printf("GEOM       Eel [Eh]      \n");
+    if (print) std::printf("GEOM       Eel [Eh]           TIME    \n");
 
     // loop over geometries
     while (stream.peek() != EOF) {
@@ -218,7 +218,9 @@ Result Method<M>::scan(const System& system, std::ifstream& stream, Result res, 
         // run the calculation
         try {
             std::tie(res, std::ignore) = run(geometry, {}, false);
-        } catch (std::exception& exception) {comment = " NOT CONVERGED";};
+        } catch (std::exception& exception) {
+            comment = " NOT CONVERGED";
+        }
 
         // extract the elapsed time
         std::string elapsed = Timer::Format(Timer::Elapsed(start));
@@ -233,11 +235,8 @@ Result Method<M>::scan(const System& system, std::ifstream& stream, Result res, 
     // define and the matrix with geometry index and energies
     Matrix<> scan(energies.size(), 2); for (size_t i = 0; i < energies.size(); i++) {scan(i, 0) = i + 1; scan(i, 1) = energies.at(i);}
 
-    // save the scan matrix
-    EigenWrite(ip / std::filesystem::path("energies.dat"), scan);
-    
-    // return the last result
-    return res;
+    // return the matrix
+    return scan;
 }
 
 // restrted method definitions

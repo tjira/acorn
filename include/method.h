@@ -21,7 +21,7 @@ public:
     virtual Result run(const System&, const Integrals&, Result res, bool) const {return res;};
 
     // additional functions
-    virtual Result scan(const System& system, std::ifstream& stream, Result res, bool print = true) const;
+    virtual Matrix<> scan(const System& system, std::ifstream& stream, Result res, bool print = true) const;
 
     // child type converter
     const M* get() const {return static_cast<const M*>(this);}

@@ -195,14 +195,14 @@ int main(int argc, char** argv) {
         }
 
         // perform scans if movies provided
-        if (input.contains("rmp") && mstream.peek() != EOF) {Printer::Title("RESTRICTED MOLLER-PLESSET SCAN");
-            RestrictedMollerPlesset rmp(rhfopt, rmpopt); rmp.scan(system, mstream, res); std::cout << std::endl;
+        if (input.contains("rhf") && mstream.peek() != EOF) {Printer::Title("RESTRICTED HARTREE-FOCK SCAN");
+            RestrictedHartreeFock rhf(rhfopt); Matrix<> scan = rhf.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
         } else if (input.contains("rci") && mstream.peek() != EOF) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION SCAN");
-            RestrictedConfigurationInteraction rci(rhfopt, rciopt); rci.scan(system, mstream, res); std::cout << std::endl;
-        } else if (input.contains("rhf") && mstream.peek() != EOF) {Printer::Title("RESTRICTED HARTREE-FOCK SCAN");
-            RestrictedHartreeFock rhf(rhfopt); rhf.scan(system, mstream, res); std::cout << std::endl;
+            RestrictedConfigurationInteraction rci(rhfopt, rciopt); Matrix<> scan = rci.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
+        } else if (input.contains("rmp") && mstream.peek() != EOF) {Printer::Title("RESTRICTED MOLLER-PLESSET SCAN");
+            RestrictedMollerPlesset rmp(rhfopt, rmpopt); Matrix<> scan = rmp.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
         } else if (input.contains("uhf") && mstream.peek() != EOF) {Printer::Title("UNRESTRICTED HARTREE-FOCK SCAN");
-            UnrestrictedHartreeFock uhf(uhfopt); uhf.scan(system, mstream, res); std::cout << std::endl;
+            UnrestrictedHartreeFock uhf(uhfopt); Matrix<> scan = uhf.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
 
         // choose what calculation to run when not scanning
         } else if (input.contains("bagel")) {Printer::Title("BAGEL DYNAMICS");
