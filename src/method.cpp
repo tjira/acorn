@@ -25,16 +25,10 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
     double step = get()->opt.dynamics.step; auto start = Timer::Now();
 
     // calculate the initial energy with gradient
-    if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, Orca>) {
-        res = gradient(system, ints, res, false);
-    } else if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
-        std::tie(res, ints) = run(system, res, false);
+    if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
         ints.dS = Integral::dOverlap(system), ints.dT = Integral::dKinetic(system);
         ints.dV = Integral::dNuclear(system), ints.dJ = Integral::dCoulomb(system);
-        res = gradient(system, ints, res, false);
-    } else {
-        std::tie(res, ints) = run(system, res, false); res = gradient(system, ints, res, false);
-    }
+    } res = gradient(system, ints, res, false);
 
     // calculate the initial kinetic energy and temperature
     double Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); double T = 2 * Ekin / Nf;

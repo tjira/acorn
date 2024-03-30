@@ -4,7 +4,7 @@
         "basis" : "sto-3g"
     },
     "orca" : {
-        "interface" : "../../interface/orca.sh",
+        "interface" : "../../interface/orca-gradient.sh",
         "dynamics" : {
             "iters" : 100,
             "step" : 20,

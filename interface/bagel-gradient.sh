@@ -2,7 +2,7 @@
 
 # USAGE: bagel.sh CHARGE MULT BASIS
 if [ "$#" -ne 3 ]; then
-    echo "USAGE: bagel.sh CHARGE MULT BASIS"; exit 1
+    echo "USAGE: bagel.sh BASIS CHARGE MULT"; exit 1
 fi
 
 # specify the molecule in the input file
@@ -11,8 +11,8 @@ cat << EOT > bagel.json
 
 {
     "title" : "molecule",
-    "basis" : "$3",
-    "df_basis" : "$3-jkfit",
+    "basis" : "$1",
+    "df_basis" : "$1-jkfit",
     "angstrom" : true,
     "geometry" : [
 EOT
