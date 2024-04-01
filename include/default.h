@@ -3,7 +3,7 @@
 #include <string>
 
 inline std::string rcioptstr = R"({
-    "excitations" : [],
+    "excitations" : [], "nstate" : 3, "state" : 1,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false, "hamiltonian" : false, "energies" : false},
     "print" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false, "hamiltonian" : false, "energies" : false}
@@ -63,7 +63,7 @@ inline std::string umpoptstr = R"({
 })";
 
 inline std::string bgloptstr = R"({
-    "interface" : "bagel.sh", "nstate" : 2, "state" : 1,
+    "interface" : "bagel.sh", "nstate" : 3, "state" : 1,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";
 

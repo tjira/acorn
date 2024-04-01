@@ -19,7 +19,7 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
     }
 
     // get the degrees of freedom and write the initial geometry
-    double Nf = system.getAtoms().size() * 3 - 6; system.save(ip / std::filesystem::path("trajectory.xyz")) ;
+    double Nf = std::max(system.getAtoms().size() * 3 - 6.0, 1.0); system.save(ip / std::filesystem::path("trajectory.xyz")) ;
 
     // get the dynamics step and start the timer
     double step = get()->opt.dynamics.step; auto start = Timer::Now();
@@ -91,7 +91,10 @@ Vector<> Method<M>::frequency(const System& system, const Matrix<>& H) {
 template <class M>
 Result Method<M>::gradient(const System& system, const Integrals&, Result res, bool print) const {
     // define the gradient matrix
-    res.G = Matrix<>(system.getAtoms().size(), 3);
+    res.G = Matrix<>(system.getAtoms().size(), 3); int state = 0;
+
+    // get the requested state
+    if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, RestrictedConfigurationInteraction>) state = get()->opt.state - 1;
 
     // define the step
     double step = 0; if constexpr (!std::is_same_v<M, Bagel> && ! std::is_same_v<M, Orca>) step = get()->opt.gradient.step;
@@ -118,7 +121,7 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
             sysMinus.move(dirMinus), sysPlus.move(dirPlus);
 
             // calculate and assign the derivative
-            res.G(i, j) = BOHR2A * (std::get<0>(run(sysPlus, res, false)).Etot - std::get<0>(run(sysMinus, res, false)).Etot) / step / 2;
+            res.G(i, j) = BOHR2A * (std::get<0>(run(sysPlus, res, false)).Eexc(state) - std::get<0>(run(sysMinus, res, false)).Eexc(state)) / step / 2;
 
             // print the iteration info
             if (print) std::printf("(%2d, %2d) %18.14f %s\n", i + 1, j + 1, res.G(i, j), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -138,7 +141,10 @@ Result Method<M>::gradient(const System& system, const Integrals&, Result res, b
 template <class M>
 Result Method<M>::hessian(const System& system, const Integrals&, Result res, bool print) const {
     // define the gradient matrix
-    res.H = Matrix<>(3 * system.getAtoms().size(), 3 * system.getAtoms().size());
+    res.H = Matrix<>(3 * system.getAtoms().size(), 3 * system.getAtoms().size()); int state = 0;
+
+    // get the requested state
+    if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, RestrictedConfigurationInteraction>) state = get()->opt.state - 1;
 
     // define the step
     double step = 0; if constexpr (!std::is_same_v<M, Bagel> && ! std::is_same_v<M, Orca>) step = get()->opt.hessian.step;
@@ -166,8 +172,8 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
             sysPlusMinus.move(dir1 - dir2), sysPlusPlus.move(dir1 + dir2);
 
             // calculate the energies
-            double energyMinusMinus = std::get<0>(run(sysMinusMinus, res, false)).Etot, energyMinusPlus = std::get<0>(run(sysMinusPlus, res, false)).Etot;
-            double energyPlusMinus = std::get<0>(run(sysPlusMinus, res, false)).Etot, energyPlusPlus = std::get<0>(run(sysPlusPlus, res, false)).Etot;
+            double energyMinusMinus = std::get<0>(run(sysMinusMinus, res, false)).Eexc(state), energyMinusPlus = std::get<0>(run(sysMinusPlus, res, false)).Eexc(state);
+            double energyPlusMinus = std::get<0>(run(sysPlusMinus, res, false)).Eexc(state), energyPlusPlus = std::get<0>(run(sysPlusPlus, res, false)).Eexc(state);
 
             // calculate and assign the derivative
             res.H(i, j) = BOHR2A * BOHR2A * (energyPlusPlus - energyMinusPlus - energyPlusMinus + energyMinusMinus) / step / step / 4; res.H(j, i) = res.H(i, j);
@@ -190,10 +196,18 @@ Result Method<M>::hessian(const System& system, const Integrals&, Result res, bo
 template<class M>
 Matrix<> Method<M>::scan(const System& system, std::ifstream& stream, Result res, bool print) const {
     // return the stream to start and define some variables
-    stream.seekg(0, std::ios::beg); int i = 0; std::vector<double> energies;
+    stream.seekg(0, std::ios::beg); int i = 0, nstate = 1; std::vector<Vector<>> energies;
+
+    // get the number of states
+    if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, RestrictedConfigurationInteraction>) nstate = get()->opt.nstate;
 
     // print the header
-    if (print) std::printf("GEOM       Eel [Eh]           TIME    \n");
+    if (print) {
+        std::printf("GEOM");
+        for (int i = 0; i < nstate; i++) {
+            std::printf("       E%02d [Eh]      ", i + 1);
+        } std::printf("     TIME    \n");
+    }
 
     // loop over geometries
     while (stream.peek() != EOF) {
@@ -216,14 +230,26 @@ Matrix<> Method<M>::scan(const System& system, std::ifstream& stream, Result res
         std::string elapsed = Timer::Format(Timer::Elapsed(start));
 
         // print the geometry results
-        if (print) std::printf("%4d %20.14f %s%s\n", i, res.Etot, elapsed.c_str(), comment.c_str());
+        if (print) {
+            std::printf("%4d", i);
+            for (long i = 0; i < nstate; i++) {
+                std::printf(" %20.14f", res.Eexc(i));
+            } std::printf(" %s%s\n", elapsed.c_str(), comment.c_str());
+        }
 
         // append the energy
-        energies.push_back(res.Eexc(0));
+        energies.push_back(res.Eexc);
     }
 
     // define and the matrix with geometry index and energies
-    Matrix<> scan(energies.size(), 2); for (size_t i = 0; i < energies.size(); i++) {scan(i, 0) = i + 1; scan(i, 1) = energies.at(i);}
+    Matrix<> scan(energies.size(), energies.at(0).size() + 1);
+
+    // fill the matrix
+    for (size_t i = 0; i < energies.size(); i++) {
+        for (long j = 0; j < energies.at(i).size(); j++) {
+            scan(i, j + 1) = energies.at(i)(j);
+        } scan(i, 0) = i + 1;
+    }
 
     // return the matrix
     return scan;

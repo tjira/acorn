@@ -17,7 +17,7 @@ public:
         } dynamics={};
 
         // RCI options
-        std::vector<int> excitations;
+        std::vector<int> excitations; int nstate=2, state=1;
     };
 public:
     // constructors and destructors
