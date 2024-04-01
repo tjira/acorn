@@ -68,7 +68,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options, dynamics, g
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, savewfn);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options, dynamics, interface);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options, dynamics, interface, nstate, state);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface);
 
 int main(int argc, char** argv) {
@@ -212,6 +212,9 @@ int main(int argc, char** argv) {
         } else if (input.contains("bagel")) {Printer::Title("BAGEL CALCULATION");
             // run the calculation
             Bagel bagel(bglopt); res = bagel.run(system, ints, res); std::cout << std::endl;
+
+            // print the excited state energies
+            Printer::Print(res.Eexc, "BAGEL EXCITED ENERGIES"); std::cout << std::endl;
 
             // print the total energy
             Printer::Print(res.Etot, "BAGEL ENERGY"), std::cout << std::endl;

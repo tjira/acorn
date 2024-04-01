@@ -4,7 +4,9 @@
         "basis" : "cc-pvdz"
     },
     "bagel" : {
-        "interface" : "../../interface/bagel-gradient-hf.sh",
+        "interface" : "../../interface/bagel-gradient-casscf.sh",
+        "nstate" : 3,
+        "state" : 2,
         "gradient" : {}
     }
 }

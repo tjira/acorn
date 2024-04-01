@@ -4,6 +4,8 @@
         "basis" : "cc-pvdz"
     },
     "bagel" : {
-        "interface" : "../../interface/bagel-energy-hf.sh"
+        "interface" : "../../interface/bagel-energy-casscf.sh",
+        "nstate" : 3,
+        "state" : 1
     }
 }

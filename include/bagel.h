@@ -13,7 +13,7 @@ public:
         } dynamics={};
 
         // variables
-        std::string method; std::filesystem::path interface;
+        std::filesystem::path interface; int nstate=2, state=1;
     };
 public:
     // constructors and destructors

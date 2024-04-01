@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # USAGE: bagel.sh CHARGE MULT BASIS
-if [ "$#" -ne 3 ]; then
+if [ "$#" -lt 3 ]; then
     echo "USAGE: bagel.sh BASIS CHARGE MULT"; exit 1
 fi
 

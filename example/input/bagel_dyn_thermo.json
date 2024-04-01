@@ -4,13 +4,15 @@
         "basis" : "cc-pvdz"
     },
     "bagel" : {
-        "interface" : "../../interface/bagel-gradient-hf.sh",
+        "interface" : "../../interface/bagel-gradient-casscf.sh",
         "dynamics" : {
             "iters" : 100,
             "step" : 20,
             "berendsen" : {
                 "temp" : 298.15
             }
-        }
+        },
+        "nstate" : 3,
+        "state" : 1
     }
 }

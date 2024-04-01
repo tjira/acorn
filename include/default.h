@@ -63,7 +63,7 @@ inline std::string umpoptstr = R"({
 })";
 
 inline std::string bgloptstr = R"({
-    "interface" : "orca.sh",
+    "interface" : "bagel.sh", "nstate" : 2, "state" : 1,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";
 

@@ -8,7 +8,7 @@ Result Bagel::gradient(const System& system, const Integrals&, Result res, bool 
     if (print) std::cout << "BAGEL DIRECTORY: " << bageldir << std::endl;
 
     // define the execution command and create the execution directory
-    std::stringstream cmd; cmd << "./bagel.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
+    std::stringstream cmd; cmd << "./bagel.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " " << opt.nstate << " " << opt.state - 1 << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
 
     // save the system and copy the interface
     system.save(bageldir / "molecule.xyz"), std::filesystem::copy_file(ip / opt.interface, bageldir / "bagel.sh", std::filesystem::copy_options::overwrite_existing);
@@ -21,13 +21,22 @@ Result Bagel::gradient(const System& system, const Integrals&, Result res, bool 
     std::ifstream gfstream(bageldir / "gradient.dat");
     std::ifstream efstream(bageldir / "energy.dat");
 
-    // extract the gradient and energy from the bagel output
+    // define the energies output vector
+    std::vector<double> energies;
+
+    // extract the gradient from the bagel output
     for (size_t i = 0; i < system.getAtoms().size(); i++) {
         for (int j = 0; j < 3; j++) gfstream >> res.G(i, j);
-    } efstream >> res.Etot;
+    }
+
+    // extract the energies from the bagel output
+    while (efstream >> res.Etot) {energies.push_back(res.Etot);} res.Etot = energies.at(opt.state - 1);
+
+    // create the vector of excited energies
+    res.Eexc = Vector<>(energies.size()); for (size_t i = 0; i < energies.size(); i++) res.Eexc(i) = energies.at(i);
 
     // return the results
-    res.Eexc = Vector<>(1); res.Eexc << res.Etot; return res;
+    return res;
 }
 
 Result Bagel::run(const System& system, const Integrals&, Result res, bool print) const {
@@ -38,7 +47,7 @@ Result Bagel::run(const System& system, const Integrals&, Result res, bool print
     if (print) std::cout << "BAGEL DIRECTORY: " << bageldir << std::endl;
 
     // define the execution command and create the execution directory
-    std::stringstream cmd; cmd << "./bagel.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
+    std::stringstream cmd; cmd << "./bagel.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " " << opt.nstate << " " << opt.state - 1 << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
 
     // save the system and copy the interface
     system.save(bageldir / "molecule.xyz"), std::filesystem::copy_file(ip / opt.interface, bageldir / "bagel.sh", std::filesystem::copy_options::overwrite_existing);
@@ -47,9 +56,15 @@ Result Bagel::run(const System& system, const Integrals&, Result res, bool print
     auto pipe = popen(("cd " + bageldir.string() + " && " + cmd.str()).c_str(), "r");
     if (!pipe || pclose(pipe) != 0) throw std::runtime_error("EXECUTION FAILED");
 
-    // define the energy and gradient streams
-    std::ifstream efstream(bageldir / "energy.dat"); efstream >> res.Etot;
+    // define the energy stream and energy vector
+    std::ifstream efstream(bageldir / "energy.dat"); std::vector<double> energies;;
+
+    // extract the energies from the bagel output
+    while (efstream >> res.Etot) {energies.push_back(res.Etot);} res.Etot = energies.at(opt.state - 1);
+
+    // create the vector of excited energies
+    res.Eexc = Vector<>(energies.size()); for (size_t i = 0; i < energies.size(); i++) res.Eexc(i) = energies.at(i);
 
     // return the results
-    res.Eexc = Vector<>(1); res.Eexc << res.Etot; return res;
+    return res;
 }
