@@ -13,8 +13,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
-# set compiler flags
+# set the debug flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
+
+# set the release flags
 set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3")
 
 # declare libraries

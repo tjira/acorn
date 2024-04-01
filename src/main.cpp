@@ -195,12 +195,12 @@ int main(int argc, char** argv) {
         }
 
         // perform scans if movies provided
-        if (input.contains("rhf") && mstream.peek() != EOF) {Printer::Title("RESTRICTED HARTREE-FOCK SCAN");
-            RestrictedHartreeFock rhf(rhfopt); Matrix<> scan = rhf.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
+        if (input.contains("rmp") && mstream.peek() != EOF) {Printer::Title("RESTRICTED MOLLER-PLESSET SCAN");
+            RestrictedMollerPlesset rmp(rhfopt, rmpopt); Matrix<> scan = rmp.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
         } else if (input.contains("rci") && mstream.peek() != EOF) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION SCAN");
             RestrictedConfigurationInteraction rci(rhfopt, rciopt); Matrix<> scan = rci.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
-        } else if (input.contains("rmp") && mstream.peek() != EOF) {Printer::Title("RESTRICTED MOLLER-PLESSET SCAN");
-            RestrictedMollerPlesset rmp(rhfopt, rmpopt); Matrix<> scan = rmp.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
+        } else if (input.contains("rhf") && mstream.peek() != EOF) {Printer::Title("RESTRICTED HARTREE-FOCK SCAN");
+            RestrictedHartreeFock rhf(rhfopt); Matrix<> scan = rhf.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
         } else if (input.contains("uhf") && mstream.peek() != EOF) {Printer::Title("UNRESTRICTED HARTREE-FOCK SCAN");
             UnrestrictedHartreeFock uhf(uhfopt); Matrix<> scan = uhf.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
         } else if (input.contains("bagel") && mstream.peek() != EOF) {Printer::Title("UNRESTRICTED HARTREE-FOCK SCAN");
@@ -320,10 +320,10 @@ int main(int argc, char** argv) {
                 // print and export the RCI results
                 if (input.at("rci").contains("print")) {
                     if (rciopt.at("print").at("hamiltonian")) Printer::Print(res.rci.F, "CI HAMILTONIAN"), std::cout << "\n";
-                    if (rciopt.at("print").at("energies")) Printer::Print(res.rci.eps, "EXCITED STATE ENERGIES"), std::cout << "\n";
+                    if (rciopt.at("print").at("energies")) Printer::Print(res.rci.Eexc, "EXCITED STATE ENERGIES"), std::cout << "\n";
                 } if (input.at("rci").contains("export")) {
                     if (rciopt.at("export").at("hamiltonian")) EigenWrite(std::filesystem::path(ip) / "HCI.mat", res.rci.F);
-                    if (rciopt.at("export").at("energies")) EigenWrite(std::filesystem::path(ip) / "ECI.mat", res.rci.eps);
+                    if (rciopt.at("export").at("energies")) EigenWrite(std::filesystem::path(ip) / "ECI.mat", res.rci.Eexc);
                 }
 
                 // print the resulting RCI energy

@@ -61,16 +61,10 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         system.save(ip / std::filesystem::path("trajectory.xyz"), std::ios::app);
 
         // calculate the next energy with gradient
-        if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, Orca>) {
-            res = gradient(system, ints, res, false);
-        } else if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
-            std::tie(res, ints) = run(system, res, false);
+        if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
             ints.dS = Integral::dOverlap(system), ints.dT = Integral::dKinetic(system);
             ints.dV = Integral::dNuclear(system), ints.dJ = Integral::dCoulomb(system);
-            res = gradient(system, ints, res, false);
-        } else {
-            std::tie(res, ints) = run(system, res, false); res = gradient(system, ints, res, false);
-        }
+        } res = gradient(system, ints, res, false);
 
         // print the iteration info
         if (print) std::printf("%6d %9.4f %14.8f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, AU2FS * step * (i + 1), res.Etot, Ekin, res.Etot + Ekin, T * AU2K, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -225,7 +219,7 @@ Matrix<> Method<M>::scan(const System& system, std::ifstream& stream, Result res
         if (print) std::printf("%4d %20.14f %s%s\n", i, res.Etot, elapsed.c_str(), comment.c_str());
 
         // append the energy
-        energies.push_back(res.Etot);
+        energies.push_back(res.Eexc(0));
     }
 
     // define and the matrix with geometry index and energies

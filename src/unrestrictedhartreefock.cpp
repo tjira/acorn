@@ -92,5 +92,5 @@ Result UnrestrictedHartreeFock::run(const System& system, const Integrals& ints,
     }
 
     // assign total energy and return the struct
-    res.Etot = res.uhf.E + system.repulsion(); return res;
+    res.Etot = res.uhf.E + system.repulsion(); res.Eexc = Vector<>(1); res.Eexc << res.Etot; return res;
 }

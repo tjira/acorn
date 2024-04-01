@@ -27,7 +27,7 @@ Result Bagel::gradient(const System& system, const Integrals&, Result res, bool 
     } efstream >> res.Etot;
 
     // return the results
-    return res;
+    res.Eexc = Vector<>(1); res.Eexc << res.Etot; return res;
 }
 
 Result Bagel::run(const System& system, const Integrals&, Result res, bool print) const {
@@ -51,5 +51,5 @@ Result Bagel::run(const System& system, const Integrals&, Result res, bool print
     std::ifstream efstream(bageldir / "energy.dat"); efstream >> res.Etot;
 
     // return the results
-    return res;
+    res.Eexc = Vector<>(1); res.Eexc << res.Etot; return res;
 }

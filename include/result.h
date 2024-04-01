@@ -7,7 +7,7 @@ struct Result {
         double E; Vector<> eps; Matrix<> C, D, G, H;
     } rhf;
     struct RestrictedConfigurationInteraction {
-        Vector<> eps; Matrix<> C, F, G, H;
+        Vector<> Eexc; Matrix<> C, F, G, H;
     } rci;
     struct RestrictedMollerPlesset {
         double Ecorr; Matrix<> G, H;
@@ -24,5 +24,5 @@ struct Result {
         std::vector<Vector<std::complex<double>>> acfs;
         std::vector<Vector<double>> spectra;
     } msv;
-    double Etot; Matrix<> G, H;
+    double Etot; Vector <> Eexc; Matrix<> G, H;
 };

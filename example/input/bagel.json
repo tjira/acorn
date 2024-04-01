@@ -4,6 +4,6 @@
         "basis" : "cc-pvdz"
     },
     "bagel" : {
-        "interface" : "../../interface/bagel-energy.sh"
+        "interface" : "../../interface/bagel-energy-hf.sh"
     }
 }

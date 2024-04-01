@@ -57,11 +57,11 @@ Result RestrictedConfigurationInteraction::run(const System& system, const Integ
     Eigen::SelfAdjointEigenSolver<Matrix<>> solver(res.rci.F);
 
     // extract the eigenvectors and eigenvalues
-    res.rci.C = solver.eigenvectors(); res.rci.eps = solver.eigenvalues().array() + system.repulsion();
+    res.rci.C = solver.eigenvectors(); res.rci.Eexc = solver.eigenvalues().array() + system.repulsion();
 
     // print the eigenproblem time
     if (print) std::cout << Timer::Format(Timer::Elapsed(start)) << std::endl << std::endl;
 
     // assign energy and return results
-    res.Etot = res.rci.eps(0); return res;
+    res.Etot = res.rci.Eexc(0), res.Eexc = res.rci.Eexc; return res;
 }

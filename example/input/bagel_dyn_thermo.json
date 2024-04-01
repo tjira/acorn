@@ -4,7 +4,7 @@
         "basis" : "cc-pvdz"
     },
     "bagel" : {
-        "interface" : "../../interface/bagel-gradient.sh",
+        "interface" : "../../interface/bagel-gradient-hf.sh",
         "dynamics" : {
             "iters" : 100,
             "step" : 20,
