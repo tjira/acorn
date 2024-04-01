@@ -211,7 +211,9 @@ Matrix<> Method<M>::scan(const System& system, std::ifstream& stream, Result res
 
         // run the calculation
         try {
-            std::tie(res, std::ignore) = run(geometry, {}, false);
+            if constexpr (std::is_same_v<M, Bagel> || std::is_same_v<M, Orca>) {
+                res = run(geometry, {}, {}, false);
+            } else std::tie(res, std::ignore) = run(geometry, {}, false);
         } catch (std::exception& exception) {
             comment = " NOT CONVERGED";
         }

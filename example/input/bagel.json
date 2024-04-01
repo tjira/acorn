@@ -1,0 +1,9 @@
+{
+    "molecule" : {
+        "file" : "../molecule/water.xyz",
+        "basis" : "cc-pvdz"
+    },
+    "bagel" : {
+        "interface" : "../../interface/bagel-energy.sh"
+    }
+}

@@ -20,7 +20,8 @@ public:
     Bagel(const Options& opt = {}) : opt(opt) {}
 
     // overriden virtual derivatives
-    Result gradient(const System& system, const Integrals& ints, Result res, bool print = true) const override;
+    Result gradient(const System& system, const Integrals& ints = {}, Result res = {}, bool print = true) const override;
+    Result run(const System& system, const Integrals& ints = {}, Result res = {}, bool print = true) const override;
 
 private:
     Options opt;

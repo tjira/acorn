@@ -203,17 +203,51 @@ int main(int argc, char** argv) {
             RestrictedMollerPlesset rmp(rhfopt, rmpopt); Matrix<> scan = rmp.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
         } else if (input.contains("uhf") && mstream.peek() != EOF) {Printer::Title("UNRESTRICTED HARTREE-FOCK SCAN");
             UnrestrictedHartreeFock uhf(uhfopt); Matrix<> scan = uhf.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
+        } else if (input.contains("bagel") && mstream.peek() != EOF) {Printer::Title("UNRESTRICTED HARTREE-FOCK SCAN");
+            Bagel bagel(bglopt); Matrix<> scan = bagel.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
+        } else if (input.contains("orca") && mstream.peek() != EOF) {Printer::Title("UNRESTRICTED HARTREE-FOCK SCAN");
+            Orca orca(orcopt); Matrix<> scan = orca.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
 
         // choose what calculation to run when not scanning
-        } else if (input.contains("bagel")) {Printer::Title("BAGEL DYNAMICS");
-            // if dynamics block is specified, run it else throw an error
-            if (input.at("bagel").contains("dynamics")) {Bagel(bglopt).dynamics(system, ints, res); std::cout << std::endl;}
-            else throw std::runtime_error("YOU HAVE TO DO DYNAMICS WITH BAGEL");
+        } else if (input.contains("bagel")) {Printer::Title("BAGEL CALCULATION");
+            // run the calculation
+            Bagel bagel(bglopt); res = bagel.run(system, ints, res); std::cout << std::endl;
 
-        } else if (input.contains("orca")) {Printer::Title("ORCA DYNAMICS");
-            // if dynamics block is specified, run it else throw an error
-            if (input.at("orca").contains("dynamics")) {Orca(orcopt).dynamics(system, ints, res); std::cout << std::endl;}
-            else throw std::runtime_error("YOU HAVE TO DO DYNAMICS WITH ORCA");
+            // print the total energy
+            Printer::Print(res.Etot, "BAGEL ENERGY"), std::cout << std::endl;
+
+            // if dynamics block is specified, run it
+            if (input.at("bagel").contains("dynamics")) {Printer::Title("BAGEL DYNAMICS");
+                bagel.dynamics(system, ints, res); std::cout << std::endl;
+
+            // if the BAGEL hessian is requested
+            } else if (input.at("bagel").contains("hessian")) {
+                throw std::runtime_error("BAGEL HESSIAN CALCULATION NOT IMPLEMENTED");
+
+            // if the BAGEL gradient is requested
+            } else if (input.at("bagel").contains("gradient")) {Printer::Title("BAGEL GRADIENT CALCULATION");
+                res = bagel.gradient(system, ints, res); std::cout << std::endl; Printer::Print(res.G, "BAGEL GRADIENT"); std::cout << std::endl;
+            }
+
+        } else if (input.contains("orca")) {Printer::Title("ORCA CALCULATION");
+            // run the calculation
+            Orca orca(orcopt); res = orca.run(system, ints, res); std::cout << std::endl;
+
+            // print the total energy
+            Printer::Print(res.Etot, "ORCA ENERGY"), std::cout << std::endl;
+
+            // if dynamics block is specified, run it
+            if (input.at("orca").contains("dynamics")) {Printer::Title("ORCA DYNAMICS");
+                orca.dynamics(system, ints, res); std::cout << std::endl;
+
+            // if the ORCA hessian is requested
+            } else if (input.at("orca").contains("hessian")) {
+                throw std::runtime_error("ORCA HESSIAN CALCULATION NOT IMPLEMENTED");
+
+            // if the ORCA gradient is requested
+            } else if (input.at("orca").contains("gradient")) {Printer::Title("ORCA GRADIENT CALCULATION");
+                res = orca.gradient(system, ints, res); std::cout << std::endl; Printer::Print(res.G, "ORCA GRADIENT"); std::cout << std::endl;
+            }
 
         } else if (input.contains("rhf")) {Printer::Title("RESTRICTED HARTREE-FOCK");
             // create the RHF object and run the calculation
