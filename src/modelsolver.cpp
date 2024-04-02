@@ -12,8 +12,11 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     // obtain the simulation dimension
     int dim; dim = StringContains(system.potential.at(0).at(0), 'y') ? 2 : 1;
 
-    // define the real and Fourier space along with time and frequency domains and wavefunction
-    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(opta.iters + 1), res.msv.f = Vector<>(opta.iters + 1); Matrix<std::complex<double>> psi;
+    // define the real and Fourier space along with time and frequency domains
+    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(opta.iters + 1), res.msv.f = Vector<>(opta.iters + opta.spectrum.zeropad + 1);
+
+    // define the wavefunction container
+    Matrix<std::complex<double>> psi;
 
     // fill the real space and calculate dr
     for (int i = 0; i < system.ngrid; i++) {
@@ -136,16 +139,17 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
         // block to calculate spectrum
         if (opta.real && !opta.spectrum.potential.empty()) {
-            // define the window
-            Vector<> window = Vector<>::Ones(opta.iters + 1);
+            // append the ACF to the vector of ACFs
+            res.msv.acfs.push_back(acf.array());
 
-            // assign the window
-            if (opta.spectrum.window == "hanning") {
-                window = 0.5 - 0.5 * (2 * M_PI * (res.msv.t.array() + opta.step * opta.iters / 2.0) / opta.iters).cos();
-            }
+            // multiply the acf with the windowing function
+            acf = acf.array() * Expression(opta.spectrum.window).eval(res.msv.t).array();
+
+            // zero pad the acf
+            acf.conservativeResize(acf.size() + opta.spectrum.zeropad); acf.tail(opta.spectrum.zeropad).setZero();
 
             // append and perform the Fourier transform
-            res.msv.acfs.push_back(acf); res.msv.spectra.push_back(res.msv.f.array() * Numpy::HFFT1D(window.array() * acf.array()).array());
+            res.msv.spectra.push_back(res.msv.f.array() * Numpy::HFFT1D(acf.array()).array());
 
             // normalize the spectrum
             if (opta.spectrum.normalize) {

@@ -15,7 +15,7 @@ public:
             double step=1; int iters=1000;
         } optimize={};
         struct Spectrum {
-            bool normalize=false, zpesub=false; std::string potential="", window="";
+            bool normalize=false, zpesub=false; int zeropad=0; std::string potential="", window="";
         } spectrum={};
 
         // variables
