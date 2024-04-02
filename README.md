@@ -38,7 +38,7 @@
 </p>
 
 <p align="center">
-Quantum Acorn, a dynamic collection of electronic structure methods, effortlessly transforms input geometry into quantum insights. Simply pass an input file, and watch as results appear in your terminal.
+Quantum Acorn, a collection of electronic structure methods compiled into a dependency-free binary.
 </p>
 
 ## Features
