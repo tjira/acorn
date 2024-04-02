@@ -472,8 +472,8 @@ int main(int argc, char** argv) {
             // save the spectral analysis results if available
             if (res.msv.spectra.size()) {
                 for (size_t i = 0; i < res.msv.spectra.size(); i++) {
+                    Matrix<> A(res.msv.t.size(), 3); A << res.msv.t, res.msv.acfs.at(i).real(), res.msv.acfs.at(i).imag(); EigenWrite(std::filesystem::path(ip) / ("acf" + std::to_string(i) + ".mat"), A);
                     Matrix<> F(res.msv.f.size(), 2); F << res.msv.f, res.msv.spectra.at(i).cwiseAbs(); EigenWrite(std::filesystem::path(ip) / ("spectrum" + std::to_string(i) + ".mat"), F);
-                    Matrix<> A(res.msv.t.size(), 2); A << res.msv.t, res.msv.acfs.at(i).cwiseAbs(); EigenWrite(std::filesystem::path(ip) / ("acf" + std::to_string(i) + ".mat"), A);
                 }
             }
         }

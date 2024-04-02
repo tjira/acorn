@@ -36,7 +36,7 @@ void EigenWrite(const std::string& fname, const Matrix<T>& A) {
     // write the matrix by rows
     for (int i = 0; i < A.rows(); i++) {
         for (int j = 0; j < A.cols(); j++) {
-            file << std::setw(20) << A(i, j) << (j < A.cols() - 1 ? " " : "");
+            file << std::setw(24) << A(i, j) << (j < A.cols() - 1 ? " " : "");
         } file << "\n";
     }
 }
