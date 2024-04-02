@@ -5,21 +5,6 @@ if [ "$#" -ne 5 ]; then
     echo "USAGE: wrapacorn.sh SYSTEM BASIS CHARGE MULT METHOD"; exit 1
 fi
 
-read -d '' RHF << EOF
-add_test(NAME %s COMMAND \${PROJECT_SOURCE_DIR}/bin/test/test_rhf %s %s)
-set_tests_properties(%s PROPERTIES PASS_REGULAR_EXPRESSION "%s")
-EOF
-
-read -d '' RMP2 << EOF
-add_test(NAME %s COMMAND \${PROJECT_SOURCE_DIR}/bin/test/test_rmp2 %s %s)
-set_tests_properties(%s PROPERTIES PASS_REGULAR_EXPRESSION "%s")
-EOF
-
-read -d '' RFCI << EOF
-add_test(NAME %s COMMAND \${PROJECT_SOURCE_DIR}/bin/test/test_rfci %s %s)
-set_tests_properties(%s PROPERTIES PASS_REGULAR_EXPRESSION "%s")
-EOF
-
 create() {
     # extract the variables from the function arguments
     METHOD="${5^^}"; SYSTEM="$1"; BASIS="${2^^}"; CHARGE="$3"; MULT="$4"
