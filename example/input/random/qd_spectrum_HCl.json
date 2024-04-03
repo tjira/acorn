@@ -1,0 +1,21 @@
+{
+    "model" : {
+        "potential" : [["0.165919*(1-exp(-1.00705*(x-2.40097)))^2"]],
+        "limits" : [0, 32],
+        "ngrid" : 4096,
+        "mass" : 1787
+    },
+    "solve" : {
+        "guess" : "exp(-(x-1)^2)",
+        "spectrum" : {
+            "potential" : "0.161132+exp(-1.24127*(x-0.711606))",
+            "zpesub" : true,
+            "normalize" : true,
+            "zeropad" : 100000
+        },
+        "real" : true,
+        "iters" : 10000,
+        "step" : 0.1,
+        "optimize" : {}
+    }
+}
