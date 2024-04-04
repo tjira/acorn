@@ -2,7 +2,6 @@
 
 import argparse as ap, itertools as it, numpy as np
 
-A2BOHR = 1.8897259886
 
 ATOM = {
     "H" :  1,                                                                                                                                                                 "He":  2,
@@ -51,6 +50,9 @@ if __name__ == "__main__":
     atoms = np.array([ATOM[line.split()[0]] for line in open(args.molecule).readlines()[2:]], dtype=int)
     coords = np.array([line.split()[1:] for line in open(args.molecule).readlines()[2:]], dtype=float)
 
+    # convert coordinates to bohrs
+    coords *= 1.8897261254578281
+
     # load the integrals from the Psi4 package or from the files
     if args.psi:
         import psi4; psi4.core.be_quiet(); mintegrals = psi4.core.MintsHelper(psi4.core.Wavefunction.build(psi4.geometry(open(args.molecule).read()), args.psi))
@@ -84,7 +86,7 @@ if __name__ == "__main__":
 
     # calculate nuclear-nuclear repulsion
     for i, j in it.product(range(len(atoms)), range(len(atoms))):
-        VNN += 0.5 * atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :]) / A2BOHR if i != j else 0
+        VNN += 0.5 * atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :]) if i != j else 0
 
     # print the results
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("scf/{}".format(args.psi))) if args.psi else "")) # type: ignore

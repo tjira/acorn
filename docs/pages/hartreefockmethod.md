@@ -53,7 +53,7 @@ where $\mathbf{F}$ is the Fock matrix, $\mathbf{C}$ is a matrix of orbital coeff
 F_{\mu\nu}=H_{\mu\nu}^{core}+D_{\kappa\lambda}(J_{\mu\nu\kappa\lambda}-\frac{1}{2}J_{\mu\lambda\kappa\nu})
 \end{equation}
 
-However, the challenge lies in the iterative nature of the solution, as the Fock matrix depends on the unknown density matrix $D$. This iterative process is carried out through a self-consistent field (SCF) method. In each iteration, a guess for the density matrix is made, and the Roothaan equations are solved. The updated density matrix
+depends on the unknown density matrix $\mathbf{D}$. This iterative process is carried out through a self-consistent field (SCF) method. In each iteration, a guess for the density matrix is made, and the Roothaan equations are solved. The updated density matrix
 
 \begin{equation}
 D_{\mu\nu}=2C_{\mu i}C_{\nu i}
