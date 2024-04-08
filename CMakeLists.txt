@@ -44,7 +44,7 @@ if (WIN32 OR STANDALONE)
 endif()
 
 # include directories
-include_directories(include ${CMAKE_BINARY_DIR}/include ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
+include_directories(include ${CMAKE_BINARY_DIR}/include ${exprtk_SOURCE_DIR} ${fftw_SOURCE_DIR}/api ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
 
 # find the necessary packages
 find_package(Eigen3 REQUIRED)
