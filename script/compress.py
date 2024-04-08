@@ -8,6 +8,7 @@ if __name__ == "__main__":
 
     # add optional arguments
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
+    parser.add_argument("-l", "--level", type=int, default=9, help="Level of compression.")
 
     # add file arguments
     parser.add_argument("file", help="File to compress.")
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # compress the file
-    sh.copyfileobj(open(args.file, "rb"), gz.open(args.file + ".gz", "wb")) # type: ignore
+    sh.copyfileobj(open(args.file, "rb"), gz.open(args.file + ".gz", "wb", compresslevel=args.level)) # type: ignore
 
     # overwrite the original file
     sh.move(args.file + ".gz", args.file)

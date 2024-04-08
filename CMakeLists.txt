@@ -1,29 +1,22 @@
-# minimum cmake requirement and CXX standard
+# minimum cmake requirement
 cmake_minimum_required(VERSION 3.18)
-set(CMAKE_CXX_STANDARD 20)
 
 # project name
 project(Acorn)
 
-# include plugins
-include(FetchContent)
-
-# set policy to enable some variable definitions
+# set policies
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-# set output directories
+# set the cmake variables
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-
-# export cmake compile options
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 20)
 
-# disable shared libraries and tests
+# set the build variables
 set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTS OFF)
-
-# disable deprecated warnings
-set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 
 # set compile flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
@@ -33,15 +26,16 @@ if (WIN32)
     string(APPEND CMAKE_CXX_FLAGS_DEBUG " -static")
 endif()
 
-# declare github libraries
-FetchContent_Declare(argparse SYSTEM GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG ac4c578f6020d5164f66ccb26b4727dea657a12b)
-FetchContent_Declare(eigen SYSTEM GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git GIT_TAG 6f9ad7da6122fdb4197c0b43dfec09ec3525305e)
-FetchContent_Declare(exprtk GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git GIT_TAG f46bffcd6966d38a09023fb37ba9335214c9b959)
-FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG a259ecc51e1951e12f757ce17db958e9881e9c6c)
-FetchContent_Declare(fftw URL https://www.fftw.org/fftw-3.3.10.tar.gz DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+# include fetch content module
+include(FetchContent)
 
-# declare the libint library
-FetchContent_Declare(libint URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+# declare libraries
+FetchContent_Declare(libint SYSTEM URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_Declare(argparse SYSTEM GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG ac4c578f6020d5164f66ccb26b4727dea657a12b)
+FetchContent_Declare(exprtk SYSTEM GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git GIT_TAG f46bffcd6966d38a09023fb37ba9335214c9b959)
+FetchContent_Declare(eigen SYSTEM GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git GIT_TAG 6f9ad7da6122fdb4197c0b43dfec09ec3525305e)
+FetchContent_Declare(json SYSTEM GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG a259ecc51e1951e12f757ce17db958e9881e9c6c)
+FetchContent_Declare(fftw SYSTEM URL https://www.fftw.org/fftw-3.3.10.tar.gz DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 
 # fetch the libraries
 FetchContent_MakeAvailable(argparse exprtk fftw json)
@@ -55,7 +49,6 @@ include_directories(include ${CMAKE_BINARY_DIR}/include ${exprtk_SOURCE_DIR} ${a
 # find the necessary packages
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(FFTW3 REQUIRED)
 
 # add acorn library
 add_library(acorn
