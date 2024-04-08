@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 
-import matplotlib.animation as anm
-import matplotlib.pyplot as plt
-
-import argparse as ap
-import numpy as np
-
-import mmap, re
+import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, mmap, re
 
 # define some simple useful functions
 minmax = lambda df: [np.min(df), np.max(df)]

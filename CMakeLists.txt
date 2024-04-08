@@ -1,5 +1,6 @@
-# minimum cmake requirement
+# minimum cmake requirement and CXX standard
 cmake_minimum_required(VERSION 3.18)
+set(CMAKE_CXX_STANDARD 20)
 
 # project name
 project(Acorn)
@@ -7,32 +8,54 @@ project(Acorn)
 # include plugins
 include(FetchContent)
 
-# set cmake variables
+# set policy to enable some variable definitions
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+# set output directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+
+# export cmake compile options
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 20)
 
-# set the debug flags
+# disable shared libraries and tests
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_TESTS OFF)
+
+# disable deprecated warnings
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
+
+# set compile flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
-
-# set the release flags
 set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3")
+if (WIN32)
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " -static")
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG " -static")
+endif()
 
-# declare libraries
+# declare github libraries
 FetchContent_Declare(argparse SYSTEM GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG ac4c578f6020d5164f66ccb26b4727dea657a12b)
+FetchContent_Declare(eigen SYSTEM GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git GIT_TAG 6f9ad7da6122fdb4197c0b43dfec09ec3525305e)
 FetchContent_Declare(exprtk GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git GIT_TAG f46bffcd6966d38a09023fb37ba9335214c9b959)
 FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG a259ecc51e1951e12f757ce17db958e9881e9c6c)
+FetchContent_Declare(fftw URL https://www.fftw.org/fftw-3.3.10.tar.gz DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+
+# declare the libint library
+FetchContent_Declare(libint URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 
 # fetch the libraries
-FetchContent_MakeAvailable(argparse exprtk json)
+FetchContent_MakeAvailable(argparse exprtk fftw json)
+if (WIN32 OR STANDALONE)
+    FetchContent_MakeAvailable(eigen libint)
+endif()
 
 # include directories
-include_directories(include ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
+include_directories(include ${CMAKE_BINARY_DIR}/include ${exprtk_SOURCE_DIR} ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
 
-# find OpenMP
+# find the necessary packages
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(FFTW3 REQUIRED)
 
 # add acorn library
 add_library(acorn
@@ -56,12 +79,9 @@ add_library(acorn
     src/transform.cpp
     src/unrestrictedhartreefock.cpp
 )
-target_link_libraries(acorn fftw3.a int2.a Eigen3::Eigen)
 
-# link OpenMP if release specified
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_link_libraries(acorn OpenMP::OpenMP_CXX)
-endif()
+# link libraries to the acorn library
+target_link_libraries(acorn fftw3 libint2$<$<NOT:$<BOOL:${STANDALONE}>>:.a> Eigen3::Eigen $<$<CONFIG:Release>:OpenMP::OpenMP_CXX>)
 
 # add acorn executable
 add_executable(acorn_exe src/main.cpp)
@@ -69,6 +89,7 @@ target_link_libraries(acorn_exe acorn)
 
 # set the folder where the basis set files are located
 target_compile_definitions(acorn_exe PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
+target_compile_definitions(acorn PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
 # set the executable name
 set_target_properties(acorn_exe PROPERTIES OUTPUT_NAME "acorn")

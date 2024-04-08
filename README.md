@@ -63,17 +63,17 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ## Compilation
 
-The software requires the [libint](https://github.com/evaleev/libint) and [fftw](https://www.fftw.org) libraries. Before the compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
+The software requires the [libint](https://github.com/evaleev/libint) library. Before the compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
 sudo apt install libboost-dev libeigen3-dev
 ```
 
-To compile the needed libraries execute `./script/libint.sh` and `./script/libfftw.sh` from the project root directory. This command creates the `libint` and `libfftw` folder with the compiled library. Now, we export the necessary environment variables.
+To compile the library execute `./script/libint.sh` from the project root directory. This command creates the `libint` directory with the compiled library. Now, we export the necessary environment variables.
 
 ```bash
-export CPLUS_INCLUDE_PATH="$PWD/libfftw/install/include:$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
-export LIBRARY_PATH="$PWD/libfftw/install/lib:$PWD/libint/install/lib:$LIBRARY_PATH"
+export CPLUS_INCLUDE_PATH="$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
+export LIBRARY_PATH="$PWD/libint/install/lib:$LIBRARY_PATH"
 ```
 
 After this, the project configuration should finish without errors.
@@ -106,4 +106,4 @@ The calculation should finish without errors. Feel free to explore all the examp
 * [exprtk](https://github.com/ArashPartow/exprtk) - C++ Mathematical Expression Parsing and Evaluation Library.
 * [fftw](https://www.fftw.org) - C Subroutine Library for Computing the Discrete Fourier Transform .
 * [json](https://github.com/nlohmann/json) - JSON for Modern C++.
-* [libint](https://github.com/evaleev/libint) - High-performance library for computing Gaussian integrals in quantum mechanics.
+* [libint](https://github.com/evaleev/libint) - High-Performance Library for Computing Gaussian Integrals in Quantum Mechanics.

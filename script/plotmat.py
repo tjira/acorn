@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 
-import matplotlib.pyplot as plt
-
-import argparse as ap
-import cycler as cl
-import numpy as np
+import argparse as ap, cycler as cl, matplotlib.pyplot as plt, numpy as np
 
 if __name__ == "__main__":
     # create the argument parser
     parser = ap.ArgumentParser(prog="Acorn Matrix Plotter", description="Matrix plotting script for the Quantum Acorn package.", add_help=False)
 
-    # add help argument
+    # add optional arguments
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
     parser.add_argument("-d", "--dimension", type=int, default=1, help="Potential dimension.")
     parser.add_argument("-n", "--normalize", action="store_true", help="Normalize provided data.")

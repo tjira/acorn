@@ -21,9 +21,6 @@ jobs:
       - name: Install Packages
         run: sudo apt install -y libboost-dev libeigen3-dev
 
-      - name: Build Libfftw
-        run: ./script/libfftw.sh
-
       - name: Build Libint
         run: ./script/libint.sh
 
@@ -32,12 +29,9 @@ jobs:
 
       - name: Build Acorn
         run: |
-          export CPLUS_INCLUDE_PATH="$PWD/libfftw/install/include:$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
-          export LIBRARY_PATH="$PWD/libfftw/install/lib:$PWD/libint/install/lib:$LIBRARY_PATH"
+          export CPLUS_INCLUDE_PATH="$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
+          export LIBRARY_PATH="$PWD/libint/install/lib:$LIBRARY_PATH"
           cmake --build build --parallel 2
-
-      - name: Copy Libfftw
-        run: cp $PWD/libfftw/install/lib/libfftw3.a bin/libfftw_linux_x86-64.a
 
       - name: Copy Libint
         run: cp $PWD/libint/install/lib/libint2.a bin/libint_linux_x86-64.a
@@ -45,6 +39,7 @@ jobs:
       - name: Rename Binaries
         run: |
           mv bin/acorn_centerxyz bin/acorn_centerxyz_linux_x86-64
+          mv bin/acorn_makemov bin/acorn_makemov_linux_x86-64
           mv bin/libacorn.a bin/libacorn_linux_x86-64.a
           mv bin/acorn bin/acorn_linux_x86-64
 
@@ -53,8 +48,8 @@ jobs:
         with:
           path: |
             bin/acorn_centerxyz_linux_x86-64
+            bin/acorn_makemov_linux_x86-64
             bin/libacorn_linux_x86-64.a
-            bin/libfftw_linux_x86-64.a
             bin/libint_linux_x86-64.a
             bin/acorn_linux_x86-64
 
@@ -78,13 +73,13 @@ jobs:
         run: |
           cp artifact/acorn_centerxyz_linux_x86-64 acorn_centerxyz
           cp artifact/libacorn_linux_x86-64.a library/libacorn.a
-          cp artifact/libfftw_linux_x86-64.a library/libfftw.a
+          cp artifact/acorn_makemov_linux_x86-64 acorn_makemov
           cp artifact/libint_linux_x86-64.a library/libint.a
           cp artifact/acorn_linux_x86-64 acorn
 
       - name: Create x86-64 Packages
         run: |
-          tar -czf acorn_linux_x86-64.tar.gz acorn acorn_centerxyz basis example interface library script/plotmat.py script/plotwfn.py LICENSE.md
+          tar -czf acorn_linux_x86-64.tar.gz acorn acorn_centerxyz acorn_makemov basis example interface library script/compress.py script/decompress.py script/plotmat.py script/plotwfn.py LICENSE.md
 
       - name: Release linux_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
