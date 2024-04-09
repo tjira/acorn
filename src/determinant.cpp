@@ -36,6 +36,64 @@ std::tuple<Determinant, int> Determinant::align(const Determinant& det2) const {
     return std::tuple<Determinant, int>{det1, swaps};
 }
 
+std::vector<Determinant> Determinant::excitations(const std::vector<int>& excs) const {
+    // check if the excitations are valid
+    if (excs.size() > 2 || std::count_if(excs.begin(), excs.end(), [](int exc) {return exc > 2;}) > 0) {
+        throw std::runtime_error("PROVIDED EXCITATIONS NOT IMPLEMENTED IN CI");
+    }
+
+    // define the vector of excitations
+    std::vector<Determinant> excitations = {*this};
+
+    // single excitations
+    if (std::find(excs.begin(), excs.end(), 1) != excs.end()) {
+        for (int i = 0; i < a.size(); i++) {
+            for (int j = a.size(); j < norb; j++) {
+                std::vector<int> det = this->a; det.at(i) = j; excitations.push_back(Determinant(norb, det, b));
+            }
+        }
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = b.size(); j < norb; j++) {
+                std::vector<int> det = this->b; det.at(i) = j; excitations.push_back(Determinant(norb, a, det));
+            }
+        }
+    }
+
+    // double excitations
+    if (std::find(excs.begin(), excs.end(), 2) != excs.end()) {
+        for (int i = 0; i < a.size(); i++) {
+            for (int j = a.size(); j < norb; j++) {
+                for (int k = 0; k < b.size(); k++) {
+                    for (int l = b.size(); l < norb; l++) {
+                        std::vector<int> deta = this->a, detb = this->b; deta.at(i) = j, detb.at(k) = l; excitations.push_back(Determinant(norb, deta, detb));
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < a.size(); i++) {
+            for (int j = a.size(); j < norb; j++) {
+                for (int k = i + 1; k < a.size(); k++) {
+                    for (int l = j + 1; l < norb; l++) {
+                        std::vector<int> det = this->a; det.at(i) = j, det.at(k) = l; excitations.push_back(Determinant(norb, det, b));
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = b.size(); j < norb; j++) {
+                for (int k = i + 1; k < b.size(); k++) {
+                    for (int l = j + 1; l < norb; l++) {
+                        std::vector<int> det = this->b; det.at(i) = j, det.at(k) = l; excitations.push_back(Determinant(norb, a, det));
+                    }
+                }
+            }
+        }
+    }
+
+    // return the excitations
+    return excitations;
+}
+
 std::vector<Determinant> Determinant::full() const {
     // define the vector of determinants
     std::vector<Determinant> full;

@@ -1,0 +1,13 @@
+{
+    "molecule" : {
+        "file" : "../molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "rhf" : {},
+    "rci" : {
+        "excitations" : [2],
+        "hessian" : {
+            "step" : 1e-5
+        }
+    }
+}

@@ -18,6 +18,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTS OFF)
 
+# disable eigen qt tests
+set(EIGEN_TEST_NOQT ON)
+
 # set compile flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3")
@@ -30,12 +33,12 @@ endif()
 include(FetchContent)
 
 # declare libraries
-FetchContent_Declare(libint SYSTEM URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_Declare(libint SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz)
 FetchContent_Declare(argparse SYSTEM GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG ac4c578f6020d5164f66ccb26b4727dea657a12b)
 FetchContent_Declare(exprtk SYSTEM GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git GIT_TAG f46bffcd6966d38a09023fb37ba9335214c9b959)
 FetchContent_Declare(eigen SYSTEM GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git GIT_TAG 6f9ad7da6122fdb4197c0b43dfec09ec3525305e)
 FetchContent_Declare(json SYSTEM GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG a259ecc51e1951e12f757ce17db958e9881e9c6c)
-FetchContent_Declare(fftw SYSTEM URL https://www.fftw.org/fftw-3.3.10.tar.gz DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www.fftw.org/fftw-3.3.10.tar.gz)
 
 # fetch the libraries
 FetchContent_MakeAvailable(argparse exprtk fftw json)

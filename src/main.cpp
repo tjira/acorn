@@ -173,25 +173,22 @@ int main(int argc, char** argv) {
 
         // print and export the atomic integrals
         if (input.contains("integral")) {
-            if (input.at("integral").contains("print")) {
-                if (intopt.at("print").at("overlap")) Printer::Print(ints.S, "OVERLAP INTEGRALS"), std::cout << "\n";
-                if (intopt.at("print").at("kinetic")) Printer::Print(ints.T, "KINETIC INTEGRALS"), std::cout << "\n";
-                if (intopt.at("print").at("nuclear")) Printer::Print(ints.V, "NUCLEAR INTEGRALS"), std::cout << "\n";
-                if (intopt.at("print").at("coulomb")) Printer::Print(ints.J, "COULOMB INTEGRALS"), std::cout << "\n";
-                if (intopt.at("print").at("doverlap")) Printer::Print(ints.dS, "OVERLAP INTEGRAL DERIVATIVES"), std::cout << "\n";
-                if (intopt.at("print").at("dkinetic")) Printer::Print(ints.dT, "KINETIC INTEGRAL DERIVATIVES"), std::cout << "\n";
-                if (intopt.at("print").at("dnuclear")) Printer::Print(ints.dV, "NUCLEAR INTEGRAL DERIVATIVES"), std::cout << "\n";
-                if (intopt.at("print").at("dcoulomb")) Printer::Print(ints.dJ, "COULOMB INTEGRAL DERIVATIVES"), std::cout << "\n";
-            } if (input.at("integral").contains("export")) {
-                if (intopt.at("export").at("overlap")) EigenWrite(std::filesystem::path(ip) / "S.mat", ints.S);
-                if (intopt.at("export").at("kinetic")) EigenWrite(std::filesystem::path(ip) / "T.mat", ints.T);
-                if (intopt.at("export").at("nuclear")) EigenWrite(std::filesystem::path(ip) / "V.mat", ints.V);
-                if (intopt.at("export").at("coulomb")) EigenWrite(std::filesystem::path(ip) / "J.mat", ints.J);
-                if (intopt.at("export").at("doverlap")) EigenWrite(std::filesystem::path(ip) / "dS.mat", ints.dS);
-                if (intopt.at("export").at("dkinetic")) EigenWrite(std::filesystem::path(ip) / "dT.mat", ints.dT);
-                if (intopt.at("export").at("dnuclear")) EigenWrite(std::filesystem::path(ip) / "dV.mat", ints.dV);
-                if (intopt.at("export").at("dcoulomb")) EigenWrite(std::filesystem::path(ip) / "dJ.mat", ints.dJ);
-            }
+            if (intopt.at("print").at("overlap")) Printer::Print(ints.S, "OVERLAP INTEGRALS"), std::cout << "\n";
+            if (intopt.at("print").at("kinetic")) Printer::Print(ints.T, "KINETIC INTEGRALS"), std::cout << "\n";
+            if (intopt.at("print").at("nuclear")) Printer::Print(ints.V, "NUCLEAR INTEGRALS"), std::cout << "\n";
+            if (intopt.at("print").at("coulomb")) Printer::Print(ints.J, "COULOMB INTEGRALS"), std::cout << "\n";
+            if (intopt.at("print").at("doverlap")) Printer::Print(ints.dS, "OVERLAP INTEGRAL DERIVATIVES"), std::cout << "\n";
+            if (intopt.at("print").at("dkinetic")) Printer::Print(ints.dT, "KINETIC INTEGRAL DERIVATIVES"), std::cout << "\n";
+            if (intopt.at("print").at("dnuclear")) Printer::Print(ints.dV, "NUCLEAR INTEGRAL DERIVATIVES"), std::cout << "\n";
+            if (intopt.at("print").at("dcoulomb")) Printer::Print(ints.dJ, "COULOMB INTEGRAL DERIVATIVES"), std::cout << "\n";
+            if (intopt.at("export").at("overlap")) EigenWrite(std::filesystem::path(ip) / "S.mat", ints.S);
+            if (intopt.at("export").at("kinetic")) EigenWrite(std::filesystem::path(ip) / "T.mat", ints.T);
+            if (intopt.at("export").at("nuclear")) EigenWrite(std::filesystem::path(ip) / "V.mat", ints.V);
+            if (intopt.at("export").at("coulomb")) EigenWrite(std::filesystem::path(ip) / "J.mat", ints.J);
+            if (intopt.at("export").at("doverlap")) EigenWrite(std::filesystem::path(ip) / "dS.mat", ints.dS);
+            if (intopt.at("export").at("dkinetic")) EigenWrite(std::filesystem::path(ip) / "dT.mat", ints.dT);
+            if (intopt.at("export").at("dnuclear")) EigenWrite(std::filesystem::path(ip) / "dV.mat", ints.dV);
+            if (intopt.at("export").at("dcoulomb")) EigenWrite(std::filesystem::path(ip) / "dJ.mat", ints.dJ);
         }
 
         // perform scans if movies provided
@@ -257,17 +254,14 @@ int main(int argc, char** argv) {
             RestrictedHartreeFock rhf(rhfopt); res = rhf.run(system, ints);
 
             // print and export the RHF results
-            if (input.at("rhf").contains("print")) {
-                if (rhfopt.at("print").at("hcore")) Printer::Print(ints.T + ints.V, "CORE HAMILTONIAN MATRIX"), std::cout << "\n";
-                if (rhfopt.at("print").at("coef")) Printer::Print(res.rhf.C, "COEFFICIENT MATRIX"), std::cout << "\n";
-                if (rhfopt.at("print").at("density")) Printer::Print(res.rhf.D, "DENSITY MATRIX"), std::cout << "\n";
-                if (rhfopt.at("print").at("orben")) Printer::Print(res.rhf.eps, "ORBITAL ENERGIES"), std::cout << "\n";
-            } if (input.at("rhf").contains("export")) {
-                if (rhfopt.at("export").at("hcore")) EigenWrite(std::filesystem::path(ip) / "H.mat", Matrix<>(ints.T + ints.V));
-                if (rhfopt.at("export").at("coef")) EigenWrite(std::filesystem::path(ip) / "C.mat", res.rhf.C);
-                if (rhfopt.at("export").at("density")) EigenWrite(std::filesystem::path(ip) / "D.mat", res.rhf.D);
-                if (rhfopt.at("export").at("orben")) EigenWrite(std::filesystem::path(ip) / "EPS.mat", res.rhf.eps);
-            }
+            if (rhfopt.at("print").at("hcore")) Printer::Print(ints.T + ints.V, "CORE HAMILTONIAN MATRIX"), std::cout << "\n";
+            if (rhfopt.at("print").at("coef")) Printer::Print(res.rhf.C, "COEFFICIENT MATRIX"), std::cout << "\n";
+            if (rhfopt.at("print").at("density")) Printer::Print(res.rhf.D, "DENSITY MATRIX"), std::cout << "\n";
+            if (rhfopt.at("print").at("orben")) Printer::Print(res.rhf.eps, "ORBITAL ENERGIES"), std::cout << "\n";
+            if (rhfopt.at("export").at("hcore")) EigenWrite(std::filesystem::path(ip) / "H.mat", Matrix<>(ints.T + ints.V));
+            if (rhfopt.at("export").at("coef")) EigenWrite(std::filesystem::path(ip) / "C.mat", res.rhf.C);
+            if (rhfopt.at("export").at("density")) EigenWrite(std::filesystem::path(ip) / "D.mat", res.rhf.D);
+            if (rhfopt.at("export").at("orben")) EigenWrite(std::filesystem::path(ip) / "EPS.mat", res.rhf.eps);
 
             // print the mulliken charges
             if (rhfopt.at("mulliken")) Printer::Print(Population::Mulliken(system, ints, res.rhf.D), "MULLIKEN CHARGES"), std::cout << std::endl;
@@ -289,8 +283,15 @@ int main(int argc, char** argv) {
                 res = rhf.gradient(system, ints, res); Printer::Print(res.rhf.G, "RESTRICTED HARTREE-FOCK GRADIENT"); std::cout << std::endl;
             }
 
+            // extract the RCI method based on the number of excitations
+            std::string rciexc = "GENERAL";
+            if (rciopt.at("excitations").size() == 2 && rciopt.at("excitations").at(0) == 1 && rciopt.at("excitations").at(1) == 2) rciexc = "CISD";
+            else if (rciopt.at("excitations").size() == 1 && rciopt.at("excitations").at(0) == 1) rciexc = "CIS";
+            else if (rciopt.at("excitations").size() == 1 && rciopt.at("excitations").at(0) == 2) rciexc = "CID";
+            else if (rciopt.at("excitations").size() == 0) rciexc = "FCI";
+
             // if configuration interaction was requested
-            if (input.contains("rci")) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION");
+            if (input.contains("rci")) {Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION (" + rciexc + ", STATE: ") + std::to_string((int)rciopt.at("state")) + ")");
                 // create the RCI object
                 RestrictedConfigurationInteraction rci(rhfopt, rciopt);
 
@@ -305,44 +306,38 @@ int main(int argc, char** argv) {
                 std::cout << std::endl;
 
                 // print and export the integrals in MS basis
-                if (input.at("rci").contains("print")) {
-                    if (rciopt.at("print").at("kineticms")) Printer::Print(ints.Tms, "KINETIC INTEGRALS IN MS BASIS"), std::cout << "\n";
-                    if (rciopt.at("print").at("nuclearms")) Printer::Print(ints.Vms, "NUCLEAR INTEGRALS IN MS BASIS"), std::cout << "\n";
-                    if (rciopt.at("print").at("hcorems")) Printer::Print(ints.Tms + ints.Vms, "CORE HAMILTONIAN MATRIX IN MS BASIS"), std::cout << "\n";
-                    if (rciopt.at("print").at("coulombms")) Printer::Print(ints.Jms, "COULOMB INTEGRALS IN MS BASIS"), std::cout << "\n";
-                } if (input.at("rci").contains("export")) {
-                    if (rciopt.at("export").at("kineticms")) EigenWrite(std::filesystem::path(ip) / "TMS.mat", ints.Tms);
-                    if (rciopt.at("export").at("nuclearms")) EigenWrite(std::filesystem::path(ip) / "VMS.mat", ints.Vms);
-                    if (rciopt.at("export").at("hcorems")) EigenWrite(std::filesystem::path(ip) / "HMS.mat", Matrix<>(ints.Tms + ints.Vms));
-                    if (rciopt.at("export").at("coulombms")) EigenWrite(std::filesystem::path(ip) / "JMS.mat", ints.Jms);
-                }
+                if (rciopt.at("print").at("kineticms")) Printer::Print(ints.Tms, "KINETIC INTEGRALS IN MS BASIS"), std::cout << "\n";
+                if (rciopt.at("print").at("nuclearms")) Printer::Print(ints.Vms, "NUCLEAR INTEGRALS IN MS BASIS"), std::cout << "\n";
+                if (rciopt.at("print").at("hcorems")) Printer::Print(ints.Tms + ints.Vms, "CORE HAMILTONIAN MATRIX IN MS BASIS"), std::cout << "\n";
+                if (rciopt.at("print").at("coulombms")) Printer::Print(ints.Jms, "COULOMB INTEGRALS IN MS BASIS"), std::cout << "\n";
+                if (rciopt.at("export").at("kineticms")) EigenWrite(std::filesystem::path(ip) / "TMS.mat", ints.Tms);
+                if (rciopt.at("export").at("nuclearms")) EigenWrite(std::filesystem::path(ip) / "VMS.mat", ints.Vms);
+                if (rciopt.at("export").at("hcorems")) EigenWrite(std::filesystem::path(ip) / "HMS.mat", Matrix<>(ints.Tms + ints.Vms));
+                if (rciopt.at("export").at("coulombms")) EigenWrite(std::filesystem::path(ip) / "JMS.mat", ints.Jms);
 
                 // perform the calculation
                 res = rci.run(system, ints, res);
 
                 // print and export the RCI results
-                if (input.at("rci").contains("print")) {
-                    if (rciopt.at("print").at("hamiltonian")) Printer::Print(res.rci.F, "CI HAMILTONIAN"), std::cout << "\n";
-                    if (rciopt.at("print").at("energies")) Printer::Print(res.rci.Eexc, "EXCITED STATE ENERGIES"), std::cout << "\n";
-                } if (input.at("rci").contains("export")) {
-                    if (rciopt.at("export").at("hamiltonian")) EigenWrite(std::filesystem::path(ip) / "HCI.mat", res.rci.F);
-                    if (rciopt.at("export").at("energies")) EigenWrite(std::filesystem::path(ip) / "ECI.mat", res.rci.Eexc);
-                }
+                if (rciopt.at("print").at("hamiltonian")) Printer::Print(res.rci.F, "CI HAMILTONIAN"), std::cout << "\n";
+                if (rciopt.at("print").at("energies")) Printer::Print(res.rci.Eexc.block(0, 0, rciopt.at("nstate"), 1), "EXCITED STATE ENERGIES"), std::cout << "\n";
+                if (rciopt.at("export").at("hamiltonian")) EigenWrite(std::filesystem::path(ip) / "HCI.mat", res.rci.F);
+                if (rciopt.at("export").at("energies")) EigenWrite(std::filesystem::path(ip) / "ECI.mat", Matrix<>(res.rci.Eexc.block(0, 0, rciopt.at("nstate"), 1)));
 
-                // print the resulting RCI energy
+                // print the resulting RCI energies
                 Printer::Print(res.Etot, "RESTRICTED CONFIGURATION INTERACTION ENERGY"), std::cout << std::endl;
 
                 // if the dynamics block is specified
-                if (input.at("rci").contains("dynamics")) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION DYNAMICS");
+                if (input.at("rci").contains("dynamics")) {Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION DYNAMICS (" + rciexc + ", STATE: ") + std::to_string((int)rciopt.at("state")) + ")");
                     rci.dynamics(system, ints, res); std::cout << std::endl;
 
                 // if the hessian is requested
-                } else if (input.at("rci").contains("hessian")) {Printer::Title("RESTRICTED CONFIGURATION FREQUENCY CALCULATION");
+                } else if (input.at("rci").contains("hessian")) {Printer::Title(std::string("RESTRICTED CONFIGURATION FREQUENCY CALCULATION (" + rciexc + ", STATE: ") + std::to_string((int)rciopt.at("state")) + ")");
                     res = rci.hessian(system, ints, res); Printer::Print(res.rci.H, "RESTRICTED CONFIGURATION INTERACTION HESSIAN"); std::cout << std::endl;
                     Printer::Print(rci.frequency(system, res.rci.H), "RESTRICTED CONFIGURATION INTERACTION FREQUENCIES"); std::cout << std::endl;
 
                 // if gradient calculation was requested
-                } else if (input.at("rci").contains("gradient")) {Printer::Title("RESTRICTED CONFIGURATION INTERACTION GRADIENT CALCULATION");
+                } else if (input.at("rci").contains("gradient")) {Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION GRADIENT CALCULATION (" + rciexc + ", STATE: ") + std::to_string((int)rciopt.at("state")) + ")");
                     res = rci.gradient(system, ints, res); Printer::Print(res.rci.G, "RESTRICTED CONFIGURATION INTERACTION GRADIENT"); std::cout << std::endl;
                 }
 
@@ -355,11 +350,8 @@ int main(int argc, char** argv) {
                 MEASURE("COULOMB INTEGRALS IN MO BASIS: ", ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C)) std::cout << std::endl;
 
                 // print and export the Coulomb integrals in MO
-                if (input.at("rmp").contains("print")) {
-                    if (rmpopt.at("print").at("coulombmo")) Printer::Print(ints.Jmo, "COULOMB INTEGRALS IN MO BASIS"), std::cout << "\n";
-                } if (input.at("rmp").contains("export")) {
-                    if (rmpopt.at("export").at("coulombmo")) EigenWrite(std::filesystem::path(ip) / "JMO.mat", ints.Jmo);
-                }
+                if (rmpopt.at("print").at("coulombmo")) Printer::Print(ints.Jmo, "COULOMB INTEGRALS IN MO BASIS"), std::cout << "\n";
+                if (rmpopt.at("export").at("coulombmo")) EigenWrite(std::filesystem::path(ip) / "JMO.mat", ints.Jmo);
 
                 // run the calculation
                 res = rmp.run(system, ints, res);
@@ -387,23 +379,20 @@ int main(int argc, char** argv) {
             UnrestrictedHartreeFock uhf(uhfopt); res = uhf.run(system, ints);
 
             // print and export the RHF results
-            if (input.at("uhf").contains("print")) {
-                if (uhfopt.at("print").at("hcore")) Printer::Print(ints.T + ints.V, "CORE HAMILTONIAN MATRIX"), std::cout << "\n";
-                if (uhfopt.at("print").at("coefa")) Printer::Print(res.uhf.Ca, "ALPHA COEFFICIENT MATRIX"), std::cout << "\n";
-                if (uhfopt.at("print").at("coefb")) Printer::Print(res.uhf.Cb, "BETA COEFFICIENT MATRIX"), std::cout << "\n";
-                if (uhfopt.at("print").at("densitya")) Printer::Print(res.uhf.Da, "ALPHA DENSITY MATRIX"), std::cout << "\n";
-                if (uhfopt.at("print").at("densityb")) Printer::Print(res.uhf.Db, "BETA DENSITY MATRIX"), std::cout << "\n";
-                if (uhfopt.at("print").at("orbena")) Printer::Print(res.uhf.epsa, "ALPHA ORBITAL ENERGIES"), std::cout << "\n";
-                if (uhfopt.at("print").at("orbenb")) Printer::Print(res.uhf.epsb, "BETA ORBITAL ENERGIES"), std::cout << "\n";
-            } if (input.at("uhf").contains("export")) {
-                if (uhfopt.at("export").at("hcore")) EigenWrite(std::filesystem::path(ip) / "H.mat", Matrix<>(ints.T + ints.V));
-                if (uhfopt.at("export").at("coefa")) EigenWrite(std::filesystem::path(ip) / "CA.mat", res.uhf.Ca);
-                if (uhfopt.at("export").at("coefb")) EigenWrite(std::filesystem::path(ip) / "CB.mat", res.uhf.Cb);
-                if (uhfopt.at("export").at("densitya")) EigenWrite(std::filesystem::path(ip) / "DA.mat", res.uhf.Da);
-                if (uhfopt.at("export").at("densityb")) EigenWrite(std::filesystem::path(ip) / "DB.mat", res.uhf.Db);
-                if (uhfopt.at("export").at("orbena")) EigenWrite(std::filesystem::path(ip) / "EPSA.mat", res.uhf.epsa);
-                if (uhfopt.at("export").at("orbenb")) EigenWrite(std::filesystem::path(ip) / "EPSB.mat", res.uhf.epsb);
-            }
+            if (uhfopt.at("print").at("hcore")) Printer::Print(ints.T + ints.V, "CORE HAMILTONIAN MATRIX"), std::cout << "\n";
+            if (uhfopt.at("print").at("coefa")) Printer::Print(res.uhf.Ca, "ALPHA COEFFICIENT MATRIX"), std::cout << "\n";
+            if (uhfopt.at("print").at("coefb")) Printer::Print(res.uhf.Cb, "BETA COEFFICIENT MATRIX"), std::cout << "\n";
+            if (uhfopt.at("print").at("densitya")) Printer::Print(res.uhf.Da, "ALPHA DENSITY MATRIX"), std::cout << "\n";
+            if (uhfopt.at("print").at("densityb")) Printer::Print(res.uhf.Db, "BETA DENSITY MATRIX"), std::cout << "\n";
+            if (uhfopt.at("print").at("orbena")) Printer::Print(res.uhf.epsa, "ALPHA ORBITAL ENERGIES"), std::cout << "\n";
+            if (uhfopt.at("print").at("orbenb")) Printer::Print(res.uhf.epsb, "BETA ORBITAL ENERGIES"), std::cout << "\n";
+            if (uhfopt.at("export").at("hcore")) EigenWrite(std::filesystem::path(ip) / "H.mat", Matrix<>(ints.T + ints.V));
+            if (uhfopt.at("export").at("coefa")) EigenWrite(std::filesystem::path(ip) / "CA.mat", res.uhf.Ca);
+            if (uhfopt.at("export").at("coefb")) EigenWrite(std::filesystem::path(ip) / "CB.mat", res.uhf.Cb);
+            if (uhfopt.at("export").at("densitya")) EigenWrite(std::filesystem::path(ip) / "DA.mat", res.uhf.Da);
+            if (uhfopt.at("export").at("densityb")) EigenWrite(std::filesystem::path(ip) / "DB.mat", res.uhf.Db);
+            if (uhfopt.at("export").at("orbena")) EigenWrite(std::filesystem::path(ip) / "EPSA.mat", res.uhf.epsa);
+            if (uhfopt.at("export").at("orbenb")) EigenWrite(std::filesystem::path(ip) / "EPSB.mat", res.uhf.epsb);
 
             // print the total energy
             Printer::Print(res.Etot, "UNRESTRICTED HARTREE-FOCK ENERGY"), std::cout << "\n";

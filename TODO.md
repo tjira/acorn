@@ -1,16 +1,18 @@
 # TODO List
 
-- [ ] Add BAGEL interface with excited state dynamics
 - [ ] Add energy calculation for exact NAD
-- [ ] Add excitation specifications to FCI
 - [ ] Add some compression for exact wavefunctions
 - [ ] Create a compare script that compares results with ORCA or Psi4
+- [ ] Inspect convergence in excited state dynamics
 - [ ] Somehow specify the initial momentum for NAD
+- [ ] Specify the number of states and calculation state in the ORCA and BAGEL output
 - [ ] Transform the NAD wavefunction to adiabatic basis
+- [x] Add BAGEL interface with excited state dynamics
 - [x] Add Hermitian FFT for spectra calculation
 - [x] Add Mulliken analysis
 - [x] Add QD spectrum calculation for excited states
 - [x] Add exact solver for 2D potentials
+- [x] Add excitation specifications to FCI
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
@@ -32,3 +34,4 @@
 - [x] Make the plotwfn.py not read the whole file if static view specified
 - [x] Modify restricted calculations to account for charge and multiplicity
 - [x] Remove the python folder before merging the fci branch
+- [x] Specify the number of states and calculation state in the RCI output

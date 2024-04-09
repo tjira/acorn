@@ -34,6 +34,7 @@ if __name__ == "__main__":
     parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["S.mat", "T.mat", "V.mat", "J.mat"])
 
     # method switches
+    parser.add_argument("--cisd", help="Perform the singles/doubles configuration interaction calculation.", action="store_true")
     parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action="store_true")
     parser.add_argument("--mp2", help="Perform the Moller-Plesset calculation.", action="store_true")
 
@@ -104,22 +105,43 @@ if __name__ == "__main__":
         print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("mp2/{}".format(args.psi))) if args.psi else "")) # type: ignore
 
     # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
-    if args.fci:
+    if args.cisd or args.fci:
 
-        # create the mask of spin indices used to correctly zero out elements in tiled MO basis matrices
-        spinind = np.arange(2 * nbf, dtype=int) % 2; spinmask = spinind.reshape(-1, 1) == spinind
+        # create the mask of spin indices used to correctly zero out elements in tiled MO basis matrices and define determinant list
+        spinind = np.arange(2 * nbf, dtype=int) % 2; spinmask = spinind.reshape(-1, 1) == spinind; dets = list()
 
         # transform the core Hamiltonian to the MO basis, tile it for alpha/beta spins and apply spin mask
         Hms = np.repeat(np.repeat(np.einsum("ip,ij,jq", C, H, C, optimize=True), 2, axis=0), 2, axis=1) * spinmask
 
-        # tile the coefficient matrix to accound for different spins
+        # tile the coefficient matrix to account for different spins
         Cms = np.block([[np.repeat(C, 2, axis=1)], [np.repeat(C, 2, axis=1)]]) * np.repeat(spinmask, nbf, axis=0)[:2 * nbf, :]
 
         # transform the coulomb integral tensor to the MS basis
         Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)
 
-        # generate all possible determinants
-        dets = [np.concatenate((2 * np.array(alpha), 2 * np.array(beta) + 1)) for alpha, beta in it.product(it.combinations(range(nbf), nocc), it.combinations(range(nbf), nocc))]
+        # define functions to generate single and double excitations of a ground configuration
+        def single(ground, nbf):
+            for i, j in it.product(range(len(ground)), range(len(ground), nbf)):
+                yield np.array(ground[:i] + [j] + ground[i + 1:])
+        def double(ground, nbf):
+            for i, j in it.product(range(len(ground)), range(len(ground), nbf)):
+                for k, l in it.product(range(i + 1, len(ground)), range(j + 1, nbf)):
+                    yield np.array(ground[:i] + [j] + ground[i + 1:k] + [l] + ground[k + 1:])
+
+        # generate all possible determinants for CISD
+        if args.cisd:
+            dets = [np.concatenate((2 * np.array(range(nocc)), 2 * np.array(range(nocc)) + 1))]
+            for electron in single(list(range(nocc)), nbf):
+                dets.append(np.concatenate((2 * np.array(electron), 2 * np.array(range(nocc)) + 1)))
+                dets.append(np.concatenate((2 * np.array(range(nocc)), 2 * np.array(electron) + 1)))
+            for alpha, beta in it.product(single(list(range(nocc)), nbf), single(list(range(nocc)), nbf)):
+                dets.append(np.concatenate((2 * np.array(alpha), 2 * np.array(beta) + 1)))
+            for electron in double(list(range(nocc)), nbf):
+                dets.append(np.concatenate((2 * np.array(electron), 2 * np.array(range(nocc)) + 1)))
+                dets.append(np.concatenate((2 * np.array(range(nocc)), 2 * np.array(electron) + 1)))
+
+        # generate all possible determinants for FCI
+        if args.fci: dets = [np.concatenate((2 * np.array(alpha), 2 * np.array(beta) + 1)) for alpha, beta in it.product(it.combinations(range(nbf), nocc), it.combinations(range(nbf), nocc))]
 
         # define the CI Hamiltonian
         Hci = np.zeros([len(dets), len(dets)])
@@ -132,28 +154,31 @@ if __name__ == "__main__":
         # fill the CI Hamiltonian
         for i in range(Hci.shape[0]):
             for j in range(Hci.shape[1]):
-                # copy the determinant and define sign
-                aligned, sign = dets[i].copy(), 1
+                # define the aligned determinant and the sign
+                aligned, sign = dets[j].copy(), 1
 
-                # align the first determinant to the second and calculate the sign
-                for k in (k for k in range(len(aligned)) if aligned[k] != dets[j][k]):
-                    while len(l := np.where(dets[j] == aligned[k])[0]) and l[0] != k:
+                # align the determinant "j" to "i" and calculate the sign
+                for k in (k for k in range(len(aligned)) if aligned[k] != dets[i][k]):
+                    while len(l := np.where(dets[i] == aligned[k])[0]) and l[0] != k:
                         aligned[[k, l[0]]] = aligned[[l[0], k]]; sign *= -1
 
                 # find the unique and common spinorbitals
                 so = np.block([
-                    np.array([aligned[i] for i in range(len(aligned)) if aligned[i] not in dets[j]]),
-                    np.array([dets[j][i] for i in range(len(dets[j])) if dets[j][i] not in aligned]),
-                    np.array([aligned[i] for i in range(len(aligned)) if aligned[i] in dets[j]])
+                    np.array([aligned[k] for k in range(len(aligned)) if aligned[k] not in dets[i]]),
+                    np.array([dets[i][k] for k in range(len(dets[j])) if dets[i][k] not in aligned]),
+                    np.array([aligned[k] for k in range(len(aligned)) if aligned[k] in dets[i]])
                 ]).astype(int)
 
                 # apply the Slater-Condon rules and multiply by the sign
-                if (aligned - dets[j] != 0).sum() == 0: Hci[i, j] = slater0(so) * sign
-                if (aligned - dets[j] != 0).sum() == 1: Hci[i, j] = slater1(so) * sign
-                if (aligned - dets[j] != 0).sum() == 2: Hci[i, j] = slater2(so) * sign
+                if (aligned - dets[i] != 0).sum() == 0: Hci[i, j] = slater0(so) * sign
+                if (aligned - dets[i] != 0).sum() == 1: Hci[i, j] = slater1(so) * sign
+                if (aligned - dets[i] != 0).sum() == 2: Hci[i, j] = slater2(so) * sign
 
         # solve the eigensystem and assign energy
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 
+        # get the name of the method
+        method = "CISD" if args.cisd else "FCI"
+
         # print the results
-        print("FCI ENERGY: {:.8f}".format(E_HF + E_FCI + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("fci/{}".format(args.psi))) if args.psi else "")) # type: ignore
+        print("{} ENERGY: {:.8f}".format(method, E_HF + E_FCI + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("{}/{}".format(method.lower(), args.psi))) if args.psi else "")) # type: ignore

@@ -28,7 +28,7 @@ Result RestrictedConfigurationInteraction::run(const System& system, const Integ
 
     // generate the determinants
     if (opt.excitations.size() == 0) dets = Determinant(ints.S.rows(), system.nocc(), system.nocc()).full();
-    else throw std::runtime_error("RCI EXCITATIONS NOT IMPLEMENTED YET");
+    else dets = Determinant(ints.S.rows(), system.nocc(), system.nocc()).excitations(opt.excitations);
 
     // print the elapsed time
     if (print) std::cout << "GENERATED " << dets.size() << " DETERMINANTS: " << std::flush;
@@ -63,5 +63,5 @@ Result RestrictedConfigurationInteraction::run(const System& system, const Integ
     if (print) std::cout << Timer::Format(Timer::Elapsed(start)) << std::endl << std::endl;
 
     // assign energy and return results
-    res.Etot = res.rci.Eexc(0), res.Eexc = res.rci.Eexc; return res;
+    res.Etot = res.rci.Eexc(opt.state - 1), res.Eexc = res.rci.Eexc; return res;
 }
