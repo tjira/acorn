@@ -41,6 +41,7 @@ jobs:
           mv bin/acorn_centerxyz bin/acorn_centerxyz_linux_x86-64
           mv bin/acorn_makemov bin/acorn_makemov_linux_x86-64
           mv bin/libacorn.a bin/libacorn_linux_x86-64.a
+          mv bin/libfftw3.a bin/libfftw_linux_x86-64.a
           mv bin/acorn bin/acorn_linux_x86-64
 
       - name: Upload Artifacts
@@ -50,6 +51,7 @@ jobs:
             bin/acorn_centerxyz_linux_x86-64
             bin/acorn_makemov_linux_x86-64
             bin/libacorn_linux_x86-64.a
+            bin/libfftw_linux_x86-64.a
             bin/libint_linux_x86-64.a
             bin/acorn_linux_x86-64
 
@@ -74,6 +76,7 @@ jobs:
           cp artifact/acorn_centerxyz_linux_x86-64 acorn_centerxyz
           cp artifact/libacorn_linux_x86-64.a library/libacorn.a
           cp artifact/acorn_makemov_linux_x86-64 acorn_makemov
+          cp artifact/libfftw_linux_x86-64.a library/libfftw.a
           cp artifact/libint_linux_x86-64.a library/libint.a
           cp artifact/acorn_linux_x86-64 acorn
 
