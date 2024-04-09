@@ -283,15 +283,20 @@ int main(int argc, char** argv) {
                 res = rhf.gradient(system, ints, res); Printer::Print(res.rhf.G, "RESTRICTED HARTREE-FOCK GRADIENT"); std::cout << std::endl;
             }
 
-            // extract the RCI method based on the number of excitations
-            std::string rciexc = "GENERAL";
-            if (rciopt.at("excitations").size() == 2 && rciopt.at("excitations").at(0) == 1 && rciopt.at("excitations").at(1) == 2) rciexc = "CISD";
-            else if (rciopt.at("excitations").size() == 1 && rciopt.at("excitations").at(0) == 1) rciexc = "CIS";
-            else if (rciopt.at("excitations").size() == 1 && rciopt.at("excitations").at(0) == 2) rciexc = "CID";
-            else if (rciopt.at("excitations").size() == 0) rciexc = "FCI";
-
             // if configuration interaction was requested
-            if (input.contains("rci")) {Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION (" + rciexc + ", STATE: ") + std::to_string((int)rciopt.at("state")) + ")");
+            if (std::string rcispec = " ("; input.contains("rci")) {
+                // extract the RCI method based on the excitations provided
+                if (rciopt.at("excitations").size() == 2 && rciopt.at("excitations").at(0) == 1 && rciopt.at("excitations").at(1) == 2) rcispec += "CISD, ";
+                else if (rciopt.at("excitations").size() == 1 && rciopt.at("excitations").at(0) == 1) rcispec += "CIS, ";
+                else if (rciopt.at("excitations").size() == 1 && rciopt.at("excitations").at(0) == 2) rcispec += "CID, ";
+                else if (rciopt.at("excitations").size() == 0) rcispec += "FCI, ";
+
+                // extract the state and append it to specification
+                rcispec += "STATE: " + std::to_string((int)rciopt.at("state")) + ")";
+
+                // print the title
+                Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION") + rcispec);
+
                 // create the RCI object
                 RestrictedConfigurationInteraction rci(rhfopt, rciopt);
 
@@ -328,16 +333,16 @@ int main(int argc, char** argv) {
                 Printer::Print(res.Etot, "RESTRICTED CONFIGURATION INTERACTION ENERGY"), std::cout << std::endl;
 
                 // if the dynamics block is specified
-                if (input.at("rci").contains("dynamics")) {Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION DYNAMICS (" + rciexc + ", STATE: ") + std::to_string((int)rciopt.at("state")) + ")");
+                if (input.at("rci").contains("dynamics")) {Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION DYNAMICS") + rcispec);
                     rci.dynamics(system, ints, res); std::cout << std::endl;
 
                 // if the hessian is requested
-                } else if (input.at("rci").contains("hessian")) {Printer::Title(std::string("RESTRICTED CONFIGURATION FREQUENCY CALCULATION (" + rciexc + ", STATE: ") + std::to_string((int)rciopt.at("state")) + ")");
+                } else if (input.at("rci").contains("hessian")) {Printer::Title(std::string("RESTRICTED CONFIGURATION FREQUENCY CALCULATION") + rcispec);
                     res = rci.hessian(system, ints, res); Printer::Print(res.rci.H, "RESTRICTED CONFIGURATION INTERACTION HESSIAN"); std::cout << std::endl;
                     Printer::Print(rci.frequency(system, res.rci.H), "RESTRICTED CONFIGURATION INTERACTION FREQUENCIES"); std::cout << std::endl;
 
                 // if gradient calculation was requested
-                } else if (input.at("rci").contains("gradient")) {Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION GRADIENT CALCULATION (" + rciexc + ", STATE: ") + std::to_string((int)rciopt.at("state")) + ")");
+                } else if (input.at("rci").contains("gradient")) {Printer::Title(std::string("RESTRICTED CONFIGURATION INTERACTION GRADIENT CALCULATION") + rcispec);
                     res = rci.gradient(system, ints, res); Printer::Print(res.rci.G, "RESTRICTED CONFIGURATION INTERACTION GRADIENT"); std::cout << std::endl;
                 }
 

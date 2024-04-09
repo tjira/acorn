@@ -4,8 +4,8 @@
 - [ ] Add some compression for exact wavefunctions
 - [ ] Create a compare script that compares results with ORCA or Psi4
 - [ ] Inspect convergence in excited state dynamics
+- [ ] Print some info on the ORCA and BAGEL calculation in the output
 - [ ] Somehow specify the initial momentum for NAD
-- [ ] Specify the number of states and calculation state in the ORCA and BAGEL output
 - [ ] Transform the NAD wavefunction to adiabatic basis
 - [x] Add BAGEL interface with excited state dynamics
 - [x] Add Hermitian FFT for spectra calculation
