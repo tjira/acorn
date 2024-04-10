@@ -7,8 +7,11 @@ Result Orca::gradient(const System& system, const Integrals&, Result res, bool p
     // print the full path of the execution folder
     if (print) std::cout << "ORCA DIRECTORY: " << orcadir << std::endl;
 
-    // define the execution command and create the execution directory
-    std::stringstream cmd; cmd << "./orca.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " > /dev/null 2>&1", std::filesystem::create_directory(orcadir);
+    // define the execution command
+    std::stringstream cmd; cmd << "./orca.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " " << opt.method << " > /dev/null 2>&1";
+
+    // create the execution directory
+    std::filesystem::create_directory(orcadir);
 
     // save the system and copy the interface
     system.save((orcadir / "molecule.xyz").string()), std::filesystem::copy_file(ip / opt.interface, orcadir / "orca.sh", std::filesystem::copy_options::overwrite_existing);
@@ -37,8 +40,11 @@ Result Orca::run(const System& system, const Integrals&, Result res, bool print)
     // print the full path of the execution folder
     if (print) std::cout << "ORCA DIRECTORY: " << orcadir << std::endl;
 
-    // define the execution command and create the execution directory
-    std::stringstream cmd; cmd << "./orca.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " > /dev/null 2>&1", std::filesystem::create_directory(orcadir);
+    // define the execution command
+    std::stringstream cmd; cmd << "./orca.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " " << opt.method << " > /dev/null 2>&1";
+
+    // create the execution directory
+    std::filesystem::create_directory(orcadir);
 
     // save the system and copy the interface
     system.save((orcadir / "molecule.xyz").string()), std::filesystem::copy_file(ip / opt.interface, orcadir / "orca.sh", std::filesystem::copy_options::overwrite_existing);

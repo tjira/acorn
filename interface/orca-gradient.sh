@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# USAGE: orca.sh CHARGE MULT BASIS
-if [ "$#" -ne 3 ]; then
-    echo "USAGE: orca.sh BASIS CHARGE MULT"; exit 1
+# USAGE: orca.sh BASIS CHARGE MULT METHOD
+if [ "$#" -ne 4 ]; then
+    echo "USAGE: orca.sh BASIS CHARGE MULT METHOD"; exit 1
 fi
 
 # specify the input file
 cat << EOT > orca.inp
-! HF ENGRAD ${1^^}
+! ${4^^} ENGRAD ${1^^}
 
 *xyzfile $2 $3 molecule.xyz
 EOT

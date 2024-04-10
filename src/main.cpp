@@ -69,7 +69,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gra
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, savewfn);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options, dynamics, interface, nstate, state);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, method);
 
 int main(int argc, char** argv) {
     // create the argument parser and the program timer
@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
                 res = bagel.gradient(system, ints, res); std::cout << std::endl; Printer::Print(res.G, "BAGEL GRADIENT"); std::cout << std::endl;
             }
 
-        } else if (input.contains("orca")) {Printer::Title("ORCA CALCULATION");
+        } else if (input.contains("orca")) {Printer::Title(std::string("ORCA CALCULATION (") + std::string(orcopt.at("method")) + ")");
             // run the calculation
             Orca orca(orcopt); res = orca.run(system, ints, res); std::cout << std::endl;
 
@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
             Printer::Print(res.Etot, "ORCA ENERGY"), std::cout << std::endl;
 
             // if dynamics block is specified, run it
-            if (input.at("orca").contains("dynamics")) {Printer::Title("ORCA DYNAMICS");
+            if (input.at("orca").contains("dynamics")) {Printer::Title(std::string("ORCA DYNAMICS (") + std::string(orcopt.at("method")) + ")");
                 orca.dynamics(system, ints, res); std::cout << std::endl;
 
             // if the ORCA hessian is requested
@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("ORCA HESSIAN CALCULATION NOT IMPLEMENTED");
 
             // if the ORCA gradient is requested
-            } else if (input.at("orca").contains("gradient")) {Printer::Title("ORCA GRADIENT CALCULATION");
+            } else if (input.at("orca").contains("gradient")) {Printer::Title(std::string("ORCA GRADIENT (") + std::string(orcopt.at("method")) + ")");
                 res = orca.gradient(system, ints, res); std::cout << std::endl; Printer::Print(res.G, "ORCA GRADIENT"); std::cout << std::endl;
             }
 

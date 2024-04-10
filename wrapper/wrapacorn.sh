@@ -13,13 +13,13 @@ create() {
     jq -n --arg file "$SYSTEM" --arg basis "$BASIS" --argjson charge "$CHARGE" --argjson multiplicity "$MULT" '{molecule: $ARGS.named}' > molecule.json
 
     # create the input file
-    if [ "$METHOD" == "RHF" ]; then
+    if [ "$METHOD" == "RHF" ] || [ "$METHOD" == "HF" ]; then
         jq '. + {rhf: {}}' molecule.json > input.json
     elif [ "$METHOD" == "UHF" ]; then
         jq '. + {uhf: {}}' molecule.json > input.json
-    elif [ "$METHOD" == "RMP2" ]; then
+    elif [ "$METHOD" == "RMP2" ] || [ "$METHOD" == "MP2" ]; then
         jq '. + {rhf: {}, rmp: {}}' molecule.json > input.json
-    elif [ "$METHOD" == "RFCI" ]; then
+    elif [ "$METHOD" == "RFCI" ] || [ "$METHOD" == "FCI" ]; then
         jq '. + {rhf: {}, rci: {}}' molecule.json > input.json
     else
         echo "INVALID METHOD: $METHOD"; exit 1

@@ -4,6 +4,7 @@
         "basis" : "sto-3g"
     },
     "orca" : {
-        "interface" : "../../interface/orca-energy-hf.sh"
+        "interface" : "../../interface/orca-energy.sh",
+        "method" : "HF"
     }
 }

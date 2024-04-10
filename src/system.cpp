@@ -34,7 +34,7 @@ System::System(std::ifstream& stream, std::string basis, int charge, int multi) 
     atoms = *reinterpret_cast<const std::vector<Atom>*>(&libintatoms);
 
     // create the shell container
-    shells = new libint2::BasisSet(basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
+    shells = new libint2::BasisSet(this->basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
 
     // calculate the number of electrons
     electrons -= charge; for (const auto& atom : atoms) electrons += atom.atomic_number;
