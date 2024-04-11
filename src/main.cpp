@@ -441,17 +441,8 @@ int main(int argc, char** argv) {
             // if the optimization was performed print the resulting energies
             if (!msaopt.at("real") && mdlopt.at("potential").size() == 1) Printer::Print(res.msv.opten, "ENERGIES"), std::cout << std::endl;
 
-            // print the spectral moments
-            if (res.msv.spectra.size() && msaopt.at("spectrum").contains("moments")) {
-                for (size_t i = 0; i < res.msv.spectra.size(); i++) {
-                    double M0 = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), 00, 0), M1 = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), 00, 1);
-                    if (msaopt.at("spectrum").at("moments") >= 0) std::printf("MOMENT #00 OF SPECTRUM #%d: % 2.2e\n", (int)i + 1, M0);
-                    if (msaopt.at("spectrum").at("moments") >= 1) std::printf("MOMENT #01 OF SPECTRUM #%d: % 2.2e\n", (int)i + 1, M1);
-                    for (int j = 2; j <= msaopt.at("spectrum").at("moments"); j++) {
-                        double MJ = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), M1, j); std::printf("MOMENT #%02d OF SPECTRUM #%d: % 2.2e\n", j, (int)i + 1, MJ);
-                    }
-                } std::cout << std::endl;
-            }
+            // save the density matrix if nonadiabatic model was used
+            if (mdlopt.at("potential").size() > 1 && res.msv.rho.size()) EigenWrite(std::filesystem::path(ip) / "rho.mat", res.msv.rho);
 
             // extract and save the potential points
             if (StringContains(mdlopt.at("potential").at(0).at(0), 'y')) {
@@ -469,6 +460,18 @@ int main(int argc, char** argv) {
                     Matrix<> A(res.msv.t.size(), 3); A << res.msv.t, res.msv.acfs.at(i).real(), res.msv.acfs.at(i).imag(); EigenWrite(std::filesystem::path(ip) / ("acf" + std::to_string(i) + ".mat"), A);
                     Matrix<> F(res.msv.f.size(), 2); F << res.msv.f, res.msv.spectra.at(i).cwiseAbs(); EigenWrite(std::filesystem::path(ip) / ("spectrum" + std::to_string(i) + ".mat"), F);
                 }
+            }
+
+            // print the spectral moments
+            if (res.msv.spectra.size() && msaopt.at("spectrum").contains("moments")) {
+                for (size_t i = 0; i < res.msv.spectra.size(); i++) {
+                    double M0 = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), 00, 0), M1 = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), 00, 1);
+                    if (msaopt.at("spectrum").at("moments") >= 0) std::printf("MOMENT #00 OF SPECTRUM #%d: % 2.2e\n", (int)i + 1, M0);
+                    if (msaopt.at("spectrum").at("moments") >= 1) std::printf("MOMENT #01 OF SPECTRUM #%d: % 2.2e\n", (int)i + 1, M1);
+                    for (int j = 2; j <= msaopt.at("spectrum").at("moments"); j++) {
+                        double MJ = Numpy::Moment(res.msv.f, res.msv.spectra.at(i), M1, j); std::printf("MOMENT #%02d OF SPECTRUM #%d: % 2.2e\n", j, (int)i + 1, MJ);
+                    }
+                } std::cout << std::endl;
             }
         }
     }

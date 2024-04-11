@@ -5,13 +5,14 @@
             ["0.001*exp(-x^2)", "-0.01*tanh(0.6*x)"]
         ],
         "limits" : [-32, 32],
-        "ngrid" : 2048,
-        "mass" : 2048
+        "ngrid" : 4096,
+        "mass" : 2000
     },
     "solve" : {
         "guess" : ["exp(-(x+10)^2)"],
+        "iters" : 500,
         "real" : true,
-        "step" : 16,
+        "step" : 10,
         "savewfn" : true
     }
 }

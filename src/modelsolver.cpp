@@ -198,10 +198,6 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         {Expression(system.potential.at(1).at(0)).eval(res.msv.r), Expression(system.potential.at(1).at(1)).eval(res.msv.r)}
     }; res.msv.U = Matrix<>(system.ngrid, system.potential.size());
 
-    // save the potential to results
-    res.msv.U.col(0) = Expression(system.potential.at(0).at(0)).eval(res.msv.r);
-    res.msv.U.col(1) = Expression(system.potential.at(1).at(1)).eval(res.msv.r);
-
     // define the complex absorbing potential
     Vector<std::complex<double>> CAP = 0.1 * I * ((-0.1 * (res.msv.r.array() - system.limits.at(0)).pow(2)).exp() + (-0.1 * (res.msv.r.array() - system.limits.at(1)).pow(2)).exp());
 
@@ -220,8 +216,8 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     K.at(1).at(1) = (-0.5 * I * res.msv.k.array().pow(2) * optn.step / system.mass()).exp();
 
     // fill the potential propagator
-    Vector<std::complex<double>> D = 4 * V.at(1).at(0).array().abs().pow(2) + (V.at(0).at(0) - res.msv.U.col(1)).array().pow(2);
-    Vector<std::complex<double>> a = (-0.25 * I * (V.at(0).at(0) + res.msv.U.col(1)) * optn.step).array().exp();
+    Vector<std::complex<double>> D = 4 * V.at(1).at(0).array().abs().pow(2) + (V.at(0).at(0) - V.at(1).at(1)).array().pow(2);
+    Vector<std::complex<double>> a = (-0.25 * I * (V.at(0).at(0) + V.at(1).at(1)) * optn.step).array().exp();
     Vector<std::complex<double>> b = (0.25 * D.array().sqrt() * optn.step).cos();
     Vector<std::complex<double>> c = I * (0.25 * D.array().sqrt() * optn.step).sin() / D.array().sqrt();
     R.at(0).at(0) = a.array() * (b.array() + c.array() * (V.at(1).at(1) - V.at(0).at(0)).array());
@@ -255,11 +251,65 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         if (print) std::printf("%6d %20.14f %.2e %.2e\n", i + 1, E, Eerr, Derr);
     }
 
-    // save the wfn dynamics
+    // define the containers for the transformation matrix and the density matrix
+    Matrix<> transform = Matrix<>::Identity(system.potential.size(), system.potential.size());
+    res.msv.rho = Matrix<>(optn.iters + 1, system.potential.size() * system.potential.size());
+
+    // perform the transformation to adiabatic basis for potential and wfns
+    for (int i = 0; i < system.ngrid; i++) {
+        // define the diabatic potential at the current point
+        Matrix<double> UD(V.size(), V.at(0).size());
+
+        // fill the diabatic potential at the current point
+        for (int j = 0; j < system.potential.size(); j++) {
+            for (int k = 0; k < system.potential.at(j).size(); k++) {
+                UD(j, k) = V.at(j).at(k)(i).real();
+            }
+        }
+        
+        // diagonalize the diabatic potential to get the adiabatic potential
+        Eigen::SelfAdjointEigenSolver<Matrix<>> eigensolver(UD); res.msv.U.row(i) = eigensolver.eigenvalues().real().transpose();
+
+        // define the overlap of eigenvectors
+        Vector<> overlap(system.potential.size());
+
+        // calculate the overlap of eigenvectors
+        for (int j = 0; j < system.potential.size(); j++) {
+            overlap(j) = transform.col(j).transpose() * eigensolver.eigenvectors().col(j);
+        }
+
+        // maximize the overlap with the previuos transformation
+        transform = eigensolver.eigenvectors(); transform = transform * overlap.asDiagonal();
+
+        // transform the wavefunction to adiabatic basis at each point
+        for (auto& psi : psis) psi.row(i) = transform.transpose() * psi.row(i).transpose();
+    }
+
+    // calculate the adiabatic density matrix
+    for (int i = 0; i < optn.iters + 1; i++) {
+        // add the time to the first column
+        res.msv.rho(i, 0) = i * optn.step;
+
+        // calculate the density matrix for the current time step
+        Matrix<std::complex<double>> rho = psis.at(i).transpose() * psis.at(i).conjugate() * dr;
+
+        // fill the density matrix
+        res.msv.rho(i, 1) = std::abs(rho(0, 0));
+        res.msv.rho(i, 2) = std::abs(rho(1, 1));
+        res.msv.rho(i, 3) = std::abs(rho(0, 1));
+    }
+
+    // save the wfn dynamics and potential in adiabatic basis
     for (size_t i = 0; i < system.potential.size() && optn.savewfn; i++) {
+        // extract the wavefunction in diabatic basis
         std::vector<Matrix<std::complex<double>>> state; for (auto psi : psis) state.push_back(psi.col(i));
+
+        // save the wavefunction
         ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
     }
+
+    // print the newline
+    if (print) std::printf("\n");
 
     // return
     return res;

@@ -35,6 +35,11 @@ if __name__ == "__main__":
     parser.add_argument("wfns", nargs="+", help="The wavefunction files to plot.")
     parser.add_argument("-p", "--potential", default="U.mat", help="The potential file to plot.")
 
+    # add wfn plotting arguments
+    parser.add_argument("-i", "--imag", action="store_true", help="Plot the imaginary part of the wavefunction.")
+    parser.add_argument("-a", "--abs", action="store_true", help="Plot the absolute value of the wavefunction.")
+    parser.add_argument("-r", "--real", action="store_true", help="Plot the real part of the wavefunction.")
+
     # add mode arguments
     parser.add_argument("--align", action="store_true", help="Align the wavefunctions to the potential.")
     parser.add_argument("--scale", action="store_true", help="Scale the potential to the wfn maximum.")
@@ -82,12 +87,18 @@ if __name__ == "__main__":
         # set the plot limits
         plt.axis((np.min(domain), np.max(domain), ymin - 0.02 * (ymax - ymin), ymax + 0.02 * (ymax - ymin)))
 
-        # define the plots and animation update function
-        plots = [[plt.plot(wfndata[i][1][0], np.real(wfndata[i][2][-1]) + energy[i][0])[0], plt.plot(wfndata[i][1][0], np.imag(wfndata[i][2][0]) + energy[i][0])[0]] for i in range(len(args.wfns))]
+        # define the initial plots
+        if args.real: plots = [plt.plot(wfndata[i][1][0], np.real(wfndata[i][2][-1]) + energy[i][0])[0] for i in range(len(args.wfns))]
+        elif args.imag: plots = [plt.plot(wfndata[i][1][0], np.imag(wfndata[i][2][-1]) + energy[i][0])[0] for i in range(len(args.wfns))]
+        elif args.abs: plots = [plt.plot(wfndata[i][1][0], np.abs(wfndata[i][2][-1]) + energy[i][0])[0] for i in range(len(args.wfns))]
+        else: plots = [[plt.plot(wfndata[i][1][0], np.real(wfndata[i][2][-1]) + energy[i][0])[0], plt.plot(wfndata[i][1][0], np.imag(wfndata[i][2][0]) + energy[i][0])[0]] for i in range(len(args.wfns))]
 
         # define the animation update function
-        def update(j): # type: ignore
-            for i in range(len(plots)): plots[i][0].set_ydata(np.real(wfndata[i][2][j]) + energy[i][j]); plots[i][1].set_ydata(np.imag(wfndata[i][2][j]) + energy[i][j])
+        def update(j):
+            if args.real: [plots[i].set_ydata(np.real(wfndata[i][2][j]) + energy[i][j]) for i in range(len(plots))] #type: ignore
+            elif args.imag: [plots[i].set_ydata(np.imag(wfndata[i][2][j]) + energy[i][j]) for i in range(len(plots))] #type: ignore
+            elif args.abs: [plots[i].set_ydata(np.abs(wfndata[i][2][j]) + energy[i][j]) for i in range(len(plots))] #type: ignore
+            else: [plots[i][0].set_ydata(np.real(wfndata[i][2][j]) + energy[i][j]) or plots[i][1].set_ydata(np.imag(wfndata[i][2][j]) + energy[i][j]) for i in range(len(plots))] #type: ignore
 
     elif wfndata[0][0][0] == 2:
         # create the figure

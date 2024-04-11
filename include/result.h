@@ -19,8 +19,8 @@ struct Result {
         double Ecorr; Matrix<> G, H;
     } ump;
     struct ModelSolver {
+        Vector<> opten; Vector<> r, k, t, f; Matrix<> U, rho;
         std::vector<Matrix<std::complex<double>>> optstates;
-        Vector<> opten; Vector<> r, k, t, f; Matrix<> U;
         std::vector<Vector<std::complex<double>>> acfs;
         std::vector<Vector<double>> spectra;
     } msv;

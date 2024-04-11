@@ -6,7 +6,6 @@
 - [ ] Inspect convergence in excited state dynamics
 - [ ] Print some info on the ORCA and BAGEL calculation in the output
 - [ ] Somehow specify the initial momentum for NAD
-- [ ] Transform the NAD wavefunction to adiabatic basis
 - [x] Add BAGEL interface with excited state dynamics
 - [x] Add Hermitian FFT for spectra calculation
 - [x] Add Mulliken analysis
@@ -35,3 +34,4 @@
 - [x] Modify restricted calculations to account for charge and multiplicity
 - [x] Remove the python folder before merging the fci branch
 - [x] Specify the number of states and calculation state in the RCI output
+- [x] Transform the NAD wavefunction to adiabatic basis
