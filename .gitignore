@@ -17,6 +17,7 @@ orca.inp
 *.old
 *.out
 *.png
+*.zip
 
 # folders
 .ccls-cache/
