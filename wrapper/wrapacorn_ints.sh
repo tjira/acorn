@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# USAGE: wrapacorn.sh SYSTEM BASIS
+# USAGE: wrapacorn_ints.sh SYSTEM BASIS
 if [ "$#" -ne 2 ]; then
-    echo "USAGE: wrapacorn.sh SYSTEM BASIS"; exit 1
+    echo "USAGE: wrapacorn_ints.sh SYSTEM BASIS"; exit 1
 fi
 
 # create the input file

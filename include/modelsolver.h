@@ -31,8 +31,8 @@ public:
         } dynamics={};
 
         // variables
-        bool savewfn=false; double step=0.1; int iters=1000;
-        std::vector<std::string> guess;
+        int iters=1000; std::vector<std::string> guess; std::string cap="0";
+        bool savewfn=false, adiabatic=true; double step=0.1, momentum=0;
     };
 public:
     // constructors and destructors

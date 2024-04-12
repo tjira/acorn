@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# USAGE: wraporca.sh METHOD SYSTEM BASIS CHARGE MULT
+# USAGE: wraporca.sh SYSTEM BASIS CHARGE MULT METHOD
 if [ "$#" -ne 5 ]; then
     echo "USAGE: wraporca.sh SYSTEM BASIS CHARGE MULT METHOD"; exit 1
 fi

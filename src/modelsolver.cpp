@@ -92,7 +92,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         Matrix<std::complex<double>> Ek = 0.5 * EigenConj(psi).array() * Numpy::FFT((k.array().pow(2) + l.array().pow(2)) * Numpy::FFT(psi).array(), 1).array();
         Matrix<std::complex<double>> Ep = EigenConj(psi).array() * U.array() * psi.array(); double E = (Ek / system.mass() + Ep).sum().real() * dr;
 
-        // vector of state energy evolution, afn vector and acf
+        // vector of state energy evolution, wfn vector and acf
         std::vector<Matrix<std::complex<double>>> wfns = {psi};
         Vector<std::complex<double>> acf(opta.iters + 1);
         std::vector<double> energies = {E}; acf(0) = 1;
@@ -170,11 +170,11 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 }
 
 Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
-    // define the real and momentum space
-    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid);
-
-    // energies container, wfn vector and wfn array
+    // define the containers for energies, wfns, transforms, density matrices and coordinates and initialize wfn
     std::vector<double> energies; Matrix<std::complex<double>> psi(system.ngrid, 2); std::vector<Matrix<std::complex<double>>> psis;
+    std::vector<Matrix<>> UT(system.ngrid, Matrix<>::Identity(system.potential.size(), system.potential.size()));
+    res.msv.rho = Matrix<>(optn.iters, system.potential.size() * system.potential.size());
+    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid);
 
     // fill the real space and calculate dr
     for (int i = 0; i < system.ngrid; i++) {
@@ -184,13 +184,10 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // fill the momentum space
     res.msv.k.fill(2 * M_PI / res.msv.k.size() / dr); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
 
-    // fill in the initial wavefunction
+    // fill in the initial wavefunction and normalize it
     for (size_t i = 0; i < optn.guess.size(); i++) {
-        psi.block(0, i, system.ngrid, 1) = (Expression(optn.guess.at(i)).eval(res.msv.r).array() * (I * std::sqrt(0.06 * system.m) * res.msv.r.array()).exp());
-    }
-
-    // normalize the wavefunction
-    psi.block(0, 0, system.ngrid, 1) = psi.block(0, 0, system.ngrid, 1).array() / std::sqrt(psi.block(0, 0, system.ngrid, 1).array().abs2().sum() * dr);
+        psi.block(0, i, system.ngrid, 1) = (Expression(optn.guess.at(i)).eval(res.msv.r).array() * (I * optn.momentum * res.msv.r.array()).exp());
+    } psi.block(0, 0, system.ngrid, 1).array() /= std::sqrt(psi.block(0, 0, system.ngrid, 1).array().abs2().sum() * dr);
 
     // create the potential
     std::vector<std::vector<Vector<std::complex<double>>>> V = {
@@ -198,15 +195,41 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         {Expression(system.potential.at(1).at(0)).eval(res.msv.r), Expression(system.potential.at(1).at(1)).eval(res.msv.r)}
     }; res.msv.U = Matrix<>(system.ngrid, system.potential.size());
 
-    // define the complex absorbing potential
-    Vector<std::complex<double>> CAP = 0.1 * I * ((-0.1 * (res.msv.r.array() - system.limits.at(0)).pow(2)).exp() + (-0.1 * (res.msv.r.array() - system.limits.at(1)).pow(2)).exp());
-
     // subtract the complex absorbing potential
-    V.at(0).at(0) = V.at(0).at(0).array() - CAP.array();
-    V.at(1).at(1) = V.at(1).at(1).array() - CAP.array();
+    V.at(0).at(0).array() -= (I * Expression(optn.cap).eval(res.msv.r)).array(), V.at(1).at(1).array() -= (I * Expression(optn.cap).eval(res.msv.r)).array();
 
-    // append the first wfn and energy
-    double E = 0; energies.push_back(E), psis.push_back(psi);
+    // loop to calculate the adiabatic transformation matrices
+    for (int i = 0; i < system.ngrid; i++) {
+        // define the diabatic potential at the current point
+        Matrix<double> UD(V.size(), V.at(0).size());
+
+        // fill the diabatic potential at the current point
+        for (int j = 0; j < system.potential.size(); j++) {
+            for (int k = 0; k < system.potential.at(j).size(); k++) {
+                UD(j, k) = V.at(j).at(k)(i).real();
+            }
+        }
+
+        // assign the diabatic potential to results
+        res.msv.U.row(i) = UD.diagonal().transpose();
+        
+        // transform to adiabatic basis only if requested
+        if (optn.adiabatic) {
+            // diagonalize the diabatic potential to get the adiabatic potential
+            Eigen::SelfAdjointEigenSolver<Matrix<>> eigensolver(UD); res.msv.U.row(i) = eigensolver.eigenvalues().transpose();
+
+            // define the overlap of eigenvectors
+            Vector<> overlap(system.potential.size());
+
+            // calculate the overlap of eigenvectors
+            for (int j = 0; j < system.potential.size(); j++) {
+                overlap(j) = UT.at(std::max(i - 1, 0)).col(j).transpose() * eigensolver.eigenvectors().col(j); overlap(j) /= std::abs(overlap(j));
+            }
+
+            // maximize the overlap with the previuos transformation
+            UT.at(i) = eigensolver.eigenvectors(); UT.at(i) = UT.at(i) * overlap.asDiagonal();
+        }
+    }
 
     // define the real and imaginary space operators
     std::vector<std::vector<Vector<std::complex<double>>>> K(2, std::vector<Vector<std::complex<double>>>(2)); auto R = K;
@@ -225,78 +248,70 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     R.at(1).at(0) = -2 * a.array() * c.array() * V.at(0).at(1).array();
     R.at(1).at(1) = a.array() * (b.array() + c.array() * (V.at(0).at(0) - V.at(1).at(1)).array());
 
+    // calculate the initial energy
+    Vector<std::complex<double>> Ek00 = 0.5 * EigenConj<Vector<std::complex<double>>>(psi.col(0)).array() * Numpy::FFT(res.msv.k.array().pow(2) * Numpy::FFT(psi.col(0)).array(), 1).array();
+    Vector<std::complex<double>> Ek11 = 0.5 * EigenConj<Vector<std::complex<double>>>(psi.col(1)).array() * Numpy::FFT(res.msv.k.array().pow(2) * Numpy::FFT(psi.col(1)).array(), 1).array();
+    Vector<std::complex<double>> Ep00 = EigenConj<Vector<std::complex<double>>>(psi.col(0)).array() * V.at(0).at(0).array() * psi.col(0).array();
+    Vector<std::complex<double>> Ep01 = EigenConj<Vector<std::complex<double>>>(psi.col(0)).array() * V.at(0).at(1).array() * psi.col(1).array();
+    Vector<std::complex<double>> Ep10 = EigenConj<Vector<std::complex<double>>>(psi.col(1)).array() * V.at(1).at(0).array() * psi.col(0).array();
+    Vector<std::complex<double>> Ep11 = EigenConj<Vector<std::complex<double>>>(psi.col(1)).array() * V.at(1).at(1).array() * psi.col(1).array();
+    double E = ((Ek00 + Ek11) / system.mass() + Ep00 + Ep01 + Ep10 + Ep11).sum().real() * dr;
+
+    // append the first wfn and energy
+    energies.push_back(E), psis.push_back(psi);
+
     // print the iteration header
-    if (print) std::printf(" ITER        Eel [Eh]         |dE|     |dD|\n");
+    if (print) std::printf(" ITER        Eel [Eh]         |dE|     |dD|     S1     S2\n");
 
     // propagate the wavefunction
     for (int i = 0; i < optn.iters; i++) {
-        // save the previous values
-        Matrix<std::complex<double>> Dprev = psi.array().abs2(); double Eprev = E;
+        // save the previous values and temporary wavefunction
+        Matrix<std::complex<double>> psip = psi, psit = psi; double Ep = E;
 
-        // apply the propagator
-        psi.col(0) = Numpy::FFT(R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
-        psi.col(1) = Numpy::FFT(R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
-        psi.col(0) = Numpy::FFT(K.at(0).at(0).array() * psi.col(0).array(), 1);
-        psi.col(1) = Numpy::FFT(K.at(1).at(1).array() * psi.col(1).array(), 1);
-        psi.col(0) = (R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array());
-        psi.col(1) = (R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array());
+        // apply the first potential part of the propagator
+        psit.col(0) = R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array(); 
+        psit.col(1) = R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array();
+        psi = psit;
 
-        // calculate the errors
-        double Eerr = 0, Derr = (psi.array().abs2() - Dprev.array()).abs2().sum();
+        // apply the kinetic part of the propagator
+        psit.col(0) = Numpy::FFT(K.at(0).at(0).array() * Numpy::FFT(psi.col(0).array()).array(), 1);
+        psit.col(1) = Numpy::FFT(K.at(1).at(1).array() * Numpy::FFT(psi.col(1).array()).array(), 1);
+        psi = psit;
 
-        // append the wfn and energy
-        energies.push_back(0); if (optn.savewfn) psis.push_back(psi);
+        // apply the second potential part of the propagator
+        psit.col(0) = R.at(0).at(0).array() * psi.col(0).array() + R.at(0).at(1).array() * psi.col(1).array();
+        psit.col(1) = R.at(1).at(0).array() * psi.col(0).array() + R.at(1).at(1).array() * psi.col(1).array();
+        psi = psit;
 
-        // print the iteration
-        if (print) std::printf("%6d %20.14f %.2e %.2e\n", i + 1, E, Eerr, Derr);
-    }
+        // transform the temporary wavefunction to adiabatic basis
+        for (int j = 0; j < psit.rows(); j++) psit.row(j) = UT.at(j).transpose() * psit.row(j).transpose();
 
-    // define the containers for the transformation matrix and the density matrix
-    Matrix<> transform = Matrix<>::Identity(system.potential.size(), system.potential.size());
-    res.msv.rho = Matrix<>(optn.iters + 1, system.potential.size() * system.potential.size());
+        // calculate the adiabatic density matrix for the current time step
+        Matrix<std::complex<double>> rho = psit.transpose() * psit.conjugate() * dr;
 
-    // perform the transformation to adiabatic basis for potential and wfns
-    for (int i = 0; i < system.ngrid; i++) {
-        // define the diabatic potential at the current point
-        Matrix<double> UD(V.size(), V.at(0).size());
+        // calculate the total energy
+        Ek00 = 0.5 * EigenConj<Vector<std::complex<double>>>(psi.col(0)).array() * Numpy::FFT(res.msv.k.array().pow(2) * Numpy::FFT(psi.col(0)).array(), 1).array();
+        Ek11 = 0.5 * EigenConj<Vector<std::complex<double>>>(psi.col(1)).array() * Numpy::FFT(res.msv.k.array().pow(2) * Numpy::FFT(psi.col(1)).array(), 1).array();
+        Ep00 = EigenConj<Vector<std::complex<double>>>(psi.col(0)).array() * V.at(0).at(0).array() * psi.col(0).array();
+        Ep01 = EigenConj<Vector<std::complex<double>>>(psi.col(0)).array() * V.at(0).at(1).array() * psi.col(1).array();
+        Ep10 = EigenConj<Vector<std::complex<double>>>(psi.col(1)).array() * V.at(1).at(0).array() * psi.col(0).array();
+        Ep11 = EigenConj<Vector<std::complex<double>>>(psi.col(1)).array() * V.at(1).at(1).array() * psi.col(1).array();
+        E = ((Ek00 + Ek11) / system.mass() + Ep00 + Ep01 + Ep10 + Ep11).sum().real() * dr;
 
-        // fill the diabatic potential at the current point
-        for (int j = 0; j < system.potential.size(); j++) {
-            for (int k = 0; k < system.potential.at(j).size(); k++) {
-                UD(j, k) = V.at(j).at(k)(i).real();
-            }
-        }
-        
-        // diagonalize the diabatic potential to get the adiabatic potential
-        Eigen::SelfAdjointEigenSolver<Matrix<>> eigensolver(UD); res.msv.U.row(i) = eigensolver.eigenvalues().real().transpose();
+        // calculate the errors and assign the previous values
+        double Eerr = std::abs(E - Ep), Derr = (psi.array().abs2() - psip.array().abs2()).abs2().sum();
 
-        // define the overlap of eigenvectors
-        Vector<> overlap(system.potential.size());
-
-        // calculate the overlap of eigenvectors
-        for (int j = 0; j < system.potential.size(); j++) {
-            overlap(j) = transform.col(j).transpose() * eigensolver.eigenvectors().col(j);
-        }
-
-        // maximize the overlap with the previuos transformation
-        transform = eigensolver.eigenvectors(); transform = transform * overlap.asDiagonal();
-
-        // transform the wavefunction to adiabatic basis at each point
-        for (auto& psi : psis) psi.row(i) = transform.transpose() * psi.row(i).transpose();
-    }
-
-    // calculate the adiabatic density matrix
-    for (int i = 0; i < optn.iters + 1; i++) {
-        // add the time to the first column
-        res.msv.rho(i, 0) = i * optn.step;
-
-        // calculate the density matrix for the current time step
-        Matrix<std::complex<double>> rho = psis.at(i).transpose() * psis.at(i).conjugate() * dr;
-
-        // fill the density matrix
+        // fill the density matrix container
         res.msv.rho(i, 1) = std::abs(rho(0, 0));
         res.msv.rho(i, 2) = std::abs(rho(1, 1));
         res.msv.rho(i, 3) = std::abs(rho(0, 1));
+        res.msv.rho(i, 0) = i * optn.step;
+
+        // append the temporary wfn in adiabatic basis and energy
+        energies.push_back(E); if (optn.savewfn) psis.push_back(psit);
+
+        // print the iteration
+        if (print) std::printf("%6d %20.14f %.2e %.2e %6.4f %6.4f\n", i + 1, E, Eerr, Derr, res.msv.rho(i, 1), res.msv.rho(i, 2));
     }
 
     // save the wfn dynamics and potential in adiabatic basis

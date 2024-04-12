@@ -4,15 +4,18 @@
             ["0.01*tanh(0.6*x)", "0.001*exp(-x^2)"],
             ["0.001*exp(-x^2)", "-0.01*tanh(0.6*x)"]
         ],
-        "limits" : [-32, 32],
+        "limits" : [-24, 24],
         "ngrid" : 4096,
         "mass" : 2000
     },
     "solve" : {
         "guess" : ["exp(-(x+10)^2)"],
-        "iters" : 500,
+        "cap" : "0.1*exp(-0.1*(x+24)^2)+0.1*exp(-0.1*(x-24)^2)",
+        "momentum" : 10.95,
+        "iters" : 350,
         "real" : true,
         "step" : 10,
-        "savewfn" : true
+        "savewfn" : true,
+        "adiabatic" : true
     }
 }

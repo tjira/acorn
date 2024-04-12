@@ -64,7 +64,11 @@ if __name__ == "__main__":
     if args.scale: U.T[1:] *= np.max([np.max(np.abs(entry[2])) for entry in wfndata]) / np.max(U.T[1:])
 
     # align the wavefunctions to the potential
-    if args.align: energy = np.repeat([U[0, 1], U[0, 2]], len(energy[0])).reshape(len(args.wfns), len(energy[0])) - energy
+    if args.align:
+        for i in range(len(wfndata)):
+            for j in range(len(wfndata[i][2])):
+                wfndata[i][2][j] += U[:, 1 + i] + 1j * U[:, 1 + i]
+        energy -= energy
 
     if wfndata[0][0][0] == 1:
         # create the figure

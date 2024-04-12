@@ -30,7 +30,7 @@ inline std::string msaoptstr = R"({
 })";
 
 inline std::string msnoptstr = R"({
-    "step" : 0.1, "guess" : ["-x^2"], "iters" : 1000, "savewfn" : false,
+    "step" : 0.1, "guess" : ["-x^2"], "iters" : 1000, "savewfn" : false, "cap" : "0", "momentum" : 0, "adiabatic" : true,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";
 
