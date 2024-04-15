@@ -27,6 +27,8 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--threshold", help="Convergence threshold for the wavefunction. (default: %(default)s)", type=float, default=1e-12)
     parser.add_argument("-v", "--potential", help="Potential where the optimization happens and, if -e not provided, also real time propagation. (default: %(default)s)", type=str, default="0.5*x**2")
     parser.add_argument("-e", "--excpotential", help="Excited state potential where the real time propagation happens. (default: %(default)s)", type=str)
+    parser.add_argument("-w", "--window", help="Window coefficient for the autocorrelation function. (default: %(default)s)", type=float, default=0)
+    parser.add_argument("-z", "--zeropad", help="Zero-Pad the autocorrelation function. (default: %(default)s)", type=int, default=0)
 
     # add the flags
     parser.add_argument("--optimize", help="Enable initial optimization for real time propagation.", action="store_true")
@@ -99,12 +101,15 @@ if __name__ == "__main__":
         # append wavefunction to list of states and print energy
         states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
 
-    # get the windowing function for FFT
-    # window = 0.5 - 0.5 * np.cos(2 * np.pi * (t + args.tstep * args.iters / 2.0) / args.iters)
-
-    # calculate the autocorrelation function of a ground state and its Fourier transform
+    # calculate the autocorrelation function and spectrum
     if args.real:
-        G = np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]); F = np.fft.fftshift(np.fft.hfft(G, len(G)))
+        # calculate the autocorrelation function and mutiply it by the window
+        G = np.exp(-args.window * np.linspace(0, args.iters * args.tstep, args.iters + 1)**2) * np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]);
+
+        # zero-pad the autocorrelation function and calculate its Fourier transform
+        G = np.concatenate([G, np.zeros(args.zeropad)]); F = np.fft.fftshift(np.fft.hfft(G, len(G)))
+
+        # define time and frequency arrays
         t, f = np.linspace(0, (len(G) - 1) * args.tstep, len(G)), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(G), args.tstep))
 
     # RESULTS AND PLOTTING =============================================================================================================================================================================

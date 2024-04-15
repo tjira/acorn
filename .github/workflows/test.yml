@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install Packages
-        run: sudo apt install -y libboost-dev libeigen3-dev
+        run: sudo apt install -y libboost-dev libeigen3-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
 
       - name: Build Libint
         run: ./script/libint.sh

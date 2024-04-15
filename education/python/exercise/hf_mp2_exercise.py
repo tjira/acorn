@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     """
     In the followng block of code, please calculate the nuclear-nuclear repulsion energy. You should use only the atoms and coords variables.
-    The code can be as short as two lines of. The result should be stored in the VNN variable.
+    The code can be as short as two lines. The result should be stored in the VNN variable.
     """
     VNN = 0
 

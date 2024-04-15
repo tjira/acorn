@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.18)
 project(Acorn)
 
 # set policies
+set(CMAKE_POLICY_DEFAULT_CMP0148 OLD)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 # set the cmake variables
@@ -38,13 +39,20 @@ FetchContent_Declare(argparse SYSTEM GIT_REPOSITORY https://github.com/p-ranav/a
 FetchContent_Declare(exprtk SYSTEM GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git GIT_TAG f46bffcd6966d38a09023fb37ba9335214c9b959)
 FetchContent_Declare(eigen SYSTEM GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git GIT_TAG 6f9ad7da6122fdb4197c0b43dfec09ec3525305e)
 FetchContent_Declare(json SYSTEM GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG a259ecc51e1951e12f757ce17db958e9881e9c6c)
+FetchContent_Declare(glad SYSTEM GIT_REPOSITORY https://github.com/Dav1dde/glad.git GIT_TAG 2348b07c1ab4504d60398713781d8a57880234fa)
+FetchContent_Declare(glfw SYSTEM GIT_REPOSITORY https://github.com/glfw/glfw.git GIT_TAG 3eaf1255b29fdf5c2895856c7be7d7185ef2b241)
+FetchContent_Declare(glm SYSTEM GIT_REPOSITORY https://github.com/g-truc/glm.git GIT_TAG 47585fde0c49fa77a2bf2fb1d2ead06999fd4b6e)
 FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www.fftw.org/fftw-3.3.10.tar.gz)
 
 # fetch the libraries
-FetchContent_MakeAvailable(argparse exprtk fftw json)
+FetchContent_MakeAvailable(argparse exprtk glad glfw glm fftw json)
 if (WIN32 OR STANDALONE)
     FetchContent_MakeAvailable(eigen libint)
 endif()
+
+# generate glad library
+add_subdirectory(${glad_SOURCE_DIR}/cmake)
+glad_add_library(glad API gl:core=4.2)
 
 # include directories
 include_directories(include ${CMAKE_BINARY_DIR}/include ${exprtk_SOURCE_DIR} ${fftw_SOURCE_DIR}/api ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
@@ -93,6 +101,10 @@ set_target_properties(acorn_exe PROPERTIES OUTPUT_NAME "acorn")
 # add tools
 add_executable(acorn_centerxyz tool/centerxyz.cpp)
 add_executable(acorn_makemov tool/makemov.cpp)
+add_executable(acorn_view tool/view.cpp)
+
+# link the tools
+target_link_libraries(acorn_view glad glfw glm)
 
 # TESTING ==========================================================================================
 

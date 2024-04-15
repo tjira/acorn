@@ -74,17 +74,20 @@ Tensor<> Numpy::Kron(const Matrix<>& A, const Tensor<>& B) {
     return C;
 }
 
-void Numpy::HFFT1D(std::complex<double>* in, double* out, int size) {
-    fftw_plan plan = fftw_plan_dft_c2r_1d(size, reinterpret_cast<fftw_complex*>(in), out, FFTW_ESTIMATE); fftw_execute(plan); fftw_destroy_plan(plan);
+void Numpy::HFFT(std::complex<double>* in, double* out, const std::vector<int>& sizes) {
+    fftw_plan plan = fftw_plan_dft_c2r(sizes.size(), sizes.data(), reinterpret_cast<fftw_complex*>(in), out, FFTW_ESTIMATE); fftw_execute(plan); fftw_destroy_plan(plan);
 }
 
-void Numpy::FFT(std::complex<double>* in, std::complex<double>* out, const std::vector<int> sizes, int sign) {
+void Numpy::FFT(std::complex<double>* in, std::complex<double>* out, const std::vector<int>& sizes, int sign) {
     fftw_plan plan = fftw_plan_dft(sizes.size(), sizes.data(), reinterpret_cast<fftw_complex*>(in), reinterpret_cast<fftw_complex*>(out), sign, FFTW_ESTIMATE); fftw_execute(plan); fftw_destroy_plan(plan);
 }
 
-Vector<double> Numpy::HFFT1D(Vector<std::complex<double>> in) {
+Matrix<double> Numpy::HFFT(Matrix<std::complex<double>> in) {
+    // extract dimension
+    int m = in.rows(), n = in.cols();
+
     // initialize the output vector and perform the FFT
-    std::vector<double> out((in.size() - 1) * 2); Numpy::HFFT1D(in.data(), out.data(), in.size());
+    std::vector<double> out((in.size() - 1) * 2); Numpy::HFFT(in.data(), out.data(), std::vector<int>{m, n});
 
     // transform the output to the correct format and return
     return Eigen::Map<Vector<double>>(out.data(), in.size());

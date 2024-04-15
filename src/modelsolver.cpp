@@ -15,8 +15,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     // define the real and Fourier space along with time and frequency domains
     res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(opta.iters + 1), res.msv.f = Vector<>(opta.iters + opta.spectrum.zeropad + 1);
 
-    // define the wavefunction container
-    Matrix<std::complex<double>> psi;
+    // define the wavefunction, potential and independent variables container
+    Matrix<std::complex<double>> psi; Matrix<> U, x, y, k, l;
 
     // fill the real space and calculate dr
     for (int i = 0; i < system.ngrid; i++) {
@@ -28,29 +28,36 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
     // fill the momentum and frequency domain
     res.msv.k.fill(2 * M_PI / res.msv.k.size() / (res.msv.r(1) - res.msv.r(0))); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
-    res.msv.f.fill(2 * M_PI / res.msv.f.size() / opta.step); for (int i = 0; i < res.msv.f.size(); i++) res.msv.f(i) *= i - (i < res.msv.f.size() / 2 ? 0 : res.msv.f.size());
+    res.msv.f.fill(2 * M_PI / res.msv.f.size() / (res.msv.t(1) - res.msv.t(0))); for (int i = 0; i < res.msv.f.size(); i++) res.msv.f(i) *= i - (i < res.msv.f.size() / 2 ? 0 : res.msv.f.size());
 
-    // define the 2-dimensional variables and potential values
-    Matrix<> x(system.ngrid, system.ngrid), y(system.ngrid, system.ngrid), k(system.ngrid, system.ngrid), l(system.ngrid, system.ngrid), U;
+    // initialize the 2-dimensional variables
+    if (dim == 2) {
+        x = Matrix<>::Zero(system.ngrid, system.ngrid), y = Matrix<>::Zero(system.ngrid, system.ngrid);
+        k = Matrix<>::Zero(system.ngrid, system.ngrid), l = Matrix<>::Zero(system.ngrid, system.ngrid);
+    } else if (dim == 1) {
+        x = Vector<>::Zero(system.ngrid), y = Vector<>::Zero(system.ngrid);
+        k = Vector<>::Zero(system.ngrid), l = Vector<>::Zero(system.ngrid);
+    }
 
-    // fill the 2-dimensional variables
-    for (int i = 0; i < system.ngrid; i++) {
-        y.col(i) = res.msv.r, l.col(i) = res.msv.k;
-    } x = y.transpose(), k = l.transpose();
-    
-    // initialize the potential matrix
-    res.msv.U = Matrix<>((int)std::pow(system.ngrid, dim), opta.real ? 2 : 1);
+    // fill the independent variables
+    if (dim == 2) {
+        for (int i = 0; i < system.ngrid; i++) {
+            x.col(i) = res.msv.r, k.col(i) = res.msv.k;
+        } y = x.transpose(), l = k.transpose();
+    } else if (dim == 1) {
+        x = res.msv.r, k = res.msv.k;
+    }
 
     // calculate the potential values
-    if (dim == 1) U = Expression(system.potential.at(0).at(0)).eval(res.msv.r);
     if (dim == 2) U = Expression(system.potential.at(0).at(0)).eval(x, y);
+    if (dim == 1) U = Expression(system.potential.at(0).at(0)).eval(x);
 
     // define the initial wavefunction and normalize it
-    if (dim == 1) {psi = Expression(opta.guess).eval(res.msv.r).col(0); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
     if (dim == 2) {psi = Expression(opta.guess).eval(x, y); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
+    if (dim == 1) {psi = Expression(opta.guess).eval(x); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
 
-    // assign correct variables for 1-dimensional model
-    if (dim == 1) x = res.msv.r, k = res.msv.k, y = Matrix<>::Zero(system.ngrid, 1), l = Matrix<>::Zero(system.ngrid, 1);
+    // initialize the potential matrix
+    res.msv.U = Matrix<>((int)std::pow(system.ngrid, dim), opta.real && !opta.spectrum.potential.empty() ? 2 : 1);
 
     // fill the ground state potential column
     for (int i = 0; i < res.msv.U.rows(); i++) {
@@ -67,8 +74,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     // real time dynamics operators
     if (opta.real) {
         // change the potential for te real time dynamics
-        if (dim == 1) U = Expression(opta.spectrum.potential).eval(res.msv.r).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
         if (dim == 2) U = Expression(opta.spectrum.potential).eval(x, y).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
+        if (dim == 1) U = Expression(opta.spectrum.potential).eval(x).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
 
         // fill the excited state potential column
         for (int i = 0; i < res.msv.U.rows(); i++) {
@@ -149,7 +156,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
             acf.conservativeResize(acf.size() + opta.spectrum.zeropad); acf.tail(opta.spectrum.zeropad).setZero();
 
             // append and perform the Fourier transform
-            res.msv.spectra.push_back(res.msv.f.array() * Numpy::HFFT1D(acf.array()).array());
+            res.msv.spectra.push_back(res.msv.f.array() * Numpy::HFFT(acf).array());
 
             // normalize the spectrum
             if (opta.spectrum.normalize) {
@@ -158,7 +165,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         }
 
         // save the state wavefunction
-        if (opta.savewfn && dim == 2) ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", x.row(0), y.col(0), wfns, energies);
+        if (opta.savewfn && dim == 2) ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", x.col(0), y.row(0), wfns, energies);
         if (opta.savewfn && dim == 1) ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", x, wfns, energies);
     }
 
@@ -274,8 +281,8 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         psi = psit;
 
         // apply the kinetic part of the propagator
-        psit.col(0) = Numpy::FFT(K.at(0).at(0).array() * Numpy::FFT(psi.col(0).array()).array(), 1);
-        psit.col(1) = Numpy::FFT(K.at(1).at(1).array() * Numpy::FFT(psi.col(1).array()).array(), 1);
+        psit.col(0) = Numpy::FFT(K.at(0).at(0).array() * Numpy::FFT(psi.col(0)).array(), 1);
+        psit.col(1) = Numpy::FFT(K.at(1).at(1).array() * Numpy::FFT(psi.col(1)).array(), 1);
         psi = psit;
 
         // apply the second potential part of the propagator

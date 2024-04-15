@@ -65,8 +65,8 @@ if __name__ == "__main__":
     E_HF, E_HF_P, VNN, nocc, nbf = 0, 1, 0, sum(atoms) // 2, S.shape[0]
 
     # define some matrices and tensors
-    H, D, C = T + V, np.zeros_like(S), np.array([])
-    K, eps = J.transpose(0, 3, 2, 1), np.array([])
+    K, eps = J.transpose(0, 3, 2, 1), np.array(nbf * [0])
+    H, D, C = T + V, np.zeros_like(S), np.zeros_like(S)
 
     # calculate the X matrix which is the inverse of the square root of the overlap matrix
     SEP = np.linalg.eigh(S); X = np.linalg.inv(SEP[1] * np.sqrt(SEP[0]) @ np.linalg.inv(SEP[1]))
