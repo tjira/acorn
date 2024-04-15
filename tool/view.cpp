@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 struct GLFWPointer {
-    std::string title="Acorn"; glm::vec2 mouse; GLFWwindow* win;
+    std::string title="Acorn"; glm::vec2 mouse; GLFWwindow* window;
     int width=1024, height=576, samples=16, major=4, minor=2;
     struct Camera {
         glm::mat4 view, proj;
@@ -57,7 +57,7 @@ public:
     Mesh(std::vector<Vertex> data) : model(1.0f), buffer(data) {};
 
     // static constructors
-    static Mesh Function(const std::string& path);
+    static std::vector<Mesh> Function(const std::string& path, int dim);
 
     // setters
     void setColor(const glm::vec3& color); void setModel(const glm::mat4& model);
@@ -78,20 +78,28 @@ Buffer::Buffer(const std::vector<Vertex>& data) : data(data) {
     glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(Vertex), data.data(), GL_STATIC_DRAW);
 }
 
-Mesh Mesh::Function(const std::string& path) {
+std::vector<Mesh> Mesh::Function(const std::string& path, int dim) {
     // define the data and the file stream
-    std::vector<Vertex> data; std::ifstream file(path); std::string line;
+    std::vector<std::vector<Vertex>> data(1); std::ifstream file(path); std::string line;
 
     while (std::getline(file, line)) {
-        // define and read the variables
-        float x, y, z; sscanf(line.c_str(), "%f %f %f", &x, &y, &z);
+        // define the line stream, variables and index
+        std::stringstream stream(line); float x, y; int i = 0; stream >> x;
 
-        // push the data
-        for (int j = 0; j < 2; j++) data.push_back({{x, y, 0}});
+        while (stream >> y) {
+            // push the mesh data
+            if (data.size() <= i) {data.push_back({});}
+
+            // push the current point and increase index
+            for (int j = 0; j < 2; j++) {data.at(i).push_back({{x, y, 0}});} i++;
+        }
     }
 
-    // remove one first end one last element and return mesh
-    data.erase(data.begin()), data.erase(data.end() - 1); return Mesh(data);
+    // remove one first end one last element
+    for (auto& set : data) set.erase(set.begin()), set.erase(set.end() - 1);
+
+    // create the mesh vector and return
+    std::vector<Mesh> mesh; for (const auto& set : data) {mesh.emplace_back(set);} return mesh;
 }
 
 void Mesh::render(const Shader& shader, const glm::mat4& transform) const {
@@ -133,12 +141,7 @@ void Shader::set(const std::string& name, T value) const {
 }
 
 void keyCallback(GLFWwindow* window, int key, int, int action, int mods) {
-    if (GLFWPointer* pointer = (GLFWPointer*)glfwGetWindowUserPointer(window); action == GLFW_PRESS || action == GLFW_REPEAT) {
-        if (key == GLFW_KEY_W) pointer->camera.view = glm::translate(pointer->camera.view, glm::vec3(0, -0.1f, 0));
-        if (key == GLFW_KEY_S) pointer->camera.view = glm::translate(pointer->camera.view, glm::vec3(0,  0.1f, 0));
-        if (key == GLFW_KEY_A) pointer->camera.view = glm::translate(pointer->camera.view, glm::vec3(-0.1f, 0, 0));
-        if (key == GLFW_KEY_D) pointer->camera.view = glm::translate(pointer->camera.view, glm::vec3( 0.1f, 0, 0));
-    }
+    if (GLFWPointer* pointer = (GLFWPointer*)glfwGetWindowUserPointer(window); action == GLFW_PRESS) {}
 }
 
 void positionCallback(GLFWwindow* window, double x, double y) {
@@ -148,12 +151,20 @@ void positionCallback(GLFWwindow* window, double x, double y) {
     // check if the left mouse button is pressed
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         // get the x and y axis of rotation
-        glm::vec3 xaxis = glm::inverse(glm::mat3(pointer->camera.view)) * glm::vec3(0, 1, 0);
-        glm::vec3 yaxis = glm::inverse(glm::mat3(pointer->camera.view)) * glm::vec3(1, 0, 0);
+        glm::vec3 xaxis = glm::inverse(glm::mat3(pointer->camera.view)) * glm::vec3(1, 0, 0);
+        glm::vec3 yaxis = glm::inverse(glm::mat3(pointer->camera.view)) * glm::vec3(0, 1, 0);
         
         // update the view matrix
-        pointer->camera.view = glm::rotate(pointer->camera.view, 0.01f * ((float)y - pointer->mouse.y), yaxis);
-        pointer->camera.view = glm::rotate(pointer->camera.view, 0.01f * ((float)x - pointer->mouse.x), xaxis);
+        pointer->camera.view = glm::rotate(pointer->camera.view, 0.01f * ((float)y - pointer->mouse.y), xaxis);
+        pointer->camera.view = glm::rotate(pointer->camera.view, 0.01f * ((float)x - pointer->mouse.x), yaxis);
+    } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        // get the x and y axis of traanslation
+        glm::vec3 xaxis = glm::inverse(glm::mat3(pointer->camera.view)) * glm::vec3(1, 0, 0);
+        glm::vec3 yaxis = glm::inverse(glm::mat3(pointer->camera.view)) * glm::vec3(0, 1, 0);
+        
+        // update the view matrix
+        pointer->camera.view = glm::translate(pointer->camera.view, 0.01f * ((float)x - pointer->mouse.x) * xaxis);
+        pointer->camera.view = glm::translate(pointer->camera.view, 0.01f * (pointer->mouse.y - (float)y) * yaxis);
     }
 
     // update the mouse position
@@ -234,7 +245,8 @@ int main(int argc, char** argv) {
 
     // add options to the parser
     program.add_argument("input").help("Input file.").default_value(std::string(""));
-    program.add_argument("-h").help("Display this help message and exit.").default_value(false).implicit_value(true);
+    program.add_argument("-h").help("-- Display this help message and exit.").default_value(false).implicit_value(true);
+    program.add_argument("-d").help("-- Dimensionality of the input.").default_value(1).scan<'i', int>();
 
     // extract the variables from the command line
     try {
@@ -250,7 +262,7 @@ int main(int argc, char** argv) {
 
     // initialize GLFW and throw error if failed
     if(!glfwInit()) {
-        throw std::runtime_error("Error during GLFW initialization.");
+        throw std::runtime_error("ERROR DURING GLFW INITIALIZATION.");
     }
 
     // create GLFW variable struct
@@ -263,24 +275,24 @@ int main(int argc, char** argv) {
     glfwWindowHint(GLFW_SAMPLES, pointer.samples);
 
     // create the window
-    if (pointer.win = glfwCreateWindow(pointer.width, pointer.height, pointer.title.c_str(), nullptr, nullptr); !pointer.win) {
+    if (pointer.window = glfwCreateWindow(pointer.width, pointer.height, pointer.title.c_str(), nullptr, nullptr); !pointer.window) {
         throw std::runtime_error("ERROR DURING WINDOW CREATION.");
     }
 
     // initialize GLAD
-    if (glfwMakeContextCurrent(pointer.win); !gladLoadGL(glfwGetProcAddress)) {
+    if (glfwMakeContextCurrent(pointer.window); !gladLoadGL(glfwGetProcAddress)) {
         throw std::runtime_error("ERROR DURING GLAD INITIALIZATION.");
     }
 
     // enable some options
-    glfwSetWindowUserPointer(pointer.win, &pointer);
+    glfwSetWindowUserPointer(pointer.window, &pointer);
     glfwSwapInterval(1); glEnable(GL_DEPTH_TEST);
 
     // Set event callbacks
-    glfwSetCursorPosCallback(pointer.win, positionCallback);
-    glfwSetWindowSizeCallback(pointer.win, resizeCallback);
-    glfwSetScrollCallback(pointer.win, scrollCallback);
-    glfwSetKeyCallback(pointer.win, keyCallback);
+    glfwSetCursorPosCallback(pointer.window, positionCallback);
+    glfwSetWindowSizeCallback(pointer.window, resizeCallback);
+    glfwSetScrollCallback(pointer.window, scrollCallback);
+    glfwSetKeyCallback(pointer.window, keyCallback);
 
     // 1D line width and point size
     glLineWidth(4), glPointSize(4);
@@ -291,7 +303,7 @@ int main(int argc, char** argv) {
 
     {
         // load the function and initialize the shader
-        Mesh mesh = Mesh::Function(program.get<std::string>("input")); Shader shader(vertex, fragment);
+        std::vector<Mesh> mesh = Mesh::Function(program.get<std::string>("input"), program.get<int>("-d")); Shader shader(vertex, fragment);
 
         // set the light uniforms
         shader.set<glm::vec3>("u_light.position", pointer.light.position);
@@ -300,17 +312,19 @@ int main(int argc, char** argv) {
         shader.set<float>("u_light.ambient", pointer.light.ambient);
         shader.set<float>("u_light.diffuse", pointer.light.diffuse);
 
-        while (!glfwWindowShouldClose(pointer.win)) {
+        while (!glfwWindowShouldClose(pointer.window)) {
             // clear the color and depth buffer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            // set the camera uniforms
             shader.set<glm::vec3>("u_camera", -glm::inverse(glm::mat3(pointer.camera.view)) * glm::vec3(pointer.camera.view[3]));
             shader.set<glm::mat4>("u_view", pointer.camera.view); shader.set<glm::mat4>("u_proj", pointer.camera.proj);
 
-            mesh.render(shader);
+            // render the meshes
+            for (const Mesh& mesh : mesh) mesh.render(shader);
             
             // Swap buffers and poll events
-            glfwSwapBuffers(pointer.win); glfwPollEvents();
+            glfwSwapBuffers(pointer.window); glfwPollEvents();
         }
     }
 

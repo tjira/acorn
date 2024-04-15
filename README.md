@@ -98,12 +98,18 @@ All the example inputs are located in the `example/input` folder. They are meant
 ./bin/acorn example/input/rhf.json
 ```
 
-The calculation should finish without errors. Feel free to explore all the examples. Keep in mind that to execute the ORCA dynamics example you need the ORCA executable in your PATH variable.
+The calculation should finish without errors. Feel free to explore all the examples. Keep in mind that to execute the ORCA or BAGEL dynamics example you need the corresponding executable in your PATH variable.
 
 ## Credits
 
 * [argparse](https://github.com/p-ranav/argparse) - Argument Parser for Modern C++.
 * [exprtk](https://github.com/ArashPartow/exprtk) - C++ Mathematical Expression Parsing and Evaluation Library.
 * [fftw](https://www.fftw.org) - C Subroutine Library for Computing the Discrete Fourier Transform .
+* [glad](https://github.com/Dav1dde/glad) - Multi-Language Vulkan/GL/GLES/EGL/GLX/WGL Loader-Generator Based on the Official Specs.
+* [glfw](https://github.com/glfw/glfw) - Multi-Platform Library for OpenGL, OpenGL ES, Vulkan, Window and Input.
+* [glm](https://github.com/g-truc/glm) - OpenGL Mathematics.
+* [imgui](https://github.com/ocornut/imgui) - Bloat-free Graphical User Interface for C++ with Minimal Dependencies.
+* [imguifiledialog](https://github.com/aiekick/ImGuiFileDialog) - File Dialog for Dear ImGui.
 * [json](https://github.com/nlohmann/json) - JSON for Modern C++.
 * [libint](https://github.com/evaleev/libint) - High-Performance Library for Computing Gaussian Integrals in Quantum Mechanics.
+* [stb](https://github.com/nothings/stb) - Single-File Public Domain Libraries for C/C++.
