@@ -1,16 +1,9 @@
 #!/bin/bash
 
-mkdir -p molecule
+mkdir -p molecule && rm -rf temp
 
 BASIS="STO-3G"
 METHOD="RHF"
-
-mkdir -p temp && cat > temp/Ar2.xyz << EOM
-2
-Ar2
-Ar 0.0000 0.0000 0.0000
-Ar 1.0000 0.0000 0.0000
-EOM
 
 mkdir -p temp && cat > temp/CO2.xyz << EOM
 3
@@ -39,13 +32,6 @@ mkdir -p temp && cat > temp/HF.xyz << EOM
 HF
 H 0.0000 0.0000 0.0000
 F 1.0000 0.0000 0.0000
-EOM
-
-mkdir -p temp && cat > temp/He2.xyz << EOM
-2
-He2
-He 0.0000 0.0000 0.0000
-He 1.0000 0.0000 0.0000
 EOM
 
 mkdir -p temp && cat > temp/Ne2.xyz << EOM
@@ -353,31 +339,6 @@ H -0.9568 -0.7985 -1.3268
 H -2.1474  0.1118 -0.3862
 EOM
 
-mkdir -p temp && cat > temp/propylbenzene.xyz << EOM
-20
-propylbenzene
-C -2.0808  1.2775  0.5299
-C -1.3608  0.0153  0.1317
-C  0.1292 -0.0014 -0.0125
-C  0.8939  1.1625  0.2207
-C  2.2852  1.1428  0.0849
-C  2.9378 -0.0331 -0.2843
-C  2.2004 -1.1934 -0.5191
-C  0.8087 -1.1818 -0.3855
-C -2.1718 -1.2296 -0.1183
-H -1.7243  1.6134  1.5261
-H -3.1784  1.1272  0.5936
-H -1.8883  2.0714 -0.2216
-H  0.4274  2.0944  0.5086
-H  2.8585  2.0428  0.2670
-H  4.0151 -0.0452 -0.3886
-H  2.7079 -2.1056 -0.8057
-H  0.2750 -2.1023 -0.5766
-H -1.8566 -2.0291  0.5841
-H -2.0206 -1.5712 -1.1636
-H -3.2577 -1.0546  0.0293
-EOM
-
 mkdir -p temp && cat > temp/pyrrole.xyz << EOM
 10
 pyrrole
@@ -467,7 +428,7 @@ cd temp && for MOL in *.xyz; do
     ENERGY=$(grep "FINAL SINGLE POINT ENERGY" "${MOL%.*}.out" | tail -n 1 | awk '{print $5}')
     sed -i "2s/.*/${MOL%.*}\/$METHOD\/$BASIS\/$ENERGY/" "$MOL"
     while read -r LINE; do
-        echo "$LINE" | awk 'NF==4 {printf("%2s % 2.14f % 2.14f % 2.14f\n", $1, $2, $3, $4)}' >> "$MOL.tmp"
+        echo "$LINE" | awk 'NF==4 {printf("%2s % 3.8f % 3.8f % 3.8f\n", $1, $2, $3, $4)}' >> "$MOL.tmp"
         echo "$LINE" | awk 'NF==1 {printf("%s\n", $1)}' >> "$MOL.tmp"
     done < "$MOL" && mv "$MOL.tmp" "$MOL" && mv "$MOL" "../molecule/$MOL"
 done && cd .. && rm -r temp
