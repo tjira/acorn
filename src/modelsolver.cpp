@@ -73,7 +73,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
     // real time dynamics operators
     if (opta.real) {
-        // change the potential for te real time dynamics
+        // change the potential for the real time dynamics
         if (dim == 2) U = Expression(opta.spectrum.potential).eval(x, y).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
         if (dim == 1) U = Expression(opta.spectrum.potential).eval(x).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
 
@@ -156,7 +156,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
             acf.conservativeResize(acf.size() + opta.spectrum.zeropad); acf.tail(opta.spectrum.zeropad).setZero();
 
             // append and perform the Fourier transform
-            res.msv.spectra.push_back(res.msv.f.array() * Numpy::HFFT(acf).array());
+            res.msv.spectra.push_back(Numpy::HFFT(acf).array());
 
             // normalize the spectrum
             if (opta.spectrum.normalize) {

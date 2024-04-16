@@ -4,12 +4,13 @@
         "basis" : "cc-pvdz"
     },
     "bagel" : {
-        "interface" : "../../interface/bagel-gradient-casscf.sh",
+        "interface" : "../../interface/bagel-gradient.sh",
         "dynamics" : {
             "iters" : 100,
             "step" : 20
         },
+        "method" : "CASSCF(4, 2)",
         "nstate" : 3,
-        "state" : 1
+        "state" : 2
     }
 }

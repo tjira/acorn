@@ -4,8 +4,12 @@
 
 #define EIGEN_INITIALIZE_MATRICES_BY_ZERO
 
+// eigen include
 #include <unsupported/Eigen/MatrixFunctions>
 #include <unsupported/Eigen/CXX11/Tensor>
+
+// include necessities
+#include <filesystem>
 
 // define the Eigen types
 template <typename T = double> using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
@@ -25,11 +29,11 @@ template <typename T> std::ostream& operator<<(std::ostream& os, const Matrix<T>
 template <typename T> std::ostream& operator<<(std::ostream& os, const Vector<T>& A);
 
 // exporting functions
-template <typename T> void EigenWrite(const std::string& fname, const Tensor<3, T>& A);
-template <typename T> void EigenWrite(const std::string& fname, const Tensor<4, T>& A);
-template <typename T> void EigenWrite(const std::string& fname, const Tensor<5, T>& A);
-template <typename T> void EigenWrite(const std::string& fname, const Matrix<T>& A);
-template <typename T> void EigenWrite(const std::string& fname, const Vector<T>& A);
+template <typename T> void EigenWrite(const std::filesystem::path& fname, const Tensor<3, T>& A);
+template <typename T> void EigenWrite(const std::filesystem::path& fname, const Tensor<4, T>& A);
+template <typename T> void EigenWrite(const std::filesystem::path& fname, const Tensor<5, T>& A);
+template <typename T> void EigenWrite(const std::filesystem::path& fname, const Matrix<T>& A);
+template <typename T> void EigenWrite(const std::filesystem::path& fname, const Vector<T>& A);
 
 //converter functions
 template <typename T> T EigenConj(const T& A) {return A.unaryExpr([](auto x) {return std::conj(x);});}
@@ -38,10 +42,10 @@ template <typename T> T EigenConj(const T& A) {return A.unaryExpr([](auto x) {re
 inline bool VectorContains(const std::vector<int>& v, const int& e) {return std::find(v.begin(), v.end(), e) != v.end();}
 inline bool StringContains(const std::string& s, const char& e) {return s.find(e) != std::string::npos;}
 
-// include necessities
-#include <fstream>
-#include <iomanip>
-
 // number of threads
 inline int nthread = 1;
 inline std::string ip;
+
+// include necessities
+#include <fstream>
+#include <iomanip>

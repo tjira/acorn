@@ -22,6 +22,11 @@ set(BUILD_TESTS OFF)
 # disable eigen qt tests
 set(EIGEN_TEST_NOQT ON)
 
+# set glfw cmake flags
+set(GLFW_BUILD_EXAMPLES OFF)
+set(GLFW_BUILD_TESTS OFF)
+set(GLFW_BUILD_DOCS OFF)
+
 # set compile flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3")

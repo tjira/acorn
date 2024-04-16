@@ -4,9 +4,10 @@
         "basis" : "cc-pvdz"
     },
     "bagel" : {
-        "interface" : "../../interface/bagel-gradient-casscf.sh",
+        "interface" : "../../interface/bagel-gradient.sh",
+        "method" : "CASSCF(4, 2)",
         "nstate" : 3,
-        "state" : 2,
+        "state" : 1,
         "gradient" : {}
     }
 }

@@ -68,7 +68,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, s
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options, dynamics, interface, nstate, state);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Bagel::Options, dynamics, interface, method, nstate, state);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options, dynamics, interface, method);
 
 int main(int argc, char** argv) {
@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
             Orca orca(orcopt); Matrix<> scan = orca.scan(system, mstream, res); EigenWrite(ip / std::filesystem::path("scan.dat"), scan); std::cout << std::endl;
 
         // choose what calculation to run when not scanning
-        } else if (input.contains("bagel")) {Printer::Title("BAGEL CALCULATION");
+        } else if (input.contains("bagel")) {Printer::Title(std::string("BAGEL CALCULATION (") + std::string(bglopt.at("method")) + ", STATE: " + std::to_string((int)bglopt.at("state")) + ")");
             // run the calculation
             Bagel bagel(bglopt); res = bagel.run(system, ints, res); std::cout << std::endl;
 
@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
             Printer::Print(res.Etot, "BAGEL ENERGY"), std::cout << std::endl;
 
             // if dynamics block is specified, run it
-            if (input.at("bagel").contains("dynamics")) {Printer::Title("BAGEL DYNAMICS");
+            if (input.at("bagel").contains("dynamics")) {Printer::Title(std::string("BAGEL DYNAMICS (") + std::string(bglopt.at("method")) + ", STATE: " + std::to_string((int)bglopt.at("state")) + ")");
                 bagel.dynamics(system, ints, res); std::cout << std::endl;
 
             // if the BAGEL hessian is requested
@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("BAGEL HESSIAN CALCULATION NOT IMPLEMENTED");
 
             // if the BAGEL gradient is requested
-            } else if (input.at("bagel").contains("gradient")) {Printer::Title("BAGEL GRADIENT CALCULATION");
+            } else if (input.at("bagel").contains("gradient")) {Printer::Title(std::string("BAGEL GRADIENT (") + std::string(bglopt.at("method")) + ", STATE: " + std::to_string((int)bglopt.at("state")) + ")");
                 res = bagel.gradient(system, ints, res); std::cout << std::endl; Printer::Print(res.G, "BAGEL GRADIENT"); std::cout << std::endl;
             }
 
@@ -449,7 +449,10 @@ int main(int argc, char** argv) {
                 Matrix<> U(res.msv.r.size() * res.msv.r.size(), res.msv.U.cols() + 2);
                 for (int i = 0; i < res.msv.r.size(); i++) {
                     for (int j = 0; j < res.msv.r.size(); j++) {
-                        U(i * res.msv.r.size() + j, 0) = res.msv.r(i), U(i * res.msv.r.size() + j, 1) = res.msv.r(j), U(i * res.msv.r.size() + j, 2) = res.msv.U(i * res.msv.r.size() + j);
+                        U(i * res.msv.r.size() + j, 0) = res.msv.r(i), U(i * res.msv.r.size() + j, 1) = res.msv.r(j);
+                        for (int k = 0; k < res.msv.U.cols(); k++) {
+                            U(i * res.msv.r.size() + j, k + 2) = res.msv.U(i * res.msv.r.size() + j, k);
+                        }
                     }
                 } EigenWrite(std::filesystem::path(ip) / "U.mat", U);
             } else {Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(std::filesystem::path(ip) / "U.mat", U);}

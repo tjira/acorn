@@ -2,7 +2,7 @@
 
 ModelSystem::ModelSystem(int m, const std::vector<std::vector<std::string>>& potential, const std::vector<double> limits, int ngrid) : potential(potential), limits(limits), ngrid(ngrid), m(m) {}
 
-void ModelSystem::SaveWavefunction(const std::string& fname, const Vector<>& x, const std::vector<Matrix<std::complex<double>>>& wfns, const std::vector<double>& energy) {
+void ModelSystem::SaveWavefunction(const std::filesystem::path& fname, const Vector<>& x, const std::vector<Matrix<std::complex<double>>>& wfns, const std::vector<double>& energy) {
     // open the file, write the header and set the precision
     std::ofstream file(fname); file << "# 1 " << wfns.size() << " " << x.size() << " " << wfns.at(0).size() << std::endl << std::fixed << std::setprecision(12);
 
@@ -30,7 +30,7 @@ void ModelSystem::SaveWavefunction(const std::string& fname, const Vector<>& x, 
     }
 }
 
-void ModelSystem::SaveWavefunction(const std::string& fname, const Vector<>& x, const Vector<>& y, const std::vector<Matrix<std::complex<double>>>& wfns, const std::vector<double>& energy) {
+void ModelSystem::SaveWavefunction(const std::filesystem::path& fname, const Vector<>& x, const Vector<>& y, const std::vector<Matrix<std::complex<double>>>& wfns, const std::vector<double>& energy) {
     // open the file, write the header and set the precision
     std::ofstream file(fname); file << "# 2 " << wfns.size() << " " << x.size() << " " << y.size() << " " << wfns.at(0).size() << std::endl << std::fixed << std::setprecision(12);
 

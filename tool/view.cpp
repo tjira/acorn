@@ -84,18 +84,23 @@ std::vector<Mesh> Mesh::Function(const std::string& path, int dim) {
 
     while (std::getline(file, line)) {
         // define the line stream, variables and index
-        std::stringstream stream(line); float x, y; int i = 0; stream >> x;
+        std::stringstream stream(line); std::vector<float> xyz(3, 0.0f); int i = 0;
 
-        while (stream >> y) {
+        // fill the independent variables
+        for (int j = 0; j < dim; j++) stream >> xyz.at(j);
+
+        // float x, y; int i = 0; stream >> x;
+
+        while (stream >> xyz.at(dim)) {
             // push the mesh data
             if (data.size() <= i) {data.push_back({});}
 
             // push the current point and increase index
-            for (int j = 0; j < 2; j++) {data.at(i).push_back({{x, y, 0}});} i++;
+            for (int j = 0; j < 2; j++) {data.at(i).push_back({{xyz.at(0), xyz.at(1), xyz.at(2)}});} i++;
         }
     }
 
-    // remove one first end one last element
+    // remove one first and one last element
     for (auto& set : data) set.erase(set.begin()), set.erase(set.end() - 1);
 
     // create the mesh vector and return
@@ -104,7 +109,7 @@ std::vector<Mesh> Mesh::Function(const std::string& path, int dim) {
 
 void Mesh::render(const Shader& shader, const glm::mat4& transform) const {
     shader.use(), shader.set<glm::mat4>("u_model", transform * model);
-    buffer.bind(), glDrawArrays(GL_LINES, 0, buffer.getSize());
+    buffer.bind(), glDrawArrays(GL_POINTS, 0, buffer.getSize());
 }
 
 Shader::Shader(const std::string& vertex, const std::string& fragment) : id(glCreateProgram()) {
@@ -246,7 +251,7 @@ int main(int argc, char** argv) {
     // add options to the parser
     program.add_argument("input").help("Input file.").default_value(std::string(""));
     program.add_argument("-h").help("-- Display this help message and exit.").default_value(false).implicit_value(true);
-    program.add_argument("-d").help("-- Dimensionality of the input.").default_value(1).scan<'i', int>();
+    program.add_argument("-d", "--dimension").help("-- Dimensionality of the input.").default_value(1).scan<'i', int>();
 
     // extract the variables from the command line
     try {

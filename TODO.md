@@ -1,23 +1,20 @@
 # TODO List
 
-- [ ] Add energy calculation for exact NAD
-- [ ] Add some compression for exact wavefunctions
-- [ ] Create a compare script that compares results with ORCA or Psi4
-- [ ] Inspect convergence in excited state dynamics
-- [ ] Print some info on the ORCA and BAGEL calculation in the output
-- [ ] Somehow specify the initial momentum for NAD
 - [x] Add BAGEL interface with excited state dynamics
 - [x] Add Hermitian FFT for spectra calculation
 - [x] Add Mulliken analysis
 - [x] Add QD spectrum calculation for excited states
+- [x] Add energy calculation for exact NAD
 - [x] Add exact solver for 2D potentials
 - [x] Add excitation specifications to FCI
+- [x] Add some compression for exact wavefunctions
 - [x] Add some tests
 - [x] Add the ability to export the atomic integrals
 - [x] Add the ability to use orca to perform ground state dynamics
 - [x] Add the options to specify optimization parameters when calculation excited state spectrum from GS
 - [x] Add windowing functions to FFT
 - [x] Check the correct working of the library before merging the fci branch
+- [x] Create a compare script that compares results with ORCA or Psi4
 - [x] Fix gradient calculation
 - [x] Fix the shells variable in system class that reads the basis each time the system is created
 - [x] Implement Berendsen thermostat
@@ -32,6 +29,9 @@
 - [x] Make the output print the input and molecule specification
 - [x] Make the plotwfn.py not read the whole file if static view specified
 - [x] Modify restricted calculations to account for charge and multiplicity
+- [x] Print method used for the BAGEL calculation in the output
+- [x] Print method used for the ORCA calculation in the output
 - [x] Remove the python folder before merging the fci branch
+- [x] Somehow specify the initial momentum for NAD
 - [x] Specify the number of states and calculation state in the RCI output
 - [x] Transform the NAD wavefunction to adiabatic basis

@@ -1,9 +1,14 @@
 #!/bin/bash
 
-# USAGE: bagel.sh CHARGE MULT BASIS
-if [ "$#" -ne 5 ]; then
-    echo "USAGE: bagel.sh BASIS CHARGE MULT NSTATE STATE"; exit 1
+# USAGE: bagel-energy.sh BASIS CHARGE MULT METHOD NSTATE STATE
+if [ "$#" -ne 6 ]; then
+    echo "USAGE: bagel.sh BASIS CHARGE MULT METHOD NSTATE STATE"; exit 1
 fi
+
+# extract variables from methods
+NACT=$(echo "$4" | grep -oP "(?<=,).*(?=\))" | tr -d " ")
+NCLOSED=$(echo "$4" | grep -oP "(?<=\().*(?=,)")
+METHOD=$(echo "$4" | sed "s/(.*)//")
 
 # specify the molecule in the input file
 cat << EOT > bagel.json
@@ -33,14 +38,14 @@ cat << EOT >> bagel.json
 {
   "title" : "forces",
   "grads" : [
-    { "title" : "force", "target" : $5 }
+    { "title" : "force", "target" : $6 }
   ],
   "export" : true,
   "method" : [ {
     "title" : "casscf",
-    "nstate" : $4,
-    "nclosed" : 4,
-    "nact" : 2
+    "nstate" : $5,
+    "nclosed" : $NCLOSED,
+    "nact" : $NACT
   } ]
 }
 
@@ -54,4 +59,4 @@ BAGEL bagel.json > bagel.out
 mv ENERGY.out energy.dat
 
 # extract the gradient
-tail -n +2 "FORCE_$5.out" | awk 'NF {print $2, $3, $4}' | sed 's/ /\n/g' > gradient.dat
+tail -n +2 "FORCE_$6.out" | awk 'NF {print $2, $3, $4}' | sed 's/ /\n/g' > gradient.dat

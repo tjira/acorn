@@ -2,13 +2,12 @@
     "model" : {
         "potential" : [["0.5*x^2"]],
         "limits" : [-16, 16],
-        "ngrid" : 512
+        "ngrid" : 1024
     },
     "solve" : {
         "guess" : "exp(-(x-1)^2)",
-        "spectrum" : {},
-        "iters" : 10000,
         "real" : true,
+        "spectrum" : {},
         "savewfn" : true
     }
 }

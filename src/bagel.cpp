@@ -8,10 +8,10 @@ Result Bagel::gradient(const System& system, const Integrals&, Result res, bool 
     if (print) std::cout << "BAGEL DIRECTORY: " << bageldir << std::endl;
 
     // define the execution command and create the execution directory
-    std::stringstream cmd; cmd << "./bagel.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " " << opt.nstate << " " << opt.state - 1 << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
+    std::stringstream cmd; cmd << "./bagel.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " \"" << opt.method << "\" " << opt.nstate << " " << opt.state - 1 << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
 
     // save the system and copy the interface
-    system.save((bageldir / "molecule.xyz").string()), std::filesystem::copy_file(ip / opt.interface, bageldir / "bagel.sh", std::filesystem::copy_options::overwrite_existing);
+    system.save(bageldir / "molecule.xyz"), std::filesystem::copy_file(ip / opt.interface, bageldir / "bagel.sh", std::filesystem::copy_options::overwrite_existing);
 
     // run the calculation and check for the error code
     auto pipe = popen(("cd " + bageldir.string() + " && " + cmd.str()).c_str(), "r");
@@ -47,10 +47,10 @@ Result Bagel::run(const System& system, const Integrals&, Result res, bool print
     if (print) std::cout << "BAGEL DIRECTORY: " << bageldir << std::endl;
 
     // define the execution command and create the execution directory
-    std::stringstream cmd; cmd << "./bagel.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " " << opt.nstate << " " << opt.state - 1 << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
+    std::stringstream cmd; cmd << "./bagel.sh " << system.getBasis() << " " << system.getCharge() << " " << system.getMulti() << " \"" << opt.method << "\" " << opt.nstate << " " << opt.state - 1 << " > /dev/null 2>&1", std::filesystem::create_directory(bageldir);
 
     // save the system and copy the interface
-    system.save((bageldir / "molecule.xyz").string()), std::filesystem::copy_file(ip / opt.interface, bageldir / "bagel.sh", std::filesystem::copy_options::overwrite_existing);
+    system.save(bageldir / "molecule.xyz"), std::filesystem::copy_file(ip / opt.interface, bageldir / "bagel.sh", std::filesystem::copy_options::overwrite_existing);
 
     // run the calculation and check for the error code
     auto pipe = popen(("cd " + bageldir.string() + " && " + cmd.str()).c_str(), "r");

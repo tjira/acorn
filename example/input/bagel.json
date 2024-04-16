@@ -4,7 +4,8 @@
         "basis" : "cc-pvdz"
     },
     "bagel" : {
-        "interface" : "../../interface/bagel-energy-casscf.sh",
+        "interface" : "../../interface/bagel-energy.sh",
+        "method" : "CASSCF(4, 2)",
         "nstate" : 3,
         "state" : 1
     }

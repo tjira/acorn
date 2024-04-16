@@ -2,12 +2,12 @@
     "model" : {
         "potential" : [["0.5*(x^2+y^2)"]],
         "limits" : [-16, 16],
-        "ngrid" : 128
+        "ngrid" : 256
     },
     "solve" : {
         "guess" : "exp(-(x^2+y^2))",
-        "spectrum" : {},
         "real" : true,
+        "spectrum" : {},
         "savewfn" : true
     }
 }

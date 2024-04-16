@@ -12,6 +12,7 @@
                 "temp" : 298.15
             }
         },
+        "method" : "CASSCF(4, 2)",
         "nstate" : 3,
         "state" : 1
     }
