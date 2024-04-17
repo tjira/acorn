@@ -57,7 +57,8 @@ public:
     Mesh(std::vector<Vertex> data) : model(1.0f), buffer(data) {};
 
     // static constructors
-    static std::vector<Mesh> Function(const std::string& path, int dim);
+    static std::vector<std::vector<Mesh>> Wavefunctions(const std::string& path, int dim);
+    static std::vector<Mesh> Matrix(const std::string& path, int dim);
 
     // setters
     void setColor(const glm::vec3& color); void setModel(const glm::mat4& model);
@@ -78,9 +79,9 @@ Buffer::Buffer(const std::vector<Vertex>& data) : data(data) {
     glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(Vertex), data.data(), GL_STATIC_DRAW);
 }
 
-std::vector<Mesh> Mesh::Function(const std::string& path, int dim) {
+std::vector<Mesh> Mesh::Matrix(const std::string& path, int dim) {
     // define the data and the file stream
-    std::vector<std::vector<Vertex>> data(1); std::ifstream file(path); std::string line;
+    std::vector<std::vector<Vertex>> data; std::ifstream file(path); std::string line;
 
     while (std::getline(file, line)) {
         // define the line stream, variables and index
@@ -88,8 +89,6 @@ std::vector<Mesh> Mesh::Function(const std::string& path, int dim) {
 
         // fill the independent variables
         for (int j = 0; j < dim; j++) stream >> xyz.at(j);
-
-        // float x, y; int i = 0; stream >> x;
 
         while (stream >> xyz.at(dim)) {
             // push the mesh data
@@ -105,6 +104,46 @@ std::vector<Mesh> Mesh::Function(const std::string& path, int dim) {
 
     // create the mesh vector and return
     std::vector<Mesh> mesh; for (const auto& set : data) {mesh.emplace_back(set);} return mesh;
+}
+
+std::vector<std::vector<Mesh>> Mesh::Wavefunctions(const std::string& path, int dim) {
+    // define the data, file stream and some containers
+    std::vector<std::vector<std::vector<Vertex>>> data; std::vector<std::vector<Mesh>> mesh;
+    std::ifstream file(path); std::string line; std::vector<float> r;
+
+    // read the header
+    std::getline(file, line);
+
+    // read the independent variables
+    for (int i = 0; i < dim; i++) {
+        std::getline(file, line); std::stringstream stream(line);
+        float value; while (stream >> value) r.push_back(value);
+    }
+
+    while (std::getline(file, line)) {
+        // push the time data
+        data.push_back({});
+        
+        // for every wfn data
+        for (int i = 0; i < 2 * dim; i++) {
+            // push the wfn data and get the line
+            data.back().push_back({}); std::getline(file, line);
+
+            // create the stream and the point container
+            std::stringstream stream(line); float value;
+
+            // fill the data
+            while (stream >> value) {
+                if (dim == 2) data.back().at(i).push_back({{r.at(data.back().at(i).size() % r.size()), r.at(data.back().at(i).size() / r.size()), value}});
+                else if (dim == 1) data.back().at(i).push_back({{r.at(data.back().at(i).size() % r.size()), value, 0}});
+            }
+        }
+    }
+
+    // fill the mesh vector and return
+    for (const auto& time : data) {std::vector<Mesh> meshes;
+        for (const auto& set : time) meshes.emplace_back(set); mesh.push_back(meshes);
+    } return mesh;
 }
 
 void Mesh::render(const Shader& shader, const glm::mat4& transform) const {
@@ -249,9 +288,10 @@ int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn View", "1.0", argparse::default_arguments::none);
 
     // add options to the parser
-    program.add_argument("input").help("Input file.").default_value(std::string(""));
+    program.add_argument("input").help("Input file.").nargs(argparse::nargs_pattern::any);
     program.add_argument("-h").help("-- Display this help message and exit.").default_value(false).implicit_value(true);
     program.add_argument("-d", "--dimension").help("-- Dimensionality of the input.").default_value(1).scan<'i', int>();
+    program.add_argument("-s", "--scale").help("-- Scale the input.").default_value(1.0).scan<'g', double>();
 
     // extract the variables from the command line
     try {
@@ -307,8 +347,20 @@ int main(int argc, char** argv) {
     pointer.camera.view = glm::lookAt({0.0f, 0.0f, 20.0f}, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     {
-        // load the function and initialize the shader
-        std::vector<Mesh> mesh = Mesh::Function(program.get<std::string>("input"), program.get<int>("-d")); Shader shader(vertex, fragment);
+        // define the containers for the meshes
+        std::vector<std::vector<Mesh>> matrices; std::vector<std::vector<std::vector<Mesh>>> wfns;
+
+        // load provided matrices and wfns
+        for (const std::string& path : program.get<std::vector<std::string>>("input")) {
+            if(path.substr(path.find_last_of(".") + 1) == "mat") {
+                matrices.push_back(Mesh::Matrix(path, program.get<int>("-d")));
+            } else if(path.substr(path.find_last_of(".") + 1) == "dat") {
+                wfns.push_back(Mesh::Wavefunctions(path, program.get<int>("-d")));
+            }
+        }
+
+        // compile the shader and define frame index
+        Shader shader(vertex, fragment); int i = 0;
 
         // set the light uniforms
         shader.set<glm::vec3>("u_light.position", pointer.light.position);
@@ -326,10 +378,11 @@ int main(int argc, char** argv) {
             shader.set<glm::mat4>("u_view", pointer.camera.view); shader.set<glm::mat4>("u_proj", pointer.camera.proj);
 
             // render the meshes
-            for (const Mesh& mesh : mesh) mesh.render(shader);
+            if (wfns.size()) for (const std::vector<std::vector<Mesh>>& file : wfns) for (const Mesh& mesh : file.at(i)) mesh.render(shader, glm::scale(glm::mat4(1.0f), {1, program.get<double>("-s"), 1}));
+            if (matrices.size()) for (const std::vector<Mesh>& file : matrices) for (const Mesh& mesh : file) mesh.render(shader, glm::scale(glm::mat4(1.0f), {1, program.get<double>("-s"), 1}));
             
-            // Swap buffers and poll events
-            glfwSwapBuffers(pointer.window); glfwPollEvents();
+            // swap buffers, poll events and increase the frame index
+            glfwSwapBuffers(pointer.window), glfwPollEvents(); if (wfns.size()) i = (i + 1) % wfns.at(0).size();
         }
     }
 
