@@ -57,7 +57,7 @@ public:
     Mesh(std::vector<Vertex> data) : model(1.0f), buffer(data) {};
 
     // static constructors
-    static std::vector<std::vector<Mesh>> Wavefunctions(const std::string& path, int dim);
+    static std::vector<std::vector<Mesh>> Wavefunctions(const std::string& path);
     static std::vector<Mesh> Matrix(const std::string& path, int dim);
 
     // setters
@@ -95,7 +95,7 @@ std::vector<Mesh> Mesh::Matrix(const std::string& path, int dim) {
             if (data.size() <= i) {data.push_back({});}
 
             // push the current point and increase index
-            for (int j = 0; j < 2; j++) {data.at(i).push_back({{xyz.at(0), xyz.at(1), xyz.at(2)}});} i++;
+            for (int j = 0; j < 2; j++) {data.at(i).push_back({{xyz.at(0), xyz.at(2), xyz.at(1)}});} i++;
         }
     }
 
@@ -106,19 +106,19 @@ std::vector<Mesh> Mesh::Matrix(const std::string& path, int dim) {
     std::vector<Mesh> mesh; for (const auto& set : data) {mesh.emplace_back(set);} return mesh;
 }
 
-std::vector<std::vector<Mesh>> Mesh::Wavefunctions(const std::string& path, int dim) {
+std::vector<std::vector<Mesh>> Mesh::Wavefunctions(const std::string& path) {
     // define the data, file stream and some containers
     std::vector<std::vector<std::vector<Vertex>>> data; std::vector<std::vector<Mesh>> mesh;
     std::ifstream file(path); std::string line; std::vector<float> r;
 
     // read the header
-    std::getline(file, line);
+    std::getline(file, line); float dim; std::stringstream hstream(line); hstream >> line; hstream >> dim;
 
     // read the independent variables
-    for (int i = 0; i < dim; i++) {
+    for (int i = 0; i < 1; i++) {
         std::getline(file, line); std::stringstream stream(line);
         float value; while (stream >> value) r.push_back(value);
-    }
+    } for (int i = 0; i < dim - 1; i++) std::getline(file, line);
 
     while (std::getline(file, line)) {
         // push the time data
@@ -134,7 +134,7 @@ std::vector<std::vector<Mesh>> Mesh::Wavefunctions(const std::string& path, int 
 
             // fill the data
             while (stream >> value) {
-                if (dim == 2) data.back().at(i).push_back({{r.at(data.back().at(i).size() % r.size()), r.at(data.back().at(i).size() / r.size()), value}});
+                if (dim == 2) data.back().at(i).push_back({{r.at(data.back().at(i).size() % r.size()), value, r.at(data.back().at(i).size() / r.size())}});
                 else if (dim == 1) data.back().at(i).push_back({{r.at(data.back().at(i).size() % r.size()), value, 0}});
             }
         }
@@ -290,8 +290,7 @@ int main(int argc, char** argv) {
     // add options to the parser
     program.add_argument("input").help("Input file.").nargs(argparse::nargs_pattern::any);
     program.add_argument("-h").help("-- Display this help message and exit.").default_value(false).implicit_value(true);
-    program.add_argument("-d", "--dimension").help("-- Dimensionality of the input.").default_value(1).scan<'i', int>();
-    program.add_argument("-s", "--scale").help("-- Scale the input.").default_value(1.0).scan<'g', double>();
+    program.add_argument("-d", "--dimension").help("-- Dimensionality of the input matrices.").default_value(1).scan<'i', int>();
 
     // extract the variables from the command line
     try {
@@ -355,7 +354,7 @@ int main(int argc, char** argv) {
             if(path.substr(path.find_last_of(".") + 1) == "mat") {
                 matrices.push_back(Mesh::Matrix(path, program.get<int>("-d")));
             } else if(path.substr(path.find_last_of(".") + 1) == "dat") {
-                wfns.push_back(Mesh::Wavefunctions(path, program.get<int>("-d")));
+                wfns.push_back(Mesh::Wavefunctions(path));
             }
         }
 
@@ -377,9 +376,11 @@ int main(int argc, char** argv) {
             shader.set<glm::vec3>("u_camera", -glm::inverse(glm::mat3(pointer.camera.view)) * glm::vec3(pointer.camera.view[3]));
             shader.set<glm::mat4>("u_view", pointer.camera.view); shader.set<glm::mat4>("u_proj", pointer.camera.proj);
 
-            // render the meshes
-            if (wfns.size()) for (const std::vector<std::vector<Mesh>>& file : wfns) for (const Mesh& mesh : file.at(i)) mesh.render(shader, glm::scale(glm::mat4(1.0f), {1, program.get<double>("-s"), 1}));
-            if (matrices.size()) for (const std::vector<Mesh>& file : matrices) for (const Mesh& mesh : file) mesh.render(shader, glm::scale(glm::mat4(1.0f), {1, program.get<double>("-s"), 1}));
+            // render the matrices
+            for (const std::vector<Mesh>& file : matrices) for (const Mesh& mesh : file) mesh.render(shader);
+
+            // render the wavefunctions
+            for (const std::vector<std::vector<Mesh>>& file : wfns) for (const Mesh& mesh : file.at(i)) mesh.render(shader);
             
             // swap buffers, poll events and increase the frame index
             glfwSwapBuffers(pointer.window), glfwPollEvents(); if (wfns.size()) i = (i + 1) % wfns.at(0).size();
