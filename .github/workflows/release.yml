@@ -58,41 +58,41 @@ jobs:
             bin/libint_linux_x86-64.a
 
     build_windows_x86-64:
-    runs-on: windows-latest
+      runs-on: windows-latest
 
-    steps:
-      - uses: actions/checkout@v3
+      steps:
+        - uses: actions/checkout@v3
 
-      - name: Install Packages
-        run: pip install jinja2
+        - name: Install Packages
+          run: pip install jinja2
 
-      - name: Configure Acorn
-        run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSTANDALONE=ON
+        - name: Configure Acorn
+          run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSTANDALONE=ON
 
-      - name: Build Acorn
-        run: cmake --build build --parallel 2
+        - name: Build Acorn
+          run: cmake --build build --parallel 2
 
-      - name: Rename Binaries
-        run: |
-          mv bin/acorn_centerxyz.exe bin/acorn_centerxyz_windows_x86-64.exe
-          mv bin/acorn_view.exe bin/acorn_centerxyz_windows_x86-64.exe
-          mv bin/acorn_makemov.exe bin/acorn_makemov_windows_x86-64.exe
-          mv bin/acorn.exe bin/acorn_windows_x86-64.exe
-          mv bin/libacorn.a bin/libacorn_windows_x86-64.a
-          mv bin/libfftw3.a bin/libfftw_windows_x86-64.a
-          mv bin/libint2.a bin/libnit_windows_x86-64.a
+        - name: Rename Binaries
+          run: |
+            mv bin/acorn_centerxyz.exe bin/acorn_centerxyz_windows_x86-64.exe
+            mv bin/acorn_view.exe bin/acorn_centerxyz_windows_x86-64.exe
+            mv bin/acorn_makemov.exe bin/acorn_makemov_windows_x86-64.exe
+            mv bin/acorn.exe bin/acorn_windows_x86-64.exe
+            mv bin/libacorn.a bin/libacorn_windows_x86-64.a
+            mv bin/libfftw3.a bin/libfftw_windows_x86-64.a
+            mv bin/libint2.a bin/libnit_windows_x86-64.a
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          path: |
-            bin/acorn_centerxyz_windows_x86-64.exe
-            bin/acorn_makemov_windows_x86-64.exe
-            bin/acorn_view_windows_x86-64.exe
-            bin/acorn_windows_x86-64.exe
-            bin/libacorn_windows_x86-64.a
-            bin/libfftw_windows_x86-64.a
-            bin/libintwindows_x86-64.a
+        - name: Upload Artifacts
+          uses: actions/upload-artifact@v3
+          with:
+            path: |
+              bin/acorn_centerxyz_windows_x86-64.exe
+              bin/acorn_makemov_windows_x86-64.exe
+              bin/acorn_view_windows_x86-64.exe
+              bin/acorn_windows_x86-64.exe
+              bin/libacorn_windows_x86-64.a
+              bin/libfftw_windows_x86-64.a
+              bin/libintwindows_x86-64.a
 
   release:
     runs-on: ubuntu-latest
