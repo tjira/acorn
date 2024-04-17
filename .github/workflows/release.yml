@@ -75,7 +75,7 @@ jobs:
       - name: Rename Binaries
         run: |
           mv bin/acorn_centerxyz.exe bin/acorn_centerxyz_windows_x86-64.exe
-          mv bin/acorn_view.exe bin/acorn_centerxyz_windows_x86-64.exe
+          mv bin/acorn_view.exe bin/acorn_view_windows_x86-64.exe
           mv bin/acorn_makemov.exe bin/acorn_makemov_windows_x86-64.exe
           mv bin/acorn.exe bin/acorn_windows_x86-64.exe
           mv bin/libacorn.a bin/libacorn_windows_x86-64.a
