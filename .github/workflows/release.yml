@@ -40,9 +40,10 @@ jobs:
         run: |
           mv bin/acorn_centerxyz bin/acorn_centerxyz_linux_x86-64
           mv bin/acorn_makemov bin/acorn_makemov_linux_x86-64
+          mv bin/acorn_view bin/acorn_view_linux_x86-64
+          mv bin/acorn bin/acorn_linux_x86-64
           mv bin/libacorn.a bin/libacorn_linux_x86-64.a
           mv bin/libfftw3.a bin/libfftw_linux_x86-64.a
-          mv bin/acorn bin/acorn_linux_x86-64
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
@@ -50,14 +51,52 @@ jobs:
           path: |
             bin/acorn_centerxyz_linux_x86-64
             bin/acorn_makemov_linux_x86-64
+            bin/acorn_view_linux_x86-64
+            bin/acorn_linux_x86-64
             bin/libacorn_linux_x86-64.a
             bin/libfftw_linux_x86-64.a
             bin/libint_linux_x86-64.a
-            bin/acorn_linux_x86-64
+
+    build_windows_x86-64:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Packages
+        run: pip install jinja2
+
+      - name: Configure Acorn
+        run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSTANDALONE=ON
+
+      - name: Build Acorn
+        run: cmake --build build --parallel 2
+
+      - name: Rename Binaries
+        run: |
+          mv bin/acorn_centerxyz.exe bin/acorn_centerxyz_windows_x86-64.exe
+          mv bin/acorn_view.exe bin/acorn_centerxyz_windows_x86-64.exe
+          mv bin/acorn_makemov.exe bin/acorn_makemov_windows_x86-64.exe
+          mv bin/acorn.exe bin/acorn_windows_x86-64.exe
+          mv bin/libacorn.a bin/libacorn_windows_x86-64.a
+          mv bin/libfftw3.a bin/libfftw_windows_x86-64.a
+          mv bin/libint2.a bin/libnit_windows_x86-64.a
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            bin/acorn_centerxyz_windows_x86-64.exe
+            bin/acorn_makemov_windows_x86-64.exe
+            bin/acorn_view_windows_x86-64.exe
+            bin/acorn_windows_x86-64.exe
+            bin/libacorn_windows_x86-64.a
+            bin/libfftw_windows_x86-64.a
+            bin/libintwindows_x86-64.a
 
   release:
     runs-on: ubuntu-latest
-    needs: [build_linux_x86-64]
+    needs: [build_linux_x86-64, build_windows_x86-64]
 
     steps:
       - uses: actions/checkout@v3
@@ -71,22 +110,44 @@ jobs:
       - name: Generate the Header Only Library
         run: ./script/headeronly.sh > library/acorn.h
 
-      - name: Copy x86-64 Binaries and Headers to the Root Folder
+      - name: Copy x86-64 Linux Binaries to the Root Folder
         run: |
           cp artifact/acorn_centerxyz_linux_x86-64 acorn_centerxyz
-          cp artifact/libacorn_linux_x86-64.a library/libacorn.a
           cp artifact/acorn_makemov_linux_x86-64 acorn_makemov
+          cp artifact/acorn_view_linux_x86-64 acorn_view
+          cp artifact/acorn_linux_x86-64 acorn
+          cp artifact/libacorn_linux_x86-64.a library/libacorn.a
           cp artifact/libfftw_linux_x86-64.a library/libfftw.a
           cp artifact/libint_linux_x86-64.a library/libint.a
-          cp artifact/acorn_linux_x86-64 acorn
 
-      - name: Create x86-64 Packages
+      - name: Create x86-64 Linux Packages
         run: |
-          tar -czf acorn_linux_x86-64.tar.gz acorn acorn_centerxyz acorn_makemov basis example interface library script/compress.py script/decompress.py script/plotmat.py script/plotwfn.py LICENSE.md
+          tar -czf acorn_linux_x86-64.tar.gz acorn acorn_centerxyz acorn_makemov acorn_view basis example interface library script/compress.py script/decompress.py script/plotmat.py script/plotwfn.py LICENSE.md
+
+      - name: Copy x86-64 Windows Binaries to the Root Folder
+        run: |
+          cp artifact/acorn_centerxyz_windows_x86-64 acorn_centerxyz.exe
+          cp artifact/acorn_makemov_windows_x86-64 acorn_makemov.exe
+          cp artifact/acorn_view_windows_x86-64 acorn_view.exe
+          cp artifact/acorn_windows_x86-64 acorn.exe
+          cp artifact/libacorn_windows_x86-64.a library/libacorn.a
+          cp artifact/libfftw_windows_x86-64.a library/libfftw.a
+          cp artifact/libint_windows_x86-64.a library/libint.a
+
+      - name: Create x86-64 Windows Packages
+        run: |
+          tar -czf acorn_windows_x86-64.tar.gz acorn.exe acorn_centerxyz.exe acorn_makemov.exe acorn_view.exe basis example interface library script/compress.py script/decompress.py script/plotmat.py script/plotwfn.py LICENSE.md
 
       - name: Release linux_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
           file: acorn_linux_x86-64.tar.gz
+          tag: ${{github.ref}}
+
+      - name: Release windows_x86-64 Version of Acorn
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn_windows_x86-64.tar.gz
           tag: ${{github.ref}}

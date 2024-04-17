@@ -107,7 +107,7 @@ Matrix<> System::drepulsion() const {
     return repulsion;
 }
 
-void System::save(std::string fname, std::ios::openmode mode) const {
+void System::save(std::filesystem::path fname, std::ios::openmode mode) const {
     // open the file, write number of atoms and set output stream flags
     std::ofstream file(fname, mode); file << atoms.size() << "\n";
     file << fname << std::fixed << std::setprecision(14) << "\n";

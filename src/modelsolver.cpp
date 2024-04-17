@@ -165,8 +165,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         }
 
         // save the state wavefunction
-        if (opta.savewfn && dim == 2) ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", x.col(0), y.row(0), wfns, energies);
-        if (opta.savewfn && dim == 1) ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", x, wfns, energies);
+        if (opta.savewfn && dim == 2) ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i) + ".dat"), x.col(0), y.row(0), wfns, energies);
+        if (opta.savewfn && dim == 1) ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i) + ".dat"), x, wfns, energies);
     }
 
     // print the newline
@@ -327,7 +327,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         std::vector<Matrix<std::complex<double>>> state; for (auto psi : psis) state.push_back(psi.col(i));
 
         // save the wavefunction
-        ModelSystem::SaveWavefunction(ip + "/state" + std::to_string(i) + ".dat", res.msv.r, state, energies);
+        ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i) + ".dat"), res.msv.r, state, energies);
     }
 
     // print the newline

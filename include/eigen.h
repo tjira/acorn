@@ -42,9 +42,8 @@ template <typename T> T EigenConj(const T& A) {return A.unaryExpr([](auto x) {re
 inline bool VectorContains(const std::vector<int>& v, const int& e) {return std::find(v.begin(), v.end(), e) != v.end();}
 inline bool StringContains(const std::string& s, const char& e) {return s.find(e) != std::string::npos;}
 
-// number of threads
-inline int nthread = 1;
-inline std::string ip;
+// number of threads and input path global variable
+inline std::filesystem::path ip; inline int nthread = 1;
 
 // include necessities
 #include <fstream>

@@ -31,8 +31,11 @@ set(GLFW_BUILD_DOCS OFF)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3")
 if (WIN32)
-    string(APPEND CMAKE_CXX_FLAGS_RELEASE " -static")
-    string(APPEND CMAKE_CXX_FLAGS_DEBUG " -static")
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " -static -Wa,-mbig-obj")
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG " -static -Wa,-mbig-obj")
+    if (CMAKE_BUILD_TYPE STREQUAL Release)
+        string(APPEND CMAKE_CXX_FLAGS_RELEASE " -mwindows")
+    endif()
 endif()
 
 # include fetch content module
@@ -51,8 +54,13 @@ FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www
 
 # fetch the libraries
 FetchContent_MakeAvailable(argparse exprtk glad glfw glm fftw json)
-if (WIN32 OR STANDALONE)
+if (STANDALONE)
     FetchContent_MakeAvailable(eigen libint)
+    if (WIN32)
+        file(READ ${libint_SOURCE_DIR}/include/libint2/boys.h CONTENT)
+        string(REPLACE "#ifdef _MSC_VER" "#ifdef WIN32" CONTENT "${CONTENT}")
+        file(WRITE ${libint_SOURCE_DIR}/include/libint2/boys.h "${CONTENT}")
+    endif()
 endif()
 
 # generate glad library
