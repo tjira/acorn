@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Packages
         run: sudo apt install -y libboost-dev libeigen3-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
@@ -46,7 +46,7 @@ jobs:
           mv bin/libfftw3.a bin/libfftw_linux_x86-64.a
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: |
             bin/acorn_centerxyz_linux_x86-64
@@ -61,7 +61,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Packages
         run: pip install jinja2
@@ -83,7 +83,7 @@ jobs:
           mv bin/libint2.a bin/libnit_windows_x86-64.a
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: |
             bin/acorn_centerxyz_windows_x86-64.exe
@@ -99,10 +99,10 @@ jobs:
     needs: [build_linux_x86-64, build_windows_x86-64]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Create Library Directory and Remove Redundant Scripts
         run: mkdir library && rm example/generate.sh
@@ -126,10 +126,10 @@ jobs:
 
       - name: Copy x86-64 Windows Binaries to the Root Folder
         run: |
-          cp artifact/acorn_centerxyz_windows_x86-64 acorn_centerxyz.exe
-          cp artifact/acorn_makemov_windows_x86-64 acorn_makemov.exe
-          cp artifact/acorn_view_windows_x86-64 acorn_view.exe
-          cp artifact/acorn_windows_x86-64 acorn.exe
+          cp artifact/acorn_centerxyz_windows_x86-64.exe acorn_centerxyz.exe
+          cp artifact/acorn_makemov_windows_x86-64.exe acorn_makemov.exe
+          cp artifact/acorn_view_windows_x86-64.exe acorn_view.exe
+          cp artifact/acorn_windows_x86-64.exe acorn.exe
           cp artifact/libacorn_windows_x86-64.a library/libacorn.a
           cp artifact/libfftw_windows_x86-64.a library/libfftw.a
           cp artifact/libint_windows_x86-64.a library/libint.a
