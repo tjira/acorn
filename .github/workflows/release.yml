@@ -45,17 +45,20 @@ jobs:
           mv bin/libacorn.a bin/libacorn_linux_x86-64.a
           mv bin/libfftw3.a bin/libfftw_linux_x86-64.a
 
+      - name: Rename the Binary Folder
+        run: mv bin bin_linux_x86-64
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           path: |
-            bin/acorn_centerxyz_linux_x86-64
-            bin/acorn_makemov_linux_x86-64
-            bin/acorn_view_linux_x86-64
-            bin/acorn_linux_x86-64
-            bin/libacorn_linux_x86-64.a
-            bin/libfftw_linux_x86-64.a
-            bin/libint_linux_x86-64.a
+            bin_linux_x86-64/acorn_centerxyz_linux_x86-64
+            bin_linux_x86-64/acorn_makemov_linux_x86-64
+            bin_linux_x86-64/acorn_view_linux_x86-64
+            bin_linux_x86-64/acorn_linux_x86-64
+            bin_linux_x86-64/libacorn_linux_x86-64.a
+            bin_linux_x86-64/libfftw_linux_x86-64.a
+            bin_linux_x86-64/libint_linux_x86-64.a
 
   build_windows_x86-64:
     runs-on: windows-latest
@@ -82,17 +85,20 @@ jobs:
           mv bin/libfftw3.a bin/libfftw_windows_x86-64.a
           mv bin/libint2.a bin/libnit_windows_x86-64.a
 
+      - name: Rename the Binary Folder
+        run: mv bin bin_windows_x86-64
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           path: |
-            bin/acorn_centerxyz_windows_x86-64.exe
-            bin/acorn_makemov_windows_x86-64.exe
-            bin/acorn_view_windows_x86-64.exe
-            bin/acorn_windows_x86-64.exe
-            bin/libacorn_windows_x86-64.a
-            bin/libfftw_windows_x86-64.a
-            bin/libintwindows_x86-64.a
+            bin_windows_x86-64/acorn_centerxyz_windows_x86-64.exe
+            bin_windows_x86-64/acorn_makemov_windows_x86-64.exe
+            bin_windows_x86-64/acorn_view_windows_x86-64.exe
+            bin_windows_x86-64/acorn_windows_x86-64.exe
+            bin_windows_x86-64/libacorn_windows_x86-64.a
+            bin_windows_x86-64/libfftw_windows_x86-64.a
+            bin_windows_x86-64/libint_windows_x86-64.a
 
   release:
     runs-on: ubuntu-latest
