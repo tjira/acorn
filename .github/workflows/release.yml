@@ -45,20 +45,18 @@ jobs:
           mv bin/libacorn.a bin/libacorn_linux_x86-64.a
           mv bin/libfftw3.a bin/libfftw_linux_x86-64.a
 
-      - name: Rename the Binary Folder
-        run: mv bin bin_linux_x86-64
-
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: linux
           path: |
-            bin_linux_x86-64/acorn_centerxyz_linux_x86-64
-            bin_linux_x86-64/acorn_makemov_linux_x86-64
-            bin_linux_x86-64/acorn_view_linux_x86-64
-            bin_linux_x86-64/acorn_linux_x86-64
-            bin_linux_x86-64/libacorn_linux_x86-64.a
-            bin_linux_x86-64/libfftw_linux_x86-64.a
-            bin_linux_x86-64/libint_linux_x86-64.a
+            bin/acorn_centerxyz_linux_x86-64
+            bin/acorn_makemov_linux_x86-64
+            bin/acorn_view_linux_x86-64
+            bin/acorn_linux_x86-64
+            bin/libacorn_linux_x86-64.a
+            bin/libfftw_linux_x86-64.a
+            bin/libint_linux_x86-64.a
 
   build_windows_x86-64:
     runs-on: windows-latest
@@ -85,20 +83,18 @@ jobs:
           mv bin/libfftw3.a bin/libfftw_windows_x86-64.a
           mv bin/libint2.a bin/libnit_windows_x86-64.a
 
-      - name: Rename the Binary Folder
-        run: mv bin bin_windows_x86-64
-
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: windows
           path: |
-            bin_windows_x86-64/acorn_centerxyz_windows_x86-64.exe
-            bin_windows_x86-64/acorn_makemov_windows_x86-64.exe
-            bin_windows_x86-64/acorn_view_windows_x86-64.exe
-            bin_windows_x86-64/acorn_windows_x86-64.exe
-            bin_windows_x86-64/libacorn_windows_x86-64.a
-            bin_windows_x86-64/libfftw_windows_x86-64.a
-            bin_windows_x86-64/libint_windows_x86-64.a
+            bin/acorn_centerxyz_windows_x86-64.exe
+            bin/acorn_makemov_windows_x86-64.exe
+            bin/acorn_view_windows_x86-64.exe
+            bin/acorn_windows_x86-64.exe
+            bin/libacorn_windows_x86-64.a
+            bin/libfftw_windows_x86-64.a
+            bin/libint_windows_x86-64.a
 
   release:
     runs-on: ubuntu-latest
@@ -118,13 +114,13 @@ jobs:
 
       - name: Copy x86-64 Linux Binaries to the Root Folder
         run: |
-          cp artifact/acorn_centerxyz_linux_x86-64 acorn_centerxyz
-          cp artifact/acorn_makemov_linux_x86-64 acorn_makemov
-          cp artifact/acorn_view_linux_x86-64 acorn_view
-          cp artifact/acorn_linux_x86-64 acorn
-          cp artifact/libacorn_linux_x86-64.a library/libacorn.a
-          cp artifact/libfftw_linux_x86-64.a library/libfftw.a
-          cp artifact/libint_linux_x86-64.a library/libint.a
+          cp linux/acorn_centerxyz_linux_x86-64 acorn_centerxyz
+          cp linux/acorn_makemov_linux_x86-64 acorn_makemov
+          cp linux/acorn_view_linux_x86-64 acorn_view
+          cp linux/acorn_linux_x86-64 acorn
+          cp linux/libacorn_linux_x86-64.a library/libacorn.a
+          cp linux/libfftw_linux_x86-64.a library/libfftw.a
+          cp linux/libint_linux_x86-64.a library/libint.a
 
       - name: Create x86-64 Linux Packages
         run: |
@@ -132,13 +128,13 @@ jobs:
 
       - name: Copy x86-64 Windows Binaries to the Root Folder
         run: |
-          cp artifact/acorn_centerxyz_windows_x86-64.exe acorn_centerxyz.exe
-          cp artifact/acorn_makemov_windows_x86-64.exe acorn_makemov.exe
-          cp artifact/acorn_view_windows_x86-64.exe acorn_view.exe
-          cp artifact/acorn_windows_x86-64.exe acorn.exe
-          cp artifact/libacorn_windows_x86-64.a library/libacorn.a
-          cp artifact/libfftw_windows_x86-64.a library/libfftw.a
-          cp artifact/libint_windows_x86-64.a library/libint.a
+          cp windows/acorn_centerxyz_windows_x86-64.exe acorn_centerxyz.exe
+          cp windows/acorn_makemov_windows_x86-64.exe acorn_makemov.exe
+          cp windows/acorn_view_windows_x86-64.exe acorn_view.exe
+          cp windows/acorn_windows_x86-64.exe acorn.exe
+          cp windows/libacorn_windows_x86-64.a library/libacorn.a
+          cp windows/libfftw_windows_x86-64.a library/libfftw.a
+          cp windows/libint_windows_x86-64.a library/libint.a
 
       - name: Create x86-64 Windows Packages
         run: |
