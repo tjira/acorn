@@ -12,7 +12,7 @@ std::string Timer::Format(long ms) {
 }
 
 std::string Timer::Local() {
-    long long t = std::time(0); auto tm = *std::localtime(&t); std::stringstream strstream;
+    std::time_t t = std::time(0); auto tm = *std::localtime(&t); std::stringstream strstream;
     strstream << std::put_time(&tm, "%a %b %d %H:%M:%S %Y"); return strstream.str();
 }
 
