@@ -29,7 +29,7 @@ where $\mathbf{C}$ represents the matrix of coefficients obtained from the Hartr
 Having computed the Coulomb integral in the molecular orbital (MO) basis, the correlation energy of a closed-shell system can be determined by assessing the sum
 
 \begin{equation}
-E_{corr}^{MP2}=\sum_{iajb}\frac{J_{iajb}(2J_{iajb}+J_{ibja})}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b},
+E_{corr}^{MP2}=\sum_{iajb}\frac{J_{iajb}(2J_{iajb}-J_{ibja})}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b},
 \end{equation}
 
 where indices $i$ and $j$ refer to occupied spatial orbitals, and $a$ and $b$ refer to unoccupied spatial orbitals. The vector $\varepsilon$ encompasses orbital energies, obtained through the solution of the Roothaan equations.
