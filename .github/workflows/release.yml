@@ -81,7 +81,7 @@ jobs:
           mv bin/acorn.exe bin/acorn_windows_x86-64.exe
           mv bin/libacorn.a bin/libacorn_windows_x86-64.a
           mv bin/libfftw3.a bin/libfftw_windows_x86-64.a
-          mv bin/libint2.a bin/libnit_windows_x86-64.a
+          mv bin/libint2.a bin/libint_windows_x86-64.a
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
