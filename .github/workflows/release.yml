@@ -127,7 +127,7 @@ jobs:
 
       - name: Create x86-64 Linux Packages
         run: |
-          tar -czf acorn_linux_x86-64.tar.gz acorn acorn_centerxyz acorn_makemov acorn_view basis example interface library script/compress.py script/decompress.py script/plotmat.py script/plotwfn.py LICENSE.md
+          tar -czf acorn_linux_x86-64.tar.gz acorn acorn_centerxyz acorn_makemov acorn_view basis example interface library script/compress.py script/decompress.py script/plotmat.py script/plottraj.py script/plotwfn.py LICENSE.md
 
       - name: Copy x86-64 Windows Binaries to the Root Folder
         run: |
@@ -141,7 +141,7 @@ jobs:
 
       - name: Create x86-64 Windows Packages
         run: |
-          tar -czf acorn_windows_x86-64.tar.gz acorn.exe acorn_centerxyz.exe acorn_makemov.exe acorn_view.exe basis example interface library script/compress.py script/decompress.py script/plotmat.py script/plotwfn.py LICENSE.md
+          tar -czf acorn_windows_x86-64.tar.gz acorn.exe acorn_centerxyz.exe acorn_makemov.exe acorn_view.exe basis example interface library script/compress.py script/decompress.py script/plotmat.py script/plottraj.py script/plotwfn.py LICENSE.md
 
       - name: Release linux_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
