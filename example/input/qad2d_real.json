@@ -1,6 +1,7 @@
 {
     "model" : {
         "potential" : [["0.5*(x^2+y^2)"]],
+        "variables" : ["x", "y"],
         "limits" : [-16, 16],
         "ngrid" : 256
     },

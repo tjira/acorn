@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv) {
     // create the model system
-    ModelSystem system(1, {{argv[1]}}, {-16, 16}, 1024);
+    ModelSystem system(1, {{argv[1]}}, {"x"}, {-16, 16}, 1024);
 
     // create the adiabatic solver options with guess function
     ModelSolver::OptionsAdiabatic opta; opta.guess = "exp(-x^2)";

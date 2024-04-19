@@ -56,10 +56,8 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, berends
 // option structures loaders for model methods
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Optimize, step, iters);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential, window, normalize, zpesub, zeropad);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, berendsen);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics::Berendsen, tau, temp, timeout);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, berendsen);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, state, position, gradient, velocity);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, state, position, gradient, velocity);
 
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, optimize, guess, savewfn, spectrum);
@@ -423,7 +421,7 @@ int main(int argc, char** argv) {
 
     } else if (input.contains("model")) {
         // create the model system
-        ModelSystem model(mdlopt.at("mass"), mdlopt.at("potential"), mdlopt.at("limits"), mdlopt.at("ngrid"));
+        ModelSystem model(mdlopt.at("mass"), mdlopt.at("potential"), mdlopt.at("variables"), mdlopt.at("limits"), mdlopt.at("ngrid"));
 
         if (input.contains("solve")) {Printer::Title("EXACT QUANTUM DYNAMICS");
             // create the adiabatic solver object
@@ -443,13 +441,13 @@ int main(int argc, char** argv) {
             res = msv.run(model, res);
 
             // if the optimization was performed print the resulting energies
-            if (!msaopt.at("real") && mdlopt.at("potential").size() == 1) Printer::Print(res.msv.opten, "ENERGIES"), std::cout << std::endl;
+            if (mdlopt.at("potential").size() == 1 && res.msv.opten.size()) Printer::Print(res.msv.opten, "ENERGIES"), std::cout << std::endl;
 
             // save the density matrix if nonadiabatic model was used
             if (mdlopt.at("potential").size() > 1 && res.msv.rho.size()) EigenWrite(std::filesystem::path(ip) / "rho.mat", res.msv.rho);
 
             // extract and save the potential points
-            if (StringContains(mdlopt.at("potential").at(0).at(0), 'y')) {
+            if (model.vars().size() == 2) {
                 Matrix<> U(res.msv.r.size() * res.msv.r.size(), res.msv.U.cols() + 2);
                 for (int i = 0; i < res.msv.r.size(); i++) {
                     for (int j = 0; j < res.msv.r.size(); j++) {

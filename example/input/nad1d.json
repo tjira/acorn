@@ -10,13 +10,13 @@
         "mass" : 2000
     },
     "solve" : {
-        "guess" : ["exp(-(x+10)^2)"],
-        "cap" : "0.1*exp(-0.1*(x+24)^2)+0.1*exp(-0.1*(x-24)^2)",
-        "momentum" : 10.95,
-        "iters" : 350,
-        "real" : true,
-        "step" : 10,
-        "savewfn" : true,
-        "adiabatic" : true
+        "dynamics" : {
+            "gradient" : ["0.006/cosh(0.6*x)^2", "-0.006/cosh(0.6*x)^2"],
+            "iters" : 1000,
+            "step" : 10,
+            "position" : [-10],
+            "velocity" : [0.005475],
+            "state" : 1
+        }
     }
 }

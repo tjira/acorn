@@ -5,7 +5,7 @@ int main(int argc, char** argv) {
     ip = std::filesystem::weakly_canonical(argv[0]).parent_path();
 
     // create the model system
-    ModelSystem system(1, {{"0.5*x^2"}}, {-16, 16}, 1024);
+    ModelSystem system(1, {{"0.5*x^2"}}, {"x"}, {-16, 16}, 1024);
 
     // create the adiabatic solver options with mandatory values
     ModelSolver::OptionsAdiabatic opta; opta.guess = "exp(-x^2)", opta.savewfn = true;

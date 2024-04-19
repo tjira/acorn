@@ -2,14 +2,16 @@
 
 #include "modelsystem.h"
 #include "result.h"
+#include "timer.h"
 
 class ModelSolver {
 public:
     struct OptionsAdiabatic {OptionsAdiabatic(){};
         // options structures
         struct Dynamics {
-            struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
-            int iters=100; double step=1.0;
+            int iters=100, state=0; double step=1.0;
+            std::vector<double> position, velocity;
+            std::vector<std::string> gradient;
         } dynamics={};
         struct Optimize {
             double step=1; int iters=1000;
@@ -26,8 +28,9 @@ public:
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};
         // dynamics structure
         struct Dynamics {
-            struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
-            int iters=100; double step=1.0;
+            int iters=100, state=0; double step=1.0;
+            std::vector<double> position, velocity;
+            std::vector<std::string> gradient;
         } dynamics={};
 
         // variables
@@ -43,6 +46,7 @@ public:
     Result run(const ModelSystem& system, Result res = {}, bool print = true);
 
 private:
+    template <typename T> Result runcd(const ModelSystem& system, const T& optdyn, Result res = {}, bool print = true);
     Result runnad(const ModelSystem& system, Result res = {}, bool print = true);
     Result runad(const ModelSystem& system, Result res = {}, bool print = true);
 

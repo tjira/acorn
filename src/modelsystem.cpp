@@ -1,6 +1,6 @@
 #include "modelsystem.h"
 
-ModelSystem::ModelSystem(int m, const std::vector<std::vector<std::string>>& potential, const std::vector<double> limits, int ngrid) : potential(potential), limits(limits), ngrid(ngrid), m(m) {}
+ModelSystem::ModelSystem(int m, const std::vector<std::vector<std::string>>& potential, const std::vector<std::string>& variables, const std::vector<double> limits, int ngrid) : potential(potential), limits(limits), ngrid(ngrid), m(m), variables(variables) {}
 
 void ModelSystem::SaveWavefunction(const std::filesystem::path& fname, const Vector<>& x, const std::vector<Matrix<std::complex<double>>>& wfns, const std::vector<double>& energy) {
     // open the file, write the header and set the precision

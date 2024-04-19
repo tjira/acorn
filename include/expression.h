@@ -6,11 +6,12 @@
 class Expression {
 public:
     // constructor
-    Expression(const std::string& expr) : exprstr(expr) {}
+    Expression(const std::string& expr, const std::vector<std::string>& variables) : variables(variables), exprstr(expr) {}
 
     // methods
-    double eval(double x) const; double eval(double x, double y) const; Vector<> eval(const Vector<>& x) const; Matrix<> eval(const Matrix<>& x, const Matrix<>& y) const;
+    double get(double x) const; double get(double x, double y) const; double get(const Vector<>& r) const;
+    Vector<> eval(const Vector<>& x) const; Matrix<> eval(const Matrix<>& x, const Matrix<>& y) const;
 
 private:
-    std::string exprstr;
+    std::vector<std::string> variables; std::string exprstr;
 };

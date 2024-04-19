@@ -1,0 +1,17 @@
+{
+    "model" : {
+        "potential" : [["0.5*x^2"]],
+        "variables" : ["x"],
+        "limits" : [-16, 16],
+        "ngrid" : 1024
+    },
+    "solve" : {
+        "dynamics" : {
+            "gradient" : ["x"],
+            "iters" : 1000,
+            "step" : 0.05,
+            "position" : [-5],
+            "state" : 1
+        }
+    }
+}
