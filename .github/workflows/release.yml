@@ -68,7 +68,7 @@ jobs:
         run: pip install jinja2
 
       - name: Configure Acorn
-        run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSTANDALONE=ON
+        run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug -DSTANDALONE=ON
 
       - name: Build Acorn
         run: cmake --build build --parallel 2
