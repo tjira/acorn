@@ -98,7 +98,12 @@ add_library(acorn
 )
 
 # link libraries to the acorn library
-target_link_libraries(acorn fftw3 libint2$<$<NOT:$<BOOL:${STANDALONE}>>:.a> Eigen3::Eigen $<$<CONFIG:Release>:OpenMP::OpenMP_CXX>)
+target_link_libraries(acorn fftw3 libint2$<$<NOT:$<BOOL:${STANDALONE}>>:.a> Eigen3::Eigen)
+
+# link OpenMP on build type
+if (NOT WIN32 AND CMAKE_BUILD_TYPE STREQUAL Release)
+    target_link_libraries(acorn OpenMP::OpenMP_CXX)
+endif()
 
 # add acorn executable
 add_executable(acorn_exe src/main.cpp)
