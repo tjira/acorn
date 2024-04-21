@@ -106,15 +106,14 @@ if __name__ == "__main__":
 
     # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
     if args.cisd or args.fci:
-
-        # create the mask of spin indices used to correctly zero out elements in tiled MO basis matrices and define determinant list
+        # create the mask of spin indices used to correctly zero out elements in tiled MO basis matrices
         spinind = np.arange(2 * nbf, dtype=int) % 2; spinmask = spinind.reshape(-1, 1) == spinind; dets = list()
-
-        # transform the core Hamiltonian to the MO basis, tile it for alpha/beta spins and apply spin mask
-        Hms = np.repeat(np.repeat(np.einsum("ip,ij,jq", C, H, C, optimize=True), 2, axis=0), 2, axis=1) * spinmask
 
         # tile the coefficient matrix to account for different spins
         Cms = np.block([[np.repeat(C, 2, axis=1)], [np.repeat(C, 2, axis=1)]]) * np.repeat(spinmask, nbf, axis=0)[:2 * nbf, :]
+
+        # transform the core Hamiltonian to the molecular spinorbital basis
+        Hms = np.einsum("ip,ij,jq", Cms, np.kron(np.eye(2), H), Cms, optimize=True) * spinmask
 
         # transform the coulomb integral tensor to the MS basis
         Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)

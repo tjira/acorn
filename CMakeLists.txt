@@ -29,13 +29,15 @@ set(GLFW_BUILD_DOCS OFF)
 
 # set compile flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-s -O3")
 if (WIN32)
     string(APPEND CMAKE_CXX_FLAGS_RELEASE " -static -Wa,-mbig-obj")
     string(APPEND CMAKE_CXX_FLAGS_DEBUG " -static -Wa,-mbig-obj")
     if (CMAKE_BUILD_TYPE STREQUAL Release)
         string(APPEND CMAKE_CXX_FLAGS_RELEASE " -mwindows")
     endif()
+else()
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " -mavx")
 endif()
 
 # include fetch content module
@@ -101,7 +103,7 @@ add_library(acorn
 target_link_libraries(acorn fftw3 libint2$<$<NOT:$<BOOL:${STANDALONE}>>:.a> Eigen3::Eigen)
 
 # link OpenMP on build type
-if (NOT WIN32 AND CMAKE_BUILD_TYPE STREQUAL Release)
+if (CMAKE_BUILD_TYPE STREQUAL Release)
     target_link_libraries(acorn OpenMP::OpenMP_CXX)
 endif()
 

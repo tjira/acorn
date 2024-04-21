@@ -21,17 +21,15 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--iters", help="Maximum number of iterations. (default: %(default)s)", type=int, default=1000)
     parser.add_argument("-m", "--mass", help="Mass parameter. (default: %(default)s)", type=int, default=1)
     parser.add_argument("-n", "--nstate", help="Number of states to consider. (default: %(default)s)", type=int, default=1)
+    parser.add_argument("-o", "--optimize", help="Number of iterations int initial optimization for real time propagation.", default=0, type=int)
     parser.add_argument("-p", "--points", help="Number of discretization points. (default: %(default)s)", type=int, default=128)
     parser.add_argument("-r", "--range", help="Range for the calculated wavefunction. (default: %(default)s)", nargs=2, type=float, default=[-16, 16])
     parser.add_argument("-s", "--tstep", help="Time step of the propagation. (default: %(default)s)", type=float, default=0.1)
     parser.add_argument("-t", "--threshold", help="Convergence threshold for the wavefunction. (default: %(default)s)", type=float, default=1e-12)
     parser.add_argument("-v", "--potential", help="Potential where the optimization happens and, if -e not provided, also real time propagation. (default: %(default)s)", type=str, default="0.5*x**2")
-    parser.add_argument("-e", "--excpotential", help="Excited state potential where the real time propagation happens. (default: %(default)s)", type=str)
-    parser.add_argument("-w", "--window", help="Window coefficient for the autocorrelation function. (default: %(default)s)", type=float, default=0)
-    parser.add_argument("-z", "--zeropad", help="Zero-Pad the autocorrelation function. (default: %(default)s)", type=int, default=0)
+    parser.add_argument("--spectrum", help="Potential, gaussian window coefficient and zero padding length for spectrum calculation. (default: %(default)s)", nargs=3, default=[])
 
     # add the flags
-    parser.add_argument("--optimize", help="Enable initial optimization for real time propagation.", action="store_true")
     parser.add_argument("--static", help="Make the optimization animation show only the last step.", action="store_true")
     parser.add_argument("--real", help="Perform the real time propagation.", action="store_true")
 
@@ -62,15 +60,15 @@ if __name__ == "__main__":
     # WAVEFUNCTION PROPAGATION =========================================================================================================================================================================
 
     # define R and K operators for imaginary time propagation
-    R, K = np.exp(-0.5 * V * 1), np.exp(-0.5 * sum([[k, l, m][i]**2 for i in range(dim)]) * 1 / args.mass)
+    R, K = np.exp(-0.5 * V * args.tstep), np.exp(-0.5 * sum([[k, l, m][i]**2 for i in range(dim)]) * args.tstep / args.mass)
 
     # propagate each state in imaginary time if requested
-    for i in (i for i in range(args.nstate) if not args.real or (args.real and args.optimize)):
+    for i in range(args.nstate):
         # define initial wavefunction
         psi = [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dr)]
 
         # propagate the wavefunction
-        for _ in range(1000):
+        for _ in range(args.iters if not (args.real or args.spectrum) else args.optimize):
             # apply R and K operators and append to wavefunction list
             psi.append(R * np.fft.ifftn(K * np.fft.fftn(R * psi[-1])));
 
@@ -82,32 +80,32 @@ if __name__ == "__main__":
             psi[-1] /= np.sqrt(np.sum(np.abs(psi[-1])**2) * dr)
 
         # append wavefunction to list of states and print energy
-        states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
+        states[i] = psi; print("OPTIMIZATION ENERGY ({:02d}):".format(i), energy(psi[-1]))
 
     # change the potential to the excited one if provided
-    if args.excpotential: V = eval(args.excpotential.replace("exp", "np.exp")) - energy(states[0][-1])
+    if args.spectrum: V = eval(args.spectrum[0].replace("exp", "np.exp")) - energy(states[0][-1])
 
     # define R and K operators for real time propagation
     R, K = np.exp(-0.5j * V * args.tstep), np.exp(-0.5j * sum([[k, l, m][i]**2 for i in range(dim)]) * args.tstep / args.mass)
 
     # propagate each state in real time if requested
-    for i in (i for i in range(args.nstate) if args.real):
+    for i in (i for i in range(args.nstate) if args.real or args.spectrum):
         # define initial wavefunction
-        psi = [states[i][-1]] if args.optimize else [0j + psi0 / np.sqrt(np.sum(np.abs(psi0)**2) * dr)]
+        psi = [states[i][-1]]
 
         # propagate the wavefunction
         for _ in range(args.iters): psi.append(R * np.fft.ifftn(K * np.fft.fftn(R * psi[-1])))
 
-        # append wavefunction to list of states and print energy
-        states[i] = psi; print("E_{}:".format(i), energy(psi[-1]))
+        # save the evolution
+        states[i] = psi; print("PROPAGATION ENERGY ({:02d})".format(i), energy(psi[-1]))
 
     # calculate the autocorrelation function and spectrum
-    if args.real:
+    if args.spectrum:
         # calculate the autocorrelation function and mutiply it by the window
-        G = np.exp(-args.window * np.linspace(0, args.iters * args.tstep, args.iters + 1)**2) * np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]);
+        G = np.exp(-float(args.spectrum[1]) * np.linspace(0, args.iters * args.tstep, args.iters + 1)**2) * np.array([np.sum((states[0][0]) * np.conj(psi)) * dr for psi in states[0]]);
 
         # zero-pad the autocorrelation function and calculate its Fourier transform
-        G = np.concatenate([G, np.zeros(args.zeropad)]); F = np.fft.fftshift(np.fft.hfft(G, len(G)))
+        G = np.concatenate([G, np.zeros(int(args.spectrum[2]))]); F = np.fft.fftshift(np.fft.hfft(G, len(G)))
 
         # define time and frequency arrays
         t, f = np.linspace(0, (len(G) - 1) * args.tstep, len(G)), 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(G), args.tstep))
@@ -119,7 +117,7 @@ if __name__ == "__main__":
 
     if dim == 1:
         # create the figure and definte tight layout
-        [fig, ax] = plt.subplots(1, 3 if args.real else 1, figsize=(16, 5) if args.real else (6, 5)); ax = ax if args.real else [ax]; plt.tight_layout()
+        [fig, ax] = plt.subplots(1, 3 if args.spectrum else 1, figsize=(16, 5) if args.spectrum else (6, 5)); ax = ax if args.spectrum else [ax]; plt.tight_layout()
 
         # define minimum and maximum x values for plotting
         xmin = np.min([np.min([np.min(x[np.abs(psi)**2 > 1e-8]) for psi in Si]) for Si in states])
@@ -145,8 +143,8 @@ if __name__ == "__main__":
             for i in range(len(plots)): plots[i][1].set_ydata(energy(states[i][j if j < len(states[i]) else -1]) + np.imag(states[i][j if j < len(states[i]) else -1]))
 
         # plot the spectrum and acf
-        if args.real: ax[2].plot(f, f * np.abs(F)) # type: ignore
-        if args.real: ax[1].plot(t, np.abs(G)) # type: ignore
+        if args.spectrum: ax[2].plot(f, f * np.abs(F)) # type: ignore
+        if args.spectrum: ax[1].plot(t, np.abs(G)) # type: ignore
 
     if dim == 2:
         # create the figure
@@ -166,7 +164,7 @@ if __name__ == "__main__":
             for i in range(len(plots)): plots[i].set_array(np.abs(states[i][j if j < len(states[i]) else -1]))
         
     # animate the wavefunction
-    if not args.static or args.real: ani = anm.FuncAnimation(fig, update, frames=np.max([len(state) for state in states]), interval=30) # type: ignore
+    if not args.static: ani = anm.FuncAnimation(fig, update, frames=np.max([len(state) for state in states]), interval=30) # type: ignore
 
     # set the window name
     fig.canvas.manager.set_window_title("Exact Quantum Adiabatic Dynamics Educational Toolkit") # type: ignore
