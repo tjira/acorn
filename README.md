@@ -63,8 +63,6 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ## Compilation
 
-### Linux
-
 The software requires the [libint](https://github.com/evaleev/libint) library. Before the compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
@@ -85,22 +83,6 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 ```
 
 And we can build with the following command.
-
-```bash
-cmake --build build
-```
-
-After the compilation the bin folder will be created along with the executables.
-
-### Windows
-
-On Windows, the libint library can not be generated, so the official release is used. Keep in mind that the windows version can be slightly different, because it uses different version of the library. To configure the project execute the following command.
-
-```bash
-cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSTANDALONE=ON
-```
-
-When the configuration is ready, you can compile the project.
 
 ```bash
 cmake --build build
