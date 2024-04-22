@@ -94,7 +94,7 @@ After the compilation the bin folder will be created along with the executables.
 
 ### Windows
 
-On Windows, the libint library can not be generated, so official release is used. Keep in mind that the windows version can be slightly different, because it uses different version of the library. To configure the project execute the following command.
+On Windows, the libint library can not be generated, so the official release is used. Keep in mind that the windows version can be slightly different, because it uses different version of the library. To configure the project execute the following command.
 
 ```bash
 cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSTANDALONE=ON
