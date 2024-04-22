@@ -29,13 +29,10 @@ set(GLFW_BUILD_DOCS OFF)
 
 # set compile flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_RELEASE "-s -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -Wall -Wextra")
 if (WIN32)
-    string(APPEND CMAKE_CXX_FLAGS_RELEASE " -static -Wa,-mbig-obj")
-    string(APPEND CMAKE_CXX_FLAGS_DEBUG " -static -Wa,-mbig-obj")
-    if (CMAKE_BUILD_TYPE STREQUAL Release)
-        string(APPEND CMAKE_CXX_FLAGS_RELEASE " -mwindows")
-    endif()
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " -mwindows -static -Wa,-mbig-obj")
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG " -mwindows -static -Wa,-mbig-obj")
 else()
     string(APPEND CMAKE_CXX_FLAGS_RELEASE " -mavx")
 endif()
@@ -100,12 +97,7 @@ add_library(acorn
 )
 
 # link libraries to the acorn library
-target_link_libraries(acorn fftw3 libint2$<$<NOT:$<BOOL:${STANDALONE}>>:.a> Eigen3::Eigen)
-
-# link OpenMP on build type
-if (CMAKE_BUILD_TYPE STREQUAL Release)
-    target_link_libraries(acorn OpenMP::OpenMP_CXX)
-endif()
+target_link_libraries(acorn fftw3 libint2$<$<NOT:$<BOOL:${STANDALONE}>>:.a> Eigen3::Eigen $<$<CONFIG:Release>:OpenMP::OpenMP_CXX>)
 
 # add acorn executable
 add_executable(acorn_exe src/main.cpp)
