@@ -1,6 +1,6 @@
 title: Quantum Acorn
 email: tom.jira@gmail.com
-github_username: jirat
+github_username: tjira
 
 url: "https://tjira.github.io"
 baseurl: "/acorn"
@@ -16,4 +16,8 @@ aux_links:
 
 callouts:
   note:
+    title: Note
     color: blue
+  warning:
+    title: Warning
+    color: red

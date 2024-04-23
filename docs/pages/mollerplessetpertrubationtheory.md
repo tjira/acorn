@@ -19,7 +19,7 @@ Restricted Møller–Plesset perturbation theory of 2nd order (RMP2) specificall
 Prior to computing the correlation energy, it is necessary to convert the Coulomb integral $\mathbf{J}$ into the basis of molecular orbitals (MO). This transformation is straightforward and is executed using the formula
 
 \begin{equation}
-J_{pqrs}^{MO}=C_{\mu p}C_{\nu q}J_{\mu\nu\kappa\lambda}C_{\kappa r}C_{\lambda s},
+J_{pqrs}^{MO}=C_{\mu p}C_{\nu q}J_{\mu\nu\kappa\lambda}C_{\kappa r}C_{\lambda s}
 \end{equation}
 
 where $\mathbf{C}$ represents the matrix of coefficients obtained from the Hartree–Fock method.
@@ -29,7 +29,7 @@ where $\mathbf{C}$ represents the matrix of coefficients obtained from the Hartr
 Having computed the Coulomb integral in the molecular orbital (MO) basis, the correlation energy of a closed-shell system can be determined by assessing the sum
 
 \begin{equation}
-E_{corr}^{MP2}=\sum_{iajb}\frac{J_{iajb}(2J_{iajb}-J_{ibja})}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b},
+E_{corr}^{MP2}=\sum_{iajb}\frac{J_{iajb}^{MO}(2J_{iajb}^{MO}-J_{ibja}^{MO})}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b}
 \end{equation}
 
 where indices $i$ and $j$ refer to occupied spatial orbitals, and $a$ and $b$ refer to unoccupied spatial orbitals. The vector $\varepsilon$ encompasses orbital energies, obtained through the solution of the Roothaan equations.

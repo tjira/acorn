@@ -19,7 +19,7 @@ The restricted version of the Hartree-Fock method (RHF) introduces a constraint 
 Let's begin by defining the core Hamiltonian, also known as the one-electron Hamiltonian. The core Hamiltonian represents a part of the full Hamiltonian that excludes electron-electron repulsion. In index notation, it is expressed as 
 
 \begin{equation}
-H_{\mu\nu}^{core}=T_{\mu\nu}+V_{\mu\nu},
+H_{\mu\nu}^{core}=T_{\mu\nu}+V_{\mu\nu}
 \end{equation}
 
 where $\mu$ and $\nu$ are indices of atomic orbitals, $T_{\mu\nu}$ is a kinetic energy matrix element and $V_{\mu\nu}$ is a potential energy matrix element. These matrix elements, given in bra-ket notation as 
@@ -29,7 +29,7 @@ T_{\mu\nu}&=\braket{\phi_{\mu}|\hat{T}|\phi_{\nu}} \\\\\
 V_{\mu\nu}&=\braket{\phi_{\mu}|\hat{V}|\phi_{\nu}}
 \end{align}
 
-are calculated using a basis set and handled by libint library. Additionally, the overlap matrix elements
+are calculated using a basis set and handled by the libint library. Additionally, the overlap matrix elements
 
 \begin{equation}
 S_{\mu\nu}=\braket{\phi_{\mu}|\phi_{\nu}}
@@ -44,7 +44,7 @@ J_{\mu\nu\kappa\lambda}=\braket{\phi_{\mu}\phi_{\mu}|\hat{J}|\phi_{\kappa}\phi_{
 play crucial roles. The Hartree-Fock method revolves around solving the Roothaan equations
 
 \begin{equation}
-\mathbf{FC}=\mathbf{SC\varepsilon},
+\mathbf{FC}=\mathbf{SC\varepsilon}
 \end{equation}
 
 where $\mathbf{F}$ is the Fock matrix, $\mathbf{C}$ is a matrix of orbital coefficients and $\mathbf{\varepsilon}$ represents orbital energies. The problem is that the Fock matrix in the form
@@ -62,13 +62,13 @@ D_{\mu\nu}=2C_{\mu i}C_{\nu i}
 and the total energy of the system
 
 \begin{equation}
-E=\frac{1}{2}D_{\mu\nu}(H_{\mu\nu}^{core}+F_{\mu\nu})+E_{nuc},
+E=\frac{1}{2}D_{\mu\nu}(H_{\mu\nu}^{core}+F_{\mu\nu})+E_{nuc}
 \end{equation}
 
 are then calculated using the core Hamiltonian and the Fock matrix. The nuclear repulsion energy
 
 \begin{equation}
-E_{nuc}=\sum_{A}\sum_{B<A}\frac{Z_{A}Z_{B}}{R_{AB}}.
+E_{nuc}=\sum_{A}\sum_{B<A}\frac{Z_{A}Z_{B}}{R_{AB}}
 \end{equation}
 
 is precomputed before the SCF iterations. The SCF procedure continues iteratively until a convergence criterion, often based on the difference in energy between consecutive iterations or the Frobenius norm of the density matrix, is met.
@@ -78,13 +78,13 @@ is precomputed before the SCF iterations. The SCF procedure continues iterativel
 If we perform the calculation as described above and get the density matrix $\mathbf{D}$ we can evaluate the nuclear energy gradient as
 
 \begin{equation}
-\frac{\partial E}{\partial X_{A,1}}=D_{\mu\nu}\frac{\partial H_{\mu\nu}^{core}}{\partial X_{A,1}}+2D_{\mu\nu}D_{\kappa\lambda}\frac{\partial J_{\mu\nu\kappa\lambda}}{\partial X_{A,1}}-2W_{\mu\nu}\frac{\partial S_{\mu\nu}}{\partial X_{A,1}},
+\frac{\partial E}{\partial X_{A,1}}=D_{\mu\nu}\frac{\partial H_{\mu\nu}^{core}}{\partial X_{A,1}}+2D_{\mu\nu}D_{\kappa\lambda}\frac{\partial J_{\mu\nu\kappa\lambda}}{\partial X_{A,1}}-2W_{\mu\nu}\frac{\partial S_{\mu\nu}}{\partial X_{A,1}}
 \end{equation}
 
 where $\mathbf{W}$ is energy weighed density matrix defined as
 
 \begin{equation}
-W_{\mu\nu}=2C_{\mu i}C_{\nu i}\varepsilon_i.
+W_{\mu\nu}=2C_{\mu i}C_{\nu i}\varepsilon_i
 \end{equation}
 
 ## Unrestricted Hartree–Fock Method
@@ -103,7 +103,7 @@ F_{\mu\nu}^{\beta}=H_{\mu\nu}^{core}+\frac{1}{2}D_{\kappa\lambda}^{\alpha}J_{\mu
 are formed similarly to the restricted version, with a small distinction. It is crucial to handle matrix slicing with care, ensuring that the number of columns in these matrices matches the number of corresponding electrons. Using these density matrices, we solve two distinct Fock equations, acquiring expansion coefficients and orbital energies before updating the density matrices. The total electron energy is computed as
 
 \begin{equation}
-E=\frac{1}{4}D_{\mu\nu}^{\alpha}(H_{\mu\nu}^{core}+F_{\mu\nu}^{\alpha})+\frac{1}{4}D_{\mu\nu}^{\beta}(H_{\mu\nu}^{core}+F_{\mu\nu}^{\beta})+E_{nuc}.
+E=\frac{1}{4}D_{\mu\nu}^{\alpha}(H_{\mu\nu}^{core}+F_{\mu\nu}^{\alpha})+\frac{1}{4}D_{\mu\nu}^{\beta}(H_{\mu\nu}^{core}+F_{\mu\nu}^{\beta})+E_{nuc}
 \end{equation}
 
 This formulation maintains the same nuclear energy term as in the restricted version.

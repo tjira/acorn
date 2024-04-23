@@ -102,18 +102,22 @@ if __name__ == "__main__":
             E_MP2 += Jmo[i, a, j, b] * (2 * Jmo[i, a, j, b] - Jmo[i, b, j, a]) / (eps[i] + eps[j] - eps[a] - eps[b]);
 
         # print the results
-        print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("mp2/{}".format(args.psi))) if args.psi else "")) # type: ignore
+        print("RMP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("mp2/{}".format(args.psi))) if args.psi else "")) # type: ignore
 
     # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
     if args.cisd or args.fci:
-        # create the mask of spin indices used to correctly zero out elements in tiled MO basis matrices
-        spinind = np.arange(2 * nbf, dtype=int) % 2; spinmask = spinind.reshape(-1, 1) == spinind; dets = list()
+        # define the tiling matrix for the MO coefficients
+        P = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T
 
-        # tile the coefficient matrix to account for different spins
-        Cms = np.block([[np.repeat(C, 2, axis=1)], [np.repeat(C, 2, axis=1)]]) * np.repeat(spinmask, nbf, axis=0)[:2 * nbf, :]
+        # define the spin masks
+        M = np.repeat([1 - np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
+        N = np.repeat([np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
+
+        # tile the coefficient matrix and apply the spin mask
+        Cms = np.block([[C @ P], [C @ P]]) * np.block([[M], [N]])
 
         # transform the core Hamiltonian to the molecular spinorbital basis
-        Hms = np.einsum("ip,ij,jq", Cms, np.kron(np.eye(2), H), Cms, optimize=True) * spinmask
+        Hms = np.einsum("ip,ij,jq", Cms, np.kron(np.eye(2), H), Cms, optimize=True)
 
         # transform the coulomb integral tensor to the MS basis
         Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)
@@ -126,6 +130,9 @@ if __name__ == "__main__":
             for i, j in it.product(range(len(ground)), range(len(ground), nbf)):
                 for k, l in it.product(range(i + 1, len(ground)), range(j + 1, nbf)):
                     yield np.array(ground[:i] + [j] + ground[i + 1:k] + [l] + ground[k + 1:])
+
+        # define the determinant list
+        dets = list()
 
         # generate all possible determinants for CISD
         if args.cisd:
@@ -177,7 +184,7 @@ if __name__ == "__main__":
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 
         # get the name of the method
-        method = "CISD" if args.cisd else "FCI"
+        method = "RCISD" if args.cisd else "RFCI"
 
         # print the results
         print("{} ENERGY: {:.8f}".format(method, E_HF + E_FCI + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("{}/{}".format(method.lower(), args.psi))) if args.psi else "")) # type: ignore
