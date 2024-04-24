@@ -1,5 +1,7 @@
 # TODO List
 
+- [ ] Split the model solver types into different objects in inputs
+- [ ] Make the method field for BAGEL actually work
 - [x] Add BAGEL interface with excited state dynamics
 - [x] Add Hermitian FFT for spectra calculation
 - [x] Add Mulliken analysis

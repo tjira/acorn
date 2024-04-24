@@ -5,6 +5,8 @@
     },
     "rhf" : {},
     "rci" : {
-        "excitations" : [2]
+        "excitations" : [2],
+        "nstate" : 3,
+        "state" : 1
     }
 }

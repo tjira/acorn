@@ -6,6 +6,8 @@
     "rhf" : {},
     "rci" : {
         "excitations" : [1, 2],
+        "nstate" : 3,
+        "state" : 1,
         "dynamics" : {
             "iters" : 100,
             "step" : 20,

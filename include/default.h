@@ -3,7 +3,6 @@
 #include <string>
 
 inline std::string rcioptstr = R"({
-    "excitations" : [], "nstate" : 3, "state" : 1,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false, "hamiltonian" : false, "energies" : false},
     "print" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false, "hamiltonian" : false, "energies" : true}
@@ -15,7 +14,6 @@ inline std::string intoptstr = R"({
 })";
 
 inline std::string mdloptstr = R"({
-    "mass" : 1, "ngrid" : 512, "limits" : [-16, 16], "variables" : ["x"]
 })";
 
 inline std::string moloptstr = R"({
@@ -35,7 +33,6 @@ inline std::string msnoptstr = R"({
 })";
 
 inline std::string rmpoptstr = R"({
-    "order" : 2,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coulombmo" : false},
     "print" : {"coulombmo" : false}
@@ -55,19 +52,10 @@ inline std::string uhfoptstr = R"({
     "print" : {"coefa" : false, "coefb" : false, "densitya" : false, "densityb" : false, "orbena" : false, "orbenb" : false, "hcore" : false}
 })";
 
-inline std::string umpoptstr = R"({
-    "order" : 2,
-    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
-    "export" : {"coulombmo" : false},
-    "print" : {"coulombmo" : false}
-})";
-
 inline std::string bgloptstr = R"({
-    "interface" : "bagel.sh", "nstate" : 3, "state" : 1,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";
 
 inline std::string orcoptstr = R"({
-    "interface" : "orca.sh",
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";

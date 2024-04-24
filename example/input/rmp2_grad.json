@@ -5,6 +5,7 @@
     },
     "rhf" : {},
     "rmp" : {
+        "order" : 2,
         "gradient" : {
             "step" : 1e-5
         }

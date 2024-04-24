@@ -3,12 +3,15 @@
         "potential" : [["0.5*x^2"]],
         "variables" : ["x"],
         "limits" : [-16, 16],
-        "ngrid" : 1024
+        "ngrid" : 1024,
+        "mass" : 1
     },
     "solve" : {
-        "guess" : "exp(-(x-1)^2)",
         "real" : false,
         "nstate" : 3,
+        "guess" : "exp(-(x-1)^2)",
+        "step" : 0.1,
+        "iters" : 1000,
         "savewfn" : true
     }
 }

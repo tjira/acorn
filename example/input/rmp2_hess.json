@@ -5,6 +5,7 @@
     },
     "rhf" : {},
     "rmp" : {
+        "order" : 2,
         "hessian" : {
             "step" : 1e-5
         }

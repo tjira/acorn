@@ -6,6 +6,8 @@
     "rhf" : {},
     "rci" : {
         "excitations" : [1],
+        "nstate" : 3,
+        "state" : 1,
         "gradient" : {
             "step" : 1e-5
         }

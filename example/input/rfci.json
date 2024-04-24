@@ -4,5 +4,9 @@
         "basis" : "sto-3g"
     },
     "rhf" : {},
-    "rci" : {}
+    "rci" : {
+        "excitations" : [],
+        "nstate" : 3,
+        "state" : 1
+    }
 }

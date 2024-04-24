@@ -4,5 +4,7 @@
         "basis" : "sto-3g"
     },
     "rhf" : {},
-    "rmp" : {}
+    "rmp" : {
+        "order" : 2
+    }
 }

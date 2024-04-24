@@ -5,6 +5,7 @@
     },
     "rhf" : {},
     "rmp" : {
+        "order" : 2,
         "dynamics" : {
             "iters" : 100,
             "step" : 20,

@@ -5,12 +5,12 @@
     },
     "bagel" : {
         "interface" : "../../interface/bagel-gradient.sh",
+        "method" : "CASSCF(4, 2)",
+        "nstate" : 3,
+        "state" : 2,
         "dynamics" : {
             "iters" : 100,
             "step" : 20
-        },
-        "method" : "CASSCF(4, 2)",
-        "nstate" : 3,
-        "state" : 2
+        }
     }
 }
