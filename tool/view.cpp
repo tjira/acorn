@@ -54,7 +54,7 @@ private:
 class Mesh {
 public:
     // mesh constructor
-    Mesh(std::vector<Vertex> data) : model(1.0f), buffer(data) {};
+    Mesh(std::vector<Vertex> data) : buffer(data), model(1.0f) {};
 
     // static constructors
     static std::vector<std::vector<Mesh>> Wavefunctions(const std::string& path);
@@ -92,7 +92,7 @@ std::vector<Mesh> Mesh::Matrix(const std::string& path, int dim) {
 
         while (stream >> xyz.at(dim)) {
             // push the mesh data
-            if (data.size() <= i) {data.push_back({});}
+            if (data.size() <= (size_t)i) {data.push_back({});}
 
             // push the current point and increase index
             for (int j = 0; j < 2; j++) {data.at(i).push_back({{xyz.at(0), xyz.at(2), xyz.at(1)}});} i++;
@@ -142,7 +142,7 @@ std::vector<std::vector<Mesh>> Mesh::Wavefunctions(const std::string& path) {
 
     // fill the mesh vector and return
     for (const auto& time : data) {std::vector<Mesh> meshes;
-        for (const auto& set : time) meshes.emplace_back(set); mesh.push_back(meshes);
+        for (const auto& set : time) {meshes.emplace_back(set);} mesh.push_back(meshes);
     } return mesh;
 }
 
