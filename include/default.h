@@ -21,15 +21,15 @@ inline std::string moloptstr = R"({
 })";
 
 inline std::string msaoptstr = R"({
-    "real" : false, "step" : 0.1, "guess" : "-x^2", "nstate" : 1, "iters" : 1000, "savewfn" : false,
     "optimize" : {"step" : 1, "iters" : 1000},
-    "spectrum" : {"normalize" : false, "zpesub" : false, "potential" : "", "window" : "1", "zeropad" : 0},
-    "dynamics" : {"iters" : 100, "step" : 20, "state" : 1, "position" : [0], "velocity" : [0], "gradient" : []}
+    "spectrum" : {"normalize" : false, "zpesub" : false, "potential" : "", "window" : "1", "zeropad" : 0}
+})";
+
+inline std::string msdoptstr = R"({
+    "trajs" : 1
 })";
 
 inline std::string msnoptstr = R"({
-    "step" : 0.1, "guess" : ["-x^2"], "iters" : 1000, "savewfn" : false, "cap" : "0", "momentum" : 0, "adiabatic" : true,
-    "dynamics" : {"iters" : 100, "step" : 20, "state" : 1, "position" : [0], "velocity" : [0], "gradient" : []}
 })";
 
 inline std::string rmpoptstr = R"({
@@ -53,9 +53,9 @@ inline std::string uhfoptstr = R"({
 })";
 
 inline std::string bgloptstr = R"({
-    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
+    "dynamics" : {"berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";
 
 inline std::string orcoptstr = R"({
-    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
+    "dynamics" : {"berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
 })";

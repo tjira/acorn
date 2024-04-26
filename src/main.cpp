@@ -56,13 +56,12 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, berends
 // option structures loaders for model methods
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Optimize, step, iters);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential, window, normalize, zpesub, zeropad);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic::Dynamics, iters, step, state, position, gradient, velocity);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Dynamics, iters, step, state, position, gradient, velocity);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsDynamics, iters, step, state, position, gradient, velocity, seed, trajs);
 
 // option loaders
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, dynamics, real, step, iters, nstate, optimize, guess, savewfn, spectrum);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian, excitations, nstate, state);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, dynamics, step, iters, guess, savewfn, cap, momentum, adiabatic);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, real, step, iters, nstate, optimize, guess, savewfn, spectrum);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, step, iters, guess, savewfn, cap, momentum, adiabatic);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UnrestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedHartreeFock::Options, dynamics, gradient, hessian, maxiter, thresh);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedMollerPlesset::Options, dynamics, gradient, hessian, order);
@@ -114,6 +113,7 @@ int main(int argc, char** argv) {
     auto mdlopt = nlohmann::json::parse(mdloptstr);
     auto molopt = nlohmann::json::parse(moloptstr);
     auto msaopt = nlohmann::json::parse(msaoptstr);
+    auto msdopt = nlohmann::json::parse(msdoptstr);
     auto msnopt = nlohmann::json::parse(msnoptstr);
     auto orcopt = nlohmann::json::parse(orcoptstr);
     auto bglopt = nlohmann::json::parse(bgloptstr);
@@ -125,6 +125,7 @@ int main(int argc, char** argv) {
     // patch the input json file and apply defaults
     if (input.contains("integral")) intopt.merge_patch(input.at("integral")), fullinput["integral"] = intopt;
     if (input.contains("molecule")) molopt.merge_patch(input.at("molecule")), fullinput["molecule"] = molopt;
+    if (input.contains("dynamics")) msdopt.merge_patch(input.at("dynamics")), fullinput["dynamics"] = msdopt;
     if (input.contains("bagel")) bglopt.merge_patch(input.at("bagel")), fullinput["bagel"] = bglopt;
     if (input.contains("model")) mdlopt.merge_patch(input.at("model")), fullinput["model"] = mdlopt;
     if (input.contains("orca")) orcopt.merge_patch(input.at("orca")), fullinput["orca"] = orcopt;
@@ -424,11 +425,8 @@ int main(int argc, char** argv) {
         ModelSystem model(mdlopt.at("mass"), mdlopt.at("potential"), mdlopt.at("variables"), mdlopt.at("limits"), mdlopt.at("ngrid"));
 
         if (input.contains("solve")) {Printer::Title("EXACT QUANTUM DYNAMICS");
-            // create the adiabatic solver object
-            ModelSolver msv(msaopt.get<ModelSolver::OptionsAdiabatic>());
-
             // if nonadiabatic model was specified assign to the solver the nonadiabatic version
-            if (mdlopt.at("potential").size() > 1) msv = ModelSolver(msnopt.get<ModelSolver::OptionsNonadiabatic>());
+            ModelSolver msv = mdlopt.at("potential").size() == 1 ? ModelSolver(msaopt.get<ModelSolver::OptionsAdiabatic>()) : ModelSolver(msnopt.get<ModelSolver::OptionsNonadiabatic>());
 
             // run the optimization if requested
             if (mdlopt.at("potential").size() == 1 && input.at("solve").contains("optimize")) {
@@ -462,10 +460,29 @@ int main(int argc, char** argv) {
             // save the spectral analysis results if available
             if (res.msv.spectra.size()) {
                 for (size_t i = 0; i < res.msv.spectra.size(); i++) {
-                    Matrix<> A(res.msv.t.size(), 3); A << res.msv.t, res.msv.acfs.at(i).real(), res.msv.acfs.at(i).imag(); EigenWrite(std::filesystem::path(ip) / ("acf" + std::to_string(i) + ".mat"), A);
-                    Matrix<> F(res.msv.f.size(), 2); F << res.msv.f, res.msv.spectra.at(i).cwiseAbs(); EigenWrite(std::filesystem::path(ip) / ("spectrum" + std::to_string(i) + ".mat"), F);
+                    Matrix<> A(res.msv.t.size(), 3); A << res.msv.t, res.msv.acfs.at(i).real(), res.msv.acfs.at(i).imag(); EigenWrite(std::filesystem::path(ip) / ("acf" + std::to_string(i + 1) + ".mat"), A);
+                    Matrix<> F(res.msv.f.size(), 2); F << res.msv.f, res.msv.spectra.at(i).cwiseAbs(); EigenWrite(std::filesystem::path(ip) / ("spectrum" + std::to_string(i + 1) + ".mat"), F);
                 }
             }
+        } else if (input.contains("dynamics")) {Printer::Title("MODEL CLASSICAL DYNAMICS");
+            // create the classical solver object
+            ModelSolver msv(msdopt.get<ModelSolver::OptionsDynamics>());
+
+            // run the calculation
+            res = msv.run(model, res);
+
+            // extract and save the potential points
+            if (model.vars().size() == 2) {
+                Matrix<> U(res.msv.r.size() * res.msv.r.size(), res.msv.U.cols() + 2);
+                for (int i = 0; i < res.msv.r.size(); i++) {
+                    for (int j = 0; j < res.msv.r.size(); j++) {
+                        U(i * res.msv.r.size() + j, 0) = res.msv.r(i), U(i * res.msv.r.size() + j, 1) = res.msv.r(j);
+                        for (int k = 0; k < res.msv.U.cols(); k++) {
+                            U(i * res.msv.r.size() + j, k + 2) = res.msv.U(i * res.msv.r.size() + j, k);
+                        }
+                    }
+                } EigenWrite(std::filesystem::path(ip) / "U.mat", U);
+            } else {Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(std::filesystem::path(ip) / "U.mat", U);}
         }
     }
 

@@ -46,7 +46,7 @@ where $\otimes_K$ stands for the Kronecker product. Similarly, the transformatio
 J_{pqrs}^{MS}=C_{\mu p}C_{\nu q}(\mathbf{I}\_{2}\otimes_K(\mathbf{I}\_{2}\otimes_K\mathbf{J})^{(4,3,2,1)})\_{\mu\nu\kappa\lambda}C_{\kappa r}C_{\lambda s}
 \end{equation}
 
-This notation accounts for the spin modifications and ensures that the transformations adhere to quantum mechanical principles.
+where the superscript $(4,3,2,1)$ denotes the axes transposition. This notation accounts for the spin modifications and ensures that the transformations adhere to quantum mechanical principles.
 
 ### The Determinants Generation
 

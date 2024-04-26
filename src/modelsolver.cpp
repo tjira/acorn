@@ -10,7 +10,7 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) {
 
 Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
     // run the classical dynamics if requested
-    if (!opta.dynamics.gradient.empty()) return runcd(system, opta.dynamics, res, print);
+    if (!optd.gradient.empty()) return runcd(system, res, print);
 
     // define the real and Fourier space along with time and frequency domains
     res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(opta.iters + 1), res.msv.f = Vector<>(opta.iters + opta.spectrum.zeropad + 1);
@@ -165,8 +165,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
         }
 
         // save the state wavefunction
-        if (opta.savewfn && system.vars().size() == 2) ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i) + ".dat"), x.col(0), y.row(0), wfns, energies);
-        if (opta.savewfn && system.vars().size() == 1) ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i) + ".dat"), x, wfns, energies);
+        if (opta.savewfn && system.vars().size() == 2) ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i + 1) + ".dat"), x.col(0), y.row(0), wfns, energies);
+        if (opta.savewfn && system.vars().size() == 1) ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i + 1) + ".dat"), x, wfns, energies);
     }
 
     // print the newline
@@ -178,7 +178,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) {
 
 Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     // run the classical dynamics if requested
-    if (!optn.dynamics.gradient.empty()) return runcd(system, optn.dynamics, res, print);
+    if (!optd.gradient.empty()) return runcd(system, res, print);
 
     // define the containers for energies, wfns, transforms, density matrices and coordinates and initialize wfn
     std::vector<double> energies; Matrix<std::complex<double>> psi(system.ngrid, 2); std::vector<Matrix<std::complex<double>>> psis;
@@ -196,7 +196,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
 
     // fill in the initial wavefunction and normalize it
     for (size_t i = 0; i < optn.guess.size(); i++) {
-        psi.block(0, i, system.ngrid, 1) = (Expression(optn.guess.at(i), system.vars()).eval(res.msv.r).array() * (I * optn.momentum * res.msv.r.array()).exp());
+        psi.block(0, i, system.ngrid, 1) = (Expression(optn.guess.at(i), system.vars()).eval(res.msv.r).array() * (I * optn.momentum * (res.msv.r.array() + 10)).exp());
     } psi.block(0, 0, system.ngrid, 1).array() /= std::sqrt(psi.block(0, 0, system.ngrid, 1).array().abs2().sum() * dr);
 
     // create the potential
@@ -330,7 +330,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
         std::vector<Matrix<std::complex<double>>> state; for (auto psi : psis) state.push_back(psi.col(i));
 
         // save the wavefunction
-        ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i) + ".dat"), res.msv.r, state, energies);
+        ModelSystem::SaveWavefunction(ip / ("state" + std::to_string(i + 1) + ".dat"), res.msv.r, state, energies);
     }
 
     // print the newline
@@ -340,13 +340,14 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
     return res;
 }
 
-template <typename T>
-Result ModelSolver::runcd(const ModelSystem& system, const T& optdyn, Result res, bool print) {
+Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
     // print the header
-    if (print) std::printf(" ITER  TIME [fs] STATE    POT [Eh]       KIN [Eh]        E [Eh]      |GRAD|      TIME\n");
+    if (print) std::printf(" TRAJ   ITER  TIME [fs] STATE PROB    POT [Eh]       KIN [Eh]        E [Eh]      |GRAD|      TIME\n");
 
-    // define energy and gradient functions
-    std::vector<Expression> energy, grad;
+    // define energy, gradient and coupling functions and define the array of state populations
+    std::vector<Expression> energy, coupling, grad; std::vector<Vector<int>> states;
+
+    // fill the real space coordinates
     res.msv.r = Vector<>(system.ngrid), res.msv.U = Matrix<>(system.ngrid, system.potential.size());
 
     // fill the real space
@@ -357,50 +358,88 @@ Result ModelSolver::runcd(const ModelSystem& system, const T& optdyn, Result res
     // fill the gradient and energy expressions
     for (size_t i = 0; i < system.potential.size(); i++) {
         energy.push_back(Expression(system.potential.at(i).at(i), system.vars()));
-        grad.push_back(Expression(optdyn.gradient.at(i), system.vars()));
+        grad.push_back(Expression(optd.gradient.at(i), system.vars()));
         res.msv.U.col(i) = energy.at(i).eval(res.msv.r);
     }
-    
-    // define the initial conditions
-    Matrix<> r(optdyn.iters + 1, system.vars().size()); Vector<> v(system.vars().size()), a(system.vars().size()), m(system.vars().size()); Vector<int> state(optdyn.iters + 1); m.fill(system.mass());
 
-    // start the timer, fill the initial conditions
-    auto start = Timer::Now(); r.row(0) = Eigen::Map<const Vector<>>(optdyn.position.data(), optdyn.position.size()), a.fill(0); state(0) = optdyn.state - 1;
-
-    // fill the initial velocity
-    v = Eigen::Map<const Vector<>>(optdyn.velocity.data(), optdyn.velocity.size());
-
-    // calculate the force
-    Vector<> F = -grad.at(state(0)).eval(r.row(0)); double Epot = energy.at(state(0)).get(r.row(0)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
-
-    // print the zeroth iteration
-    if (print) std::printf("%6d %9.4f %5d %14.8f %14.8f %14.8f %.2e %s\n", 0, 0.0, state(0) + 1, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
-
-    for (int i = 0; i < optdyn.iters; i++) {
-        // start the timer and store the previous v and a
-        start = Timer::Now(); Vector<> vp = v, ap = a;
-
-        // calculate the velocity and accceleration
-        a = F.array() / m.array(); v = vp + 0.5 * (ap + a) * optdyn.step;
-
-        // move the system
-        r.row(i + 1) = r.row(i) + optdyn.step * (v + 0.5 * a * optdyn.step);
-
-        // fill the state
-        state(i + 1) = state(i);
-
-        // calculate the potential and kinetic energy
-        double Epot = energy.at(state(i + 1)).get(r.row(i + 1)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
-
-        // calculate the force
-        F = -grad.at(state(i + 1)).eval(r.row(i + 1));
-
-        // print the iteration
-        if (print) std::printf("%6d %9.4f %5d %14.8f %14.8f %14.8f %.2e %s\n", i + 1, AU2FS * optdyn.step * (i + 1), state(i + 1) + 1, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+    // fill the coupling expressions
+    for (size_t i = 0; i < system.potential.size(); i++) {
+        for (size_t j = 0; j < system.potential.size(); j++) {
+            if (i != j) coupling.push_back(Expression(system.potential.at(i).at(j), system.vars()));
+        }
     }
 
-    // save the matrix of states and coordinates
-    Matrix<> SR(r.rows(), r.cols() + 1); SR << (state.array() + 1).cast<double>(), r; EigenWrite(ip / "trajectory.mat", SR);
+    for (int i = 0; i < optd.trajs; i++) {
+        // random number generator
+        std::mt19937 mt(optd.seed + i); std::uniform_real_distribution<double> dist(0, 1);
+    
+        // define and fill the initial conditions
+        Matrix<> r(optd.iters + 1, system.vars().size()); Vector<> v(system.vars().size()), a(system.vars().size()), m(system.vars().size()); m.fill(system.mass());
+        r.row(0) = Eigen::Map<const Vector<>>(optd.position.data(), r.cols()), v = Eigen::Map<const Vector<>>(optd.velocity.data(), r.cols()), a.fill(0);
+
+        r.row(0)(0) = r.row(0)(0) + dist(mt) * 2 - 1;
+
+        // define the initial state, state container and start the timer
+        Vector<int> state(optd.iters + 1); state(0) = optd.state - 1; auto start = Timer::Now();
+
+        // calculate the force and potential with kinetic energy
+        Vector<> F = -grad.at(state(0)).eval(r.row(0)); double Epot = energy.at(state(0)).get(r.row(0)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
+
+        // define the energy difference container and fill the zeroth iteration
+        std::vector<double> Ediff; Ediff.push_back(energy.at(1).get(r.row(0)) - energy.at(0).get(r.row(0)));
+
+        // print the zeroth iteration
+        if (print) std::printf("%6d %6d %9.4f %5d %1.2f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, 0, 0.0, state(0) + 1, 0.0, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+
+        for (int j = 0; j < optd.iters; j++) {
+            // start the timer and store the previous v and a
+            start = Timer::Now(); Vector<> vp = v, ap = a;
+
+            // calculate the velocity and accceleration
+            a = F.array() / m.array(); v = vp + 0.5 * (ap + a) * optd.step;
+
+            // move the system
+            r.row(j + 1) = r.row(j) + optd.step * (v + 0.5 * a * optd.step);
+
+            // fill the state
+            state(j + 1) = state(j);
+
+            // calculate the potential and kinetic energy
+            double Epot = energy.at(state(j + 1)).get(r.row(j + 1)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
+
+            // append the energy and calculate the derivative of the energy difference
+            Ediff.push_back(energy.at(1).get(r.row(j + 1)) - energy.at(0).get(r.row(j + 1))); double dE = (Ediff.at(j + 1) - Ediff.at(j)) / optd.step;
+
+            // calculate the probability of state change
+            double gamma = std::pow(coupling.at(0).get(r.row(j + 1)), 2) / std::abs(dE); double P = 1 - std::exp(-2 * M_PI * (std::isnan(gamma) ? 0 : gamma));
+
+            // change the state if the jump is accepted
+            if (dist(mt) < P) state(j + 1) = state(j + 1) == 1 ? 0 : 1;
+
+            // calculate the force
+            F = -grad.at(state(j + 1)).eval(r.row(j + 1));
+
+            // print the iteration
+            if (print) std::printf("%6d %6d %9.4f %5d %1.2f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, j + 1, AU2FS * optd.step * (j + 1), state(j + 1) + 1, P, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+        }
+
+        // save the states and define the density diagonal
+        states.push_back(state);
+
+        // save the matrix of states and coordinates
+        Matrix<> SR(r.rows(), r.cols() + 1); SR << (state.array() + 1).cast<double>(), r; EigenWrite(ip / ("trajectory" + std::to_string(i + 1) + ".mat"), SR);
+    }
+
+    // define the density matrix diagonal array
+    Matrix<> rho = Matrix<>(optd.iters + 1, system.potential.size() + 1);
+
+    // fill the density matrix diagonal
+    for (int j = 0; j < optd.iters + 1; j++) {
+        for (const auto& state : states) {
+            rho(j, 1) += state(j) == 0 ? 1.0 / states.size() : 0;
+        } rho(j, 0) = j * optd.step, rho(j, 2) = 1 - rho(j, 1);
+    } EigenWrite(ip / ("rho.mat"), rho);
+
 
     // print the newline
     if (print) std::printf("\n");

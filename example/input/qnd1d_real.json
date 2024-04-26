@@ -14,7 +14,6 @@
         "cap" : "0.1*exp(-0.1*(x+24)^2)+0.1*exp(-0.1*(x-24)^2)",
         "momentum" : 10.95,
         "iters" : 350,
-        "real" : true,
         "step" : 10,
         "savewfn" : true,
         "adiabatic" : true
