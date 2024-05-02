@@ -35,8 +35,9 @@ if (WIN32)
     string(APPEND CMAKE_CXX_FLAGS_DEBUG " -mwindows -static -Wa,-mbig-obj")
 endif()
 
-# include fetch content module
+# includes and testing
 include(FetchContent)
+enable_testing()
 
 # declare libraries
 FetchContent_Declare(libint SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz)
@@ -50,14 +51,10 @@ FetchContent_Declare(glm SYSTEM GIT_REPOSITORY https://github.com/g-truc/glm.git
 FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www.fftw.org/fftw-3.3.10.tar.gz)
 
 # fetch the libraries
-FetchContent_MakeAvailable(argparse exprtk glad glfw glm fftw json)
+FetchContent_MakeAvailable(argparse exprtk fftw json)
 if (STANDALONE)
     FetchContent_MakeAvailable(eigen libint)
 endif()
-
-# generate glad library
-add_subdirectory(${glad_SOURCE_DIR}/cmake)
-glad_add_library(glad API gl:core=4.2)
 
 # include directories
 include_directories(include ${CMAKE_BINARY_DIR}/include ${exprtk_SOURCE_DIR} ${fftw_SOURCE_DIR}/api ${argparse_SOURCE_DIR}/include ${json_SOURCE_DIR}/include)
@@ -103,18 +100,24 @@ target_compile_definitions(acorn PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 # set the executable name
 set_target_properties(acorn_exe PROPERTIES OUTPUT_NAME "acorn")
 
-# add tools
-add_executable(acorn_centerxyz tool/centerxyz.cpp)
-add_executable(acorn_makemov tool/makemov.cpp)
-add_executable(acorn_view tool/view.cpp)
+if (BUILD_TOOLS)
+    # fetch the libraries for tools
+    FetchContent_MakeAvailable(glad glfw glm)
 
-# link the tools
-target_link_libraries(acorn_view glad glfw glm)
+    # generate glad library
+    add_subdirectory(${glad_SOURCE_DIR}/cmake)
+    glad_add_library(glad API gl:core=4.2)
+
+    # add tools
+    add_executable(acorn_centerxyz tool/centerxyz.cpp)
+    add_executable(acorn_makemov tool/makemov.cpp)
+    add_executable(acorn_view tool/view.cpp)
+
+    # link the tools
+    target_link_libraries(acorn_view glad glfw glm)
+endif()
 
 # TESTING ==========================================================================================
-
-# enable testing
-enable_testing()
 
 if (BUILD_TESTING)
     # add test executables
