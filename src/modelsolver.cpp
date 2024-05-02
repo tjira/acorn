@@ -369,16 +369,20 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
         }
     }
 
+    #if defined(_OPENMP)
+    #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < optd.trajs; i++) {
-        // random number generator
-        std::mt19937 mt(optd.seed + i); std::uniform_real_distribution<double> dist(0, 1); std::normal_distribution<double> norm(0, 1);
+        // random number generators
+        std::mt19937 mt(optd.seed + i); std::uniform_real_distribution<double> dist(0, 1);
     
-        // define and fill the initial conditions
-        Matrix<> r(optd.iters + 1, system.vars().size()); Vector<> v(system.vars().size()), a(system.vars().size()), m(system.vars().size()); m.fill(system.mass());
-        r.row(0) = Eigen::Map<const Vector<>>(optd.position.data(), r.cols()), v = Eigen::Map<const Vector<>>(optd.velocity.data(), r.cols()), a.fill(0);
+        // create the containers for the position, velocity, acceleration and mass
+        Matrix<> r(optd.iters + 1, system.vars().size()); Vector<> v(system.vars().size()), a(system.vars().size()), m(system.vars().size()); a.fill(0), m.fill(system.mass());
 
-        // vary the initial position
-        r.row(0)(0) = r.row(0)(0) + norm(mt);
+        // fill the initial position and momentum
+        std::normal_distribution<double> positiondist(optd.position.at(0), 0.5);
+        std::normal_distribution<double> momentumdist(optd.momentum.at(0), 1.0);
+        r.row(0)(0) = positiondist(mt), v(0) = momentumdist(mt) / system.mass();
 
         // define the initial state, state container and start the timer
         Vector<int> state(optd.iters + 1); state(0) = optd.state - 1; auto start = Timer::Now();

@@ -21,22 +21,23 @@ if __name__ == "__main__":
     # create the parser
     parser = ap.ArgumentParser(
         prog="resmet.py", description="Restricted Electronic Structure Methods Educational Toolkit",
-        add_help=False, formatter_class=lambda prog: ap.HelpFormatter(prog, max_help_position=128)
+        formatter_class=lambda prog: ap.HelpFormatter(prog, max_help_position=128),
+        add_help=False, allow_abbrev=False
     )
 
     # add the arguments
     parser.add_argument("-m", "--molecule", help="Molecule file in the .xyz format. (default: %(default)s)", type=str, default="molecule.xyz")
     parser.add_argument("-t", "--threshold", help="Convergence threshold for SCF loop. (default: %(default)s)", type=float, default=1e-12)
-    parser.add_argument("-h", "--help", help="Print this help message.", action="store_true")
+    parser.add_argument("-h", "--help", help="Print this help message.", action=ap.BooleanOptionalAction)
 
     # add integral options
     parser.add_argument("--psi", help="Use the Psi4 package to calculate atomic integrals with the provided basis.", type=str)
     parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["S.mat", "T.mat", "V.mat", "J.mat"])
 
     # method switches
-    parser.add_argument("--cisd", help="Perform the singles/doubles configuration interaction calculation.", action="store_true")
-    parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action="store_true")
-    parser.add_argument("--mp2", help="Perform the Moller-Plesset calculation.", action="store_true")
+    parser.add_argument("--cisd", help="Perform the singles/doubles configuration interaction calculation.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--mp2", help="Perform the Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
 
     # parse the arguments
     args = parser.parse_args()

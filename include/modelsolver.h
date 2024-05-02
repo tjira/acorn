@@ -27,7 +27,7 @@ public:
     };
     struct OptionsDynamics {
         int iters=100, seed=1, state=0, trajs=1; double step=1.0;
-        std::vector<double> position, velocity;
+        std::vector<double> position, momentum;
         std::vector<std::string> gradient;
     } dynamics={};
 

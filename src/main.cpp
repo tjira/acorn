@@ -56,7 +56,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step, berends
 // option structures loaders for model methods
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Optimize, step, iters);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential, window, normalize, zpesub, zeropad);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsDynamics, iters, step, state, position, gradient, velocity, seed, trajs);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsDynamics, iters, step, state, position, gradient, momentum, seed, trajs);
 
 // option loaders
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian, excitations, nstate, state);

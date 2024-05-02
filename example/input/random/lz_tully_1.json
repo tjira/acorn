@@ -14,7 +14,7 @@
         "iters" : 350,
         "step" : 10,
         "position" : [-10],
-        "velocity" : [0.0075],
+        "momentum" : [15],
         "state" : 1,
         "trajs" : 10000,
         "seed" : 1
