@@ -22,6 +22,9 @@
     <a href="https://github.com/tjira/acorn/stargazers">
         <img src="https://img.shields.io/github/stars/tjira/acorn?style=for-the-badge"/>
     </a>
+    <a href="https://github.com/tjira/acorn/actions/workflows/test.yml">
+        <img src="https://img.shields.io/github/actions/workflow/status/tjira/acorn/test.yml?style=for-the-badge&label=test"/>
+    </a>
     <br>
     <a href="https://github.com/tjira/acorn">
         <img src="https://img.shields.io/github/languages/code-size/tjira/acorn?style=for-the-badge"/>
