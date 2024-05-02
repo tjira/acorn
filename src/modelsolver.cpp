@@ -196,7 +196,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) {
 
     // fill in the initial wavefunction and normalize it
     for (size_t i = 0; i < optn.guess.size(); i++) {
-        psi.block(0, i, system.ngrid, 1) = (Expression(optn.guess.at(i), system.vars()).eval(res.msv.r).array() * (I * optn.momentum * (res.msv.r.array() + 10)).exp());
+        psi.block(0, i, system.ngrid, 1) = (Expression(optn.guess.at(i), system.vars()).eval(res.msv.r).array() * (I * optn.momentum * res.msv.r.array()).exp());
     } psi.block(0, 0, system.ngrid, 1).array() /= std::sqrt(psi.block(0, 0, system.ngrid, 1).array().abs2().sum() * dr);
 
     // create the potential
@@ -371,13 +371,14 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
 
     for (int i = 0; i < optd.trajs; i++) {
         // random number generator
-        std::mt19937 mt(optd.seed + i); std::uniform_real_distribution<double> dist(0, 1);
+        std::mt19937 mt(optd.seed + i); std::uniform_real_distribution<double> dist(0, 1); std::normal_distribution<double> norm(0, 1);
     
         // define and fill the initial conditions
         Matrix<> r(optd.iters + 1, system.vars().size()); Vector<> v(system.vars().size()), a(system.vars().size()), m(system.vars().size()); m.fill(system.mass());
         r.row(0) = Eigen::Map<const Vector<>>(optd.position.data(), r.cols()), v = Eigen::Map<const Vector<>>(optd.velocity.data(), r.cols()), a.fill(0);
 
-        r.row(0)(0) = r.row(0)(0) + dist(mt) * 2 - 1;
+        // vary the initial position
+        r.row(0)(0) = r.row(0)(0) + norm(mt);
 
         // define the initial state, state container and start the timer
         Vector<int> state(optd.iters + 1); state(0) = optd.state - 1; auto start = Timer::Now();
@@ -408,19 +409,21 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
             double Epot = energy.at(state(j + 1)).get(r.row(j + 1)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
 
             // append the energy and calculate the derivative of the energy difference
-            Ediff.push_back(energy.at(1).get(r.row(j + 1)) - energy.at(0).get(r.row(j + 1))); double dE = (Ediff.at(j + 1) - Ediff.at(j)) / optd.step;
+            Ediff.push_back(energy.at(1).get(r.row(j + 1)) - energy.at(0).get(r.row(j + 1))); double dEdiff = (Ediff.at(j + 1) - Ediff.at(j)) / optd.step;
 
-            // calculate the probability of state change
-            double gamma = std::pow(coupling.at(0).get(r.row(j + 1)), 2) / std::abs(dE); double P = 1 - std::exp(-2 * M_PI * (std::isnan(gamma) ? 0 : gamma));
+            // calculate the probability of state change according to the Landau-Zener formula
+            double gamma = std::pow(coupling.at(0).get(r.row(j + 1)), 2) / std::abs(dEdiff); double P = 1 - std::exp(-2 * M_PI * (std::isnan(gamma) ? 0 : gamma));
 
             // change the state if the jump is accepted
-            if (dist(mt) < P) state(j + 1) = state(j + 1) == 1 ? 0 : 1;
+            if (dist(mt) < P && (Ekin > std::abs(Ediff.at(j + 1)))) {
+                state(j + 1) = state(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0)*v(0) - (state(j + 1) - state(j)) * 2 * Ediff.at(j + 1) / system.mass());
+            }
 
             // calculate the force
             F = -grad.at(state(j + 1)).eval(r.row(j + 1));
 
             // print the iteration
-            if (print) std::printf("%6d %6d %9.4f %5d %1.2f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, j + 1, AU2FS * optd.step * (j + 1), state(j + 1) + 1, P, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+            if (print) std::printf("%6d %6d %9.4f %5d %1.2f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, j + 1, AU2FS * optd.step * (j + 1), state(j) + 1, P, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
         }
 
         // save the states and define the density diagonal
