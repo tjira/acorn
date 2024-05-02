@@ -345,7 +345,7 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
     if (print) std::printf(" TRAJ   ITER  TIME [fs] STATE PROB    POT [Eh]       KIN [Eh]        E [Eh]      |GRAD|      TIME\n");
 
     // define energy, gradient and coupling functions and define the array of state populations
-    std::vector<Expression> energy, coupling, grad; std::vector<Vector<int>> states;
+    std::vector<Expression> energy, coupling, grad; std::vector<Vector<int>> states(optd.trajs);
 
     // fill the real space coordinates
     res.msv.r = Vector<>(system.ngrid), res.msv.U = Matrix<>(system.ngrid, system.potential.size());
@@ -431,7 +431,7 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
         }
 
         // save the states and define the density diagonal
-        states.push_back(state);
+        states.at(i) = state;
 
         // save the matrix of states and coordinates
         Matrix<> SR(r.rows(), r.cols() + 1); SR << (state.array() + 1).cast<double>(), r; EigenWrite(ip / ("trajectory" + std::to_string(i + 1) + ".mat"), SR);
