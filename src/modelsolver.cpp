@@ -416,10 +416,11 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
             Ediff.push_back(energy.at(1).get(r.row(j + 1)) - energy.at(0).get(r.row(j + 1))); double dEdiff = (Ediff.at(j + 1) - Ediff.at(j)) / optd.step;
 
             // calculate the probability of state change according to the Landau-Zener formula
-            double gamma = std::pow(coupling.at(0).get(r.row(j + 1)), 2) / std::abs(dEdiff); double P = 1 - std::exp(-2 * M_PI * (std::isnan(gamma) ? 0 : gamma));
+            double gamma = std::pow(coupling.at(0).get(r.row(j + 1)), 2) / std::abs(dEdiff); double P = 1 - std::exp(-2 * M_PI * gamma);
 
             // change the state if the jump is accepted
-            if (dist(mt) < P && (Ekin > std::abs(Ediff.at(j + 1)))) {
+            if (Ediff.at(j) * Ediff.at(j + 1) < 0 && dist(mt) < P) {
+                if (Ekin < std::abs(Ediff.at(j + 1))) throw std::runtime_error("The kinetic energy is not enough to overcome the energy barrier.");
                 state(j + 1) = state(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0)*v(0) - (state(j + 1) - state(j)) * 2 * Ediff.at(j + 1) / system.mass());
             }
 

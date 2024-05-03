@@ -10,7 +10,7 @@
         "mass" : 2000
     },
     "solve" : {
-        "guess" : ["exp(-(x+9)^2)"],
+        "guess" : ["exp(-(x+10)^2)"],
         "cap" : "0",
         "momentum" : 15,
         "iters" : 350,
