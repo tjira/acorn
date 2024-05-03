@@ -420,7 +420,6 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
 
             // change the state if the jump is accepted
             if (Ediff.at(j) * Ediff.at(j + 1) < 0 && dist(mt) < P) {
-                if (Ekin < std::abs(Ediff.at(j + 1))) throw std::runtime_error("The kinetic energy is not enough to overcome the energy barrier.");
                 state(j + 1) = state(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0)*v(0) - (state(j + 1) - state(j)) * 2 * Ediff.at(j + 1) / system.mass());
             }
 
