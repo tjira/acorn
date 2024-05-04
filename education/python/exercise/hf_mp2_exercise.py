@@ -3,11 +3,15 @@
 import itertools as it, numpy as np
 
 """
-This is an exercise script made for educational purposes. The script is supposed to calculate the Hartree-Fock energy and the MP2 correlation energy of a provided molecule.
-The script expects that the molecule.xyz and all the integral files are present in the same directory as the script, but modification is trivial.
-The script is divided into three parts. In the first part, the molecule and the integrals are loaded. This part should not be modified by a student.
-In the second part, the Hartree-Fock calculation is performed. The student should fill the while loop with the correct calculations as well as the nuclear-nuclear repulsion energy.
-In the last part, the MP2 calculation is performed. The student should transform the Coulomb integrals to the molecular orbital basis and calculate the MP2 correlation energy.
+This educational script is designed to compute the Hartree-Fock energy, MP2 correlation energy and the FCI energy for a specified molecule. It requires that the molecule.xyz file and all integral files be located in the same directory as the script, though adjustments can easily be made. The script is structured into four main sections.
+
+In the first section, the script loads the molecule and integral data. This section is intended to remain unaltered by students.
+
+In the second section, the script performs the Hartree-Fock calculation. Students are expected to complete the while loop with the appropriate calculations. The calculation of the nuclear-nuclear repulsion energy is also requested.
+
+The third section is dedicated to the MP2 calculation. Here, students need to convert the Coulomb integrals to the molecular orbital basis and compute the MP2 correlation energy.
+
+The fourth and final section involves the FCI (Full Configuration Interaction) calculation. Students should convert the required integrals into the molecular spinorbital basis, generate all possible electron determinants, and apply the Slater-Condon rules to construct the CI Hamiltonian.
 """
 
 ATOM = {
@@ -39,32 +43,24 @@ if __name__ == "__main__":
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
 
     """
-    Here are some variables used throughout the calculation. Please use E_HF as a container for the HF energy. The E_HF_P is the previous energy and is used to check the convergence of the calculation.
-    You can of course use different names for these variables, but some parts of the code are written with these names in mind. Threshold is the convergence threshold for the calculation.
-    The nocc is the number of occupied orbitals for the system. The nbf is the number of basis functions. The variables E_HF and E_HF_P are initialized to zero and one, so that the SCF loop would start.
+    Here are defined some of the necessary variables. The variable "E_HF" stores the Hartree-Fock energy, while "E_HF_P" keeps track of the previous iteration's energy to monitor convergence. The "thresh" defines the convergence criteria for the calculation. The variables "nocc" and "nbf" represent the number of occupied orbitals and the number of basis functions, respectively. Initially, "E_HF" is set to zero and "E_HF_P" to one to trigger the start of the Self-Consistent Field (SCF) loop. Although you can rename these variables, it's important to note that certain sections of the code are tailored to these specific names.
     """
     E_HF, E_HF_P, nocc, nbf, thresh = 0, 1, sum(atoms) // 2, S.shape[0], 1e-8
 
     """
-    These lines define the Hamiltonian matrix as the sum of kinetic and potential matrix. The density matrix is initialized as a zero matrix and the coefficients are an empty array.
-    The coefficient matrix is actually calculated in the while loop, but I already defined it here so it can be used outside of the loop (for example in the MP2 calculation).
-    The exchange tensor is also correctly calculated here as a transpose of the Coulomb tensor. The eps vector is a vector of orbital energies and is defined here for the same reason as the coefficients.
+    These lines set up key components for our HF calculations. The Hamiltonian matrix is defined as the sum of the kinetic and potential energy matrices. We initialize the density matrix as a zero matrix, and the coefficients start as an empty array. Although the coefficient matrix is computed within the while loop, it's defined outside to allow for its use in subsequent calculations, such as the MP2 energy computation. Similarly, the exchange tensor is accurately derived here by transposing the Coulomb tensor. The "eps" vector, which contains the orbital energies, is also defined at this stage to facilitate access throughout the script. This setup ensures that all necessary variables are ready for iterative processing and further calculations beyond the SCF loop.
     """
     K, eps = J.transpose(0, 3, 2, 1), np.array(nbf * [0])
     H, D, C = T + V, np.zeros_like(S), np.zeros_like(S)
 
     """
-    This while loop is the SCF loop. Please fill it so it calculates the Fock matrix, solves the Fock equations, builds the density matrix from the coefficients and calculates the energy.
-    You can use all the variables defined above and all the functions in numpy package. The recommended functions are np.einsum and np.linalg.eigh.
-    Part of the calculation will probably be calculation of the inverse square root of a matrix. The numpy package does not conatin a function for this.
-    You can find a library that can do that or you can do it manually. The manual calculation is, of course, preferred.
+    This while loop is the SCF loop. Please fill it so it calculates the Fock matrix, solves the Fock equations, builds the density matrix from the coefficients and calculates the energy. You can use all the variables defined above and all the functions in numpy package. The recommended functions are np.einsum and np.linalg.eigh. Part of the calculation will probably be calculation of the inverse square root of a matrix. The numpy package does not conatin a function for this. You can find a library that can do that or you can do it manually. The manual calculation is, of course, preferred.
     """
     while abs(E_HF - E_HF_P) > thresh:
         break
 
     """
-    In the followng block of code, please calculate the nuclear-nuclear repulsion energy. You should use only the atoms and coords variables.
-    The code can be as short as two lines. The result should be stored in the VNN variable.
+    In the followng block of code, please calculate the nuclear-nuclear repulsion energy. You should use only the atoms and coords variables. The code can be as short as two lines. The result should be stored in the VNN variable.
     """
     VNN = 0
 
@@ -85,3 +81,67 @@ if __name__ == "__main__":
 
     # print the results
     print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
+
+    # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
+
+    """
+    The first step is to transform the matrix of coefficients into the basis of molecular spinorbitals, which we'll store in the variable "Cms". In this transformation, the resulting matrix will have twice the number of rows and columns to account for spin. To achieve this, you might use techniques like tiling matrices and applying spin masks. For practical implementation, I recommend exploring numpy functions such as np.block, np.repeat, and np.kron. These functions are highly effective for assembling and replicating blocks in the matrix to expand it appropriately for both spin up and spin down states. This method ensures that each spatial orbital is associated with both its spin components in the new basis.
+    """
+    Cms = np.zeros(2 * np.array(C.shape))
+
+
+    """
+    With the coefficient matrix in the molecular spinorbital basis available, we can proceed to transform the core Hamiltonian and the Coulomb integrals. It's important to note that the transformed matrices will contain twice as many elements along each axis compared to their counterparts in the atomic orbital (AO) basis. This increase is due to the representation of both spin states in the molecular spinorbital basis.
+    """
+    Hms, Jms = np.zeros(2 * np.array(H.shape)), np.zeros(2 * np.array(H.shape))
+
+
+    """
+    The next step involves generating determinants. We will store these in a simple list, with each determinant represented by an array of numbers, where each number corresponds to an occupied spinorbital. Since we are programming for Full Configuration Interaction (FCI), we aim to generate all possible determinants. However, should we decide to implement methods like CIS, CID, or CISD, we could easily limit the number of excitations. It’s important to remember that for all CI methods, the rest of the code remains unchanged—the only difference lies in the determinants used. Don’t overcomplicate this. Generating all possible determinants can be efficiently achieved using a simple list comprehension. I recommend employing the combinations function from the itertools package to facilitate this task.
+    """
+    dets = list()
+
+    """
+    Now, for your convenince, I define here the CI Hamiltonian.
+    """
+    Hci = np.zeros([len(dets), len(dets)])
+
+    """
+    Before we begin constructing the Hamiltonian, it's recommended to define the Slater-Condon rules. Let's consider that the input for these functions will be an array of spinorbitals, segmented into unique and common ones. A practical approach might be to arrange this 1D array with all unique spinorbitals at the front, followed by the common spinorbitals. This arrangement allows you to easily determine the number of unique spinorbitals based on the rule being applied, meaning you will always know how many entries at the beginning of the array are unique spinorbitals. While you can develop your own method for managing this array, I will proceed under the assumption that the Slater-Condon rules we use will take a single array of spinorbitals and return an unsigned matrix element. The sign of this element will be corrected later in the script. For simplicity and flexibility, I'll define these rules using lambda functions, but you're welcome to expand them into full functions if you prefer.
+    """
+    slater0 = lambda so: 0
+    slater1 = lambda so: 0
+    slater2 = lambda so: 0
+
+    """
+    We can now proceed to filling the CI Hamiltonian. The loop is simple.
+    """
+    for i in range(Hci.shape[0]):
+        for j in range(Hci.shape[1]):
+            """
+            The challenging part of this process is aligning the determinants. In this step, I transfer the contents of the j-th determinant into the "aligned" determinant. It’s important not to alter the j-th determinant directly within its original place, as doing so could disrupt the computation of other matrix elements. Instead, carry out the alignment on the determinant now contained in the "aligned" variable. Additionally, the element sign is defined at this stage.
+            """
+            aligned, sign = dets[j].copy(), 1
+
+            """
+            Now it's your turn. Please adjust the "aligned" determinant to match the i-th determinant as closely as possible. By "align," I mean you should execute a series of spinorbital swaps to minimize the differences between the "aligned" and the i-th determinant. It's also important to monitor the number of swaps you make, as each swap affects the sign of the determinant, hence the reason for the "sign" variable defined earlier. This task is not straightforward, so don't hesitate to reach out to the authors if you need guidance.
+            """
+            aligned = aligned
+
+            """
+            After aligning, we end up with two matched determinants: "aligned" and "dets[i]". At this point, we can apply the Slater-Condon rules. I suggested earlier that the input for these rules should be an array combining both unique and common spinorbitals. You can prepare this array now. However, if you've designed your Slater-Condon rules to directly accept the determinants instead, you can skip this preparatory step.
+            """
+            so = list()
+
+            """
+            Now, you'll need to assign the matrix element. Start by determining the number of differences between the two determinants. Based on this number, apply the corresponding Slater-Condon rule. Don’t forget to multiply the result by the sign to account for any changes due to swaps made during the alignment of the determinants.
+            """
+            H[i, j] = 0
+
+    """
+    You can finally solve the eigenvalue problem. Please, assign the correlation energy to the E_FCI variable.
+    """
+    E_FCI = 0
+
+    # print the results
+    print("FCI ENERGY: {:.8f}".format(E_HF + E_FCI + VNN))
