@@ -1,19 +1,87 @@
-# final restricted HF energy
-add_test(NAME rhf_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_rhf_energy water sto-3g)
-set_tests_properties(rhf_energy PROPERTIES PASS_REGULAR_EXPRESSION "-74.965901")
+# rhf
+add_test(NAME rhf COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rhf.json)
+set_property(TEST rhf PROPERTY PASS_REGULAR_EXPRESSION "ENERGY: -74.965901")
 
-# final restricted MP2 energy
-add_test(NAME rmp2_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_rmp2_energy water sto-3g)
-set_tests_properties(rmp2_energy PROPERTIES PASS_REGULAR_EXPRESSION "-75.004854")
+# rhf_grad
+add_test(NAME rhf_grad COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rhf_grad.json)
+set_property(TEST rhf_grad PROPERTY PASS_REGULAR_EXPRESSION "3.60e-06")
 
-# final restricted FCI energy
-add_test(NAME rfci_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_rfci_energy water sto-3g)
-set_tests_properties(rfci_energy PROPERTIES PASS_REGULAR_EXPRESSION "-75.020410")
+# rhf_hess
+add_test(NAME rhf_hess COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rhf_hess.json)
+set_property(TEST rhf_hess PROPERTY PASS_REGULAR_EXPRESSION "1.91e\\+00")
 
-# final unrestricted HF energy
-add_test(NAME uhf_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_uhf_energy water sto-3g 1 0)
-set_tests_properties(uhf_energy PROPERTIES PASS_REGULAR_EXPRESSION "-74.662281")
+# rhf_dyn
+add_test(NAME rhf_dyn COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rhf_dyn.json)
+set_property(TEST rhf_dyn PROPERTY PASS_REGULAR_EXPRESSION "48.3777   -74.965901")
 
-# adiabatic dynamics using harmonic oscillator
-add_test(NAME aqdyn_energy COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_aqdyn_energy "0.5*x^2")
-set_tests_properties(aqdyn_energy PROPERTIES PASS_REGULAR_EXPRESSION "0.500000")
+# rhf_dyn_thermo
+add_test(NAME rhf_dyn_thermo COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rhf_dyn_thermo.json)
+set_property(TEST rhf_dyn_thermo PROPERTY PASS_REGULAR_EXPRESSION "26.489440")
+
+# rmp2
+add_test(NAME rmp2 COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rmp2.json)
+set_property(TEST rmp2 PROPERTY PASS_REGULAR_EXPRESSION "-75.004854")
+
+# rmp2_grad
+add_test(NAME rmp2_grad COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rmp2_grad.json)
+set_property(TEST rmp2_grad PROPERTY PASS_REGULAR_EXPRESSION "5.12e-02")
+
+# rmp2_hess
+add_test(NAME rmp2_hess COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rmp2_hess.json)
+set_property(TEST rmp2_hess PROPERTY PASS_REGULAR_EXPRESSION "1.83e\\+00")
+
+# rmp2_dyn
+add_test(NAME rmp2_dyn COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rmp2_dyn.json)
+set_property(TEST rmp2_dyn PROPERTY PASS_REGULAR_EXPRESSION "48.3777   -75.004854")
+
+# rmp2_dyn_thermo
+add_test(NAME rmp2_dyn_thermo COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rmp2_dyn_thermo.json)
+set_property(TEST rmp2_dyn_thermo PROPERTY PASS_REGULAR_EXPRESSION "294.820111")
+
+# uhf
+add_test(NAME uhf COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/uhf.json)
+set_property(TEST uhf PROPERTY PASS_REGULAR_EXPRESSION "-74.662281")
+
+# uhf_grad
+add_test(NAME uhf_grad COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/uhf_grad.json)
+set_property(TEST uhf_grad PROPERTY PASS_REGULAR_EXPRESSION "9.03e-02")
+
+# uhf_hess
+add_test(NAME uhf_hess COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/uhf_hess.json)
+set_property(TEST uhf_hess PROPERTY PASS_REGULAR_EXPRESSION "1.96e\\+00")
+
+# uhf_dyn
+add_test(NAME uhf_dyn COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/uhf_dyn.json)
+set_property(TEST uhf_dyn PROPERTY PASS_REGULAR_EXPRESSION "48.3777   -74.662281")
+
+# uhf_dyn_thermo
+add_test(NAME uhf_dyn_thermo COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/uhf_dyn_thermo.json)
+set_property(TEST uhf_dyn_thermo PROPERTY PASS_REGULAR_EXPRESSION "225.361172")
+
+# qad1d_imag
+add_test(NAME qad1d_imag COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qad1d_imag.json)
+set_property(TEST qad1d_imag PROPERTY PASS_REGULAR_EXPRESSION "2.96e\\+00")
+
+# qad1d_real
+add_test(NAME qad1d_real COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qad1d_real.json)
+set_property(TEST qad1d_real PROPERTY PASS_REGULAR_EXPRESSION "1000     1.124931")
+
+# qad2d_imag
+add_test(NAME qad2d_imag COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qad2d_imag.json)
+set_property(TEST qad2d_imag PROPERTY PASS_REGULAR_EXPRESSION "1.00e\\+00")
+
+# qad2d_real
+add_test(NAME qad2d_real COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qad2d_real.json)
+set_property(TEST qad2d_real PROPERTY PASS_REGULAR_EXPRESSION "200     1.251579")
+
+# qnd1d_real
+add_test(NAME qnd1d_real COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qnd1d_real.json)
+set_property(TEST qnd1d_real PROPERTY PASS_REGULAR_EXPRESSION "350     0.020225")
+
+# ad1d
+add_test(NAME ad1d COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/ad1d.json)
+set_property(TEST ad1d PROPERTY PASS_REGULAR_EXPRESSION "1.2094     1 0.00    15.338049")
+
+# nad1d
+add_test(NAME nad1d COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/nad1d.json)
+set_property(TEST nad1d PROPERTY PASS_REGULAR_EXPRESSION "96.7554     1 0.00     0.009999")

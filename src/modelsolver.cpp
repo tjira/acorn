@@ -391,7 +391,7 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
         Vector<> F = -grad.at(state(0)).eval(r.row(0)); double Epot = energy.at(state(0)).get(r.row(0)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
 
         // define the energy difference container and fill the zeroth iteration
-        std::vector<double> Ediff; Ediff.push_back(energy.at(1).get(r.row(0)) - energy.at(0).get(r.row(0)));
+        std::vector<double> Ediff; if (system.potential.size() > 1) Ediff.push_back(energy.at(1).get(r.row(0)) - energy.at(0).get(r.row(0)));
 
         // print the zeroth iteration
         if (print) std::printf("%6d %6d %9.4f %5d %1.2f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, 0, 0.0, state(0) + 1, 0.0, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -410,17 +410,19 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
             state(j + 1) = state(j);
 
             // calculate the potential and kinetic energy
-            double Epot = energy.at(state(j + 1)).get(r.row(j + 1)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
+            double Epot = energy.at(state(j + 1)).get(r.row(j + 1)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(), P = 0;
 
-            // append the energy and calculate the derivative of the energy difference
-            Ediff.push_back(energy.at(1).get(r.row(j + 1)) - energy.at(0).get(r.row(j + 1))); double dEdiff = (Ediff.at(j + 1) - Ediff.at(j)) / optd.step;
+            if (system.potential.size() > 1) {
+                // append the energy and calculate the derivative of the energy difference
+                Ediff.push_back(energy.at(1).get(r.row(j + 1)) - energy.at(0).get(r.row(j + 1))); double dEdiff = (Ediff.at(j + 1) - Ediff.at(j)) / optd.step;
 
-            // calculate the probability of state change according to the Landau-Zener formula
-            double gamma = std::pow(coupling.at(0).get(r.row(j + 1)), 2) / std::abs(dEdiff); double P = 1 - std::exp(-2 * M_PI * gamma);
+                // calculate the probability of state change according to the Landau-Zener formula
+                double gamma = std::pow(coupling.at(0).get(r.row(j + 1)), 2) / std::abs(dEdiff); P = 1 - std::exp(-2 * M_PI * gamma);
 
-            // change the state if the jump is accepted
-            if (Ediff.at(j) * Ediff.at(j + 1) < 0 && dist(mt) < P) {
-                state(j + 1) = state(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0)*v(0) - (state(j + 1) - state(j)) * 2 * Ediff.at(j + 1) / system.mass());
+                // change the state if the jump is accepted
+                if (Ediff.at(j) * Ediff.at(j + 1) < 0 && dist(mt) < P) {
+                    state(j + 1) = state(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0)*v(0) - (state(j + 1) - state(j)) * 2 * Ediff.at(j + 1) / system.mass());
+                }
             }
 
             // calculate the force
@@ -437,15 +439,17 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) {
         Matrix<> SR(r.rows(), r.cols() + 1); SR << (state.array() + 1).cast<double>(), r; EigenWrite(ip / ("trajectory" + std::to_string(i + 1) + ".mat"), SR);
     }
 
-    // define the density matrix diagonal array
-    Matrix<> rho = Matrix<>(optd.iters + 1, system.potential.size() + 1);
+    if (system.potential.size() > 1) {
+        // define the density matrix diagonal array
+        Matrix<> rho = Matrix<>(optd.iters + 1, system.potential.size() + 1);
 
-    // fill the density matrix diagonal
-    for (int j = 0; j < optd.iters + 1; j++) {
-        for (const auto& state : states) {
-            rho(j, 1) += state(j) == 0 ? 1.0 / states.size() : 0;
-        } rho(j, 0) = j * optd.step, rho(j, 2) = 1 - rho(j, 1);
-    } EigenWrite(ip / ("rho.mat"), rho);
+        // fill the density matrix diagonal
+        for (int j = 0; j < optd.iters + 1; j++) {
+            for (const auto& state : states) {
+                rho(j, 1) += state(j) == 0 ? 1.0 / states.size() : 0;
+            } rho(j, 0) = j * optd.step, rho(j, 2) = 1 - rho(j, 1);
+        } EigenWrite(ip / ("rho.mat"), rho);
+    }
 
 
     // print the newline

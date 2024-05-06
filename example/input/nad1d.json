@@ -16,7 +16,7 @@
         "position" : [-10],
         "momentum" : [10.95],
         "state" : 1,
-        "trajs" : 100,
+        "trajs" : 1,
         "seed" : 1
     }
 }

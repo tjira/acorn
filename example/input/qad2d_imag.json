@@ -8,10 +8,10 @@
     },
     "solve" : {
         "real" : false,
-        "nstate" : 3,
+        "nstate" : 1,
         "guess" : "exp(-(x^2+y^2))",
         "step" : 0.1,
-        "iters" : 1000,
+        "iters" : 200,
         "savewfn" : true
     }
 }

@@ -117,30 +117,5 @@ if (BUILD_TOOLS)
     target_link_libraries(acorn_view glad glfw glm)
 endif()
 
-# TESTING ==========================================================================================
-
-if (BUILD_TESTING)
-    # add test executables
-    add_executable(test_rhf_energy test/rhf_energy.cpp)
-    add_executable(test_rmp2_energy test/rmp2_energy.cpp)
-    add_executable(test_rfci_energy test/rfci_energy.cpp)
-    add_executable(test_uhf_energy test/uhf_energy.cpp)
-    add_executable(test_aqdyn_energy test/aqdyn_energy.cpp)
-
-    # link the test executables to the library
-    target_link_libraries(test_rhf_energy acorn)
-    target_link_libraries(test_rmp2_energy acorn)
-    target_link_libraries(test_rfci_energy acorn)
-    target_link_libraries(test_uhf_energy acorn)
-    target_link_libraries(test_aqdyn_energy acorn)
-
-    # change the output folder for the test executables
-    set_target_properties(test_rhf_energy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
-    set_target_properties(test_rmp2_energy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
-    set_target_properties(test_rfci_energy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
-    set_target_properties(test_uhf_energy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
-    set_target_properties(test_aqdyn_energy PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
-endif()
-
 # include test file
 include(CMakeTests.txt)

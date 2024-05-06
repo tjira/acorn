@@ -1,7 +1,8 @@
 # TODO List
 
-- [ ] Split the model solver types into different objects in inputs
 - [ ] Make the method field for BAGEL actually work
+- [ ] Make the propagator class
+- [ ] Make the surface hipping class
 - [x] Add BAGEL interface with excited state dynamics
 - [x] Add Hermitian FFT for spectra calculation
 - [x] Add Mulliken analysis
@@ -36,4 +37,5 @@
 - [x] Remove the python folder before merging the fci branch
 - [x] Somehow specify the initial momentum for NAD
 - [x] Specify the number of states and calculation state in the RCI output
+- [x] Split the model solver types into different objects in inputs
 - [x] Transform the NAD wavefunction to adiabatic basis
