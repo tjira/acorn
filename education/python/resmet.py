@@ -54,11 +54,8 @@ if __name__ == "__main__":
     # convert coordinates to bohrs
     coords *= 1.8897261254578281
 
-    # load the integrals from the Psi4 package or from the files
-    if args.psi:
-        import psi4; psi4.core.be_quiet(); mintegrals = psi4.core.MintsHelper(psi4.core.Wavefunction.build(psi4.geometry(open(args.molecule).read()), args.psi))
-        S, T, V, J = np.array(mintegrals.ao_overlap()), np.array(mintegrals.ao_kinetic()), np.array(mintegrals.ao_potential()), np.array(mintegrals.ao_eri())
-    else: S, T, V = np.loadtxt(args.int[0]), np.loadtxt(args.int[1]), np.loadtxt(args.int[2]); J = np.loadtxt(args.int[3]).reshape(4 * [S.shape[1]])
+    # load the integrals from the files
+    S, T, V = np.loadtxt(args.int[0]), np.loadtxt(args.int[1]), np.loadtxt(args.int[2]); J = np.loadtxt(args.int[3]).reshape(4 * [S.shape[1]])
 
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
 
@@ -90,7 +87,7 @@ if __name__ == "__main__":
         VNN += 0.5 * atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :]) if i != j else 0
 
     # print the results
-    print("RHF ENERGY: {:.8f}".format(E_HF + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("scf/{}".format(args.psi))) if args.psi else "")) # type: ignore
+    print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
     # MOLLER-PLESSET PERTRUBATION THEORY OF 2ND ORDER ==================================================================================================================================================
     if args.mp2:
@@ -103,10 +100,11 @@ if __name__ == "__main__":
             E_MP2 += Jmo[i, a, j, b] * (2 * Jmo[i, a, j, b] - Jmo[i, b, j, a]) / (eps[i] + eps[j] - eps[a] - eps[b]);
 
         # print the results
-        print("RMP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("mp2/{}".format(args.psi))) if args.psi else "")) # type: ignore
+        print("RMP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
 
     # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
     if args.cisd or args.fci:
+
         # define the tiling matrix for the MO coefficients
         P = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T
 
@@ -184,8 +182,5 @@ if __name__ == "__main__":
         # solve the eigensystem and assign energy
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 
-        # get the name of the method
-        method = "RCISD" if args.cisd else "RFCI"
-
         # print the results
-        print("{} ENERGY: {:.8f}".format(method, E_HF + E_FCI + VNN) + (" (PSI4: {:.8f})".format(psi4.energy("{}/{}".format(method.lower(), args.psi))) if args.psi else "")) # type: ignore
+        print("{} ENERGY: {:.8f}".format("RCISD" if args.cisd else "RFCI", E_HF + E_FCI + VNN))

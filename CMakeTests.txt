@@ -38,6 +38,86 @@ set_property(TEST rmp2_dyn PROPERTY PASS_REGULAR_EXPRESSION "48.3777   -75.00485
 add_test(NAME rmp2_dyn_thermo COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rmp2_dyn_thermo.json)
 set_property(TEST rmp2_dyn_thermo PROPERTY PASS_REGULAR_EXPRESSION "294.820111")
 
+# rfci
+add_test(NAME rfci COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rfci.json)
+set_property(TEST rfci PROPERTY PASS_REGULAR_EXPRESSION "-75.020410")
+
+# rfci_grad
+add_test(NAME rfci_grad COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rfci_grad.json)
+set_property(TEST rfci_grad PROPERTY PASS_REGULAR_EXPRESSION "7.59e-02")
+
+# rfci_hess
+add_test(NAME rfci_hess COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rfci_hess.json)
+set_property(TEST rfci_hess PROPERTY PASS_REGULAR_EXPRESSION "1.78e\\+00")
+
+# rfci_dyn
+add_test(NAME rfci_dyn COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rfci_dyn.json)
+set_property(TEST rfci_dyn PROPERTY PASS_REGULAR_EXPRESSION "48.3777   -75.020410")
+
+# rfci_dyn_thermo
+add_test(NAME rfci_dyn_thermo COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rfci_dyn_thermo.json)
+set_property(TEST rfci_dyn_thermo PROPERTY PASS_REGULAR_EXPRESSION "697.632499")
+
+# rcis
+add_test(NAME rcis COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcis.json)
+set_property(TEST rcis PROPERTY PASS_REGULAR_EXPRESSION "-74.965901")
+
+# rcis_grad
+add_test(NAME rcis_grad COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcis_grad.json)
+set_property(TEST rcis_grad PROPERTY PASS_REGULAR_EXPRESSION "3.59e-06")
+
+# rcis_hess
+add_test(NAME rcis_hess COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcis_hess.json)
+set_property(TEST rcis_hess PROPERTY PASS_REGULAR_EXPRESSION "1.91e\\+00")
+
+# rcis_dyn
+add_test(NAME rcis_dyn COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcis_dyn.json)
+set_property(TEST rcis_dyn PROPERTY PASS_REGULAR_EXPRESSION "48.3777   -74.965901")
+
+# rcis_dyn_thermo
+add_test(NAME rcis_dyn_thermo COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcis_dyn_thermo.json)
+set_property(TEST rcis_dyn_thermo PROPERTY PASS_REGULAR_EXPRESSION "413.758627")
+
+# rcid
+add_test(NAME rcid COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcid.json)
+set_property(TEST rcid PROPERTY PASS_REGULAR_EXPRESSION "-75.019260")
+
+# rcid_grad
+add_test(NAME rcid_grad COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcid_grad.json)
+set_property(TEST rcid_grad PROPERTY PASS_REGULAR_EXPRESSION "7.24e-02")
+
+# rcid_hess
+add_test(NAME rcid_hess COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcid_hess.json)
+set_property(TEST rcid_hess PROPERTY PASS_REGULAR_EXPRESSION "1.79e\\+00")
+
+# rcid_dyn
+add_test(NAME rcid_dyn COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcid_dyn.json)
+set_property(TEST rcid_dyn PROPERTY PASS_REGULAR_EXPRESSION "48.3777   -75.019260")
+
+# rcid_dyn_thermo
+add_test(NAME rcid_dyn_thermo COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcid_dyn_thermo.json)
+set_property(TEST rcid_dyn_thermo PROPERTY PASS_REGULAR_EXPRESSION "520.077658")
+
+# rcisd
+add_test(NAME rcisd COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcisd.json)
+set_property(TEST rcisd PROPERTY PASS_REGULAR_EXPRESSION "-75.019528")
+
+# rcisd_grad
+add_test(NAME rcisd_grad COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcisd_grad.json)
+set_property(TEST rcisd_grad PROPERTY PASS_REGULAR_EXPRESSION "7.29e-02")
+
+# rcisd_hess
+add_test(NAME rcisd_hess COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcisd_hess.json)
+set_property(TEST rcisd_hess PROPERTY PASS_REGULAR_EXPRESSION "1.78e\\+00")
+
+# rcisd_dyn
+add_test(NAME rcisd_dyn COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcisd_dyn.json)
+set_property(TEST rcisd_dyn PROPERTY PASS_REGULAR_EXPRESSION "48.3777   -75.019528")
+
+# rcisd_dyn_thermo
+add_test(NAME rcisd_dyn_thermo COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/rcisd_dyn_thermo.json)
+set_property(TEST rcisd_dyn_thermo PROPERTY PASS_REGULAR_EXPRESSION "564.026618")
+
 # uhf
 add_test(NAME uhf COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/uhf.json)
 set_property(TEST uhf PROPERTY PASS_REGULAR_EXPRESSION "-74.662281")
