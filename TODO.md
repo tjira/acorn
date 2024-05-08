@@ -1,5 +1,6 @@
 # TODO List
 
+- [ ] Make it so that the default opitons are disabled for nested objects in inputs
 - [ ] Make the method field for BAGEL actually work
 - [ ] Make the propagator class
 - [ ] Make the surface hipping class

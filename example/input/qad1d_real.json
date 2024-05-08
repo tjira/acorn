@@ -12,7 +12,9 @@
         "guess" : "exp(-(x-1)^2)",
         "step" : 0.1,
         "iters" : 1000,
-        "spectrum" : {},
+        "spectrum" : {
+            "potential" : "0.5*x^2"
+        },
         "savewfn" : true
     }
 }

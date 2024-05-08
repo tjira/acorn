@@ -74,12 +74,10 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
     // real time dynamics operators
     if (opta.real) {
         // change the potential for the real time dynamics
-        if (system.vars().size() == 2) V(0, 0) = Expression(opta.spectrum.potential, system.vars()).eval(x, y).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
-        if (system.vars().size() == 1) V(0, 0) = Expression(opta.spectrum.potential, system.vars()).eval(x).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
-
-        // fill the excited state potential column
-        for (int i = 0; i < res.msv.U.rows(); i++) {
-            res.msv.U(i, 1) = V(0, 0)(i % system.ngrid, i / system.ngrid);
+        if (!opta.spectrum.potential.empty()) {
+            if (system.vars().size() == 2) V(0, 0) = Expression(opta.spectrum.potential, system.vars()).eval(x, y).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
+            if (system.vars().size() == 1) V(0, 0) = Expression(opta.spectrum.potential, system.vars()).eval(x).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
+            for (int i = 0; i < res.msv.U.rows(); i++) res.msv.U(i, 1) = V(0, 0)(i % system.ngrid, i / system.ngrid);
         }
 
         // define the real time operators

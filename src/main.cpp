@@ -137,10 +137,7 @@ int main(int argc, char** argv) {
 
     // patch the inputs for the modelsolver
     if (input.contains("solve") && mdlopt.at("potential").size() == 1) {
-        msaopt.merge_patch(input.at("solve"));
-        if (msaopt.at("spectrum").at("potential").get<std::string>().empty()) {
-            msaopt.at("spectrum").at("potential") = mdlopt.at("potential").at(0).at(0);
-        } fullinput["solve"] = msaopt;
+        msaopt.merge_patch(input.at("solve")), fullinput["solve"] = msaopt;
     } else if (input.contains("solve") && mdlopt.at("potential").size() != 1) msnopt.merge_patch(input.at("solve")), fullinput["solve"] = msnopt;
 
     // throw an error if restricted calculation cannot be performed due to multiplicity

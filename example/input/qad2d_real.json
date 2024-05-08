@@ -12,7 +12,9 @@
         "guess" : "exp(-(x^2+y^2))",
         "step" : 0.1,
         "iters" : 200,
-        "spectrum" : {},
+        "spectrum" : {
+            "potential" : "0.5*(x^2+y^2)"
+        },
         "savewfn" : true
     }
 }
