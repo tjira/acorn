@@ -1,6 +1,7 @@
 {
     "model" : {
         "potential" : [["0.3644*(x-2.5)^2/2"]],
+        "variables" : ["x"],
         "limits" : [-16, 16],
         "ngrid" : 1024,
         "mass" : 911
@@ -14,6 +15,8 @@
             "zpesub" : true,
             "zeropad" : 1000000
         },
+        "nstate" : 1,
+        "savewfn" : false,
         "optimize" : {},
         "real" : true,
         "iters" : 100000,

@@ -1,6 +1,7 @@
 {
     "model" : {
         "potential" : [["0.165919*(1-exp(-1.00705*(x-2.40097)))^2"]],
+        "variables" : ["x"],
         "limits" : [0, 32],
         "ngrid" : 4096,
         "mass" : 1787
@@ -13,6 +14,8 @@
             "normalize" : true,
             "zeropad" : 100000
         },
+        "nstate" : 1,
+        "savewfn" : false,
         "real" : true,
         "iters" : 10000,
         "step" : 0.1,

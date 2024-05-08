@@ -144,7 +144,7 @@ set_property(TEST qad1d_imag PROPERTY PASS_REGULAR_EXPRESSION "2.96e\\+00")
 
 # qad1d_real
 add_test(NAME qad1d_real COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qad1d_real.json)
-set_property(TEST qad1d_real PROPERTY PASS_REGULAR_EXPRESSION "1000     1.124931")
+set_property(TEST qad1d_real PROPERTY PASS_REGULAR_EXPRESSION "2.4189     1.124931")
 
 # qad2d_imag
 add_test(NAME qad2d_imag COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qad2d_imag.json)
@@ -152,11 +152,11 @@ set_property(TEST qad2d_imag PROPERTY PASS_REGULAR_EXPRESSION "1.00e\\+00")
 
 # qad2d_real
 add_test(NAME qad2d_real COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qad2d_real.json)
-set_property(TEST qad2d_real PROPERTY PASS_REGULAR_EXPRESSION "200     1.251579")
+set_property(TEST qad2d_real PROPERTY PASS_REGULAR_EXPRESSION "0.4838     1.251579")
 
 # qnd1d_real
 add_test(NAME qnd1d_real COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/qnd1d_real.json)
-set_property(TEST qnd1d_real PROPERTY PASS_REGULAR_EXPRESSION "350     0.020225")
+set_property(TEST qnd1d_real PROPERTY PASS_REGULAR_EXPRESSION "84.6609     0.020225")
 
 # ad1d
 add_test(NAME ad1d COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/ad1d.json)

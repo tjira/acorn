@@ -442,9 +442,6 @@ int main(int argc, char** argv) {
             // if the optimization was performed print the resulting energies
             if (mdlopt.at("potential").size() == 1 && res.msv.opten.size()) Printer::Print(res.msv.opten, "ENERGIES"), std::cout << std::endl;
 
-            // save the density matrix if nonadiabatic model was used
-            if (mdlopt.at("potential").size() > 1 && res.msv.rho.size()) EigenWrite(std::filesystem::path(ip) / "rho.mat", res.msv.rho);
-
             // extract and save the potential points
             if (model.vars().size() == 2) {
                 Matrix<> U(res.msv.r.size() * res.msv.r.size(), res.msv.U.cols() + 2);
@@ -458,13 +455,6 @@ int main(int argc, char** argv) {
                 } EigenWrite(std::filesystem::path(ip) / "U.mat", U);
             } else {Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(std::filesystem::path(ip) / "U.mat", U);}
 
-            // save the spectral analysis results if available
-            if (res.msv.spectra.size()) {
-                for (size_t i = 0; i < res.msv.spectra.size(); i++) {
-                    Matrix<> A(res.msv.t.size(), 3); A << res.msv.t, res.msv.acfs.at(i).real(), res.msv.acfs.at(i).imag(); EigenWrite(std::filesystem::path(ip) / ("acf" + std::to_string(i + 1) + ".mat"), A);
-                    Matrix<> F(res.msv.f.size(), 2); F << res.msv.f, res.msv.spectra.at(i).cwiseAbs(); EigenWrite(std::filesystem::path(ip) / ("spectrum" + std::to_string(i + 1) + ".mat"), F);
-                }
-            }
         } else if (input.contains("dynamics")) {Printer::Title("MODEL CLASSICAL DYNAMICS");
             // create the classical solver object
             ModelSolver msv(msdopt.get<ModelSolver::OptionsDynamics>());

@@ -38,12 +38,12 @@ public:
     ModelSolver(const OptionsDynamics& optd) : optd(optd) {};
 
     // methods and solvers
-    Result run(const ModelSystem& system, Result res = {}, bool print = true);
+    Result run(const ModelSystem& system, Result res = {}, bool print = true) const;
 
 private:
-    Result runnad(const ModelSystem& system, Result res = {}, bool print = true);
-    Result runad(const ModelSystem& system, Result res = {}, bool print = true);
-    Result runcd(const ModelSystem& system, Result res = {}, bool print = true);
+    Result runnad(const ModelSystem& system, Result res = {}, bool print = true) const;
+    Result runad(const ModelSystem& system, Result res = {}, bool print = true) const;
+    Result runcd(const ModelSystem& system, Result res = {}, bool print = true) const;
 
 private:
     OptionsAdiabatic opta; OptionsNonadiabatic optn; OptionsDynamics optd;
