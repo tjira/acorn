@@ -70,6 +70,7 @@ add_library(acorn
     src/eigen.cpp
     src/expression.cpp
     src/integral.cpp
+    src/matrixofmatrices.cpp
     src/method.cpp
     src/modelsolver.cpp
     src/modelsystem.cpp
@@ -77,6 +78,7 @@ add_library(acorn
     src/orca.cpp
     src/population.cpp
     src/printer.cpp
+    src/propagator.cpp
     src/restrictedconfigurationinteraction.cpp
     src/restrictedhartreefock.cpp
     src/restrictedmollerplesset.cpp

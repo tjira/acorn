@@ -1,6 +1,6 @@
 #pragma once
 
-#include "modelsystem.h"
+#include "propagator.h"
 #include "result.h"
 #include "timer.h"
 

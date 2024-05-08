@@ -22,7 +22,7 @@ struct Result {
         Vector<> opten; Vector<> r, k, t, f; Matrix<> U, rho;
         std::vector<Matrix<std::complex<double>>> optstates;
         std::vector<Vector<std::complex<double>>> acfs;
-        std::vector<Vector<double>> spectra;
+        std::vector<Vector<double>> spectra; double dr;
     } msv;
     double Etot; Vector <> Eexc; Matrix<> G, H;
 };
