@@ -1,7 +1,7 @@
 #include "integral.h"
 
-// include the libint
-#include <libint2.hpp>
+// include libint
+#include "libint.h"
 
 Matrix<> Integral::Single(libint2::Engine& engine, const System& system) {
     // extract shells, create a map between shell and basis function indices and initialize the engine vector

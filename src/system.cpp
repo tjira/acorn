@@ -1,18 +1,34 @@
 #include "system.h"
 
-// include the libint
-#include <libint2.hpp>
+// include libint
+#include "libint.h"
 
 // define the functions returning libint version
 int libint2::major() {return LIBINT_MAJOR_VERSION;}
 int libint2::minor() {return LIBINT_MINOR_VERSION;}
 int libint2::micro() {return LIBINT_MICRO_VERSION;}
 
+template <typename T> std::vector<T> System::getAtoms() const {
+    // return *reinterpret_cast<const std::vector<T>*>(&atoms);
+    if constexpr (std::is_same<T, libint2::Atom>::value) {
+        // create the libint atoms
+        std::vector<libint2::Atom> libintatoms;
+
+        // copy all the atoms
+        for (const Atom& atom : atoms) {
+            libint2::Atom a; a.atomic_number = atom.atomic_number; a.x = atom.x; a.y = atom.y; a.z = atom.z; libintatoms.push_back(a);
+        }
+
+        // return the atoms
+        return libintatoms;
+    } else return atoms;
+}
+
 // define the shell getter and the destructor
 libint2::BasisSet System::getShells() const {return *shells;} System::~System() {delete shells;}
 
 System::System(const System& system) : electrons(system.electrons), charge(system.charge), multi(system.multi), basis(system.basis), lnxbasis(system.lnxbasis), atoms(system.atoms) {
-    shells = new libint2::BasisSet(basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
+    shells = new libint2::BasisSet(basis, getAtoms<libint2::Atom>());
 }
 
 System::System(std::ifstream& stream, std::string basis, int charge, int multi) : electrons(0), charge(charge), multi(multi), basis(basis), lnxbasis(basis) {
@@ -31,10 +47,14 @@ System::System(std::ifstream& stream, std::string basis, int charge, int multi) 
 
     // read the input geometry
     std::vector<libint2::Atom> libintatoms = libint2::read_dotxyz(stream);
-    atoms = *reinterpret_cast<const std::vector<Atom>*>(&libintatoms);
+
+    // convert the libint atoms to the custom atoms struct
+    for (const libint2::Atom& atom : libintatoms) {
+        Atom a; a.atomic_number = atom.atomic_number; a.x = atom.x; a.y = atom.y; a.z = atom.z; atoms.push_back(a);
+    }
 
     // create the shell container
-    shells = new libint2::BasisSet(this->basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
+    shells = new libint2::BasisSet(this->basis, getAtoms<libint2::Atom>());
 
     // calculate the number of electrons
     electrons -= charge; for (const auto& atom : atoms) electrons += atom.atomic_number;
@@ -64,7 +84,7 @@ void System::move(const Matrix<>& dir) {
     }
 
     // create the shell container
-    delete shells; shells = new libint2::BasisSet(basis, *reinterpret_cast<const std::vector<libint2::Atom>*>(&atoms));
+    delete shells; shells = new libint2::BasisSet(basis, getAtoms<libint2::Atom>());
 }
 
 double System::repulsion() const {

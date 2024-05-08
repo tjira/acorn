@@ -1,7 +1,7 @@
 #include "population.h"
 
 // include libint
-#include <libint2.hpp>
+#include "libint.h"
 
 Vector<> Population::Mulliken(const System& system, const Integrals& ints, const Matrix<>& D) {
     // define the resulting vector and the DS matrix

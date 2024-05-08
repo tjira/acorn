@@ -16,8 +16,9 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const System& system); int getElectrons() const {return electrons;}
 
     // atom container getter and charge, multi and basis getters
-    int getCharge() const {return charge;} int getMulti() const {return multi;} std::string getBasis() const {return lnxbasis;}
-    template <typename T = Atom> std::vector<T> getAtoms() const {return *reinterpret_cast<const std::vector<T>*>(&atoms);}
+    int getCharge() const {return charge;} int getMulti() const {return multi;}
+    template <typename T = Atom> std::vector<T> getAtoms() const;
+    std::string getBasis() const {return lnxbasis;}
 
     // shell container and getter, system mover, number of occupied orbitals getter
     libint2::BasisSet getShells() const; void move(const Matrix<>& dir); int nocc() const {return electrons / 2;}

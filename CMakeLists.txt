@@ -28,8 +28,8 @@ set(GLFW_BUILD_TESTS OFF)
 set(GLFW_BUILD_DOCS OFF)
 
 # set compile flags
-set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3 -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3 -Wall -Wextra -flarge-source-files")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -flarge-source-files")
 if (WIN32)
     string(APPEND CMAKE_CXX_FLAGS_RELEASE " -mwindows -static -Wa,-mbig-obj")
     string(APPEND CMAKE_CXX_FLAGS_DEBUG " -mwindows -static -Wa,-mbig-obj")

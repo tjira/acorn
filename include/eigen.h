@@ -5,8 +5,11 @@
 #define EIGEN_INITIALIZE_MATRICES_BY_ZERO
 
 // eigen include
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #include <unsupported/Eigen/MatrixFunctions>
 #include <unsupported/Eigen/CXX11/Tensor>
+#pragma GCC diagnostic pop
 
 // include necessities
 #include <filesystem>
