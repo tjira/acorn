@@ -437,20 +437,7 @@ int main(int argc, char** argv) {
             res = msv.run(model, res);
 
             // if the optimization was performed print the resulting energies
-            if (mdlopt.at("potential").size() == 1 && res.msv.opten.size()) Printer::Print(res.msv.opten, "ENERGIES"), std::cout << std::endl;
-
-            // extract and save the potential points
-            if (model.vars().size() == 2) {
-                Matrix<> U(res.msv.r.size() * res.msv.r.size(), res.msv.U.cols() + 2);
-                for (int i = 0; i < res.msv.r.size(); i++) {
-                    for (int j = 0; j < res.msv.r.size(); j++) {
-                        U(i * res.msv.r.size() + j, 0) = res.msv.r(i), U(i * res.msv.r.size() + j, 1) = res.msv.r(j);
-                        for (int k = 0; k < res.msv.U.cols(); k++) {
-                            U(i * res.msv.r.size() + j, k + 2) = res.msv.U(i * res.msv.r.size() + j, k);
-                        }
-                    }
-                } EigenWrite(std::filesystem::path(ip) / "U.mat", U);
-            } else {Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(std::filesystem::path(ip) / "U.mat", U);}
+            if (mdlopt.at("potential").size() == 1 && res.msv.energy.size()) Printer::Print(res.msv.energy, "OPTIMAL ENERGIES"), std::cout << std::endl;
 
         } else if (input.contains("dynamics")) {Printer::Title("MODEL CLASSICAL DYNAMICS");
             // create the classical solver object
@@ -458,19 +445,6 @@ int main(int argc, char** argv) {
 
             // run the calculation
             res = msv.run(model, res);
-
-            // extract and save the potential points
-            if (model.vars().size() == 2) {
-                Matrix<> U(res.msv.r.size() * res.msv.r.size(), res.msv.U.cols() + 2);
-                for (int i = 0; i < res.msv.r.size(); i++) {
-                    for (int j = 0; j < res.msv.r.size(); j++) {
-                        U(i * res.msv.r.size() + j, 0) = res.msv.r(i), U(i * res.msv.r.size() + j, 1) = res.msv.r(j);
-                        for (int k = 0; k < res.msv.U.cols(); k++) {
-                            U(i * res.msv.r.size() + j, k + 2) = res.msv.U(i * res.msv.r.size() + j, k);
-                        }
-                    }
-                } EigenWrite(std::filesystem::path(ip) / "U.mat", U);
-            } else {Matrix<> U(res.msv.r.size(), res.msv.U.cols() + 1); U << res.msv.r, res.msv.U; EigenWrite(std::filesystem::path(ip) / "U.mat", U);}
         }
     }
 

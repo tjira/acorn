@@ -1,12 +1,14 @@
 {
     "model" : {
         "potential" : [["0.3644*(x-2.5)^2/2"]],
+        "variables" : ["x"],
         "limits" : [-16, 16],
         "ngrid" : 1024,
         "mass" : 911
     },
     "solve" : {
         "guess" : "exp(-(x-1)^2)",
+        "optimize" : {},
         "spectrum" : {
             "potential" : "0.25*0.3644*(x-2.5)^2/2+0.5",
             "window" : "exp(-1e-7*x^2)",
@@ -14,7 +16,6 @@
             "zpesub" : true,
             "zeropad" : 1000000
         },
-        "optimize" : {},
         "nstate" : 1,
         "savewfn" : false,
         "real" : true,

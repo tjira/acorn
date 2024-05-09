@@ -16,9 +16,6 @@ Result ModelSolver::run(const ModelSystem& system, Result res, bool print) const
     res.msv.k.fill(2 * M_PI / res.msv.k.size() / (res.msv.r(1) - res.msv.r(0))); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
     res.msv.f.fill(2 * M_PI / res.msv.f.size() / (res.msv.t(1) - res.msv.t(0))); for (int i = 0; i < res.msv.f.size(); i++) res.msv.f(i) *= i - (i < res.msv.f.size() / 2 ? 0 : res.msv.f.size());
 
-    // initialize the potential matrix
-    res.msv.U = Matrix<>((int)std::pow(system.ngrid, system.vars().size()), system.potential.size() + (opta.real && !opta.spectrum.potential.empty() ? 1 : 0));
-
     // run the calculation
     if (system.potential.size() == 1) return runad(system, res, print);
     else return runnad(system, res, print);
@@ -60,13 +57,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
     if (system.vars().size() == 2) {psi = Expression(opta.guess, system.vars()).eval(x, y); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
     if (system.vars().size() == 1) {psi = Expression(opta.guess, system.vars()).eval(x); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
 
-    // fill the ground state potential column
-    for (int i = 0; i < res.msv.U.rows(); i++) {
-        res.msv.U(i, 0) = V(0, 0)(i % system.ngrid, i / system.ngrid);
-    }
-
     // define the vector of optimal wavefunction and energies if imaginary time is selected
-    if (!opta.real) res.msv.optstates = std::vector<Matrix<std::complex<double>>>(opta.nstate, psi), res.msv.opten = Vector<>(opta.nstate); 
+    if (!opta.real) res.msv.wfn = std::vector<Matrix<std::complex<double>>>(opta.nstate, psi), res.msv.energy = Vector<>(opta.nstate); 
 
     // define the imaginary time operators
     auto[R, K] = Propagator<1>::Get(system, V.complex(), k.array().pow(2) + l.array().pow(2), opta.step, false);
@@ -75,13 +67,20 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
     if (opta.real) {
         // change the potential for the real time dynamics
         if (!opta.spectrum.potential.empty()) {
-            if (system.vars().size() == 2) V(0, 0) = Expression(opta.spectrum.potential, system.vars()).eval(x, y).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
-            if (system.vars().size() == 1) V(0, 0) = Expression(opta.spectrum.potential, system.vars()).eval(x).array() - (opta.spectrum.zpesub ? res.msv.opten(0) : 0);
-            for (int i = 0; i < res.msv.U.rows(); i++) res.msv.U(i, 1) = V(0, 0)(i % system.ngrid, i / system.ngrid);
+            if (system.vars().size() == 2) V(0, 0) = Expression(opta.spectrum.potential, system.vars()).eval(x, y).array() - (opta.spectrum.zpesub ? res.msv.energy(0) : 0);
+            if (system.vars().size() == 1) V(0, 0) = Expression(opta.spectrum.potential, system.vars()).eval(x).array() - (opta.spectrum.zpesub ? res.msv.energy(0) : 0);
         }
 
         // define the real time operators
         std::tie(R, K) = Propagator<1>::Get(system, V.complex(), k.array().pow(2) + l.array().pow(2), opta.step, true);
+    }
+
+    // print the potential
+    if (system.vars().size() == 1 && print) {
+        std::printf("POTENTIAL POINTS\n       R [au]              POT [Eh]\n");
+        for (int i = 0; i < system.ngrid; i++) {
+            std::printf("%20.14f %20.14f\n", res.msv.r(i), V(0, 0)(i % system.ngrid, i / system.ngrid));
+        } std::printf("\n");
     }
 
     // loop over all states
@@ -90,7 +89,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
         if (print) std::printf("%sSTATE %i PROPAGATION %s\n  ITER TIME [fs]         Eel [Eh]         |dE|     |dD|\n", i ? "\n" : "", i + 1, opta.real ? "(RT)" : "(IT)");
 
         // assign the guess as the optimized state to psi
-        if (res.msv.optstates.size()) {psi = res.msv.optstates.at(i);}
+        if (res.msv.wfn.size()) {psi = res.msv.wfn.at(i);}
 
         // calculate the total energy of the guess function
         double E = Propagator<1>::Energy(system, V, res.msv.r, k.array().pow(2) + l.array().pow(2), psi);
@@ -113,7 +112,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
 
             // subtract lower eigenstates
             for (int k = 0; k < i && !opta.real; k++) {
-                psi = psi.array() - (EigenConj(res.msv.optstates.at(k)).array() * psi.array()).sum() * dr * res.msv.optstates.at(k).array();
+                psi = psi.array() - (EigenConj(res.msv.wfn.at(k)).array() * psi.array()).sum() * dr * res.msv.wfn.at(k).array();
             }
 
             // normalize the wavefunction
@@ -138,16 +137,16 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
         }
 
         // assign the energy and wavefunction
-        if (!opta.real) res.msv.optstates.at(i) = psi, res.msv.opten(i) = E;
+        if (!opta.real) res.msv.wfn.at(i) = psi, res.msv.energy(i) = E;
 
         // block to calculate spectrum
         if (opta.real && !opta.spectrum.potential.empty()) {
             // print the ACF header
-            if (print) std::printf("\nSTATE %i ACF\nTIME [fs]         REAL                 IMAG\n", i + 1);
+            if (print) std::printf("\nSTATE %i ACF\n     TIME [fs]              REAL                 IMAG\n", i + 1);
 
             // print the ACF
             for (int j = 0; j <= opta.iters; j++) {
-                if (print) std::printf("%9.4f %20.14f %20.14f\n", AU2FS * res.msv.t(j), acf(j).real(), acf(j).imag());
+                if (print) std::printf("%19.14f %20.14f %20.14f\n", AU2FS * res.msv.t(j), acf(j).real(), acf(j).imag());
             }
 
             // multiply the acf with the windowing function
@@ -163,11 +162,11 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
             if (opta.spectrum.normalize) spectrum = spectrum.array() / spectrum.array().abs().maxCoeff();
 
             // print the spectrum header
-            if (print) std::printf("\nSTATE %i SPECTRUM\n   FREQ [au]            INTS\n", i + 1);
+            if (print) std::printf("\nSTATE %i SPECTRUM\n     FREQ [au]              INTS\n", i + 1);
 
             // print the spectrum
             for (int j = 0; j < spectrum.size(); j++) {
-                if (print) std::printf("%15.4f %20.14f\n", res.msv.f(j), std::abs(spectrum(j)));
+                if (print) std::printf("%19.14f %20.14f\n", res.msv.f(j), spectrum.cwiseAbs()(j));
             }
         }
 
@@ -209,6 +208,9 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) co
     // subtract the complex absorbing potential
     V(0, 0).array() -= (I * Expression(optn.cap, system.vars()).eval(res.msv.r)).array(), V(1, 1).array() -= (I * Expression(optn.cap, system.vars()).eval(res.msv.r)).array();
 
+    // print the potential header
+    std::printf("POTENTIAL POINTS\n       R [au]              V11 [Eh]             V22 [Eh]\n");
+
     // loop to calculate the adiabatic transformation matrices
     for (int i = 0; i < system.ngrid; i++) {
         // define the diabatic potential at the current point
@@ -220,14 +222,11 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) co
                 UD(j, k) = V(j, k)(i).real();
             }
         }
-
-        // assign the diabatic potential to results
-        res.msv.U.row(i) = UD.diagonal().transpose();
         
         // transform to adiabatic basis only if requested
         if (optn.adiabatic) {
             // diagonalize the diabatic potential to get the adiabatic potential
-            Eigen::SelfAdjointEigenSolver<Matrix<>> eigensolver(UD); res.msv.U.row(i) = eigensolver.eigenvalues().transpose();
+            Eigen::SelfAdjointEigenSolver<Matrix<>> eigensolver(UD); Vector<> eval = eigensolver.eigenvalues().transpose();
 
             // define the overlap of eigenvectors
             Vector<> overlap(system.potential.size());
@@ -239,8 +238,11 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) co
 
             // maximize the overlap with the previuos transformation
             UT.at(i) = eigensolver.eigenvectors(); UT.at(i) = UT.at(i) * overlap.asDiagonal();
-        }
-    }
+
+            // print the potential row
+            if (print) std::printf("%20.14f %20.14f %20.14f\n", res.msv.r(i), eval(0), eval(1));
+        } else if (print) std::printf("%20.14f %20.14f %20.14f\n", res.msv.r(i), UD.diagonal().transpose()(0), UD.diagonal().transpose()(1));
+    } if (print) std::printf("\n");
 
     // define the real and imaginary space operators
     auto[R, K] = Propagator<2>::Get(system, V.complex(), res.msv.k.array().pow(2), optn.step, true);
@@ -307,9 +309,6 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) co
 }
 
 Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) const {
-    // print the header
-    if (print) std::printf(" TRAJ   ITER  TIME [fs] STATE PROB    POT [Eh]       KIN [Eh]        E [Eh]      |GRAD|      TIME\n");
-
     // define energy, gradient and coupling functions and define the array of state populations
     std::vector<Expression> energy, coupling, grad; std::vector<Vector<int>> states(optd.trajs);
 
@@ -317,7 +316,6 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
     for (size_t i = 0; i < system.potential.size(); i++) {
         energy.push_back(Expression(system.potential.at(i).at(i), system.vars()));
         grad.push_back(Expression(optd.gradient.at(i), system.vars()));
-        res.msv.U.col(i) = energy.at(i).eval(res.msv.r);
     }
 
     // fill the coupling expressions
@@ -326,6 +324,23 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
             if (i != j) coupling.push_back(Expression(system.potential.at(i).at(j), system.vars()));
         }
     }
+
+    // print the potential
+    if (system.vars().size() == 1 && print) {
+        std::printf("POTENTIAL POINTS\n       R [au]       ");
+        for (size_t i = 0; i < system.potential.size(); i++) {
+            std::printf("       V%lu%lu [Eh]      ", i + 1, i + 1);
+        } std::printf("\n");
+        for (int i = 0; i < system.ngrid; i++) {
+            std::printf("%20.14f", res.msv.r(i));
+            for (size_t j = 0; j < system.potential.size(); j++) {
+                std::printf(" %20.14f",  energy.at(j).get(res.msv.r(i)));
+            } std::printf("\n");
+        } std::printf("\n");
+    }
+
+    // print the header
+    if (print) std::printf(" TRAJ   ITER  TIME [fs] STATE PROB    POT [Eh]       KIN [Eh]        E [Eh]      |GRAD|      TIME\n");
 
     #if defined(_OPENMP)
     #pragma omp parallel for num_threads(nthread)

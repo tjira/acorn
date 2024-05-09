@@ -100,7 +100,7 @@ if __name__ == "__main__":
             E_MP2 += Jmo[i, a, j, b] * (2 * Jmo[i, a, j, b] - Jmo[i, b, j, a]) / (eps[i] + eps[j] - eps[a] - eps[b]);
 
         # print the results
-        print("RMP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
+        print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
 
     # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
     if args.cisd or args.fci:
@@ -183,4 +183,4 @@ if __name__ == "__main__":
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 
         # print the results
-        print("{} ENERGY: {:.8f}".format("RCISD" if args.cisd else "RFCI", E_HF + E_FCI + VNN))
+        print("{} ENERGY: {:.8f}".format("CISD" if args.cisd else "FCI", E_HF + E_FCI + VNN))

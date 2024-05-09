@@ -8,6 +8,7 @@
     },
     "solve" : {
         "guess" : "exp(-(x-1)^2)",
+        "optimize" : {},
         "spectrum" : {
             "potential" : "0.1*(1-exp(-0.6749074010558782*(x-3)))^2+0.5",
             "window" : "exp(-1e-7*x^2)",
@@ -15,7 +16,6 @@
             "zpesub" : true,
             "zeropad" : 1000000
         },
-        "optimize" : {},
         "nstate" : 1,
         "savewfn" : false,
         "real" : true,

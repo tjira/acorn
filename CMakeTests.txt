@@ -164,4 +164,4 @@ set_property(TEST ad1d PROPERTY PASS_REGULAR_EXPRESSION "1.2094     1 0.00    15
 
 # nad1d
 add_test(NAME nad1d COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn ${PROJECT_SOURCE_DIR}/example/input/nad1d.json)
-set_property(TEST nad1d PROPERTY PASS_REGULAR_EXPRESSION "96.7554     1 0.00     0.009999")
+set_property(TEST nad1d PROPERTY PASS_REGULAR_EXPRESSION "84.6609     1 0.00     0.009999")
