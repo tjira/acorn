@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, mmap, re
+import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, mmap, os, re
 
 # define some simple useful functions
 minmax = lambda df: [np.min(df), np.max(df)]
@@ -51,8 +51,11 @@ if __name__ == "__main__":
     # general arguments
     parser.add_argument("--static", action="store_true", help="Plot only the final frame.")
 
-    # parse arguments, load potential and define the data
-    args = parser.parse_args(); U = np.loadtxt(args.potential)
+    # parse arguments
+    args = parser.parse_args(); U = np.array([])
+
+    # read the potential
+    if os.path.exists(args.potential): U = np.loadtxt(args.potential)
 
     # read the wavefunctions
     wfndata = [read(wfnfile, args.static) for wfnfile in args.wfns]

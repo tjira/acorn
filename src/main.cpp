@@ -101,7 +101,8 @@ int main(int argc, char** argv) {
     // print library versions
     std::printf("EIGEN %d.%d.%d, ", EIGEN_WORLD_VERSION, EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
     std::printf("LIBINT %d.%d.%d, ", libint2::major(), libint2::minor(), libint2::micro());
-    std::printf("%d/%d CORES)\n\n", nthread, std::thread::hardware_concurrency());
+    std::printf("%d/%d CORES, ", nthread, std::thread::hardware_concurrency());
+    std::printf("%s)\n\n", Timer::Local().c_str());
 
     // open the input file and parse the input
     std::ifstream istream(program.get("input")); nlohmann::json input = nlohmann::json::parse(istream); istream.close();
@@ -265,7 +266,7 @@ int main(int argc, char** argv) {
             if (rhfopt.at("export").at("orben")) EigenWrite(std::filesystem::path(ip) / "EPS.mat", res.rhf.eps);
 
             // print the mulliken charges
-            if (rhfopt.at("mulliken")) Printer::Print(Population::Mulliken(system, ints, res.rhf.D), "MULLIKEN CHARGES"), std::cout << std::endl;
+            Printer::Print(Population::Mulliken(system, ints, res.rhf.D), "MULLIKEN CHARGES"), std::cout << std::endl;
 
             // print the total energy
             Printer::Print(res.Etot, "RESTRICTED HARTREE-FOCK ENERGY"), std::cout << std::endl;

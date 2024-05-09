@@ -1,6 +1,6 @@
 #include "expression.h"
 
-// include the exprtk
+// include exprtk
 #include <exprtk.hpp>
 
 Vector<> Expression::eval(const Vector<>& x) const {

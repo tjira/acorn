@@ -39,7 +39,7 @@ inline std::string rmpoptstr = R"({
 })";
 
 inline std::string rhfoptstr = R"({
-    "maxiter" : 1000, "thresh" : 1e-12, "mulliken" : false,
+    "maxiter" : 1000, "thresh" : 1e-12,
     "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coef" : false, "density" : false, "orben" : false, "hcore" : false},
     "print" : {"coef" : false, "density" : false, "orben" : false, "hcore" : false}

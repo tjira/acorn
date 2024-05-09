@@ -1,7 +1,7 @@
 #include "restrictedhartreefock.h"
 
-// include DIIS from libint
-#include <libint2/diis.h>
+// include libint
+#include "libint.h"
 
 std::tuple<Result, Integrals> RestrictedHartreeFock::run(const System& system, Result res, bool print) const {
     // define the integral struct
