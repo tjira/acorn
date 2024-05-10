@@ -9,6 +9,7 @@ orca.inp
 
 # exts
 *.clean
+*.html
 *.lock
 *.dat
 *.gif

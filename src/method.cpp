@@ -8,7 +8,7 @@
 template <class M>
 void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) const {
     // print the header
-    if (print) std::printf(" ITER  TIME [fs]    POT [Eh]       KIN [Eh]        E [Eh]         TK [K]      |GRAD|      TIME\n");
+    if (print) std::printf(" ITER  TIME [fs]    POT [Eh]       KIN [Eh]        E [Eh]      |GRAD|      TIME\n");
 
     // create position, velocity and mass matrices
     Matrix<> v(system.getAtoms().size(), 3), a(system.getAtoms().size(), 3), m(system.getAtoms().size(), 3);
@@ -18,11 +18,11 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         m.row(i) = [](double m) {return Vector<>::Constant(3, m);}(an2m.at(system.getAtoms().at(i).atomic_number) * AMU2AU);
     }
 
-    // get the degrees of freedom and write the initial geometry
-    double Nf = std::max(system.getAtoms().size() * 3 - 6.0, 1.0); system.save(ip / std::filesystem::path("trajectory.xyz")) ;
-
     // get the dynamics step and start the timer
     double step = get()->opt.dynamics.step; auto start = Timer::Now();
+
+    // write the initial geometry
+    system.save(ip / std::filesystem::path("trajectory.xyz")) ;
 
     // calculate the initial energy with gradient
     if constexpr (std::is_same_v<M, RestrictedHartreeFock>) {
@@ -30,11 +30,11 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         ints.dV = Integral::dNuclear(system), ints.dJ = Integral::dCoulomb(system);
     } res = gradient(system, ints, res, false);
 
-    // calculate the initial kinetic energy and temperature
-    double Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); double T = 2 * Ekin / Nf;
+    // calculate the initial kinetic energy
+    double Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
 
     // print the zeroth iteration
-    if (print) std::printf("%6d %9.4f %14.8f %14.8f %14.8f %14.8f %.2e %s\n", 0, 0.0, res.Etot, Ekin, res.Etot + Ekin, T * AU2K, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+    if (print) std::printf("%6d %9.4f %14.8f %14.8f %14.8f %.2e %s\n", 0, 0.0, res.Etot, Ekin, res.Etot + Ekin, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
 
     for (int i = 0; i < get()->opt.dynamics.iters; i++) {
         // start the timer and store the previous v and a
@@ -43,16 +43,8 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         // calculate the velocity and accceleration
         a = -res.G.array() / m.array(); v = vp + 0.5 * (ap + a) * step;
 
-        // calculate the kinetic energy and temperature before thermostatting
-        Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); T = 2 * Ekin / Nf;
-
-        // apply the berendsen thermostat
-        if (get()->opt.dynamics.berendsen.temp > 0 && AU2FS * step * i < get()->opt.dynamics.berendsen.timeout) {
-            v.array() *= std::sqrt(1 + (get()->opt.dynamics.berendsen.temp / T / AU2K - 1) * step / get()->opt.dynamics.berendsen.tau);
-        }
-
-        // calculate the kinetic energy and temperature after thermostatting
-        Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(); T = 2 * Ekin / Nf;
+        // calculate the kinetic energy
+        Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
 
         // move the system
         system.move(step * (v + 0.5 * a * step));
@@ -67,7 +59,7 @@ void Method<M>::dynamics(System system, Integrals ints, Result res, bool print) 
         } res = gradient(system, ints, res, false);
 
         // print the iteration info
-        if (print) std::printf("%6d %9.4f %14.8f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, AU2FS * step * (i + 1), res.Etot, Ekin, res.Etot + Ekin, T * AU2K, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
+        if (print) std::printf("%6d %9.4f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, AU2FS * step * (i + 1), res.Etot, Ekin, res.Etot + Ekin, res.G.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
     }
 }
 

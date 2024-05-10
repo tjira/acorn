@@ -3,7 +3,7 @@
 #include <string>
 
 inline std::string rcioptstr = R"({
-    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
+    "dynamics" : {"iters" : 100, "step" : 20}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false, "hamiltonian" : false, "energies" : false},
     "print" : {"coulombms" : false, "kineticms" : false, "nuclearms" : false, "hcorems" : false, "hamiltonian" : false, "energies" : true}
 })";
@@ -33,29 +33,29 @@ inline std::string msnoptstr = R"({
 })";
 
 inline std::string rmpoptstr = R"({
-    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
+    "dynamics" : {"iters" : 100, "step" : 20}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coulombmo" : false},
     "print" : {"coulombmo" : false}
 })";
 
 inline std::string rhfoptstr = R"({
     "maxiter" : 1000, "thresh" : 1e-12,
-    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
+    "dynamics" : {"iters" : 100, "step" : 20}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coef" : false, "density" : false, "orben" : false, "hcore" : false},
     "print" : {"coef" : false, "density" : false, "orben" : false, "hcore" : false}
 })";
 
 inline std::string uhfoptstr = R"({
-    "maxiter" : 1000, "thresh" : 1e-12,
-    "dynamics" : {"iters" : 100, "step" : 20, "berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
+    "dynamics" : {"iters" : 100, "step" : 20}, "maxiter" : 1000, "thresh" : 1e-12,
+    "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
     "export" : {"coefa" : false, "coefb" : false, "densitya" : false, "densityb" : false, "orbena" : false, "orbenb" : false, "hcore" : false},
     "print" : {"coefa" : false, "coefb" : false, "densitya" : false, "densityb" : false, "orbena" : false, "orbenb" : false, "hcore" : false}
 })";
 
 inline std::string bgloptstr = R"({
-    "dynamics" : {"berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
+    "dynamics" : {"iters" : 100, "step" : 20}
 })";
 
 inline std::string orcoptstr = R"({
-    "dynamics" : {"berendsen" : {"tau" : 15, "temp" : 0, "timeout" : 20}}
+    "dynamics" : {"iters" : 100, "step" : 20}
 })";

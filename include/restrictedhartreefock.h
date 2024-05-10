@@ -11,7 +11,6 @@ public:
 
         // dynamics structure
         struct Dynamics {
-            struct Berendsen {double tau=1, temp=0, timeout=10;} berendsen={};
             int iters=100; double step=1.0;
         } dynamics={};
 

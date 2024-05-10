@@ -8,7 +8,6 @@ public:
     struct Options {Options(){};
         // dynamics structure
         struct Dynamics {
-            struct Berendsen {bool enabled=false; double tau = 1, temp=298.15, timeout=10;} berendsen={};
             int iters=100; double step=1.0;
         } dynamics={};
 
