@@ -11,6 +11,7 @@ orca.inp
 *.clean
 *.html
 *.lock
+*.css
 *.dat
 *.gif
 *.mat

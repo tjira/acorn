@@ -19,13 +19,16 @@
     <a href="https://github.com/tjira/acorn/blob/master/LICENSE.md">
         <img src="https://img.shields.io/github/license/tjira/acorn?style=for-the-badge"/>
     </a>
-    <a href="https://github.com/tjira/acorn/stargazers">
-        <img src="https://img.shields.io/github/stars/tjira/acorn?style=for-the-badge"/>
-    </a>
     <a href="https://github.com/tjira/acorn/actions/workflows/test.yml">
         <img src="https://img.shields.io/github/actions/workflow/status/tjira/acorn/test.yml?style=for-the-badge&label=test"/>
     </a>
+    <a href="https://app.codecov.io/gh/tjira/acorn">
+        <img src="https://img.shields.io/codecov/c/github/tjira/acorn?style=for-the-badge"/>
+    </a>
     <br>
+    <a href="https://github.com/tjira/acorn/stargazers">
+        <img src="https://img.shields.io/github/stars/tjira/acorn?style=for-the-badge"/>
+    </a>
     <a href="https://github.com/tjira/acorn">
         <img src="https://img.shields.io/github/languages/code-size/tjira/acorn?style=for-the-badge"/>
     </a>
@@ -59,7 +62,6 @@ Below are all the important features of Acorn divided into categories. If you ar
 * Numerical Hessians and Frequency Analysis for Every Method
 * Molecular Dynamics With Calculated or Provided Gradients
 * Mulliken Population Analysis for RHF
-* Berendsen Thermostatting for MD
 
 ## Compilation
 
