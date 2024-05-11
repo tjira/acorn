@@ -41,9 +41,14 @@ jobs:
         run: pip install gcovr
 
       - name: Run Coverage Analysis
-        run: gcovr . --html -e build -o coverage.html
+        run: gcovr . --html -e build -e libint -o coverage.html
 
-      - name: Upload Coverage Artifact
+      - name: Upload Coverage Reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+
+      - name: Upload Coverage as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage
