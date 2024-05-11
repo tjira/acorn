@@ -120,7 +120,7 @@ if (BUILD_TOOLS)
 endif()
 
 # list of test names
-set(TESTS rhf rmp2 rfci uhf qad1d_imag)
+set(TESTS rhf rmp2 rfci rcisd rcid rcis uhf qad1d_imag)
 
 if (BUILD_TESTING)
     foreach(TEST IN LISTS TESTS)

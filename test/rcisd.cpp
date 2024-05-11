@@ -1,6 +1,6 @@
 #include "restrictedconfigurationinteraction.h"
 
-constexpr double result = -75.02041035041981, precision = 1e-6;
+constexpr double result = -75.01952896551643, precision = 1e-6;
 
 int main(int, char** argv) {
     // get executable path for the executable
@@ -26,8 +26,11 @@ int main(int, char** argv) {
     // transform the coulomb integrals to the MS basis
     ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
 
-    // perform the FCI calculation
-    res = RestrictedConfigurationInteraction().run(system, ints, res, false);
+    // create the CI options
+    RestrictedConfigurationInteraction::Options opt; opt.excitations = {1, 2};
+
+    // perform the CISD calculation
+    res = RestrictedConfigurationInteraction(RestrictedHartreeFock::Options(), opt).run(system, ints, res, false);
 
     // print the total energy and the difference from the reference result
     std::printf("ENERGY: %.14f, DIFFERENCE: %.3e\n", res.Etot, std::abs(res.Etot - result));
