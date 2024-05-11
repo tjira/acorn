@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
   test_linux_x86-64:
@@ -25,10 +25,7 @@ jobs:
         run: ./script/libint.sh
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_COMPILER=g++
-
-      - name: Generate the Header Only Library
-        run: ./script/headeronly.sh > bin/acorn.h
+        run: cmake -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
 
       - name: Build Acorn
         run: |
@@ -39,3 +36,12 @@ jobs:
       - name: Run Tests
         working-directory: build
         run: ctest --verbose
+
+      - name: Run Coverage Analysis
+        run: gcovr . --html -e build -o coverage.html
+
+      - name: Upload Coverage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.html

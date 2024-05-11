@@ -119,5 +119,21 @@ if (BUILD_TOOLS)
     target_link_libraries(acorn_view glad glfw glm)
 endif()
 
-# include test file
-include(CMakeTests.txt)
+# list of test names
+set(TESTS rhf rmp2 rfci uhf qad1d_imag)
+
+if (BUILD_TESTING)
+    foreach(TEST IN LISTS TESTS)
+        # create the executable
+        add_executable(test_${TEST} test/${TEST}.cpp)
+
+        # link the libraries to the test
+        target_link_libraries(test_${TEST} acorn)
+
+        # set the output directory
+        set_target_properties(test_${TEST} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
+
+        # add the test
+        add_test(NAME ${TEST} COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_${TEST})
+    endforeach()
+endif()

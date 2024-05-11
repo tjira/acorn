@@ -30,7 +30,9 @@ cat \
     include/restrictedconfigurationinteraction.h  \
     include/restrictedmollerplesset.h  \
     include/expression.h \
+    include/matrixofmatrices.h \
     include/modelsystem.h \
+    include/propagator.h \
     include/modelsolver.h \
     include/orca.h \
 | sed '/#pragma once/d ; /#include/d ; /\/\//d ; /^$/d'
