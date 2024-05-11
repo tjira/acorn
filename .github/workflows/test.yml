@@ -37,6 +37,9 @@ jobs:
         working-directory: build
         run: ctest --verbose
 
+      - name: Install Gcovr Package
+        run: pip install gcovr
+
       - name: Run Coverage Analysis
         run: gcovr . --html -e build -o coverage.html
 
