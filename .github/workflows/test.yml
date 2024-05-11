@@ -37,12 +37,6 @@ jobs:
         working-directory: build
         run: ctest --verbose
 
-      - name: Install Gcovr Package
-        run: pip install gcovr
-
-      - name: Run Coverage Analysis
-        run: gcovr . --html -e build -e libint -e test -o coverage.html
-
       - name: Upload Coverage Reports
         uses: codecov/codecov-action@v4.0.1
         with:
