@@ -1,13 +1,13 @@
 #include "modelsolver.h"
 
-constexpr double result = 0.50000038965072, precision = 1e-6;
+constexpr double result = 1.00000077930145, precision = 1e-6;
 
-int test_qad1d_imag(int, char**) {
+int test_qad2d_imag(int, char**) {
     // create the model system
-    ModelSystem system(1, {{"0.5*x^2"}}, {"x"}, {-16, 16}, 1024);
+    ModelSystem system(1, {{"0.5*(x^2+y^2)"}}, {"x", "y"}, {-16, 16}, 256);
 
     // create the adiabatic solver options with guess function
-    ModelSolver::OptionsAdiabatic opt; opt.guess = "exp(-(x-1)^2)", opt.real = false;
+    ModelSolver::OptionsAdiabatic opt; opt.guess = "exp(-(x^2+y^2))", opt.iters = 200, opt.real = false;
 
     // create the solver and perforn the dynamics
     Result res = ModelSolver(opt).run(system, {}, false);

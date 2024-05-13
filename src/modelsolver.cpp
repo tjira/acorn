@@ -1,5 +1,4 @@
 #include "modelsolver.h"
-#include "modelsystem.h"
 
 #define I std::complex<double>(0, 1)
 
@@ -57,8 +56,8 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
     if (system.vars().size() == 2) {psi = Expression(opta.guess, system.vars()).eval(x, y); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
     if (system.vars().size() == 1) {psi = Expression(opta.guess, system.vars()).eval(x); psi = psi.array() / std::sqrt(psi.array().abs2().sum() * dr);}
 
-    // define the vector of optimal wavefunction and energies if imaginary time is selected
-    if (!opta.real) res.msv.wfn = std::vector<Matrix<std::complex<double>>>(opta.nstate, psi), res.msv.energy = Vector<>(opta.nstate); 
+    // define the vector of optimal wavefunction and energies if not already defined from imaginary time propagation
+    if (!res.msv.wfn.size()) res.msv.wfn = std::vector<Matrix<std::complex<double>>>(opta.nstate, psi), res.msv.energy = Vector<>(opta.nstate); 
 
     // define the imaginary time operators
     auto[R, K] = Propagator<1>::Get(system, V.complex(), k.array().pow(2) + l.array().pow(2), opta.step, false);
@@ -137,7 +136,7 @@ Result ModelSolver::runad(const ModelSystem& system, Result res, bool print) con
         }
 
         // assign the energy and wavefunction
-        if (!opta.real) res.msv.wfn.at(i) = psi, res.msv.energy(i) = E;
+        res.msv.wfn.at(i) = psi, res.msv.energy(i) = E;
 
         // block to calculate spectrum
         if (opta.real && !opta.spectrum.potential.empty()) {

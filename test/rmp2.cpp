@@ -2,12 +2,9 @@
 
 constexpr double result = -75.00485494762017, precision = 1e-6;
 
-int main(int, char** argv) {
-    // get executable path for the executable
-    auto path = std::filesystem::weakly_canonical(argv[0]).parent_path();
-
+int test_rmp2(int, char**) {
     // create the molecule stream
-    std::ifstream mstream(path / "../../example/molecule/water.xyz");
+    std::ifstream mstream("../example/molecule/water.xyz");
 
     // create the molecule and integral container
     System system(mstream, "STO-3G"); Integrals ints(true);

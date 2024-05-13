@@ -120,20 +120,31 @@ if (BUILD_TOOLS)
 endif()
 
 # list of test names
-set(TESTS rhf rmp2 rfci rcisd rcid rcis uhf qad1d_imag)
+set(TESTS
+    test/rhf.cpp
+    test/rmp2.cpp
+    test/rfci.cpp
+    test/rcisd.cpp
+    test/rcid.cpp
+    test/rcis.cpp
+    test/uhf.cpp
+    test/qad1d_imag.cpp
+    test/qad1d_real.cpp
+    test/qad2d_imag.cpp
+    test/qad2d_real.cpp
+)
+
+# create the test sourcelist
+create_test_sourcelist(TESTLIST acorn_test.cpp ${TESTS})
 
 if (BUILD_TESTING)
-    foreach(TEST IN LISTS TESTS)
-        # create the executable
-        add_executable(test_${TEST} test/${TEST}.cpp)
+    # add the test executable and link the libraries
+    add_executable(acorn_test acorn_test.cpp ${TESTS})
+    target_link_libraries(acorn_test acorn)
 
-        # link the libraries to the test
-        target_link_libraries(test_${TEST} acorn)
-
-        # set the output directory
-        set_target_properties(test_${TEST} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/test)
-
-        # add the test
-        add_test(NAME ${TEST} COMMAND ${PROJECT_SOURCE_DIR}/bin/test/test_${TEST})
-    endforeach()
+    # generate the tests
+    foreach (TEST ${TESTS})
+        get_filename_component(TESTNAME ${TEST} NAME_WE)
+        add_test(NAME test_${TESTNAME} COMMAND acorn_test "test/${TESTNAME}")
+    endforeach ()
 endif()

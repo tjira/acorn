@@ -425,14 +425,17 @@ int main(int argc, char** argv) {
             if (mdlopt.at("potential").size() == 1 && input.at("solve").contains("optimize")) {
                 auto opt = msaopt.get<ModelSolver::OptionsAdiabatic>(); opt.real = false;
                 opt.iters = opt.optimize.iters, opt.step = opt.optimize.step;
-                res = ModelSolver(opt).run(model);
+                res = ModelSolver(opt).run(model, res, false);
             }
+
+            // if the optimization was performed print the resulting energies
+            if (mdlopt.at("potential").size() == 1 && res.msv.energy.size()) Printer::Print(res.msv.energy, "OPTIMAL ENERGIES"), std::cout << std::endl;
             
             // run the calculation
             res = msv.run(model, res);
 
             // if the optimization was performed print the resulting energies
-            if (mdlopt.at("potential").size() == 1 && res.msv.energy.size()) Printer::Print(res.msv.energy, "OPTIMAL ENERGIES"), std::cout << std::endl;
+            Printer::Print(res.msv.energy, "FINAL ENERGIES"), std::cout << std::endl;
 
         } else if (input.contains("dynamics")) {Printer::Title("MODEL CLASSICAL DYNAMICS");
             // create the classical solver object
