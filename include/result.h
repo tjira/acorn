@@ -20,7 +20,7 @@ struct Result {
     } ump;
     struct ModelSolver {
         std::vector<Matrix<std::complex<double>>> wfn;
-        Vector<> energy; Vector<> r, k, t, f;
+        Vector<> energy, pops; Vector<> r, k, t, f;
     } msv;
     double Etot; Vector <> Eexc; Matrix<> G, H;
 };

@@ -8,15 +8,15 @@ class RestrictedMollerPlesset : public RestrictedMethod<RestrictedMollerPlesset>
 public:
     struct Options {Options(){};
         // gradient and hessian structures
-        struct Gradient {double step=1e-5;} gradient; struct Hessian {double step=1e-5;} hessian;
+        struct Gradient {double step;} gradient; struct Hessian {double step;} hessian;
 
         // dynamics structure
         struct Dynamics {
-            int iters=100; double step=1.0;
+            int iters; double step;
         } dynamics={};
 
         // values of simple options
-        int order=2;
+        int order;
     };
 public:
     // constructors and destructors

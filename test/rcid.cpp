@@ -9,12 +9,16 @@ int test_rcid(int, char**) {
     // create the molecule and integral container
     System system(mstream, "STO-3G"); Integrals ints(true);
 
+    // define the HF and CI options
+    RestrictedConfigurationInteraction::Options rciopt; rciopt.excitations = {2}, rciopt.nstate = 2; rciopt.state = 1;
+    RestrictedHartreeFock::Options rhfopt; rhfopt.maxiter = 100; rhfopt.thresh = 1e-8;
+
     // calculate all the atomic integrals
     ints.S = Integral::Overlap(system); ints.T = Integral::Kinetic(system);
     ints.V = Integral::Nuclear(system); ints.J = Integral::Coulomb(system);
 
     // run the restricted Hartree-Fock calculation
-    Result res = RestrictedHartreeFock().run(system, ints, {}, false);
+    Result res = RestrictedHartreeFock(rhfopt).run(system, ints, {}, false);
 
     // transform the one-electron integrals to the MS basis
     ints.Tms = Transform::SingleSpin(ints.T, res.rhf.C);
@@ -23,11 +27,8 @@ int test_rcid(int, char**) {
     // transform the coulomb integrals to the MS basis
     ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
 
-    // create the CI options
-    RestrictedConfigurationInteraction::Options opt; opt.excitations = {2};
-
     // perform the CISD calculation
-    res = RestrictedConfigurationInteraction(RestrictedHartreeFock::Options(), opt).run(system, ints, res, false);
+    res = RestrictedConfigurationInteraction(rhfopt, rciopt).run(system, ints, res, false);
 
     // print the total energy and the difference from the reference result
     std::printf("ENERGY: %.14f, DIFFERENCE: %.3e\n", res.Etot, std::abs(res.Etot - result));

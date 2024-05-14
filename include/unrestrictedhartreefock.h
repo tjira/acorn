@@ -7,15 +7,15 @@ class UnrestrictedHartreeFock : public UnrestrictedMethod<UnrestrictedHartreeFoc
 public:
     struct Options {Options(){};
         // gradient and hessian structrures
-        struct Gradient {double step=1e-5;} gradient={}; struct Hessian {double step=1e-5;} hessian={};
+        struct Gradient {double step;} gradient={}; struct Hessian {double step;} hessian={};
 
         // dynamics structure
         struct Dynamics {
-            int iters=100; double step=1.0; std::string folder;
+            int iters; double step; std::string folder;
         } dynamics={};
 
         // variables
-        int maxiter=100; double thresh=1e-8;
+        int maxiter; double thresh;
     };
 public:
     // constructors and destructors

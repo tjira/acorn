@@ -4,6 +4,8 @@
         "basis" : "sto-3g"
     },
     "rhf" : {
-        "gradient" : {}
+        "gradient" : {},
+        "maxiter" : 100,
+        "thresh" : 1e-8
     }
 }

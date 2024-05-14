@@ -434,8 +434,11 @@ int main(int argc, char** argv) {
             // run the calculation
             res = msv.run(model, res);
 
-            // if the optimization was performed print the resulting energies
+            // print the resulting energies
             Printer::Print(res.msv.energy, "FINAL ENERGIES"), std::cout << std::endl;
+
+            // print the final populations
+            if (res.msv.pops.size()) Printer::Print(res.msv.pops, "FINAL POPULATIONS"), std::cout << std::endl;
 
         } else if (input.contains("dynamics")) {Printer::Title("MODEL CLASSICAL DYNAMICS");
             // create the classical solver object
@@ -443,6 +446,9 @@ int main(int argc, char** argv) {
 
             // run the calculation
             res = msv.run(model, res);
+
+            // print the populations
+            Printer::Print(res.msv.pops, "FINAL POPULATIONS"), std::cout << std::endl;
         }
     }
 

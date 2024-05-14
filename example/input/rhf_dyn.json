@@ -8,6 +8,8 @@
             "iters" : 100,
             "step" : 20
         },
-        "gradient" : {}
+        "gradient" : {},
+        "maxiter" : 100,
+        "thresh" : 1e-8
     }
 }

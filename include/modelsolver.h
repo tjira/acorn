@@ -16,17 +16,15 @@ public:
         } spectrum={};
 
         // variables
-        int nstate=1, iters=1000; double step=0.1;
-        bool real=false, savewfn=false;
-        std::string guess;
+        bool real, savewfn; std::string guess;
+        int nstate, iters; double step;
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};
-        // variables
-        int iters=1000; std::vector<std::string> guess; std::string cap="0";
-        bool savewfn=false, adiabatic=true; double step=0.1, momentum=0;
+        bool savewfn, adiabatic; int iters; double step, momentum;
+        std::vector<std::string> guess; std::string cap="0";
     };
     struct OptionsDynamics {
-        int iters=100, seed=1, state=0, trajs=1; double step=1.0;
+        int iters, seed, state, trajs; double step;
         std::vector<double> position, momentum;
         std::vector<std::string> gradient;
     } dynamics={};

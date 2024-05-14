@@ -9,12 +9,15 @@ int test_rhf(int, char**) {
     // create the molecule and integral container
     System system(mstream, "STO-3G"); Integrals ints(true);
 
+    // define the HF options
+    RestrictedHartreeFock::Options rhfopt; rhfopt.maxiter = 100; rhfopt.thresh = 1e-8;
+
     // calculate all the atomic integrals
     ints.S = Integral::Overlap(system); ints.T = Integral::Kinetic(system);
     ints.V = Integral::Nuclear(system); ints.J = Integral::Coulomb(system);
 
     // run the restricted Hartree-Fock calculation
-    Result res = RestrictedHartreeFock().run(system, ints, {}, false);
+    Result res = RestrictedHartreeFock(rhfopt).run(system, ints, {}, false);
 
     // print the total energy and the difference from the reference result
     std::printf("ENERGY: %.14f, DIFFERENCE: %.3e\n", res.Etot, std::abs(res.Etot - result));

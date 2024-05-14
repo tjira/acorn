@@ -3,13 +3,17 @@
 #define I std::complex<double>(0, 1)
 
 Result ModelSolver::run(const ModelSystem& system, Result res, bool print) const {
+    // define the number of iterations and the step
+    int iters = std::max(std::max(opta.iters, optn.iters), optd.iters);
+    double step = std::max(std::max(opta.step, optn.step), optd.step);
+
     // define the space, momentum, time and frequency grids
-    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(opta.iters + 1), res.msv.f = Vector<>(opta.iters + opta.spectrum.zeropad + 1);
+    res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(iters + 1), res.msv.f = Vector<>(iters + opta.spectrum.zeropad + 1);
 
     // fill the real and time domain
     for (int i = 0; i < system.ngrid; i++) {
         res.msv.r(i) = system.limits.at(0) + (system.limits.at(1) - system.limits.at(0)) * i / (system.ngrid - 1);
-    } for (int i = 0; i <= opta.iters; i++) res.msv.t(i) = i * opta.step;
+    } for (int i = 0; i <= iters; i++) res.msv.t(i) = i * step;
 
     // fill the momentum and frequency domain
     res.msv.k.fill(2 * M_PI / res.msv.k.size() / (res.msv.r(1) - res.msv.r(0))); for (int i = 0; i < res.msv.k.size(); i++) res.msv.k(i) *= i - (i < res.msv.k.size() / 2 ? 0 : res.msv.k.size());
@@ -208,7 +212,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) co
     V(0, 0).array() -= (I * Expression(optn.cap, system.vars()).eval(res.msv.r)).array(), V(1, 1).array() -= (I * Expression(optn.cap, system.vars()).eval(res.msv.r)).array();
 
     // print the potential header
-    std::printf("POTENTIAL POINTS\n       R [au]              V11 [Eh]             V22 [Eh]\n");
+    if (print) std::printf("POTENTIAL POINTS\n       R [au]              V11 [Eh]             V22 [Eh]\n");
 
     // loop to calculate the adiabatic transformation matrices
     for (int i = 0; i < system.ngrid; i++) {
@@ -290,6 +294,9 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) co
         // print the iteration
         if (print) std::printf("%6d %9.4f %20.14f %.2e %.2e %6.4f %6.4f %6.4f\n", i + 1, AU2FS * (i + 1) * optn.step, E, Eerr, Derr, std::abs(rho(0, 0)), std::abs(rho(1, 1)), std::abs(rho(0, 1)));
     }
+
+    // save the last wfn, energy and state populations to the result struct
+    res.msv.wfn = {psi}, res.msv.energy = Vector<>(1); res.msv.energy(0) = E, res.msv.pops = Vector<>(2); res.msv.pops << std::abs(rho(0, 0)), std::abs(rho(1, 1));
 
     // save the wfn dynamics and potential in chosen basis
     for (size_t i = 0; i < system.potential.size() && optn.savewfn; i++) {
@@ -381,7 +388,7 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
             // fill the state
             state(j + 1) = state(j);
 
-            // calculate the potential and kinetic energy
+            // calculate the potential and kinetic energy and define the hopping probability variable
             double Epot = energy.at(state(j + 1)).get(r.row(j + 1)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(), P = 0;
 
             if (system.potential.size() > 1) {
@@ -404,7 +411,7 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
             if (print) std::printf("%6d %6d %9.4f %5d %1.2f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, j + 1, AU2FS * optd.step * (j + 1), state(j) + 1, P, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
         }
 
-        // save the states and define the density diagonal
+        // save the current state
         states.at(i) = state;
 
         // save the matrix of states and coordinates
@@ -428,8 +435,13 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
 
             // print the population
             if (print) std::printf("%9.4f %6.4f %6.4f\n", AU2FS * j * optd.step, pop1, pop2);
+
+            // save the population
+            if (j == optd.iters) res.msv.pops = Vector<>(2), res.msv.pops << pop1, pop2;
         }
     }
+
+
 
     // print the newline
     if (print) std::printf("\n");

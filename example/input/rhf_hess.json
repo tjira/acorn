@@ -6,6 +6,8 @@
     "rhf" : {
         "hessian" : {
             "step" : 1e-5
-        }
+        },
+        "maxiter" : 100,
+        "thresh" : 1e-8
     }
 }

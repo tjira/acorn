@@ -8,15 +8,15 @@ class RestrictedConfigurationInteraction : public RestrictedMethod<RestrictedCon
 public:
     struct Options {Options(){};
         // gradient and hessian structures
-        struct Gradient {double step=1e-5;} gradient; struct Hessian {double step=1e-5;} hessian;
+        struct Gradient {double step;} gradient; struct Hessian {double step;} hessian;
 
         // dynamics structure
         struct Dynamics {
-            int iters=100; double step=1.0;
+            int iters; double step;
         } dynamics={};
 
         // RCI options
-        std::vector<int> excitations; int nstate=2, state=1;
+        std::vector<int> excitations; int nstate, state;
     };
 public:
     // constructors and destructors

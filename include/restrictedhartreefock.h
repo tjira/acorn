@@ -7,15 +7,15 @@ class RestrictedHartreeFock : public RestrictedMethod<RestrictedHartreeFock> {
 public:
     struct Options {Options(){};
         // gradient and hessian structrures
-        struct Gradient {double step=1e-5;} gradient={}; struct Hessian {double step=1e-5;} hessian={};
+        struct Gradient {double step;} gradient={}; struct Hessian {double step;} hessian={};
 
         // dynamics structure
         struct Dynamics {
-            int iters=100; double step=1.0;
+            int iters; double step;
         } dynamics={};
 
         // variables
-        int maxiter=100; double thresh=1e-8;
+        int maxiter; double thresh;
     };
 public:
     // constructors and destructors

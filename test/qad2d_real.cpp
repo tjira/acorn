@@ -7,7 +7,8 @@ int test_qad2d_real(int, char**) {
     ModelSystem system(1, {{"0.5*(x^2+y^2)"}}, {"x", "y"}, {-16, 16}, 256);
 
     // create the adiabatic solver options with guess function
-    ModelSolver::OptionsAdiabatic opt; opt.guess = "exp(-(x^2+y^2))", opt.iters = 200, opt.real = true;
+    ModelSolver::OptionsAdiabatic opt; opt.guess = "exp(-(x^2+y^2))", opt.iters = 200;
+    opt.nstate = 1, opt.real = true, opt.savewfn = false, opt.step = 0.1;
 
     // create the solver and perforn the dynamics
     Result res = ModelSolver(opt).run(system, {}, false);

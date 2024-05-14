@@ -132,6 +132,8 @@ set(TESTS
     test/qad1d_real.cpp
     test/qad2d_imag.cpp
     test/qad2d_real.cpp
+    test/qnd1d_real.cpp
+    test/nad1d.cpp
 )
 
 # create the test sourcelist
