@@ -13,7 +13,11 @@
         "step" : 0.1,
         "iters" : 1000,
         "spectrum" : {
-            "potential" : "0.5*x^2"
+            "potential" : "0.5*x^2",
+            "normalize" : false,
+            "zpesub" : false,
+            "zeropad" : 0,
+            "window" : "1"
         },
         "savewfn" : true
     }

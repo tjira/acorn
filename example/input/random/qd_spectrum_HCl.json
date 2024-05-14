@@ -8,7 +8,10 @@
     },
     "solve" : {
         "guess" : "exp(-(x-1)^2)",
-        "optimize" : {},
+        "optimize" : {
+            "iters" : 1000,
+            "step" : 1
+        },
         "spectrum" : {
             "potential" : "0.161132+exp(-1.24127*(x-0.711606))",
             "zpesub" : true,

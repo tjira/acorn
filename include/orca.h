@@ -8,7 +8,7 @@ public:
     struct Options {Options(){};
         // dynamics structure
         struct Dynamics {
-            int iters=100; double step=1.0;
+            int iters; double step;
         } dynamics={};
 
         // variables

@@ -9,10 +9,10 @@ public:
     struct OptionsAdiabatic {OptionsAdiabatic(){};
         // options structures
         struct Optimize {
-            double step=1; int iters=1000;
+            double step; int iters;
         } optimize={};
         struct Spectrum {
-            bool normalize=false, zpesub=false; int zeropad=0; std::string potential="", window="";
+            bool normalize, zpesub; int zeropad; std::string potential, window;
         } spectrum={};
 
         // variables
@@ -21,7 +21,7 @@ public:
     };
     struct OptionsNonadiabatic {OptionsNonadiabatic(){};
         bool savewfn, adiabatic; int iters; double step, momentum;
-        std::vector<std::string> guess; std::string cap="0";
+        std::vector<std::string> guess; std::string cap;
     };
     struct OptionsDynamics {
         int iters, seed, state, trajs; double step;
