@@ -14,7 +14,7 @@
             "step" : 20
         },
         "gradient" : {
-            "step" : 1e-5
+            "step" : 1e-6
         }
     }
 }

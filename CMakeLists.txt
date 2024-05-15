@@ -122,6 +122,8 @@ endif()
 # list of test names
 set(TESTS
     test/rhf.cpp
+    test/rhf_mulliken.cpp
+    test/rhf_grad.cpp
     test/rmp2.cpp
     test/rfci.cpp
     test/rcisd.cpp
