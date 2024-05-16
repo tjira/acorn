@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
 
     # define energies, number of occupied orbitals and nbf
-    E_HF, E_HF_P, VNN, nocc, nbf = 0, 1, 0, sum(atoms) // 2, S.shape[0]
+    E_HF, E_HF_P, VNN, nocc, nvirt, nbf = 0, 1, 0, sum(atoms) // 2, S.shape[0] - sum(atoms) // 2, S.shape[0]
 
     # define some matrices and tensors
     K, eps = J.transpose(0, 3, 2, 1), np.array(nbf * [0])
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     # MOLLER-PLESSET PERTRUBATION THEORY ==================================================================================================================================================
     if args.mp2:
 
-        # define the tiling matrix for the MO coefficients and initialize the MP energies
+        # define the tiling matrix for the MO coefficients and energy placeholder
         P, E_MP2 = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T, 0
 
         # define the spin masks
@@ -102,12 +102,23 @@ if __name__ == "__main__":
         # tile the coefficient matrix, apply the spin mask and tile the orbital energies
         Cms, epsms = np.block([[C @ P], [C @ P]]) * np.block([[M], [N]]), np.repeat(eps, 2)
 
-        # transform the coulomb integrals to the MS basis
+        # transform the coulomb integrals to the MS basis in chemists' notation and slice it
         Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)
 
-        # calculate the MP2 correlation
-        for i, j, a, b in it.product(range(2 * nocc), range(2 * nocc), range(2 * nocc, 2 * nbf), range(2 * nocc, 2 * nbf)):
-            E_MP2 += 0.25 * (Jms[i, a, j, b] - Jms[i, b, j, a])**2 / (epsms[i] + epsms[j] - epsms[a] - epsms[b]);
+        # define the orbital slices to remove unwanted coefficients
+        o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)
+
+        # define all the necessary integral slices
+        ovov = Jms[o, v, o, v]
+
+        # define the 4-th order tensor of sum of spinorbital energies, where virtual energies are positive and occupied negative
+        eiajb = np.array([[[[ea + eb - ei - ej for eb in epsms[v]] for ej in epsms[o]] for ea in epsms[v]] for ei in epsms[o]])
+
+        # define the double excitations amplitudes
+        tiajb = (ovov - ovov.swapaxes(1, 3)) / eiajb
+
+        # calculate the MP2 correlation energy
+        E_MP2 -= 0.25 * np.einsum("iajb,iajb", (ovov - ovov.swapaxes(1, 3)), tiajb)
 
         # print the results
         print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
