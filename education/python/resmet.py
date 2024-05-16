@@ -37,7 +37,8 @@ if __name__ == "__main__":
     # method switches
     parser.add_argument("--cisd", help="Perform the singles/doubles configuration interaction calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action=ap.BooleanOptionalAction)
-    parser.add_argument("--mp2", help="Perform the Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--mp2", help="Perform the second order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--mp3", help="Perform the third order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
 
     # parse the arguments
     args = parser.parse_args()
@@ -90,10 +91,10 @@ if __name__ == "__main__":
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
     # MOLLER-PLESSET PERTRUBATION THEORY ==================================================================================================================================================
-    if args.mp2:
+    if args.mp2 or args.mp3:
 
-        # define the tiling matrix for the MO coefficients and energy placeholder
-        P, E_MP2 = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T, 0
+        # define the tiling matrix for the MO coefficients and energy placeholders
+        P, E_MP2, E_MP3 = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T, 0, 0
 
         # define the spin masks
         M = np.repeat([1 - np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
@@ -102,26 +103,35 @@ if __name__ == "__main__":
         # tile the coefficient matrix, apply the spin mask and tile the orbital energies
         Cms, epsms = np.block([[C @ P], [C @ P]]) * np.block([[M], [N]]), np.repeat(eps, 2)
 
-        # transform the coulomb integrals to the MS basis in chemists' notation and slice it
-        Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)
+        # transform the coulomb integrals to the MS basis in chemists' notation and define the antisymmetrized version
+        Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True); Jmsa = Jms - Jms.swapaxes(1, 3)
 
-        # define the orbital slices to remove unwanted coefficients
+        # define the orbital slices for occupied and unoccupied orbitals
         o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)
 
-        # define all the necessary integral slices
-        ovov = Jms[o, v, o, v]
+        # define slices of the antisymmetrized coulomb integrals
+        oooo, ovov, ovvo, vvvv = Jmsa[o, o, o, o], Jmsa[o, v, o, v], Jmsa[o, v, v, o], Jmsa[v, v, v, v]
 
         # define the 4-th order tensor of sum of spinorbital energies, where virtual energies are positive and occupied negative
-        eiajb = np.array([[[[ea + eb - ei - ej for eb in epsms[v]] for ej in epsms[o]] for ea in epsms[v]] for ei in epsms[o]])
+        eovov = np.array([[[[ea + eb - ei - ej for eb in epsms[v]] for ej in epsms[o]] for ea in epsms[v]] for ei in epsms[o]])
 
-        # define the double excitations amplitudes
-        tiajb = (ovov - ovov.swapaxes(1, 3)) / eiajb
+        # define the amplitudes
+        tovov = ovov / eovov
 
         # calculate the MP2 correlation energy
-        E_MP2 -= 0.25 * np.einsum("iajb,iajb", (ovov - ovov.swapaxes(1, 3)), tiajb)
+        E_MP2 -= 0.25 * np.einsum("iajb,iajb", ovov, tovov)
 
-        # print the results
+        # calculate the MP3 correlation energy
+        if args.mp3:
+            E_MP3 -= 0.125 * np.einsum("kilj,iajb,kalb", oooo, tovov, tovov)
+            E_MP3 -= 0.125 * np.einsum("kcbj,iajb,iakc", ovvo, tovov, tovov)
+            E_MP3 -= 0.125 * np.einsum("acbd,iajb,icjd", vvvv, tovov, tovov)
+
+        # print the MP2 energy
         print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
+
+        # print the MP3 energy
+        if args.mp3: print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 
     # CONFIGUIRATION INTERACTION =======================================================================================================================================================================
     if args.cisd or args.fci:
