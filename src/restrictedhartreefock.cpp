@@ -27,7 +27,7 @@ Result RestrictedHartreeFock::run(const System& system, const Integrals& ints, R
     Matrix<> H = ints.T + ints.V, F = H;
 
     // print the iteration header
-    if (print) std::printf("ITER       Eel [Eh]         |dE|     |dD|       TIME    \n");
+    if (print) std::printf("SCF ITERATIONS\nITER       Eel [Eh]         |dE|     |dD|       TIME    \n");
 
     for (int i = 1; i <= opt.maxiter; i++) {
         // start the timer

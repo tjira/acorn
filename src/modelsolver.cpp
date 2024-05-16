@@ -4,8 +4,11 @@
 
 Result ModelSolver::run(const ModelSystem& system, Result res, bool print) const {
     // define the number of iterations and the step
-    int iters = std::max(std::max(opta.iters, optn.iters), optd.iters);
-    double step = std::max(std::max(opta.step, optn.step), optd.step);
+    int iters = system.potential.size() == 1 ? opta.iters : optn.iters;
+    double step = system.potential.size() == 1 ? opta.step : optn.step;
+
+    // redefine to the classical dynamics if requested
+    if (!optd.gradient.empty()) iters = optd.iters, step = optd.step;
 
     // define the space, momentum, time and frequency grids
     res.msv.r = Vector<>(system.ngrid), res.msv.k = Vector<>(system.ngrid), res.msv.t = Vector<>(iters + 1), res.msv.f = Vector<>(iters + opta.spectrum.zeropad + 1);
@@ -263,7 +266,7 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) co
     energies.push_back(E); if (optn.savewfn) psis.push_back(psi);
 
     // print the iteration header
-    if (print) std::printf(" ITER  TIME [fs]       Eel [Eh]         |dE|     |dD|     S1     S2     CR\n");
+    if (print) std::printf("QND WFN PROPAGATION\n ITER  TIME [fs]       Eel [Eh]         |dE|     |dD|     S1     S2     CR\n");
 
     // print the zeroth iteration
     if (print) std::printf("%6d %9.4f %20.14f %.2e %.2e %6.4f %6.4f %6.4f\n", 0, 0.0, E, 0.0, 0.0, std::abs(rho(0, 0)), std::abs(rho(1, 1)), std::abs(rho(0, 1)));
