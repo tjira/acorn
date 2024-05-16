@@ -89,20 +89,30 @@ if __name__ == "__main__":
     # print the results
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
-    # MOLLER-PLESSET PERTRUBATION THEORY OF 2ND ORDER ==================================================================================================================================================
+    # MOLLER-PLESSET PERTRUBATION THEORY ==================================================================================================================================================
     if args.mp2:
 
-        # transform the coulomb integral to MO basis and define the MP2 energy
-        Jmo, E_MP2 = np.einsum("ip,jq,ijkl,kr,ls", C, C, J, C, C, optimize=True), 0
+        # define the tiling matrix for the MO coefficients and initialize the MP energies
+        P, E_MP2 = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T, 0
+
+        # define the spin masks
+        M = np.repeat([1 - np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
+        N = np.repeat([np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
+
+        # tile the coefficient matrix, apply the spin mask and tile the orbital energies
+        Cms, epsms = np.block([[C @ P], [C @ P]]) * np.block([[M], [N]]), np.repeat(eps, 2)
+
+        # transform the coulomb integrals to the MS basis
+        Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)
 
         # calculate the MP2 correlation
-        for i, j, a, b in it.product(range(nocc), range(nocc), range(nocc, nbf), range(nocc, nbf)):
-            E_MP2 += Jmo[i, a, j, b] * (2 * Jmo[i, a, j, b] - Jmo[i, b, j, a]) / (eps[i] + eps[j] - eps[a] - eps[b]);
+        for i, j, a, b in it.product(range(2 * nocc), range(2 * nocc), range(2 * nocc, 2 * nbf), range(2 * nocc, 2 * nbf)):
+            E_MP2 += 0.25 * (Jms[i, a, j, b] - Jms[i, b, j, a])**2 / (epsms[i] + epsms[j] - epsms[a] - epsms[b]);
 
         # print the results
         print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
 
-    # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
+    # CONFIGUIRATION INTERACTION =======================================================================================================================================================================
     if args.cisd or args.fci:
 
         # define the tiling matrix for the MO coefficients
@@ -118,7 +128,7 @@ if __name__ == "__main__":
         # transform the core Hamiltonian to the molecular spinorbital basis
         Hms = np.einsum("ip,ij,jq", Cms, np.kron(np.eye(2), H), Cms, optimize=True)
 
-        # transform the coulomb integral tensor to the MS basis
+        # transform the coulomb integrals to the MS basis
         Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)
 
         # define functions to generate single and double excitations of a ground configuration
