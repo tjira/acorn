@@ -31,7 +31,6 @@ if __name__ == "__main__":
     parser.add_argument("-h", "--help", help="Print this help message.", action=ap.BooleanOptionalAction)
 
     # add integral options
-    parser.add_argument("--psi", help="Use the Psi4 package to calculate atomic integrals with the provided basis.", type=str)
     parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["S.mat", "T.mat", "V.mat", "J.mat"])
 
     # method switches
@@ -45,6 +44,9 @@ if __name__ == "__main__":
 
     # print the help message if the flag is set
     if args.help: parser.print_help(); exit()
+
+    # forward declaration of integrals and energies in MS basis (just to avoid NameError in linting)
+    Hms, Jms, Jmsa, epsms = np.zeros(2 * [0]), np.zeros(4 * [0]), np.zeros(4 * [0]), np.array([])
 
     # OBTAIN THE MOLECULE AND ATOMIC INTEGRALS =========================================================================================================================================================
 
@@ -90,11 +92,11 @@ if __name__ == "__main__":
     # print the results
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
-    # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
-    if args.mp2 or args.mp3:
+    # INTEGRAL TRANSFORM FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
+    if args.mp2 or args.mp3 or args.cisd or args.fci:
 
         # define the tiling matrix for the MO coefficients and energy placeholders
-        P, E_MP2, E_MP3 = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T, 0, 0
+        P = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T
 
         # define the spin masks
         M = np.repeat([1 - np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
@@ -103,11 +105,17 @@ if __name__ == "__main__":
         # tile the coefficient matrix, apply the spin mask and tile the orbital energies
         Cms, epsms = np.block([[C @ P], [C @ P]]) * np.block([[M], [N]]), np.repeat(eps, 2)
 
+        # transform the core Hamiltonian to the molecular spinorbital basis
+        Hms = np.einsum("ip,ij,jq", Cms, np.kron(np.eye(2), H), Cms, optimize=True)
+
         # transform the coulomb integrals to the MS basis in chemists' notation and define the antisymmetrized version
         Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True); Jmsa = Jms - Jms.swapaxes(1, 3)
 
-        # define the orbital slices for occupied and unoccupied orbitals
-        o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)
+    # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
+    if args.mp2 or args.mp3:
+
+        # define the orbital slices and energy placeholders
+        o, v, E_MP2, E_MP3 = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf), 0, 0
 
         # define slices of the antisymmetrized coulomb integrals
         oooo, oovv, ovov, vvvv = Jmsa[o, o, o, o], Jmsa[o, o, v, v], Jmsa[o, v, o, v], Jmsa[v, v, v, v]
@@ -135,22 +143,6 @@ if __name__ == "__main__":
 
     # CONFIGUIRATION INTERACTION =======================================================================================================================================================================
     if args.cisd or args.fci:
-
-        # define the tiling matrix for the MO coefficients
-        P = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T
-
-        # define the spin masks
-        M = np.repeat([1 - np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
-        N = np.repeat([np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
-
-        # tile the coefficient matrix and apply the spin mask
-        Cms = np.block([[C @ P], [C @ P]]) * np.block([[M], [N]])
-
-        # transform the core Hamiltonian to the molecular spinorbital basis
-        Hms = np.einsum("ip,ij,jq", Cms, np.kron(np.eye(2), H), Cms, optimize=True)
-
-        # transform the coulomb integrals to the MS basis
-        Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True)
 
         # define functions to generate single and double excitations of a ground configuration
         def single(ground, nbf):

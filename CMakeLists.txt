@@ -125,6 +125,7 @@ set(TESTS
     test/rhf_mulliken.cpp
     test/rhf_grad.cpp
     test/rmp2.cpp
+    test/rmp3.cpp
     test/rfci.cpp
     test/rcisd.cpp
     test/rcid.cpp
