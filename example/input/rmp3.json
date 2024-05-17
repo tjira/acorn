@@ -1,0 +1,13 @@
+{
+    "molecule" : {
+        "file" : "../molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "rhf" : {
+        "maxiter" : 100,
+        "thresh" : 1e-8
+    },
+    "rmp" : {
+        "order" : 3
+    }
+}

@@ -20,8 +20,8 @@ int test_rmp2(int, char**) {
     // run the restricted Hartree-Fock calculation
     Result res = RestrictedHartreeFock(rhfopt).run(system, ints, {}, false);
 
-    // transform the coulomb integrals to the MO basis
-    ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C);
+    // transform the coulomb integrals to the MS basis
+    ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C);
 
     // perform the RMP2 calculation
     res = RestrictedMollerPlesset(rhfopt, rmpopt).run(system, ints, res, false);

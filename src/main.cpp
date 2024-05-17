@@ -343,16 +343,16 @@ int main(int argc, char** argv) {
                 }
 
             // if RMP calculation was requested
-            } else if (input.contains("rmp")) {Printer::Title("RESTRICTED MOLLER-PLESSET");
+            } else if (input.contains("rmp")) {Printer::Title("RESTRICTED MOLLER-PLESSET (" + std::to_string((int)rmpopt.at("order")) + ")");
                 // create the RMP object
                 RestrictedMollerPlesset rmp(rhfopt, rmpopt);
 
-                // transform the coulomb tensor to MO basis
-                MEASURE("COULOMB INTEGRALS IN MO BASIS: ", ints.Jmo = Transform::Coulomb(ints.J, res.rhf.C)) std::cout << std::endl;
+                // transform the coulomb tensor to MS basis
+                MEASURE("COULOMB INTEGRALS IN MS BASIS: ", ints.Jms = Transform::CoulombSpin(ints.J, res.rhf.C)) std::cout << std::endl;
 
                 // print and export the Coulomb integrals in MO
-                if (rmpopt.at("print").at("coulombmo")) Printer::Print(ints.Jmo, "COULOMB INTEGRALS IN MO BASIS"), std::cout << "\n";
-                if (rmpopt.at("export").at("coulombmo")) EigenWrite(std::filesystem::path(ip) / "JMO.mat", ints.Jmo);
+                if (rmpopt.at("print").at("coulombms")) Printer::Print(ints.Jms, "COULOMB INTEGRALS IN MS BASIS"), std::cout << "\n";
+                if (rmpopt.at("export").at("coulombms")) EigenWrite(std::filesystem::path(ip) / "JMS.mat", ints.Jmo);
 
                 // run the calculation
                 res = rmp.run(system, ints, res);

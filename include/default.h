@@ -34,8 +34,8 @@ inline std::string msnoptstr = R"({
 
 inline std::string rmpoptstr = R"({
     "dynamics" : {"iters" : 100, "step" : 20}, "gradient" : {"step" : 1e-5}, "hessian" : {"step" : 1e-5},
-    "export" : {"coulombmo" : false},
-    "print" : {"coulombmo" : false}
+    "export" : {"coulombms" : false},
+    "print" : {"coulombms" : false}
 })";
 
 inline std::string rhfoptstr = R"({
