@@ -120,11 +120,8 @@ if __name__ == "__main__":
         # define slices of the antisymmetrized coulomb integrals
         oooo, oovv, ovov, vvvv = Jmsa[o, o, o, o], Jmsa[o, o, v, v], Jmsa[o, v, o, v], Jmsa[v, v, v, v]
 
-        # define the 4-th order tensor of sum of spinorbital energies, where virtual energies are positive and occupied negative
-        eovov = np.array([[[[ea + eb - ei - ej for eb in epsms[v]] for ej in epsms[o]] for ea in epsms[v]] for ei in epsms[o]])
-
         # define the amplitudes
-        tovov = ovov / eovov
+        tovov = ovov / np.array([[[[ea + eb - ei - ej for eb in epsms[v]] for ej in epsms[o]] for ea in epsms[v]] for ei in epsms[o]])
 
         # calculate the MP2 correlation energy
         E_MP2 -= 0.25 * np.einsum("iajb,iajb", ovov, tovov, optimize=True)
