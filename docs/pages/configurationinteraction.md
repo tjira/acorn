@@ -11,42 +11,19 @@ nav_order: 1
 Configuration interaction (CI) is a post-Hartree-Fock, utilizing a linear variational approach to address the nonrelativistic Schrödinger equation under the Born–Oppenheimer approximation for multi-electron quantum systems. CI mathematically represents the wave function as a linear combination of Slater determinants. The term "configuration" refers to different ways electrons can occupy orbitals, while "interaction" denotes the mixing of these electronic configurations or states. CI computations, however, are resource-intensive, requiring significant CPU time and memory, limiting their application to smaller molecular systems. While Full CI (FCI) considers all possible electronic configurations, making it computationally prohibitive for larger systems, truncated versions like CISD, CISDT, and CISDTQ are more feasible and commonly employed in quantum chemistry studies.
 
 
-## Restricted Full Configuration Interaction
+## Full Configuration Interaction
 
-Let's consider the restricted version of the Full Configuration Interaction (FCI) method, which considers all possible electronic configurations within a given basis set. The FCI wave function is expressed as a linear combination of Slater determinants, where each determinant represents a unique electron configuration. The FCI method provides the most accurate description of the electronic structure, but its computational cost grows exponentially with the number of electrons and basis functions, making it infeasible for large systems.
+Let's consider the Full Configuration Interaction (FCI) method, which considers all possible electronic configurations within a given basis set. The FCI wave function is expressed as a linear combination of Slater determinants, where each determinant represents a unique electron configuration. The FCI method provides the most accurate description of the electronic structure, but its computational cost grows exponentially with the number of electrons and basis functions, making it infeasible for large systems.
 
 ### The Transformation of Integrals to Molecular Spinorbital Basis
-To begin, we need to convert the coefficient matrix $\mathbf{C}$ into the basis of molecular spinorbitals (MS), as this matrix is essential for later transformations of the core Hamiltonian and the Coulomb integrals. Let the number of spatial basis functions be denoted as $n$. The coefficient matrix in the MS basis will then be of dimension $2n \times 2n$, to incorporate the electron spin. In this transformation, each column (orbital) is duplicated and the result is vertically concatenated with itself. The corresponding segments are then zeroed out to respect the Pauli exclusion principle. This is done mathematically using the tiling matrix $\mathbf{P}_{n \times 2n}$, defined as
 
-\begin{equation}
-\mathbf{P}=\begin{pmatrix}e_1&e_1&e_2&e_2&\dots&e_n&e_n\end{pmatrix}
-\end{equation}
-
-where $e_i$ represents the $i$-th column of the identity matrix $\mathbf{I}\_n$. To facilitate the correct allocation of spin states, we define the matrices $\mathbf{M}\_{n \times 2n}$ and $\mathbf{N}_{n \times 2n}$ with elements given by
-
-\begin{equation}
-M_{ij}=1-j\bmod 2,N_{ij}=j \bmod 2
-\end{equation}
-
-The coefficient matrix $\mathbf{C}$ in the MS basis is then expressed as
-
-\begin{equation}
-\mathbf{C}^{MS}=\begin{pmatrix}\mathbf{CP}\\\ \mathbf{CP}\end{pmatrix}\odot\begin{pmatrix}\mathbf{M}\\\ \mathbf{N}\end{pmatrix}
-\end{equation}
-
-where $\odot$ denotes the Hadamard product. This transformed matrix $\mathbf{C}^{MS}$ is then used to transform the core Hamiltonian and the Coulomb integrals to the MS basis. For the core Hamiltonian, we specifically arrange the elements to be block-diagonal, with identical diagonal blocks corresponding to the spatial orbitals and zero off-diagonal blocks, mathematically written as
+To begin, we need to convert the core Hamiltonian $\mathbf{H}^{core}$ and the Coulomb integrals $\mathbf{J}$ into the basis of molecular spinorbitals (MS). The proces of transforming the Coulomb integrals is already described in the Møller–Plesset perturbation theory page [here](mollerplessetpertrubationtheory.html#the-transform-of-integrals-to-molecular-spinorbital-basis). To transform the core Hamiltonian, we use the formula
 
 \begin{equation}
 H_{pq}^{core,MS}=C_{\mu p}^{MS}(\mathbf{I}\_{2}\otimes_K\mathbf{H}^{core})\_{\mu\nu}C_{\nu r}^{MS}
 \end{equation}
 
-where $\otimes_K$ stands for the Kronecker product. Similarly, the transformation of the Coulomb integrals in the MS basis is given by
-
-\begin{equation}
-J_{pqrs}^{MS}=C_{\mu p}C_{\nu q}(\mathbf{I}\_{2}\otimes_K(\mathbf{I}\_{2}\otimes_K\mathbf{J})^{(4,3,2,1)})\_{\mu\nu\kappa\lambda}C_{\kappa r}C_{\lambda s}
-\end{equation}
-
-where the superscript $(4,3,2,1)$ denotes the axes transposition. This notation accounts for the spin modifications and ensures that the transformations adhere to quantum mechanical principles.
+where $\mathbf{C}^{MS}$ is the coefficient matrix in the MS basis, defined in the MPPT page.
 
 ### The Determinants Generation
 

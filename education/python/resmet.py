@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # print the results
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
-    # MOLLER-PLESSET PERTRUBATION THEORY ==================================================================================================================================================
+    # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
     if args.mp2 or args.mp3:
 
         # define the tiling matrix for the MO coefficients and energy placeholders
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)
 
         # define slices of the antisymmetrized coulomb integrals
-        oooo, ovov, ovvo, vvvv = Jmsa[o, o, o, o], Jmsa[o, v, o, v], Jmsa[o, v, v, o], Jmsa[v, v, v, v]
+        oooo, oovv, ovov, vvvv = Jmsa[o, o, o, o], Jmsa[o, o, v, v], Jmsa[o, v, o, v], Jmsa[v, v, v, v]
 
         # define the 4-th order tensor of sum of spinorbital energies, where virtual energies are positive and occupied negative
         eovov = np.array([[[[ea + eb - ei - ej for eb in epsms[v]] for ej in epsms[o]] for ea in epsms[v]] for ei in epsms[o]])
@@ -119,16 +119,16 @@ if __name__ == "__main__":
         tovov = ovov / eovov
 
         # calculate the MP2 correlation energy
-        E_MP2 -= 0.25 * np.einsum("iajb,iajb", ovov, tovov)
-
-        # calculate the MP3 correlation energy
-        if args.mp3:
-            E_MP3 -= 0.125 * np.einsum("kilj,iajb,kalb", oooo, tovov, tovov)
-            E_MP3 -= 0.125 * np.einsum("kcbj,iajb,iakc", ovvo, tovov, tovov)
-            E_MP3 -= 0.125 * np.einsum("acbd,iajb,icjd", vvvv, tovov, tovov)
+        E_MP2 -= 0.25 * np.einsum("iajb,iajb", ovov, tovov, optimize=True)
 
         # print the MP2 energy
         print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
+
+        # calculate the MP3 correlation energy
+        if args.mp3:
+            E_MP3 += 0.125 * np.einsum("iajb,acbd,icjd", tovov, vvvv, tovov, optimize=True)
+            E_MP3 += 0.125 * np.einsum("iajb,kilj,kalb", tovov, oooo, tovov, optimize=True)
+            E_MP3 -=         np.einsum("iajb,kibc,kajc", tovov, oovv, tovov, optimize=True)
 
         # print the MP3 energy
         if args.mp3: print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
