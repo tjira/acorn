@@ -10,7 +10,12 @@
         "mass" : 2000
     },
     "dynamics" : {
-        "gradient" : ["0.006/cosh(0.6*x)^2", "-0.006/cosh(0.6*x)^2"],
+        "gradient" : [
+            ["0.006/cosh(0.6*x)^2", "-0.002*x*exp(-x^2)"],
+            ["-0.002*x*exp(-x^2)", "-0.006/cosh(0.6*x)^2"]
+        ],
+        "savetraj" : true,
+        "adiabatic" : false,
         "iters" : 350,
         "step" : 10,
         "position" : [-10],

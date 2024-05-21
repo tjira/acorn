@@ -319,18 +319,13 @@ Result ModelSolver::runnad(const ModelSystem& system, Result res, bool print) co
 
 Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) const {
     // define energy, gradient and coupling functions and define the array of state populations
-    std::vector<Expression> energy, coupling, grad; std::vector<Vector<int>> states(optd.trajs);
+    std::vector<std::vector<Expression>> potential(system.potential.size()), gradient(system.potential.size()); std::vector<Vector<int>> states(optd.trajs);
 
-    // fill the gradient and energy expressions
-    for (size_t i = 0; i < system.potential.size(); i++) {
-        energy.push_back(Expression(system.potential.at(i).at(i), system.vars()));
-        grad.push_back(Expression(optd.gradient.at(i), system.vars()));
-    }
-
-    // fill the coupling expressions
+    // fill the potential and gradient expressions
     for (size_t i = 0; i < system.potential.size(); i++) {
         for (size_t j = 0; j < system.potential.size(); j++) {
-            if (i != j) coupling.push_back(Expression(system.potential.at(i).at(j), system.vars()));
+            potential.at(i).push_back(Expression(system.potential.at(i).at(j), system.vars()));
+            gradient.at(i).push_back(Expression(optd.gradient.at(i).at(j), system.vars()));
         }
     }
 
@@ -343,7 +338,7 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
         for (int i = 0; i < system.ngrid; i++) {
             std::printf("%20.14f", res.msv.r(i));
             for (size_t j = 0; j < system.potential.size(); j++) {
-                std::printf(" %20.14f",  energy.at(j).get(res.msv.r(i)));
+                std::printf(" %20.14f",  potential.at(j).at(j).get(res.msv.r(i)));
             } std::printf("\n");
         } std::printf("\n");
     }
@@ -369,11 +364,22 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
         // define the initial state, state container and start the timer
         Vector<int> state(optd.iters + 1); state(0) = optd.state - 1; auto start = Timer::Now();
 
+        // define the potential matrix and its derivative at the initial position
+        Matrix<> V(system.potential.size(), system.potential.size()), dV(system.potential.size(), system.potential.size());
+
+        // calculate the potential and gradient at the initial position
+        for (size_t j = 0; j < system.potential.size(); j++) {
+            for (size_t k = 0; k < system.potential.size(); k++) {
+                V(j, k) = potential.at(j).at(k).get(r.row(0));
+                dV(j, k) = gradient.at(j).at(k).get(r.row(0));
+            }
+        }
+
         // calculate the force and potential with kinetic energy
-        Vector<> F = -grad.at(state(0)).eval(r.row(0)); double Epot = energy.at(state(0)).get(r.row(0)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
+        Vector<> F(1); F(0) = -dV(state(0), state(0)); double Epot = V(state(0), state(0)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum();
 
         // define the energy difference container and fill the zeroth iteration
-        std::vector<double> Ediff; if (system.potential.size() > 1) Ediff.push_back(energy.at(1).get(r.row(0)) - energy.at(0).get(r.row(0)));
+        std::vector<double> Ediff, dEdiff; if (system.potential.size() > 1) Ediff.push_back(V(1, 1) - V(0, 0)), dEdiff.push_back(0);
 
         // print the zeroth iteration
         if (print) std::printf("%6d %6d %9.4f %5d %1.2f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, 0, 0.0, state(0) + 1, 0.0, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -391,24 +397,32 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
             // fill the state
             state(j + 1) = state(j);
 
+            // calculate the potential and gradient at the current position
+            for (size_t k = 0; k < system.potential.size(); k++) {
+                for (size_t l = 0; l < system.potential.size(); l++) {
+                    V(k, l) = potential.at(k).at(l).get(r.row(j + 1));
+                    dV(k, l) = gradient.at(k).at(l).get(r.row(j + 1));
+                }
+            }
+
             // calculate the potential and kinetic energy and define the hopping probability variable
-            double Epot = energy.at(state(j + 1)).get(r.row(j + 1)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(), P = 0;
+            double Epot = V(state(j + 1), state(j + 1)), Ekin = 0.5 * (m.array() * v.array() * v.array()).sum(), P = 0;
 
             if (system.potential.size() > 1) {
                 // append the energy and calculate the derivative of the energy difference
-                Ediff.push_back(energy.at(1).get(r.row(j + 1)) - energy.at(0).get(r.row(j + 1))); double dEdiff = (Ediff.at(j + 1) - Ediff.at(j)) / optd.step;
+                Ediff.push_back(V(1, 1) - V(0, 0)); dEdiff.push_back((Ediff.at(j + 1) - Ediff.at(j)) / optd.step);
 
                 // calculate the probability of state change according to the Landau-Zener formula
-                double gamma = std::pow(coupling.at(0).get(r.row(j + 1)), 2) / std::abs(dEdiff); P = 1 - std::exp(-2 * M_PI * gamma);
+                double gamma = std::pow(V(0, 1), 2) / std::abs(dEdiff.at(j + 1)); P = 1 - std::exp(-2 * M_PI * gamma);
 
                 // change the state if the jump is accepted
-                if (Ediff.at(j) * Ediff.at(j + 1) < 0 && dist(mt) < P) {
+                if (!optd.adiabatic && Ediff.at(j) * Ediff.at(j + 1) < 0 && dist(mt) < P) {
                     state(j + 1) = state(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0)*v(0) - (state(j + 1) - state(j)) * 2 * Ediff.at(j + 1) / system.mass());
                 }
             }
 
             // calculate the force
-            F = -grad.at(state(j + 1)).eval(r.row(j + 1));
+            F(0) = -dV(state(j + 1), state(j + 1));
 
             // print the iteration
             if (print) std::printf("%6d %6d %9.4f %5d %1.2f %14.8f %14.8f %14.8f %.2e %s\n", i + 1, j + 1, AU2FS * optd.step * (j + 1), state(j) + 1, P, Epot, Ekin, Epot + Ekin, F.norm(), Timer::Format(Timer::Elapsed(start)).c_str());
@@ -418,7 +432,7 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
         states.at(i) = state;
 
         // save the matrix of states and coordinates
-        Matrix<> SR(r.rows(), r.cols() + 1); SR << (state.array() + 1).cast<double>(), r; EigenWrite(ip / ("trajectory" + std::to_string(i + 1) + ".mat"), SR);
+        Matrix<> SR(r.rows(), r.cols() + 1); SR << (state.array() + 1).cast<double>(), r; if (optd.savetraj) EigenWrite(ip / ("trajectory" + std::to_string(i + 1) + ".mat"), SR);
     }
 
     if (system.potential.size() > 1) {
@@ -443,8 +457,6 @@ Result ModelSolver::runcd(const ModelSystem& system, Result res, bool print) con
             if (j == optd.iters) res.msv.pops = Vector<>(2), res.msv.pops << pop1, pop2;
         }
     }
-
-
 
     // print the newline
     if (print) std::printf("\n");

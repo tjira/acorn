@@ -50,9 +50,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orca::Options::Dynamics, iters, step);
 // option structures loaders for model methods
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Optimize, step, iters);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic::Spectrum, potential, window, normalize, zpesub, zeropad);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsDynamics, iters, step, state, position, gradient, momentum, seed, trajs);
 
 // option loaders
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsDynamics, iters, step, state, position, gradient, momentum, seed, trajs, savetraj, adiabatic);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RestrictedConfigurationInteraction::Options, dynamics, gradient, hessian, excitations, nstate, state);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsAdiabatic, real, step, iters, nstate, optimize, guess, savewfn, spectrum);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ModelSolver::OptionsNonadiabatic, step, iters, guess, savewfn, cap, momentum, adiabatic);
@@ -448,7 +448,7 @@ int main(int argc, char** argv) {
             res = msv.run(model, res);
 
             // print the populations
-            Printer::Print(res.msv.pops, "FINAL POPULATIONS"), std::cout << std::endl;
+            if (res.msv.pops.size()) Printer::Print(res.msv.pops, "FINAL POPULATIONS"), std::cout << std::endl;
         }
     }
 

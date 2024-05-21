@@ -24,9 +24,10 @@ public:
         std::vector<std::string> guess; std::string cap;
     };
     struct OptionsDynamics {
-        int iters, seed, state, trajs; double step;
+        std::vector<std::vector<std::string>> gradient;
         std::vector<double> position, momentum;
-        std::vector<std::string> gradient;
+        double step; bool savetraj, adiabatic;
+        int iters, seed, state, trajs;
     } dynamics={};
 
 public:
