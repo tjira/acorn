@@ -1,16 +1,7 @@
-# root links
-/compile_commands.json
-
 # files
-trajectory.xyz
-molecule.xyz
-orca.inp
-.replit
+M.xyz
 
 # exts
-*.clean
-*.html
-*.lock
 *.css
 *.dat
 *.gif
@@ -22,13 +13,7 @@ orca.inp
 *.zip
 
 # folders
-.ccls-cache/
 .cache/
-_site/
 build/
 temp/
 bin/
-
-# interface folders
-.bagel.[0-9]*
-.orca.[0-9]*

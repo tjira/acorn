@@ -22,4 +22,12 @@ include_directories(include lib)
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
+# create the base library
+add_library(acorn_base src/matrix.cpp src/tensor.cpp)
+
+# link the base library
+target_link_libraries(acorn_base Eigen3::Eigen)
+
+# add subprograms
 add_subdirectory(program/integral)
+add_subdirectory(program/hf)
