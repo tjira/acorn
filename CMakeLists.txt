@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -flarge-source-files -fprofile-arcs -ftest-coverage")
 
 # set release flags
-set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3 -Wall -Wextra -flarge-source-files")
+set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3 -flarge-source-files")
 
 # include directories
 include_directories(include lib)

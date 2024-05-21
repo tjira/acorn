@@ -1,61 +1,54 @@
 #include "argparse.hpp"
 #include "tensor.h"
 
-inline Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> toMatrix(Eigen::Tensor<double, 2, Eigen::ColMajor> A) {return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>>(A.data(), A.dimension(0), A.dimension(1));}
-inline Eigen::Tensor<double, 2, Eigen::ColMajor> toTensor(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> A) {return Eigen::TensorMap<Eigen::Tensor<double, 2, Eigen::ColMajor>>(A.data(), A.rows(), A.cols());}
-
-#include <unsupported/Eigen/MatrixFunctions>
-
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Hartree-Fock Program", "1.0", argparse::default_arguments::none);
 
+    // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
+    program.add_argument("-i", "--iterations").help("-- Number of SCF iterations.").default_value(100).scan<'i', int>();
+    program.add_argument("-t", "--threshold").help("-- Convergence threshold.").default_value(1e-8).scan<'g', double>();
 
+    // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
-    Matrix<> V = Matrix<>::Load("V.mat"), T = Matrix<>::Load("T.mat"), S = Matrix<>::Load("S.mat"); Tensor<> J = Tensor<>::Load("J.mat");
+    // load the integrals from disk
+    Matrix V = Matrix<>::Load("V.mat"), T = Matrix<>::Load("T.mat"), S = Matrix<>::Load("S.mat"); Tensor J = Tensor<>::Load("J.mat");
 
-    double E = 0; int nocc = 5;
+    // initialize all the matrices used throughout the SCF procedure and the energy
+    Matrix H = T + V, F = H, C(S.rows(), S.cols()), D(S.rows(), S.cols()), eps(S.rows(), 1);
 
-    Tensor<> Janti = J - J.transpose({0, 3, 2, 1}) * 0.5;
+    // initialize the coulomb contraction axes and energy placeholder
+    Eigen::IndexPair<int> first(2, 0), second(3, 1); double E = 0;
 
-    // Matrix<> H = T + V, F = H, C(S.rows(), S.cols()), D(S.rows(), S.cols());
+    int nocc = 5;
 
-    Eigen::IndexPair<int> first(2, 0), second(3, 1);
+    // start the SCF procedure
+    for (int i = 0; i < program.get<int>("-i"); i++) {
+        // calculate the iteration Fock matrix
+        F = H + (J - 0.5 * J.transpose({0, 3, 2, 1})).contract(D.tensor(), {first, second}).matrix();
 
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> H = T.mat + V.mat, F = H, C(S.rows(), S.cols()), D(S.rows(), S.cols()), e;
-    Eigen::Tensor<double, 4, Eigen::ColMajor> ERI = Janti.ten;
+        // solve the eigenproblem and save the previous D and E values
+        std::tie(eps, C) = F.eigh(S); Matrix Dp = D; double Ep = E;
 
-    for (int i = 0; i < 100; i++) {
-        // calculate the Fock matrix
-        F = H + toMatrix(ERI.contract(toTensor(D), Eigen::array<Eigen::IndexPair<int>, 2>{first, second}));
+        // calculate the new density matrix and energy
+        D = 2 * C.leftcols(nocc).dot(C.leftcols(nocc).t()); E = 0.5 * (D * (H + F)).sum();
 
-        // solve the roothan equations
-        Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>> solver(F, S.mat);
-
-        // exteract the eigenvalues and eigenvectors
-        C = solver.eigenvectors(), e = solver.eigenvalues();
-
-        // save previous density matrix and energy
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> Dp = D; double Ep = E;
-
-        // calculate the new density matrix
-        D = 2 * C.leftCols(nocc) * C.leftCols(nocc).transpose();
-
-        // calculate the new energy
-        E = 0.5 * D.cwiseProduct(H + F).sum();
-
-        // calculate the E and D errors
-        double Eerr = std::abs(E - Ep), Derr = (D - Dp).norm();
+        // print the iteration info
+        std::printf("%4d %20.14f %.2e %.2e %s\n", i + 1, E, std::abs(E - Ep), (D - Dp).norm(), "");
 
         // finish if covergence reached
-        if (Eerr < 1e-8 && Derr < 1e-8) {break;}
-
-        std::cout << E << std::endl;
+        if (double thresh = program.get<double>("-t"); std::abs(E - Ep) < thresh && (D - Dp).norm() < thresh) break;
+        else if (i == program.get<int>("-i") - 1) {
+            throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN SCF REACHED.");
+        }
     }
 
-    std::cout << "Energy: " << E << std::endl;
+    // save the final matrices
+    C.save("C.mat"), D.save("D.mat"), eps.save("eps.mat");
 
+    // print the final energy
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n", E);
 }
