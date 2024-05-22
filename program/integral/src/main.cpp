@@ -4,9 +4,9 @@
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none);
 
-    program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
     program.add_argument("-b", "--basis").help("-- Basis set used for integrals.").default_value("STO-3G");
-    program.add_argument("-f", "--file").help("-- System file in .xyz format.").default_value("M.xyz");
+    program.add_argument("-f", "--file").help("-- System file in .xyz format.").default_value("molecule.xyz");
+    program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
 
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}

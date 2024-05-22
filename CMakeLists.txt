@@ -23,7 +23,7 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # create the base library
-add_library(acorn_base src/matrix.cpp src/tensor.cpp)
+add_library(acorn_base src/matrix.cpp src/system.cpp src/tensor.cpp)
 
 # link the base library
 target_link_libraries(acorn_base Eigen3::Eigen)

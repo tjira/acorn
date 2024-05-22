@@ -1,8 +1,5 @@
 #pragma once
 
-#include <fstream>
-#include <iomanip>
-
 #include <unsupported/Eigen/MatrixFunctions>
 
 template <typename T = double> using EigenMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
@@ -10,8 +7,10 @@ template <typename T = double> using EigenMatrix = Eigen::Matrix<T, Eigen::Dynam
 template <int D, typename T> class Tensor; template <typename T = double> class Matrix {
     template <typename TT> friend class Matrix;
 public:
-    template <typename... dims> Matrix(dims... args) : mat(args...) {}
-    static Matrix<T> Load(const std::string& filename);
+    template <typename... dims> Matrix(dims... args);
+
+    // static functions
+    static Matrix<T> Load(const std::string& path);
 
     // matrix operators
     Matrix<T> operator-(const Matrix<T>& A) const;
@@ -29,7 +28,8 @@ public:
     T& operator()(int i, int j); T* data(); void zero();
 
     // block operations
-    Matrix<T> leftcols(int n) const; 
+    Matrix<T> row(int n) const;  Matrix<T> col(int n) const; const T* data() const;
+    const T& operator()(int i, int j) const; Matrix<T> leftcols(int n) const;
 
     // eigenproblem solvers
     std::tuple<Matrix<T>, Matrix<T>> eigh(const Matrix<T>& A) const;
@@ -38,11 +38,14 @@ public:
     int cols() const; int rows() const; T norm() const; T sum() const;
 
     // input/output related functions
-    void save(const std::string& path) const; Tensor<2, T> tensor() const;
+    void save(const std::string& path, std::vector<int> dims = {}) const; Tensor<2, T> tensor() const;
 
 private:
     EigenMatrix<T> mat;
 };
+
+// the templated constructor with parameter pack
+template <typename T> template <typename... aargs> Matrix<T>::Matrix(aargs... args) : mat(args...) {}
 
 // define the friend operators
 template <typename T> Matrix<T> operator*(double a, const Matrix<T>& A) {return a * A.mat;}

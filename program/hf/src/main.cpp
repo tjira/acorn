@@ -1,4 +1,6 @@
 #include "argparse.hpp"
+
+#include "system.h"
 #include "tensor.h"
 
 int main(int argc, char** argv) {
@@ -14,21 +16,19 @@ int main(int argc, char** argv) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
-    // load the integrals from disk
-    Matrix V = Matrix<>::Load("V.mat"), T = Matrix<>::Load("T.mat"), S = Matrix<>::Load("S.mat"); Tensor J = Tensor<>::Load("J.mat");
+    // load the system and integrals from disk
+    System system("molecule.xyz"); Matrix<> V = Matrix<>::Load("V.mat"), T = Matrix<>::Load("T.mat"), S = Matrix<>::Load("S.mat"); Tensor<> J = Tensor<>::Load("J.mat");
 
     // initialize all the matrices used throughout the SCF procedure and the energy
-    Matrix H = T + V, F = H, C(S.rows(), S.cols()), D(S.rows(), S.cols()), eps(S.rows(), 1);
+    Matrix<> H = T + V, F = H, C(S.rows(), S.cols()), D(S.rows(), S.cols()), eps(S.rows(), 1);
 
-    // initialize the coulomb contraction axes and energy placeholder
-    Eigen::IndexPair<int> first(2, 0), second(3, 1); double E = 0;
-
-    int nocc = 5;
+    // initialize the coulomb contraction axes, the energy placeholder and the number of occupied orbitals
+    Eigen::IndexPair<int> first(2, 0), second(3, 1); double E = 0; int nocc = system.nocc();
 
     // start the SCF procedure
     for (int i = 0; i < program.get<int>("-i"); i++) {
         // calculate the iteration Fock matrix
-        F = H + (J - 0.5 * J.transpose({0, 3, 2, 1})).contract(D.tensor(), {first, second}).matrix();
+        F = H + (J - 0.5 * J.t({0, 3, 2, 1})).contract(D.tensor(), {first, second}).matrix();
 
         // solve the eigenproblem and save the previous D and E values
         std::tie(eps, C) = F.eigh(S); Matrix Dp = D; double Ep = E;
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
         // finish if covergence reached
         if (double thresh = program.get<double>("-t"); std::abs(E - Ep) < thresh && (D - Dp).norm() < thresh) break;
         else if (i == program.get<int>("-i") - 1) {
-            throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN SCF REACHED.");
+            throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE SCF REACHED.");
         }
     }
 
@@ -50,5 +50,5 @@ int main(int argc, char** argv) {
     C.save("C.mat"), D.save("D.mat"), eps.save("eps.mat");
 
     // print the final energy
-    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n", E);
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n", E + system.nuclearRepulsion());
 }

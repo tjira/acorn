@@ -1,61 +1,54 @@
 #include "tensor.h"
 
+#include <fstream>
+
+// tensor operators
 template <int D, typename T> Tensor<D, T> Tensor<D, T>::operator+(const Tensor<D, T>& A) const {return ten + A.ten;}
 template <int D, typename T> Tensor<D, T> Tensor<D, T>::operator-(const Tensor<D, T>& A) const {return ten - A.ten;}
 template <int D, typename T> Tensor<D, T> Tensor<D, T>::operator*(const Tensor<D, T>& A) const {return ten * A.ten;}
 
+// special tensor operations
+template <int D, typename T> Tensor<2, T> Tensor<D, T>::contract(const Tensor<2, T>& A, const Eigen::array<Eigen::IndexPair<int>, 2>& dims) {return ten.contract(A.ten, dims);}
+template <int D, typename T> Tensor<D, T> Tensor<D, T>::t(const Eigen::array<int, D>& axes) const {return ten.shuffle(axes);}
+
+// non-const functions
+template <int D, typename T> void Tensor<D, T>::save(const std::string& path) const {return matrix().save(path, std::vector<int>(ten.dimensions().begin(), ten.dimensions().end()));}
+template <int D, typename T> void Tensor<D, T>::zero() {ten.setZero();}
+
+// function to convert a tensor to a matrix
 template <int D, typename T>
-Tensor<2, T> Tensor<D, T>::contract(const Tensor<2, T>& A, const Eigen::array<Eigen::IndexPair<int>, 2>& dims) {
-    return ten.contract(A.ten, dims);
+Matrix<T> Tensor<D, T>::matrix() const {
+    // get the dimensions of the resulting matrix
+    int rows = 1, cols = 1; for (int i = 0; i < D; i++) if (i % 2) cols *= ten.dimension(i); else rows *= ten.dimension(i);
+
+    // create the matrix and assign the values
+    Matrix<T> mat(rows, cols); for (int i = 0; i < ten.size(); i++) {mat(i / cols, i % rows) = ten.data()[i];} return mat;
 }
 
-template <int D, typename T>
-Matrix<T> Tensor<D, T>::matrix() {
-    if constexpr (D == 2) {
-        Matrix<T> mat(ten.dimension(0), ten.dimension(1));
-        for (int i = 0; i < ten.size(); i++) {mat(i / mat.cols(), i % mat.rows()) = ten.data()[i];} return mat;
-    } else {
-
-
-        Matrix<T> mat(ten.dimension(0) * ten.dimension(2), ten.dimension(1) * ten.dimension(3));
-        for (int i = 0; i < ten.size(); i++) {mat(i / mat.cols(), i % mat.rows()) = ten.data()[i];} return mat;
-    }
-}
-
-template <int D, typename T>
-Tensor<D, T> Tensor<D, T>::Load(const std::string& path) {
+template <>
+Tensor<2, double> Tensor<2, double>::Load(const std::string& path) {
     // open the input file and read the dimensions
-    std::ifstream file(path); std::string line; std::getline(file, line);
+    std::ifstream file(path); int rows, cols; file >> cols >> rows; Tensor<2, double> ten(rows, cols);
 
-    // read the tensor by dimensions
-    if constexpr (D == 4) {
-        Eigen::Tensor<T, D, Eigen::ColMajor> ten(7, 7, 7, 7);
-        for (int i = 0; i < ten.size(); i++) file >> ten.data()[i];
-        return Tensor<D, T>(ten);
-    }
+    // read the tensor by dimensions, assign the values and return the tensor
+    for (int i = 0; i < rows; i++) {for (int j = 0; j < cols; j++) file >> ten(i, j);} return ten;
 }
 
-template <int D, typename T>
-void Tensor<D, T>::save(const std::string& path) const {
-    // open the output file
-    std::ofstream file(path);
+template <>
+Tensor<4, double> Tensor<4, double>::Load(const std::string& path) {
+    // open the input file and read the dimensions
+    std::ifstream file(path); std::array<int, 4> dims; for (int i = 0; i < 4; i++) file >> dims.at(i);
 
-    if constexpr (D == 4) {
-        // write the header and set the formatting
-        file << ten.dimension(0) << " " << ten.dimension(1) << " " << ten.dimension(2) << " " << ten.dimension(3) << "\n" << std::fixed << std::setprecision(14);
+    // create the tensor
+    Tensor<4, double> ten(dims.at(0), dims.at(1), dims.at(2), dims.at(3));
 
-        // write the matrix by rows
-        for (int i = 0; i < ten.dimension(0); i++) {
-            for (int j = 0; j < ten.dimension(1); j++) {
-                for (int k = 0; k < ten.dimension(2); k++) {
-                    for (int l = 0; l < ten.dimension(3); l++) {
-                        file << std::setw(24) << ten(i, j, k, l) << " ";
-                    }
-                } file << "\n";
-            }
-        }
+    // read the tensor by dimensions, assign the values and return the tensor
+    for (int i = 0; i < dims.at(0); i++) for (int j = 0; j < dims.at(1); j++) {
+        for (int k = 0; k < dims.at(2); k++) for (int l = 0; l < dims.at(3); l++) file >> ten(i, j, k, l);
     }
+
+    // return the tensor
+    return ten;
 }
 
-template class Tensor<2, double>;
-template class Tensor<4, double>;
+template class Tensor<2, double>; template class Tensor<4, double>;
