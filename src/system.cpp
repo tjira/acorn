@@ -3,9 +3,12 @@
 
 #include <fstream>
 
-// getters
+// variable getters
 Matrix<> System::atoms() const {return AN;}
 Matrix<> System::coords() const {return R;}
+
+// information getters
+int System::nocc() const {return std::accumulate(AN.data(), AN.data() + AN.rows(), 0) / 2;}
 
 System::System(const std::string& path) {
     // open the file stream
@@ -29,9 +32,6 @@ System::System(const std::string& path) {
     }
 }
 
-int System::nocc() const {
-    return std::accumulate(AN.data(), AN.data() + AN.rows(), 0) / 2;
-}
 
 double System::nuclearRepulsion() const {
     // create the variable
@@ -44,6 +44,5 @@ double System::nuclearRepulsion() const {
         }
     }
 
-    // return the repulsion
-    return repulsion;
+    return repulsion; // return the nuclear-nuclear repulsion of the system
 }

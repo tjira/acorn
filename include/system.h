@@ -9,7 +9,7 @@ public:
     // property calculators
     double nuclearRepulsion() const;
 
-    // private variable getters
+    // private variable and information getters
     Matrix<> atoms() const; Matrix<> coords() const; int nocc() const;
 
 private:

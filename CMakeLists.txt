@@ -29,5 +29,6 @@ add_library(acorn_base src/matrix.cpp src/system.cpp src/tensor.cpp)
 target_link_libraries(acorn_base Eigen3::Eigen)
 
 # add subprograms
+add_subdirectory(program/transform)
 add_subdirectory(program/integral)
 add_subdirectory(program/hf)

@@ -22,11 +22,14 @@ public:
     template <int DD, typename TT> friend Tensor<DD, TT> operator*(const Tensor<DD, TT>& A, double a);
 
     // special matrix operations
-    Tensor<2, T> contract(const Tensor<2, T>& A, const Eigen::array<Eigen::IndexPair<int>, 2>& dims);
+    template <int DD, long unsigned int DDD> Tensor<D + DD - 2 * DDD, T> contract(const Tensor<DD, T>& A, const Eigen::array<Eigen::IndexPair<int>, DDD>& dims);
     Tensor<D, T> t(const Eigen::array<int, D>& axes) const;
 
     // assignment operators and non-const functions
     template <typename... dims> T& operator()(dims... args) {return ten(args...);} void zero();
+
+    // block operations
+    EigenTensor<D, T>::Dimensions dimensions() const;
 
     // input/output related functions
     void save(const std::string& path) const; Matrix<T> matrix() const;
@@ -41,6 +44,12 @@ template <int D, typename T> template <typename... aargs> Tensor<D, T>::Tensor(a
 // define the friend operators
 template <int D, typename T> Tensor<D, T> operator*(double a, const Tensor<D, T>& A) {return a * A.ten;}
 template <int D, typename T> Tensor<D, T> operator*(const Tensor<D, T>& A, double a) {return a * A.ten;}
+
+// function for tensor contraction
+template <int D, typename T> template <int DD, long unsigned int DDD>
+Tensor<D + DD - 2 * DDD, T> Tensor<D, T>::contract(const Tensor<DD, T>& A, const Eigen::array<Eigen::IndexPair<int>, DDD>& dims) {
+    return ten.contract(A.ten, dims);
+}
 
 // define the matrix class
 #include "matrix.h"

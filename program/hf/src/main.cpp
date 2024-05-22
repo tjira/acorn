@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     // start the SCF procedure
     for (int i = 0; i < program.get<int>("-i"); i++) {
         // calculate the iteration Fock matrix
-        F = H + (J - 0.5 * J.t({0, 3, 2, 1})).contract(D.tensor(), {first, second}).matrix();
+        F = H + (J - 0.5 * J.t({0, 3, 2, 1})).contract(D.tensor(), Eigen::array<Eigen::IndexPair<int>, 2>{first, second}).matrix();
 
         // solve the eigenproblem and save the previous D and E values
         std::tie(eps, C) = F.eigh(S); Matrix Dp = D; double Ep = E;

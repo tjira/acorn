@@ -8,8 +8,10 @@ template <int D, typename T> Tensor<D, T> Tensor<D, T>::operator-(const Tensor<D
 template <int D, typename T> Tensor<D, T> Tensor<D, T>::operator*(const Tensor<D, T>& A) const {return ten * A.ten;}
 
 // special tensor operations
-template <int D, typename T> Tensor<2, T> Tensor<D, T>::contract(const Tensor<2, T>& A, const Eigen::array<Eigen::IndexPair<int>, 2>& dims) {return ten.contract(A.ten, dims);}
 template <int D, typename T> Tensor<D, T> Tensor<D, T>::t(const Eigen::array<int, D>& axes) const {return ten.shuffle(axes);}
+
+// block operations
+template <int D, typename T> EigenTensor<D, T>::Dimensions Tensor<D, T>::dimensions() const {return ten.dimensions();}
 
 // non-const functions
 template <int D, typename T> void Tensor<D, T>::save(const std::string& path) const {return matrix().save(path, std::vector<int>(ten.dimensions().begin(), ten.dimensions().end()));}
@@ -27,8 +29,11 @@ Matrix<T> Tensor<D, T>::matrix() const {
 
 template <>
 Tensor<2, double> Tensor<2, double>::Load(const std::string& path) {
-    // open the input file and read the dimensions
-    std::ifstream file(path); int rows, cols; file >> cols >> rows; Tensor<2, double> ten(rows, cols);
+    // open the input file and check for errors
+    std::ifstream file(path); if (!file.good()) throw std::runtime_error("UNABLE TO OPEN FILE `" + path + "` FOR READING");
+
+    // read the dimensions and create the tensor
+    int rows, cols; file >> cols >> rows; Tensor<2, double> ten(rows, cols);
 
     // read the tensor by dimensions, assign the values and return the tensor
     for (int i = 0; i < rows; i++) {for (int j = 0; j < cols; j++) file >> ten(i, j);} return ten;
@@ -36,8 +41,11 @@ Tensor<2, double> Tensor<2, double>::Load(const std::string& path) {
 
 template <>
 Tensor<4, double> Tensor<4, double>::Load(const std::string& path) {
-    // open the input file and read the dimensions
-    std::ifstream file(path); std::array<int, 4> dims; for (int i = 0; i < 4; i++) file >> dims.at(i);
+    // open the input file and check for errors
+    std::ifstream file(path); if (!file.good()) throw std::runtime_error("UNABLE TO OPEN FILE `" + path + "` FOR READING");
+
+    // read the dimensions and assign them to an array
+    std::array<int, 4> dims; for (int i = 0; i < 4; i++) file >> dims.at(i);
 
     // create the tensor
     Tensor<4, double> ten(dims.at(0), dims.at(1), dims.at(2), dims.at(3));
@@ -47,8 +55,7 @@ Tensor<4, double> Tensor<4, double>::Load(const std::string& path) {
         for (int k = 0; k < dims.at(2); k++) for (int l = 0; l < dims.at(3); l++) file >> ten(i, j, k, l);
     }
 
-    // return the tensor
-    return ten;
+    return ten; // return the loaded tensor
 }
 
 template class Tensor<2, double>; template class Tensor<4, double>;
