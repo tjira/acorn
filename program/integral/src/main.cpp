@@ -16,9 +16,9 @@ int main(int argc, char** argv) {
     std::vector<libint2::Atom> atoms = libint2::read_dotxyz(fstream); libint2::BasisSet shells(program.get("-b"), atoms);
 
     libint2::initialize();
-    Matrix<> V = Integral::Nuclear(atoms, shells); V.save("V.mat");
-    Matrix<> T = Integral::Kinetic(shells); T.save("T.mat");
-    Matrix<> S = Integral::Overlap(shells); S.save("S.mat");
-    Tensor<> J = Integral::Coulomb(shells); J.save("J.mat");
+    Integral::Nuclear(atoms, shells).save("V_AO.mat");
+    Integral::Kinetic(shells).save("T_AO.mat");
+    Integral::Overlap(shells).save("S_AO.mat");
+    Integral::Coulomb(shells).save("J_AO.mat");
     libint2::finalize();
 }

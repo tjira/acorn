@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // load the system and integrals from disk
-    System system("molecule.xyz"); Matrix<> V = Matrix<>::Load("V.mat"), T = Matrix<>::Load("T.mat"), S = Matrix<>::Load("S.mat"); Tensor<> J = Tensor<>::Load("J.mat");
+    System system("molecule.xyz"); Matrix<> V = Matrix<>::Load("V_AO.mat"), T = Matrix<>::Load("T_AO.mat"), S = Matrix<>::Load("S_AO.mat"); Tensor<> J = Tensor<>::Load("J_AO.mat");
 
     // initialize all the matrices used throughout the SCF procedure and the energy
     Matrix<> H = T + V, F = H, C(S.rows(), S.cols()), D(S.rows(), S.cols()), eps(S.rows(), 1);
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     }
 
     // save the final matrices
-    C.save("C.mat"), D.save("D.mat"), eps.save("eps.mat");
+    C.save("C_MO.mat"), D.save("D_MO.mat"), eps.save("E_MO.mat");
 
     // print the final energy
     std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n", E + system.nuclearRepulsion());

@@ -10,7 +10,7 @@ Matrix<> System::coords() const {return R;}
 // information getters
 int System::nocc() const {return std::accumulate(AN.data(), AN.data() + AN.rows(), 0) / 2;}
 
-System::System(const std::string& path) {
+System::System(const std::string& path) : AN(0, 0), R(0, 0) {
     // open the file stream
     std::ifstream file(path);
 

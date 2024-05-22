@@ -3,5 +3,6 @@
 #include "tensor.h"
 
 namespace Transform {
-    Tensor<> Coulomb(const Tensor<>& Jao, const Matrix<>& Cmo);
+    Tensor<> CoulombSpatial(const Tensor<>& Jao, const Matrix<>& Cmo);
+    Tensor<> CoulombSpin(const Tensor<>& Jao, const Matrix<>& Cmo);
 }

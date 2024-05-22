@@ -14,7 +14,10 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // load the integrals in atomic spatial orbital basis from disk
-    Matrix<> V = Matrix<>::Load("V.mat"), T = Matrix<>::Load("T.mat"), S = Matrix<>::Load("S.mat"), C = Matrix<>::Load("C.mat"); Tensor<> J = Tensor<>::Load("J.mat");
+    Matrix<> V = Matrix<>::Load("V_AO.mat"), T = Matrix<>::Load("T_AO.mat"), S = Matrix<>::Load("S_AO.mat"), C = Matrix<>::Load("C_MO.mat"); Tensor<> J = Tensor<>::Load("J_AO.mat");
 
-    Transform::Coulomb(J, C).save("Jmo.mat");
+    std::cout << T << std::endl;
+
+    // transform the integrals and save them to disk
+    Transform::CoulombSpatial(J, C).save("J_MO.mat");
 }
