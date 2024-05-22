@@ -12,7 +12,8 @@ template <int D, typename T> class Tensor;
 template <typename T = double> class Matrix {
     template <typename U> friend class Matrix;
 public:
-    Matrix(int m, int n) : mat(m, n) {} Matrix(const EigenMatrix<T>& mat) : mat(mat) {}
+    Matrix(int m, int n) : mat(m, n) {mat.setZero();} Matrix(const EigenMatrix<T>& mat) : mat(mat) {}
+    Matrix(int m, int n, const std::function<T(int, int)>& func); Matrix(int m, int n, T value);
 
     // static functions
     static Matrix<T> Load(const std::string& path); static Matrix<T> Identity(int n);
@@ -28,13 +29,18 @@ public:
 
     // special matrix operations
     Matrix<T> dot(const Matrix<T>& A) const; Matrix<T> t() const;
+    Tensor<4, T> kron(const Tensor<4, T>& A) const;
+    Matrix<> kron(const Matrix<>& A) const;
 
     // assignment operators and non-const functions
-    T& operator()(int i, int j); T* data(); void zero();
+    T& operator()(int i, int j); T* data();
 
     // block operations
-    Matrix<T> row(int n) const;  Matrix<T> col(int n) const; const T* data() const;
     const T& operator()(int i, int j) const; Matrix<T> leftcols(int n) const;
+    Matrix<T> repeat(int count, int axis) const; const T* data() const;
+    Matrix<> apply(const std::function<T(int, int)>& func) const;
+    Matrix<T> row(int n) const; Matrix<T> col(int n) const;
+    Matrix<T> vjoin(const Matrix<T>& A) const;
 
     // eigenproblem solvers
     std::tuple<Matrix<T>, Matrix<T>> eigh(const Matrix<T>& A) const;

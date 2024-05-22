@@ -1,7 +1,7 @@
 #include "integral.h"
 
 Matrix<> Integral::Single(libint2::Engine& engine, const libint2::BasisSet& shells) {
-    int nbf = shells.nbf(); Matrix<> ints(nbf, nbf); ints.zero(); std::vector<size_t> sh2bf = shells.shell2bf();
+    int nbf = shells.nbf(); Matrix<> ints(nbf, nbf); std::vector<size_t> sh2bf = shells.shell2bf();
 
     for (size_t i = 0; i < shells.size(); i++) {
         for (size_t j = 0; j < shells.size(); j++) {
@@ -19,7 +19,7 @@ Matrix<> Integral::Single(libint2::Engine& engine, const libint2::BasisSet& shel
 }
 
 Tensor<> Integral::Double(libint2::Engine& engine, const libint2::BasisSet& shells) {
-    int nbf = shells.nbf(); Tensor<> ints(nbf, nbf, nbf, nbf); ints.zero(); std::vector<size_t> sh2bf = shells.shell2bf();
+    int nbf = shells.nbf(); Tensor<> ints(nbf, nbf, nbf, nbf); std::vector<size_t> sh2bf = shells.shell2bf();
 
     for (size_t i = 0; i < shells.size(); i++) {
         for (size_t j = 0; j < shells.size(); j++) {

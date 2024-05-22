@@ -15,7 +15,6 @@ template <int D, typename T> int Tensor<D, T>::dimension(int i) const {return te
 
 // non-const functions
 template <int D, typename T> void Tensor<D, T>::save(const std::string& path) const {return matrix().save(path, std::vector<int>(ten.dimensions().begin(), ten.dimensions().end()));}
-template <int D, typename T> void Tensor<D, T>::zero() {ten.setZero();}
 
 // function to convert a tensor to a matrix
 template <int D, typename T>

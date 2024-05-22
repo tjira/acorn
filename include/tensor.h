@@ -15,7 +15,7 @@ template <typename T> class Matrix;
 template <int D = 4, typename T = double> class Tensor {
     template <int E, typename U> friend class Tensor;
 public:
-    template <Integer... dims> Tensor(dims... args) : ten(args...) {} Tensor(const EigenTensor<D, T>& ten) : ten(ten) {}
+    template <Integer... dims> Tensor(dims... args) : ten(args...) {ten.setZero();} Tensor(const EigenTensor<D, T>& ten) : ten(ten) {}
 
     // static functions
     static Tensor<D, T> Load(const std::string& path);
@@ -34,10 +34,10 @@ public:
     Tensor<D, T> t(const Eigen::array<int, D>& axes) const;
 
     // assignment operators and non-const functions
-    template <typename... dims> T& operator()(dims... args) {return ten(args...);} void zero();
+    template <typename... dims> T& operator()(dims... args) {return ten(args...);}
 
     // block operations
-    int dimension(int i) const;
+    template <typename... dims> const T& operator()(dims... args) const {return ten(args...);} int dimension(int i) const;
 
     // input/output related functions
     void save(const std::string& path) const; Matrix<T> matrix() const;
