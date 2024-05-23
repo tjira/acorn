@@ -31,7 +31,7 @@ if __name__ == "__main__":
     parser.add_argument("-h", "--help", help="Print this help message.", action=ap.BooleanOptionalAction)
 
     # add integral options
-    parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["S.mat", "T.mat", "V.mat", "J.mat"])
+    parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["S_AO.mat", "T_AO.mat", "V_AO.mat", "J_AO.mat"])
 
     # method switches
     parser.add_argument("--cisd", help="Perform the singles/doubles configuration interaction calculation.", action=ap.BooleanOptionalAction)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     coords *= 1.8897261254578281
 
     # load the integrals from the files
-    S, T, V = np.loadtxt(args.int[0]), np.loadtxt(args.int[1]), np.loadtxt(args.int[2]); J = np.loadtxt(args.int[3]).reshape(4 * [S.shape[1]])
+    S, T, V = np.loadtxt(args.int[0], skiprows=1), np.loadtxt(args.int[1], skiprows=1), np.loadtxt(args.int[2], skiprows=1); J = np.loadtxt(args.int[3], skiprows=1).reshape(4 * [S.shape[1]])
 
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
 

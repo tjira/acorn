@@ -4,13 +4,13 @@
 #include <fstream>
 
 // variable getters
-Matrix<> System::atoms() const {return AN;}
-Matrix<> System::coords() const {return R;}
+EigenMatrix<> System::atoms() const {return AN;}
+EigenMatrix<> System::coords() const {return R;}
 
 // information getters
 int System::nocc() const {return std::accumulate(AN.data(), AN.data() + AN.rows(), 0) / 2;}
 
-System::System(const std::string& path) : AN(0, 0), R(0, 0) {
+System::System(const std::string& path) {
     // open the file stream
     std::ifstream file(path);
 
@@ -24,7 +24,7 @@ System::System(const std::string& path) : AN(0, 0), R(0, 0) {
     std::getline(file, line); std::stringstream(line) >> natoms; std::getline(file, line);
 
     // initialize the atomic number and position matrices
-    AN = Matrix<>(natoms, 1); R = Matrix<>(natoms, 3);
+    AN = EigenMatrix<>(natoms, 1); R = EigenMatrix<>(natoms, 3);
 
     // extract the atomic numbers and positions
     for (int i = 0; i < natoms; i++) {

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "tensor.h"
+#include "eigen.h"
 
 namespace Transform {
     // two electron integrals
-    Tensor<> CoulombSpatial(const Tensor<>& Jao, const Matrix<>& Cmo);
-    Tensor<> CoulombSpin(const Tensor<>& Jao, const Matrix<>& Cmo);
+    EigenTensor<> CoulombSpin(const EigenTensor<>& Jao, const EigenMatrix<>& Cmo);
+    EigenTensor<> CoulombSpatial(const EigenTensor<>& Jao, EigenMatrix<>& Cmo);
 
     // one electron integrals
-    Matrix<> SingleSpatial(const Matrix<>& Aao, const Matrix<>& Cmo);
-    Matrix<> SingleSpin(const Matrix<>& Aao, const Matrix<>& Cmo);
+    EigenMatrix<> SingleSpin(const EigenMatrix<>& Aao, const EigenMatrix<>& Cmo);
+    EigenMatrix<> SingleSpatial(const EigenMatrix<>& Aao, EigenMatrix<>& Cmo);
 }

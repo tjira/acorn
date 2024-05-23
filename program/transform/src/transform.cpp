@@ -1,49 +1,43 @@
 #include "transform.h"
 
-Tensor<> Transform::CoulombSpatial(const Tensor<>& Jao, const Matrix<>& Cmo) {
+EigenTensor<> Transform::CoulombSpatial(const EigenTensor<>& Jao, EigenMatrix<>& Cmo) {
     // perform the transform
-    Tensor<4> J01 = Cmo.tensor().contract<4, 1>(Jao, {Eigen::IndexPair<int>(0, 0)});
-    Tensor<4> J02 = Cmo.tensor().contract<4, 1>(J01, {Eigen::IndexPair<int>(0, 1)});
-    Tensor<4> J03 = Cmo.tensor().contract<4, 1>(J02, {Eigen::IndexPair<int>(0, 2)});
-    Tensor<4> Jmo = Cmo.tensor().contract<4, 1>(J03, {Eigen::IndexPair<int>(0, 3)});
+    EigenTensor<> J01 = TENSORMAP(Cmo).contract(Jao, Eigen::array<Eigen::IndexPair<int>, 1>{Eigen::IndexPair<int>(0, 0)});
+    EigenTensor<> J02 = TENSORMAP(Cmo).contract(J01, Eigen::array<Eigen::IndexPair<int>, 1>{Eigen::IndexPair<int>(0, 1)});
+    EigenTensor<> J03 = TENSORMAP(Cmo).contract(J02, Eigen::array<Eigen::IndexPair<int>, 1>{Eigen::IndexPair<int>(0, 2)});
+    EigenTensor<> Jmo = TENSORMAP(Cmo).contract(J03, Eigen::array<Eigen::IndexPair<int>, 1>{Eigen::IndexPair<int>(0, 3)});
 
     return Jmo; // return the Coulomb integrals in molecular orbital basis
 }
 
-Tensor<> Transform::CoulombSpin(const Tensor<>& Jao, const Matrix<>& Cmo) {
+EigenTensor<> Transform::CoulombSpin(const EigenTensor<>& Jao, const EigenMatrix<>& Cmo) {
     // create the tiling matrix P that repeats the MO columns 2 times
-    Matrix<> P = Matrix<>::Identity(Cmo.rows()).repeat(2, 1);
+    EigenMatrix<> P = Eigen::Repeat<double>(EigenMatrix<>::Identity(Cmo.rows(), Cmo.rows()), 2, 1);
 
     // create the spin masks
-    Matrix<> M(Cmo.rows(), 2 * Cmo.cols(), [](int, int j) {return 1 - j % 2;});
-    Matrix<> N(Cmo.rows(), 2 * Cmo.cols(), [](int, int j) {return j % 2;});
+    EigenMatrix<> M = Eigen::IndexFunction(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 1 - j % 2;}));
+    EigenMatrix<> N = Eigen::IndexFunction(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return j % 2;}));
 
     // transform the wfn coefficients to the spin basis
-    Matrix<> Cms = Cmo.dot(P).vjoin(Cmo.dot(P)) * M.vjoin(N);
+    EigenMatrix<> Cms = Eigen::Vjoin<double>(Cmo * P, Cmo * P).cwiseProduct(Eigen::Vjoin(M, N));
 
     // return the transformed matrix
-    return CoulombSpatial(Matrix<>::Identity(2).kron(Matrix<>::Identity(2).kron(Jao).t({3, 2, 1, 0})), Cms);
+    return CoulombSpatial(Eigen::Kron<double>(EigenMatrix<>::Identity(2, 2), Eigen::Kron<double>(EigenMatrix<>::Identity(2, 2), Jao).shuffle(Eigen::array<int, 4>{3, 2, 1, 0})), Cms);
 }
 
-Matrix<> Transform::SingleSpatial(const Matrix<>& Aao, const Matrix<>& Cmo) {
-    // perform the transform
-    Matrix<> A01 = Cmo.tensor().contract<2, 1>(Aao.tensor(), {Eigen::IndexPair<int>(0, 0)}).matrix();
-    Matrix<> Amo = Cmo.tensor().contract<2, 1>(A01.tensor(), {Eigen::IndexPair<int>(0, 1)}).matrix();
+EigenMatrix<> Transform::SingleSpatial(const EigenMatrix<>& Aao, EigenMatrix<>& Cmo) {return Cmo.transpose() * Aao * Cmo;}
 
-    return Amo; // return the single-electron integrals in molecular orbital basis
-}
-
-Matrix<> Transform::SingleSpin(const Matrix<>& Aao, const Matrix<>& Cmo) {
+EigenMatrix<> Transform::SingleSpin(const EigenMatrix<>& Aao, const EigenMatrix<>& Cmo) {
     // create the tiling matrix P that repeats the MO columns 2 times
-    Matrix<> P = Matrix<>::Identity(Cmo.rows()).repeat(2, 1);
+    EigenMatrix<> P = Eigen::Repeat<double>(EigenMatrix<>::Identity(Cmo.rows(), Cmo.rows()), 2, 1);
 
     // create the spin masks
-    Matrix<> M(Cmo.rows(), 2 * Cmo.cols(), [](int, int j) {return 1 - j % 2;});
-    Matrix<> N(Cmo.rows(), 2 * Cmo.cols(), [](int, int j) {return j % 2;});
+    EigenMatrix<> M = Eigen::IndexFunction(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 1 - j % 2;}));
+    EigenMatrix<> N = Eigen::IndexFunction(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return j % 2;}));
 
     // transform the wfn coefficients to the spin basis
-    Matrix<> Cms = Cmo.dot(P).vjoin(Cmo.dot(P)) * M.vjoin(N);
+    EigenMatrix<> Cms = Eigen::Vjoin<double>(Cmo * P, Cmo * P).cwiseProduct(Eigen::Vjoin(M, N));
 
     // return the transformed matrix
-    return SingleSpatial(Matrix<>::Identity(2).kron(Aao), Cms);
+    return SingleSpatial(Eigen::Kron<double>(EigenMatrix<>::Identity(2, 2), Aao), Cms);
 }

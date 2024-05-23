@@ -1,6 +1,6 @@
 #pragma once
 
-#include "matrix.h"
+#include "eigen.h"
 
 class System {
 public:
@@ -10,8 +10,8 @@ public:
     double nuclearRepulsion() const;
 
     // private variable and information getters
-    Matrix<> atoms() const; Matrix<> coords() const; int nocc() const;
+    EigenMatrix<> atoms() const; EigenMatrix<> coords() const; int nocc() const;
 
 private:
-    Matrix<> AN, R;
+    EigenMatrix<> AN, R;
 };
