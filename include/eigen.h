@@ -10,6 +10,7 @@
 
 template <typename T = double> using EigenMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
 template <size_t D = 4, typename T = double> using EigenTensor = Eigen::Tensor<T, D, Eigen::ColMajor>;
+template <typename T = double> using EigenVector = Eigen::Vector<T, Eigen::Dynamic>;
 
 namespace Eigen {
     template <typename T = double> EigenMatrix<T> IndexFunction(int rows, int cols, const std::function<T(int, int)>& func);

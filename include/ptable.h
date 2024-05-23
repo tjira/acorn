@@ -4,8 +4,7 @@
 #define BOHR2A 0.529177210903
 #define AMU2AU 1822.888486192
 
-#include <string>
-#include <unordered_map>
+#include "argparse.h"
 
 inline std::unordered_map<int, std::string> AN2SM = {
     { 1,  "H"},

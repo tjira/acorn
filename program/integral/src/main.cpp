@@ -1,4 +1,3 @@
-#include "argparse.hpp"
 #include "integral.h"
 
 int main(int argc, char** argv) {

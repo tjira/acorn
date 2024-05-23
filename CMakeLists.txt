@@ -23,12 +23,13 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # create the base library
-add_library(acorn_base src/system.cpp)
+add_library(acorn_base src/expression.cpp src/system.cpp)
 
 # link the base library
 target_link_libraries(acorn_base Eigen3::Eigen)
 
 # add subprograms
+add_subdirectory(program/potential)
 add_subdirectory(program/transform)
 add_subdirectory(program/integral)
 add_subdirectory(program/hf)

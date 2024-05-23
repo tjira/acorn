@@ -1,8 +1,6 @@
 #include "ptable.h"
 #include "system.h"
 
-#include <fstream>
-
 // variable getters
 EigenMatrix<> System::atoms() const {return AN;}
 EigenMatrix<> System::coords() const {return R;}

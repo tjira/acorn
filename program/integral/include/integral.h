@@ -1,6 +1,7 @@
 #pragma once
 
-#include "eigen.h"
+#include "system.h"
+#include "ptable.h"
 
 #include <libint2.hpp>
 
