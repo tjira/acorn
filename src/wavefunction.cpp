@@ -2,11 +2,10 @@
 #include "fourier.h"
 #include "wavefunction.h"
 
-Wavefunction::Wavefunction(const Wavefunction& wfn) : data(wfn.data), r(wfn.r), k(wfn.k), mass(wfn.mass), dr(wfn.dr) {}
-
-Wavefunction::Wavefunction(const std::string& guess, const EigenMatrix<>& r, double mass) : r(r), k(r.rows(), r.cols()), mass(mass), dr(r(1) - r(0)) {
+#include <iostream>
+Wavefunction::Wavefunction(const std::string& guess, const EigenMatrix<>& r, double mass, double momentum) : r(r), k(r.rows(), r.cols()), mass(mass), dr(r(1) - r(0)) {
     // evaluate the guess expression
-    Expression wfnexpr(guess, {"x"}); data = wfnexpr.eval(r);
+    Expression wfnexpr(guess, {"x"}); data = wfnexpr.eval(r).array() * (std::complex<double>(0, 1) * momentum * r.array()).exp();
 
     // calculate the k-space grid
     k.fill(2 * M_PI / k.size() / dr); for (int i = 0; i < k.size(); i++) k(i) *= i - (i < k.size() / 2 ? 0 : k.size());
@@ -49,4 +48,12 @@ Wavefunction Wavefunction::propagate(const EigenMatrix<std::complex<double>>& R,
 
     // return the wfn
     return wfn;
+}
+
+void Wavefunction::Write(const std::string& path) const {
+    // create the matrix that holds the data
+    EigenMatrix<> rwfn(data.rows(), r.cols() + 2 * data.cols());
+
+    // fill the matrix with the data and write
+    rwfn << r, data.real(), data.imag(); Eigen::Write(path, rwfn);
 }

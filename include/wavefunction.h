@@ -4,7 +4,7 @@
 
 class Wavefunction {
 public:
-    Wavefunction(const std::string& guess, const EigenMatrix<>& r, double mass); Wavefunction(const Wavefunction& wfn);
+    Wavefunction(const std::string& guess, const EigenMatrix<>& r, double mass, double momentum = 0);
 
     // operators with other wavefunctions
     Wavefunction operator-(const Wavefunction& wfn) const {Wavefunction res(*this); res.data -= wfn.data; return res;}
@@ -19,8 +19,8 @@ public:
     double energy(const EigenMatrix<>& U) const; double norm() const; std::complex<double> overlap(const Wavefunction& wfn) const;
     Wavefunction propagate(const EigenMatrix<std::complex<double>>& R, const EigenMatrix<std::complex<double>>& K) const;
 
-    // getters
-    EigenMatrix<> getk() const {return k;}
+    // getters and input/output functions
+    EigenMatrix<> getk() const {return k;} EigenMatrix<> getr() const {return r;} void Write(const std::string& path) const; EigenMatrix<std::complex<double>>& get() {return data;}
 
 private:
     EigenMatrix<std::complex<double>> data; EigenMatrix<> r, k; double mass, dr;

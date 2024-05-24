@@ -2,7 +2,7 @@
 #include <argparse.hpp>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Hartree-Fock Program", "1.0", argparse::default_arguments::none);
+    argparse::ArgumentParser program("Acorn Adiabatic Quantum Dynamics Program", "1.0", argparse::default_arguments::none);
 
     // add the command line arguments
     program.add_argument("-g", "--guess").help("-- Initial wavefunction.").default_value(std::string("exp(-(x-1)^2)"));
@@ -60,6 +60,9 @@ int main(int argc, char** argv) {
         // append to states and energy and print the new line
         states.at(i) = wfn; eps(i) = E; std::cout << std::endl;
     }
+
+    // write the states to disk
+    for (int i = 0; i < nstate; i++) states.at(i).Write("state" + std::to_string(i) + ".mat");
 
     // print the final energies
     std::cout << eps << std::endl;

@@ -6,7 +6,7 @@ int main(int argc, char** argv) {
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
-    program.add_argument("-e", "--expression").help("-- The potential energy expression to evaluate.").default_value(std::string("0.5*x^2"));
+    program.add_argument("-e", "--expression").help("-- The potential energy expression to evaluate.").nargs(argparse::nargs_pattern::at_least_one).default_value(std::vector<std::string>{"0.5*x^2"});
     program.add_argument("-g", "--grid").help("-- Limits of the evaluation grid.").nargs(2).default_value(std::vector<double>{-16.0, 16.0}).scan<'g', double>();
     program.add_argument("-p", "--points").help("-- Number of points on the grid in each dimension.").default_value(1024).scan<'i', int>();
 
@@ -15,15 +15,18 @@ int main(int argc, char** argv) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
-    // define the expression and the resulting matrix
-    Expression expr(program.get<std::string>("-e"), {"x"}); EigenMatrix<> U(program.get<int>("-p"), 2);
+    // define the potential matrix
+    EigenMatrix<> U(program.get<int>("-p"), program.get<std::vector<std::string>>("-e").size() + 1);
 
     // calculate the grid spacing
     double dr = (program.get<std::vector<double>>("-g").at(1) - program.get<std::vector<double>>("-g").at(0)) / (program.get<int>("-p") - 1);
 
-    // evaluate the expression on the grid
-    for (int i = 0; i < program.get<int>("-p"); i++) {
-        U(i, 0) = program.get<std::vector<double>>("-g").at(0) + i * dr; U(i, 1) = expr.eval(U(i, 0));
+    // fill the independent variable column
+    for (int i = 0; i < program.get<int>("-p"); i++) U(i, 0) = program.get<std::vector<double>>("-g").at(0) + i * dr;
+
+    // fill the potential columns
+    for (int i = 0; i < U.cols() - 1; i++) {
+        Expression expr(program.get<std::vector<std::string>>("-e").at(i), {"x"}); U.col(i + 1) = expr.eval(U.col(0));
     }
 
     // write the potential to disk

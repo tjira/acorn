@@ -20,10 +20,7 @@ include_directories(include lib)
 
 # find the necessary packages
 find_package(Eigen3 REQUIRED)
-find_package(FFTW3 REQUIRED)
-
-# find omp for parallelization
-find_package(OpenMP)
+find_package(OpenMP REQUIRED)
 
 # create the base library
 add_library(acorn_base src/expression.cpp src/fourier.cpp src/system.cpp src/wavefunction.cpp)
@@ -36,5 +33,6 @@ add_subdirectory(program/potential)
 add_subdirectory(program/transform)
 add_subdirectory(program/integral)
 add_subdirectory(program/aqdyn)
+add_subdirectory(program/nqdyn)
 add_subdirectory(program/hf)
 add_subdirectory(program/mp)
