@@ -1,4 +1,5 @@
 #include "expression.h"
+#include <argparse.hpp>
 
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Hartree-Fock Program", "1.0", argparse::default_arguments::none);
@@ -6,8 +7,8 @@ int main(int argc, char** argv) {
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
     program.add_argument("-e", "--expression").help("-- The potential energy expression to evaluate.").default_value(std::string("0.5*x^2"));
-    program.add_argument("-g", "--grid").help("-- Limits of the evaluation grid.").nargs(2).default_value(std::vector<double>{-16.0, 16.0});
-    program.add_argument("-p", "--points").help("-- Number of points on the grid in each dimension.").default_value(1024);
+    program.add_argument("-g", "--grid").help("-- Limits of the evaluation grid.").nargs(2).default_value(std::vector<double>{-16.0, 16.0}).scan<'g', double>();
+    program.add_argument("-p", "--points").help("-- Number of points on the grid in each dimension.").default_value(1024).scan<'i', int>();
 
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {

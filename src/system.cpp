@@ -25,9 +25,7 @@ System::System(const std::string& path) {
     AN = EigenMatrix<>(natoms, 1); R = EigenMatrix<>(natoms, 3);
 
     // extract the atomic numbers and positions
-    for (int i = 0; i < natoms; i++) {
-        std::getline(file, line); std::stringstream(line) >> sm >> R(i, 0) >> R(i, 1) >> R(i, 2); AN(i, 0) = SM2AN[sm];
-    }
+    for (int i = 0; i < natoms; i++) std::getline(file, line), std::stringstream(line) >> sm >> R(i, 0) >> R(i, 1) >> R(i, 2), AN(i, 0) = SM2AN[sm];
 }
 
 
@@ -36,10 +34,8 @@ double System::nuclearRepulsion() const {
     double repulsion = 0;
 
     // calculate the repulsion
-    for (int i = 0; i < AN.rows(); i++) {
-        for (int j = 0; j < i; j++) {
-            double d = (R.row(i) - R.row(j)).norm(); repulsion += AN(i, 0) * AN(j, 0) / d / A2BOHR;
-        }
+    for (int i = 0; i < AN.rows(); i++) for (int j = 0; j < i; j++) {
+        double d = (R.row(i) - R.row(j)).norm(); repulsion += AN(i, 0) * AN(j, 0) / d / A2BOHR;
     }
 
     return repulsion; // return the nuclear-nuclear repulsion of the system

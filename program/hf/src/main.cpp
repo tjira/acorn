@@ -1,5 +1,5 @@
-#include "ptable.h"
 #include "system.h"
+#include <argparse.hpp>
 
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Hartree-Fock Program", "1.0", argparse::default_arguments::none);
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
         E = 0.5 * D.cwiseProduct(H + F).sum();
 
         // print the iteration info
-        std::printf("%4d %20.14f %.2e %.2e %s\n", i + 1, E, std::abs(E - Ep), (D - Dp).norm(), "");
+        std::printf("%6d %20.14f %.2e %.2e %s\n", i + 1, E, std::abs(E - Ep), (D - Dp).norm(), "");
 
         // finish if covergence reached
         if (double thresh = program.get<double>("-t"); std::abs(E - Ep) < thresh && (D - Dp).norm() < thresh) break;

@@ -17,6 +17,7 @@ namespace Eigen {
 
     template <typename T = double> EigenTensor<4, T> Kron(const EigenMatrix<T>& A, const EigenTensor<4, T>& B);
     template <typename T = double> EigenMatrix<T> Vjoin(const EigenMatrix<T>& A, const EigenMatrix<T>& B);
+    template <typename T = std::complex<double>> EigenMatrix<T> ComplexConjugate(const EigenMatrix<T>& A);
     template <typename T = double> EigenMatrix<T> Kron(const EigenMatrix<T>& A, const EigenMatrix<T>& B);
     template <typename T = double> EigenMatrix<T> Repeat(const EigenMatrix<T>& A, int count, int axis);
 
@@ -32,6 +33,11 @@ namespace Eigen {
 template <typename T>
 EigenMatrix<T> Eigen::IndexFunction(int m, int n, const std::function<T(int, int)>& func) {
     EigenMatrix<T> A(m, n); for (int i = 0; i < m; i++) {for (int j = 0; j < n; j++) A(i, j) = func(i, j);} return A;
+}
+
+template <typename T>
+EigenMatrix<T> Eigen::ComplexConjugate(const EigenMatrix<T>& A) {
+    return A.unaryExpr([](T x) {return std::conj(x);});
 }
 
 template <typename T>
@@ -109,7 +115,7 @@ EigenMatrix<T> Eigen::LoadMatrix(const std::string& path) {
     std::ifstream file(path); if (!file.good()) throw std::runtime_error("UNABLE TO OPEN FILE `" + path + "` FOR READING");
 
     // read the dimensions and create the tensor
-    int rows, cols; file >> cols >> rows; EigenMatrix<T> A(rows, cols);
+    int rows, cols; file >> rows >> cols; EigenMatrix<T> A(rows, cols);
 
     // read the tensor by dimensions, assign the values and return the tensor
     for (int i = 0; i < rows; i++) {for (int j = 0; j < cols; j++) file >> A(i, j);}

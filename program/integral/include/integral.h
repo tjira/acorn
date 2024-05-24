@@ -1,8 +1,6 @@
 #pragma once
 
-#include "system.h"
-#include "ptable.h"
-
+#include "linalg.h"
 #include <libint2.hpp>
 
 namespace Integral {

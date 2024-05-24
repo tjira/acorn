@@ -1,6 +1,6 @@
 #pragma once
 
-#include "eigen.h"
+#include "linalg.h"
 
 class System {
 public:

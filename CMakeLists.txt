@@ -13,24 +13,28 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -flarge-source-files -fprofile-arcs -ftest-coverage")
 
 # set release flags
-set(CMAKE_CXX_FLAGS_RELEASE "-mavx -s -O3 -flarge-source-files")
+set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -flarge-source-files -flto=auto")
 
 # include directories
 include_directories(include lib)
 
 # find the necessary packages
 find_package(Eigen3 REQUIRED)
-find_package(OpenMP REQUIRED)
+find_package(FFTW3 REQUIRED)
+
+# find omp for parallelization
+find_package(OpenMP)
 
 # create the base library
-add_library(acorn_base src/expression.cpp src/system.cpp)
+add_library(acorn_base src/expression.cpp src/fourier.cpp src/system.cpp src/wavefunction.cpp)
 
 # link the base library
-target_link_libraries(acorn_base Eigen3::Eigen)
+target_link_libraries(acorn_base fftw3.a Eigen3::Eigen)
 
 # add subprograms
 add_subdirectory(program/potential)
 add_subdirectory(program/transform)
 add_subdirectory(program/integral)
+add_subdirectory(program/aqdyn)
 add_subdirectory(program/hf)
 add_subdirectory(program/mp)

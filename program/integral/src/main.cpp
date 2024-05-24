@@ -1,4 +1,5 @@
 #include "integral.h"
+#include <argparse.hpp>
 
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none);

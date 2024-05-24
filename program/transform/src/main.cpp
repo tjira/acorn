@@ -1,4 +1,5 @@
 #include "transform.h"
+#include <argparse.hpp>
 
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Hartree-Fock Integral Transform Engine", "1.0", argparse::default_arguments::none);
