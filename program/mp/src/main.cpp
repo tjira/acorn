@@ -1,8 +1,9 @@
 #include "system.h"
+#include "timer.h"
 #include <argparse.hpp>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Moller-Plesset Pertrubation Theory Program", "1.0", argparse::default_arguments::none);
+    argparse::ArgumentParser program("Acorn Moller-Plesset Pertrubation Theory Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -11,21 +12,21 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
     // load the system from disk
     System system("molecule.xyz");
 
     // load the integrals in MS basis from disk
-    EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat");
-    EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat");
-    EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat");
+    tp = Timer::Now(); std::cout << "V_MS MATRIX READING: " << std::flush; EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    tp = Timer::Now(); std::cout << "T_MS MATRIX READING: " << std::flush; EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    tp = Timer::Now(); std::cout << "J_MS TENSOR READING: " << std::flush; EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
 
     // load the molecular orbital energies from disk
-    EigenMatrix<> eps = Eigen::LoadMatrix("E_MO.mat");
+    tp = Timer::Now(); std::cout << "E_MO VECTOR READING: " << std::flush; EigenMatrix<> eps = Eigen::LoadMatrix("E_MO.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
 
     // extract the number of occupied and virtual orbitals and define the energy
-    int nocc = system.nocc(); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 
+    int nocc = (eps.array() < 0.0).count(); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 
 
     // initialize the antisymmetrized Coulomb integrals and the Hamiltonian matrix in MS basis
     EigenTensor<> Jmsa = Jms - Jms.shuffle(Eigen::array<int, 4>{0, 3, 2, 1}); EigenMatrix<> Hms = Tms + Vms;
@@ -55,17 +56,23 @@ int main(int argc, char** argv) {
         E += Hms(i, i); for (int j = 0; j < 2 * nocc; j++) E += 0.5 * Jmsa(i, i, j, j);
     }
 
+    // print new line
+    std::cout << std::endl;
+
     // add the MP2 correlation energy
-    if (program.get<int>("-o") > 1) {
+    if (tp = Timer::Now(); program.get<int>("-o") > 1) {
         // define the contraction axes
         Eigen::IndexPair<int> a1(0, 0), a2(1, 1), a3(2, 2), a4(3, 3);
 
         // add the MP2 correlation energy
         E -= 0.25 * EigenTensor<0>(ovov.contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{a1, a2, a3, a4}))(0);
+
+        // print the MP2 timing
+        std::printf("MP2 CORRELATION ENERGY TIMING: %s\n", Timer::Format(Timer::Elapsed(tp)).c_str());
     }
 
     // add the MP3 correlation energy
-    if (program.get<int>("-o") > 2) {
+    if (tp = Timer::Now(); program.get<int>("-o") > 2) {
         // define the contraction axes
         Eigen::IndexPair<int> a11(1, 0), a12(3, 2), a21(0, 0), a22(1, 2), a23(2, 1), a24(3, 3);
         Eigen::IndexPair<int> b11(0, 1), b12(2, 3), b21(0, 1), b22(1, 3), b23(2, 0), b24(3, 2);
@@ -75,8 +82,11 @@ int main(int argc, char** argv) {
         E += 0.125 * EigenTensor<0>(t.contract(vvvv, Eigen::array<Eigen::IndexPair<int>, 2>{a11, a12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{a21, a22, a23, a24}))(0);
         E += 0.125 * EigenTensor<0>(t.contract(oooo, Eigen::array<Eigen::IndexPair<int>, 2>{b11, b12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{b21, b22, b23, b24}))(0);
         E -=         EigenTensor<0>(t.contract(oovv, Eigen::array<Eigen::IndexPair<int>, 2>{c11, c12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{c21, c22, c23, c24}))(0);
+
+        // print the MP2 timing
+        std::printf("MP3 CORRELATION ENERGY TIMING: %s\n", Timer::Format(Timer::Elapsed(tp)).c_str());
     }
 
     // print the final energy
-    std::printf("FINAL SINGLE POINT ENERGY: %.14f\n", E + system.nuclearRepulsion());
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", E + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());
 }

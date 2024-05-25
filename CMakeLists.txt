@@ -23,13 +23,13 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # create the base library
-add_library(acorn_base src/expression.cpp src/fourier.cpp src/system.cpp src/wavefunction.cpp)
+add_library(acorn_base src/fourier.cpp src/system.cpp src/timer.cpp src/wavefunction.cpp)
 
 # link the base library
 target_link_libraries(acorn_base fftw3.a Eigen3::Eigen)
 
 # add subprograms
-add_subdirectory(program/potential)
+add_subdirectory(program/expression)
 add_subdirectory(program/transform)
 add_subdirectory(program/integral)
 add_subdirectory(program/aqdyn)

@@ -52,7 +52,8 @@ EigenMatrix<T> Eigen::Kron(const EigenMatrix<T>& A, const EigenMatrix<T>& B) {
         }
     }
 
-    return C; // return the Kronecker product
+    // return the Kronecker product
+    return C;
 }
 
 template <typename T>
@@ -71,7 +72,8 @@ EigenTensor<4, T> Eigen::Kron(const EigenMatrix<T>& A, const EigenTensor<4, T>& 
         }
     }
 
-    return C; // return the Kronecker product
+    // return the Kronecker product
+    return C;
 }
 
 template <typename T>
@@ -86,7 +88,8 @@ EigenMatrix<T> Eigen::Repeat(const EigenMatrix<T>& A, int count, int axis) {
     if (axis == 0) for (int i = 0; i < A.rows(); i++) for (int j = 0; j < count; j++) B.row(i * count + j) = A.row(i);
     else if (axis == 1) for (int i = 0; i < A.cols(); i++) for (int j = 0; j < count; j++) B.col(i * count + j) = A.col(i);
 
-    return B; // return the repeated matrix
+    // return the repeated matrix
+    return B;
 }
 
 template <typename T>
@@ -94,10 +97,8 @@ EigenMatrix<T> Eigen::Vjoin(const EigenMatrix<T>& A, const EigenMatrix<T>& B) {
     // create the new matrix with the joined dimensions
     EigenMatrix<> C(A.rows() + B.rows(), A.cols());
 
-    // copy the matrices into the new matrix
-    C.topRows(A.rows()) = A, C.bottomRows(B.rows()) = B;
-
-    return C; // return the vertically joined matrices
+    // copy the matrices into the new matrix and return
+    C.topRows(A.rows()) = A, C.bottomRows(B.rows()) = B; return C;
 }
 
 template <typename T>
@@ -117,10 +118,8 @@ EigenMatrix<T> Eigen::LoadMatrix(const std::string& path) {
     // read the dimensions and create the tensor
     int rows, cols; file >> rows >> cols; EigenMatrix<T> A(rows, cols);
 
-    // read the tensor by dimensions, assign the values and return the tensor
-    for (int i = 0; i < rows; i++) {for (int j = 0; j < cols; j++) file >> A(i, j);}
-
-    return A; // return the loaded tensor
+    // read the tensor by dimensions, assign the values and return the matrix
+    for (int i = 0; i < rows; i++) {for (int j = 0; j < cols; j++) file >> A(i, j);} return A;
 }
 
 template <typename T>
@@ -139,7 +138,8 @@ EigenTensor<4, T> Eigen::LoadTensor(const std::string& path) {
         for (int k = 0; k < dims.at(2); k++) for (int l = 0; l < dims.at(3); l++) file >> A(i, j, k, l);
     }
 
-    return A; // return the loaded tensor
+    // return the tensor
+    return A;
 }
 
 template <typename T>
