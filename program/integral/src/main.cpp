@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
 
     // add the command line arguments
     program.add_argument("-b", "--basis").help("-- Basis set used for integrals.").default_value("STO-3G");
-    program.add_argument("-f", "--file").help("-- System file in .xyz format.").default_value("molecule.xyz");
+    program.add_argument("-f", "--file").help("-- System file in the .xyz format.").default_value("molecule.xyz");
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
 
     // parse the command line arguments

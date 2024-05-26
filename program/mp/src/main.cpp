@@ -7,6 +7,7 @@ int main(int argc, char** argv) {
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
+    program.add_argument("-f", "--file").help("-- System file in the .xyz format.").default_value("molecule.xyz");
     program.add_argument("-o", "--order").help("-- Order of theory.").default_value(2).scan<'i', int>();
 
     // parse the command line arguments
@@ -15,13 +16,13 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
     // load the system from disk
-    System system("molecule.xyz");
+    System system(program.get("-f"));
 
     // load the integrals in MS basis from disk
     MEASURE("NUCLEAR INTEGRALS IN MS BASIS READING: ", EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat"))
     MEASURE("KINETIC INTEGRALS IN MS BASIS READING: ", EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat"))
     MEASURE("COULOMB INTEGRALS IN MS BASIS READING: ", EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat"))
-    MEASURE("ORBITAL ENERGIES IN MO BASIS READING:  ", EigenMatrix<> eps = Eigen::LoadMatrix("E_MO.mat"))
+    MEASURE("ORBITAL ENERGIES IN MS BASIS READING:  ", EigenMatrix<> Ems = Eigen::LoadMatrix("E_MS.mat"))
 
     // extract the number of occupied and virtual orbitals and define the energy
     int nocc = system.nocc(); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 
@@ -43,7 +44,7 @@ int main(int argc, char** argv) {
         for (int j = 0; j < 2 * nocc; j++) {
             for (int a = 0; a < 2 * nvirt; a++) {
                 for (int b = 0; b < 2 * nvirt; b++) {
-                    t(i, a, j, b) /= eps(nocc + a / 2) + eps(nocc + b / 2) - eps(i / 2) - eps(j / 2);
+                    t(i, a, j, b) /= Ems(2 * nocc + a) + Ems(2 * nocc + b) - Ems(i) - Ems(j);
                 }
             }
         }

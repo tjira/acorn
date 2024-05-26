@@ -18,32 +18,21 @@ namespace Eigen {
 
     // general functions
     template <typename T = double> EigenTensor<4, T> Kron(const EigenMatrix<T>& A, const EigenTensor<4, T>& B);
-    template <typename T = double> EigenMatrix<T> Vjoin(const EigenMatrix<T>& A, const EigenMatrix<T>& B);
-    template <typename T = std::complex<double>> EigenMatrix<T> ComplexConjugate(const EigenMatrix<T>& A);
-    template <typename T = double> EigenMatrix<T> Kron(const EigenMatrix<T>& A, const EigenMatrix<T>& B);
+    template <typename T = double> EigenMatrix<   T> Kron(const EigenMatrix<T>& A, const EigenMatrix<   T>& B);
     template <typename T = double> EigenMatrix<T> Repeat(const EigenMatrix<T>& A, int count, int axis);
-
-    // eigenproblem solvers
-    template <typename T = double> std::tuple<EigenMatrix<T>, EigenMatrix<T>> Gsaes(const EigenMatrix<T>& A, const EigenMatrix<T>& B);
-    template <typename T = double> std::tuple<EigenMatrix<T>, EigenMatrix<T>> Saes(const EigenMatrix<T>& A);
 
     // file readers
     template <typename T = double> EigenTensor<4, T> LoadTensor(const std::string& path);
-    template <typename T = double> EigenMatrix<T> LoadMatrix(const std::string& path);
+    template <typename T = double> EigenMatrix<   T> LoadMatrix(const std::string& path);
 
     // file writers
     template <typename T = double> void Write(const std::string& path, const EigenTensor<4, T>& A);
-    template <typename T = double> void Write(const std::string& path, const EigenMatrix<T>& A);
+    template <typename T = double> void Write(const std::string& path, const EigenMatrix<   T>& A);
 }
 
 template <typename T>
 EigenMatrix<T> Eigen::IndexFunction(int m, int n, const std::function<T(int, int)>& func) {
     EigenMatrix<T> A(m, n); for (int i = 0; i < m; i++) {for (int j = 0; j < n; j++) A(i, j) = func(i, j);} return A;
-}
-
-template <typename T>
-EigenMatrix<T> Eigen::ComplexConjugate(const EigenMatrix<T>& A) {
-    return A.unaryExpr([](T x) {return std::conj(x);});
 }
 
 template <typename T>
@@ -96,33 +85,6 @@ EigenMatrix<T> Eigen::Repeat(const EigenMatrix<T>& A, int count, int axis) {
 
     // return the repeated matrix
     return B;
-}
-
-template <typename T>
-EigenMatrix<T> Eigen::Vjoin(const EigenMatrix<T>& A, const EigenMatrix<T>& B) {
-    // create the new matrix with the joined dimensions
-    EigenMatrix<> C(A.rows() + B.rows(), A.cols());
-
-    // copy the matrices into the new matrix and return
-    C.topRows(A.rows()) = A, C.bottomRows(B.rows()) = B; return C;
-}
-
-template <typename T>
-std::tuple<EigenMatrix<T>, EigenMatrix<T>> Eigen::Gsaes(const EigenMatrix<T>& A, const EigenMatrix<T>& B) {
-    // solve the eigenvalue problem
-    Eigen::GeneralizedSelfAdjointEigenSolver<EigenMatrix<T>> solver(A, B);
-
-    // return the eigenvalues and eigenvectors
-    return {solver.eigenvalues(), solver.eigenvectors()};
-}
-
-template <typename T>
-std::tuple<EigenMatrix<T>, EigenMatrix<T>> Eigen::Saes(const EigenMatrix<T>& A) {
-    // solve the eigenvalue problem
-    Eigen::SelfAdjointEigenSolver<EigenMatrix<T>> solver(A);
-
-    // return the eigenvalues and eigenvectors
-    return {solver.eigenvalues(), solver.eigenvectors()};
 }
 
 template <typename T>

@@ -7,7 +7,7 @@ template <int S> using MatrixOfMatrices = std::array<std::array<EigenMatrix<std:
 template <int S>
 class Wavefunction {
 public:
-    Wavefunction(const EigenMatrix<>& data, const EigenMatrix<>& r, double mass = 1, double momentum = 0);
+    Wavefunction(const EigenMatrix<>& data, const EigenMatrix<>& r, double mass = 1, double momentum = 0); Wavefunction() = default;
 
     // arithmetic operators
     Wavefunction operator*(const std::complex<double>& scalar) const {Wavefunction wfn(*this); for (int i = 0; i < S; i++) wfn.data.col(i) *= scalar; return wfn;}

@@ -7,6 +7,7 @@ int main(int argc, char** argv) {
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
+    program.add_argument("-f", "--file").help("-- System file in the .xyz format.").default_value("molecule.xyz");
     program.add_argument("-i", "--iterations").help("-- Number of SCF iterations.").default_value(100).scan<'i', int>();
     program.add_argument("-t", "--threshold").help("-- Convergence threshold.").default_value(1e-8).scan<'g', double>();
 
@@ -16,7 +17,7 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
     // load the system from disk
-    System system("molecule.xyz");
+    System system(program.get("-f"));
 
     // load the integrals in AO basis from disk
     MEASURE("NUCLEAR INTEGRALS IN AO BASIS READING: ", EigenMatrix<> V = Eigen::LoadMatrix("V_AO.mat"))
@@ -25,7 +26,7 @@ int main(int argc, char** argv) {
     MEASURE("COULOMB INTEGRALS IN AO BASIS READING: ", EigenTensor<> J = Eigen::LoadTensor("J_AO.mat"))
 
     // initialize all the matrices used throughout the SCF procedure and the energy
-    EigenMatrix<> H = T + V, F = H, C(S.rows(), S.cols()), D(S.rows(), S.cols()), eps(S.rows(), 1);
+    EigenMatrix<> H = T + V, F = H, Cmo(S.rows(), S.cols()), Dmo(S.rows(), S.cols()), Emo(S.rows(), 1);
 
     // initialize the contraction axes and the energy placeholder
     Eigen::IndexPair<int> first(2, 0), second(3, 1); double E = 0;
@@ -40,34 +41,34 @@ int main(int argc, char** argv) {
         tp = Timer::Now();
 
         // calculate the electron-electron repulsion
-        EigenTensor<2> VEE = (J - 0.5 * J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1})).contract(TENSORMAP(D), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
+        EigenTensor<2> VEE = (J - 0.5 * J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1})).contract(TENSORMAP(Dmo), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
 
-        // calculate the Fock matrix
-        F = H + MATRIXMAP(VEE);
+        // calculate the Fock matrix and define previous values
+        F = H + MATRIXMAP(VEE); EigenMatrix<> Dmop = Dmo; double Ep = E;
 
-        // solve the eigenproblem and save the previous D and E values
-        std::tie(eps, C) = Eigen::Gsaes(F, S); EigenMatrix<> Dp = D; double Ep = E;
+        // solve the Roothaan equations
+        Eigen::GeneralizedSelfAdjointEigenSolver<EigenMatrix<>> solver(F, S); Emo = solver.eigenvalues(), Cmo = solver.eigenvectors();
 
         // calculate the new density
-        D = 2 * C.leftCols(system.nocc()) * C.leftCols(system.nocc()).transpose();
+        Dmo = 2 * Cmo.leftCols(system.nocc()) * Cmo.leftCols(system.nocc()).transpose();
 
         // calculate the new energy
-        E = 0.5 * D.cwiseProduct(H + F).sum();
+        E = 0.5 * Dmo.cwiseProduct(H + F).sum();
 
         // print the iteration info
-        std::printf("%6d %20.14f %.2e %.2e %s\n", i + 1, E, std::abs(E - Ep), (D - Dp).norm(), Timer::Format(Timer::Elapsed(tp)).c_str());
+        std::printf("%6d %20.14f %.2e %.2e %s\n", i + 1, E, std::abs(E - Ep), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(tp)).c_str());
 
         // finish if covergence reached
-        if (double thresh = program.get<double>("-t"); std::abs(E - Ep) < thresh && (D - Dp).norm() < thresh) {std::cout << std::endl; break;}
+        if (double thresh = program.get<double>("-t"); std::abs(E - Ep) < thresh && (Dmo - Dmop).norm() < thresh) {std::cout << std::endl; break;}
         else if (i == program.get<int>("-i") - 1) {
             throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE SCF REACHED.");
         }
     }
 
     // save the final matrices
-    MEASURE("COEFFICIENT MATRIX WRITING: ", Eigen::Write("C_MO.mat", C))
-    MEASURE("ORBITAL ENERGIES WRITING:   ", Eigen::Write("E_MO.mat", eps))
-    MEASURE("DENSITY MATRIX WRITING:     ", Eigen::Write("D_MO.mat", D))
+    MEASURE("COEFFICIENT MATRIX WRITING: ", Eigen::Write("C_MO.mat", Cmo))
+    MEASURE("ORBITAL ENERGIES WRITING:   ", Eigen::Write("E_MO.mat", Emo))
+    MEASURE("DENSITY MATRIX WRITING:     ", Eigen::Write("D_MO.mat", Dmo))
 
     // print the final energy and total time
     std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", E + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());

@@ -1,13 +1,17 @@
 #include "integral.h"
 
 EigenMatrix<> Integral::Single(libint2::Engine& engine, const libint2::BasisSet& shells) {
+    // define the number of basis functions, matrix of integrals and shell to basis function map
     int nbf = shells.nbf(); EigenMatrix<> ints(nbf, nbf); ints.setZero(); std::vector<size_t> sh2bf = shells.shell2bf();
 
+    // loop over all elements
     for (size_t i = 0; i < shells.size(); i++) {
         for (size_t j = 0; j < shells.size(); j++) {
 
+            // calculate the integral
             engine.compute(shells.at(j), shells.at(i)); if (engine.results().at(0) == nullptr) continue;
 
+            // assign the integrals
             for(size_t k = 0, m = 0; k < shells.at(i).size(); k++) {
                 for(size_t l = 0; l < shells.at(j).size(); l++, m++) {
                     ints(k + sh2bf.at(i), l + sh2bf.at(j)) = engine.results().at(0)[m];
@@ -20,15 +24,19 @@ EigenMatrix<> Integral::Single(libint2::Engine& engine, const libint2::BasisSet&
 }
 
 EigenTensor<> Integral::Double(libint2::Engine& engine, const libint2::BasisSet& shells) {
+    // define the number of basis functions, matrix of integrals and shell to basis function map
     int nbf = shells.nbf(); EigenTensor<> ints(nbf, nbf, nbf, nbf); ints.setZero(); std::vector<size_t> sh2bf = shells.shell2bf();
 
+    // loop over all elements
     for (size_t i = 0; i < shells.size(); i++) {
         for (size_t j = 0; j < shells.size(); j++) {
             for (size_t k = 0; k < shells.size(); k++) {
                 for (size_t l = 0; l < shells.size(); l++) {
 
+                    // calculate the integral
                     engine.compute(shells.at(i), shells.at(j), shells.at(k), shells.at(l)); if (engine.results().at(0) == nullptr) continue;
 
+                    // assign the integrals
                     for (size_t m = 0, q = 0; m < shells.at(i).size(); m++) {
                         for (size_t n = 0; n < shells.at(j).size(); n++) {
                             for (size_t o = 0; o < shells.at(k).size(); o++) {
