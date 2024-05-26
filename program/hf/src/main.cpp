@@ -19,10 +19,10 @@ int main(int argc, char** argv) {
     System system("molecule.xyz");
 
     // load the integrals in AO basis from disk
-    tp = Timer::Now(); std::cout << "V_AO MATRIX READING: " << std::flush; EigenMatrix<> V = Eigen::LoadMatrix("V_AO.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "T_AO MATRIX READING: " << std::flush; EigenMatrix<> T = Eigen::LoadMatrix("T_AO.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "S_AO MATRIX READING: " << std::flush; EigenMatrix<> S = Eigen::LoadMatrix("S_AO.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "J_AO TENSOR READING: " << std::flush; EigenTensor<> J = Eigen::LoadTensor("J_AO.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    MEASURE("NUCLEAR INTEGRALS IN AO BASIS READING: ", EigenMatrix<> V = Eigen::LoadMatrix("V_AO.mat"))
+    MEASURE("KINETIC INTEGRALS IN AO BASIS READING: ", EigenMatrix<> T = Eigen::LoadMatrix("T_AO.mat"))
+    MEASURE("OVERLAP INTEGRALS IN AO BASIS READING: ", EigenMatrix<> S = Eigen::LoadMatrix("S_AO.mat"))
+    MEASURE("COULOMB INTEGRALS IN AO BASIS READING: ", EigenTensor<> J = Eigen::LoadTensor("J_AO.mat"))
 
     // initialize all the matrices used throughout the SCF procedure and the energy
     EigenMatrix<> H = T + V, F = H, C(S.rows(), S.cols()), D(S.rows(), S.cols()), eps(S.rows(), 1);
@@ -65,9 +65,9 @@ int main(int argc, char** argv) {
     }
 
     // save the final matrices
-    tp = Timer::Now(); std::cout << "E_MO VECTOR WRITING: " << std::flush; Eigen::Write("E_MO.mat", eps); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "C_MO MATRIX WRITING: " << std::flush; Eigen::Write("C_MO.mat", C); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "D_MO MATRIX WRITING: " << std::flush; Eigen::Write("D_MO.mat", D); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    MEASURE("COEFFICIENT MATRIX WRITING: ", Eigen::Write("C_MO.mat", C))
+    MEASURE("ORBITAL ENERGIES WRITING:   ", Eigen::Write("E_MO.mat", eps))
+    MEASURE("DENSITY MATRIX WRITING:     ", Eigen::Write("D_MO.mat", D))
 
     // print the final energy and total time
     std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", E + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());

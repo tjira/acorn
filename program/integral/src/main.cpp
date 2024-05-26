@@ -24,20 +24,20 @@ int main(int argc, char** argv) {
 
     // calculate the integrals
     libint2::initialize();
-    tp = Timer::Now(); std::cout << "V_AO MATRIX CALCULATION: " << std::flush; EigenMatrix<> V = Integral::Nuclear(atoms, shells); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "T_AO MATRIX CALCULATION: " << std::flush; EigenMatrix<> T = Integral::Kinetic(shells); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "S_AO MATRIX CALCULATION: " << std::flush; EigenMatrix<> S = Integral::Overlap(shells); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "J_AO TENSOR CALCULATION: " << std::flush; EigenTensor<> J = Integral::Coulomb(shells); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    MEASURE("NUCLEAR INTEGRALS IN AO BASIS CALCULATION: ", EigenMatrix<> V = Integral::Nuclear(atoms, shells))
+    MEASURE("KINETIC INTEGRALS IN AO BASIS CALCULATION: ", EigenMatrix<> T = Integral::Kinetic(shells))
+    MEASURE("OVERLAP INTEGRALS IN AO BASIS CALCULATION: ", EigenMatrix<> S = Integral::Overlap(shells))
+    MEASURE("COULOMB INTEGRALS IN AO BASIS CALCULATION: ", EigenTensor<> J = Integral::Coulomb(shells))
     libint2::finalize();
 
     // new line
     std::cout << std::endl;
     
     // save the integrals to disk
-    tp = Timer::Now(); std::cout << "V_AO MATRIX WRITING: " << std::flush; Eigen::Write("V_AO.mat", V); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "T_AO MATRIX WRITING: " << std::flush; Eigen::Write("T_AO.mat", T); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "S_AO MATRIX WRITING: " << std::flush; Eigen::Write("S_AO.mat", S); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "J_AO TENSOR WRITING: " << std::flush; Eigen::Write("J_AO.mat", J); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    MEASURE("NUCLEAR INTEGRALS IN AO BASIS WRITING: ", Eigen::Write("V_AO.mat", V))
+    MEASURE("KINETIC INTEGRALS IN AO BASIS WRITING: ", Eigen::Write("T_AO.mat", T))
+    MEASURE("OVERLAP INTEGRALS IN AO BASIS WRITING: ", Eigen::Write("S_AO.mat", S))
+    MEASURE("COULOMB INTEGRALS IN AO BASIS WRITING: ", Eigen::Write("J_AO.mat", J))
 
     // print the total time
     std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;

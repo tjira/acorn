@@ -13,19 +13,25 @@ template <size_t D = 4, typename T = double> using EigenTensor = Eigen::Tensor<T
 template <typename T = double> using EigenVector = Eigen::Vector<T, Eigen::Dynamic>;
 
 namespace Eigen {
+    // complementary constructors
     template <typename T = double> EigenMatrix<T> IndexFunction(int rows, int cols, const std::function<T(int, int)>& func);
 
+    // general functions
     template <typename T = double> EigenTensor<4, T> Kron(const EigenMatrix<T>& A, const EigenTensor<4, T>& B);
     template <typename T = double> EigenMatrix<T> Vjoin(const EigenMatrix<T>& A, const EigenMatrix<T>& B);
     template <typename T = std::complex<double>> EigenMatrix<T> ComplexConjugate(const EigenMatrix<T>& A);
     template <typename T = double> EigenMatrix<T> Kron(const EigenMatrix<T>& A, const EigenMatrix<T>& B);
     template <typename T = double> EigenMatrix<T> Repeat(const EigenMatrix<T>& A, int count, int axis);
 
+    // eigenproblem solvers
     template <typename T = double> std::tuple<EigenMatrix<T>, EigenMatrix<T>> Gsaes(const EigenMatrix<T>& A, const EigenMatrix<T>& B);
+    template <typename T = double> std::tuple<EigenMatrix<T>, EigenMatrix<T>> Saes(const EigenMatrix<T>& A);
 
+    // file readers
     template <typename T = double> EigenTensor<4, T> LoadTensor(const std::string& path);
     template <typename T = double> EigenMatrix<T> LoadMatrix(const std::string& path);
 
+    // file writers
     template <typename T = double> void Write(const std::string& path, const EigenTensor<4, T>& A);
     template <typename T = double> void Write(const std::string& path, const EigenMatrix<T>& A);
 }
@@ -105,6 +111,15 @@ template <typename T>
 std::tuple<EigenMatrix<T>, EigenMatrix<T>> Eigen::Gsaes(const EigenMatrix<T>& A, const EigenMatrix<T>& B) {
     // solve the eigenvalue problem
     Eigen::GeneralizedSelfAdjointEigenSolver<EigenMatrix<T>> solver(A, B);
+
+    // return the eigenvalues and eigenvectors
+    return {solver.eigenvalues(), solver.eigenvectors()};
+}
+
+template <typename T>
+std::tuple<EigenMatrix<T>, EigenMatrix<T>> Eigen::Saes(const EigenMatrix<T>& A) {
+    // solve the eigenvalue problem
+    Eigen::SelfAdjointEigenSolver<EigenMatrix<T>> solver(A);
 
     // return the eigenvalues and eigenvectors
     return {solver.eigenvalues(), solver.eigenvectors()};

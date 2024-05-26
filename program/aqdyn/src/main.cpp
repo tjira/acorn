@@ -7,10 +7,11 @@ int main(int argc, char** argv) {
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
-    program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(1000).scan<'i', int>();
+    program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(200).scan<'i', int>();
     program.add_argument("-m", "--mass").help("-- Mass of the model system.").default_value(1.0).scan<'g', double>();
     program.add_argument("-n", "--nstate").help("-- Number of states to calculate.").default_value(1).scan<'i', int>();
-    program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(0.1).scan<'g', double>();
+    program.add_argument("-p", "--momentum").help("-- Momentum of the model system.").default_value(0.0).scan<'g', double>();
+    program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(1.0).scan<'g', double>();
     program.add_argument("--imaginary").help("-- Enable the imaginary time propagation.").default_value(false).implicit_value(true);
 
     // parse the command line arguments
@@ -22,10 +23,10 @@ int main(int argc, char** argv) {
     int iters = program.get<int>("-i"), nstate = program.get<int>("-n"); double mass = program.get<double>("-m"), step = program.get<double>("-s");
 
     // load the potential
-    tp = Timer::Now(); std::cout << "POTENTIAL READING: " << std::flush; EigenMatrix<> U = Eigen::LoadMatrix("U.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    MEASURE("POTENTIAL MATRIX READING: ", EigenMatrix<> U = Eigen::LoadMatrix("U_ADIA.mat"))
 
     // load the wavefunction
-    tp = Timer::Now(); std::cout << "WFUNCTION READING: " << std::flush; Wavefunction<1> wfn(Eigen::LoadMatrix("PSI0_0.mat").rightCols(2), U.leftCols(U.cols() - 1), mass); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    MEASURE("WAVEFUNCTION READING:     ", Wavefunction<1> wfn(Eigen::LoadMatrix("PSI_ADIA_GUESS.mat").rightCols(2), U.leftCols(U.cols() - 1), mass, program.get<double>("-p")))
 
     // normalize the wfn, extract the potential values from the last column
     wfn = wfn.normalized(); U.col(0) = U.rightCols(1); U.conservativeResize(U.rows(), 1);
@@ -39,11 +40,11 @@ int main(int argc, char** argv) {
     // perform the dynamics for every state
     for (int i = 0; i < nstate; i++) {
 
-        // assign the initial wfn with its energy and create the evolution matrix
-        wfn = states.at(i); double E = wfn.energy(U); EigenMatrix<> evolution(U.rows(), 3 + 2 * iters);
+        // assign the initial wfn with its energy and define the container for wfn values for saving
+        wfn = states.at(i); double E = wfn.energy(U); EigenMatrix<> wfnt(U.rows(), 3 + 2 * iters);
 
         // save the initial state
-        evolution.col(0) = wfn.getr(); evolution.col(1) = wfn.get().at(0).real(), evolution.col(2) = wfn.get().at(0).imag();
+        wfnt.col(0) = wfn.getr(); wfnt.col(1) = wfn.get().col(0).real(), wfnt.col(2) = wfn.get().col(0).imag();
 
         // print the header
         std::printf("\nSTATE %d\n%6s %20s %8s %12s\n", i, "ITER", "ENERGY", "|dE|", "TIME");
@@ -61,14 +62,14 @@ int main(int argc, char** argv) {
             wfn = wfn.normalized(); E = wfn.energy(U);
 
             // save the wavefunction to the evolution matrix
-            evolution.col(3 + 2 * j) = wfn.get().at(0).real(); evolution.col(4 + 2 * j) = wfn.get().at(0).imag();
+            wfnt.col(3 + 2 * j) = wfn.get().col(0).real(); wfnt.col(4 + 2 * j) = wfn.get().col(0).imag();
 
             // print the iteration info
             std::printf("%6d %20.14f %.2e %s\n", j + 1, E, std::abs(E - Ep), Timer::Format(Timer::Elapsed(tp)).c_str());
         }
 
         // append to states and energy, print the new line and save the evolution
-        states.at(i) = wfn; eps(i) = E; Eigen::Write("PSI" + std::to_string(i) + "_T.mat", evolution);
+        states.at(i) = wfn; eps(i) = E; Eigen::Write("PSI_ADIA_" + std::to_string(i) + ".mat", wfnt);
     }
 
     // print the total time

@@ -1,13 +1,11 @@
 #include "fourier.h"
 #include "wavefunction.h"
 
-#include <iostream>
-
 template<int S>
-Wavefunction<S>::Wavefunction(const EigenMatrix<std::complex<double>>& data, const EigenMatrix<>& r, double mass, double momentum) : r(r), k(r.rows(), r.cols()), mass(mass) {
+Wavefunction<S>::Wavefunction(const EigenMatrix<>& data, const EigenMatrix<>& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
     // add the momentum to the wavefunction
     for (int i = 0; i < 2 * S; i += 2) {
-        this->data.at(i / 2) = (data.col(i) + std::complex<double>(0, 1) * data.col(i + 1)).array() * (std::complex<double>(0, 1) * momentum * r.array()).exp();
+        this->data.col(i / 2) = (data.col(i) + std::complex<double>(0, 1) * data.col(i + 1)).array() * (std::complex<double>(0, 1) * momentum * r.array()).exp();
     } dr = r(1) - r(0);
 
     // calculate the k-space grid
@@ -15,30 +13,33 @@ Wavefunction<S>::Wavefunction(const EigenMatrix<std::complex<double>>& data, con
 }
 
 template <int S>
+Wavefunction<S> Wavefunction<S>::adiabatize(const std::vector<EigenMatrix<>>& UT) const {
+    // define adiabatic wavefunction
+    Wavefunction wfn(*this);
+
+    // loop over all points and transform the wavefunction
+    for (int j = 0; j < data.rows(); j++) wfn.data.row(j) = UT.at(j).adjoint() * data.row(j).transpose();
+
+    // return the wfn
+    return wfn;
+}
+
+template <int S>
 EigenMatrix<> Wavefunction<S>::density() const {
-    // define the density matrix
-    EigenMatrix<> density(S, S); density.setZero();
-
-    for (int i = 0; i < S; i++) {
-        for (int j = 0; j < S; j++) {
-            density(i, j) += std::abs((data.at(i).transpose() * Eigen::ComplexConjugate(data.at(j)))(0)) * dr;
-        }
-    }
-
     // return the density matrix
-    return density;
+    return (data.transpose() * data.conjugate()).array().abs() * dr;
 }
 
 template <>
 double Wavefunction<1>::energy(const EigenMatrix<>& U) const {
     // obtain the negative spatial second derivative of the wavefunction in the k-space
-    EigenMatrix<std::complex<double>> wfnk = k.array().pow(2) * FourierTransform::Forward(data.at(0)).array();
+    EigenMatrix<std::complex<double>> wfnk = k.array().pow(2) * FourierTransform::Forward(data).array();
 
     // calculate the kinetic energy
-    double Ek = 0.5 * (Eigen::ComplexConjugate(data.at(0)).transpose() * FourierTransform::Inverse(wfnk))(0).real() * dr / mass;
+    double Ek = 0.5 * (data.adjoint() * FourierTransform::Inverse(wfnk))(0).real() * dr / mass;
 
     // calculate the potential energy
-    double Ep = (Eigen::ComplexConjugate(data.at(0)).transpose() * (U.array() * data.at(0).array()).matrix())(0).real() * dr;
+    double Ep = (data.adjoint() * (U.array() * data.array()).matrix())(0).real() * dr;
 
     // return the total energy
     return Ek + Ep;
@@ -47,14 +48,14 @@ double Wavefunction<1>::energy(const EigenMatrix<>& U) const {
 template <>
 double Wavefunction<2>::energy(const EigenMatrix<>& U) const {
     // calculate the kinetic energies
-    EigenMatrix<std::complex<double>> Ek00 = Eigen::ComplexConjugate(data.at(0)).array() * FourierTransform::Inverse(k.array().pow(2) * FourierTransform::Forward(data.at(0)).array()).array();
-    EigenMatrix<std::complex<double>> Ek11 = Eigen::ComplexConjugate(data.at(1)).array() * FourierTransform::Inverse(k.array().pow(2) * FourierTransform::Forward(data.at(1)).array()).array();
+    EigenMatrix<std::complex<double>> Ek00 = data.col(0).conjugate().array() * FourierTransform::Inverse(k.array().pow(2) * FourierTransform::Forward(data.col(0)).array()).array();
+    EigenMatrix<std::complex<double>> Ek11 = data.col(1).conjugate().array() * FourierTransform::Inverse(k.array().pow(2) * FourierTransform::Forward(data.col(1)).array()).array();
 
     // calculate the potential energies
-    EigenMatrix<std::complex<double>> Ep00 = Eigen::ComplexConjugate(data.at(0)).array() * U.col(0).array() * data.at(0).array();
-    EigenMatrix<std::complex<double>> Ep01 = Eigen::ComplexConjugate(data.at(0)).array() * U.col(1).array() * data.at(1).array();
-    EigenMatrix<std::complex<double>> Ep10 = Eigen::ComplexConjugate(data.at(1)).array() * U.col(2).array() * data.at(0).array();
-    EigenMatrix<std::complex<double>> Ep11 = Eigen::ComplexConjugate(data.at(1)).array() * U.col(3).array() * data.at(1).array();
+    EigenMatrix<std::complex<double>> Ep00 = data.col(0).conjugate().array() * U.col(0).array() * data.col(0).array();
+    EigenMatrix<std::complex<double>> Ep01 = data.col(0).conjugate().array() * U.col(1).array() * data.col(1).array();
+    EigenMatrix<std::complex<double>> Ep10 = data.col(1).conjugate().array() * U.col(2).array() * data.col(0).array();
+    EigenMatrix<std::complex<double>> Ep11 = data.col(1).conjugate().array() * U.col(3).array() * data.col(1).array();
 
     // return the total energy
     return (0.5 * (Ek00 + Ek11) / mass + Ep00 + Ep01 + Ep10 + Ep11).sum().real() * dr;
@@ -66,7 +67,7 @@ EigenVector<> Wavefunction<S>::norm() const {
     EigenVector<> norm(S);
 
     // calculate the norm of the wavefunction and store it in the vector
-    for (int i = 0; i < S; i++) norm(i) = std::sqrt(data.at(i).array().abs2().sum() * dr);
+    for (int i = 0; i < S; i++) norm(i) = std::sqrt(data.col(i).array().abs2().sum() * dr);
 
     // return the norm
     return norm;
@@ -78,10 +79,10 @@ Wavefunction<S> Wavefunction<S>::normalized() const {
     Wavefunction wfn(*this); EigenVector<> norms(S);
 
     // calculate the norms of the wavefunction
-    for (int i = 0; i < S; i++) norms(i) = std::sqrt(data.at(i).array().abs2().sum() * dr);
+    for (int i = 0; i < S; i++) norms(i) = std::sqrt(data.col(i).array().abs2().sum() * dr);
 
     // divide the wavefunction by the norm
-    for (int i = 0; i < S; i++) if (norms(i) > 1e-14) wfn.data.at(i) /= norms(i);
+    for (int i = 0; i < S; i++) if (norms(i) > 1e-14) wfn.data.col(i) /= norms(i);
 
     // return the wfn
     return wfn;
@@ -90,7 +91,7 @@ Wavefunction<S> Wavefunction<S>::normalized() const {
 template <>
 std::complex<double> Wavefunction<1>::overlap(const Wavefunction<1>& wfn) const {
     // return the overlap of the wavefunctions
-    return (Eigen::ComplexConjugate(wfn.data.at(0)).array() * data.at(0).array()).sum() * dr;
+    return (wfn.data.col(0).conjugate().array() * data.col(0).array()).sum() * dr;
 }
 
 template <>
@@ -99,11 +100,11 @@ Wavefunction<1> Wavefunction<1>::propagate(const MatrixOfMatrices<1>& R, const M
     Wavefunction wfn(*this);
 
     // propagate the wavefunction
-    wfn.data.at(0) = R.at(0).at(0).array() * wfn.data.at(0).array();
-    wfn.data.at(0) = FourierTransform::Forward(wfn.data.at(0));
-    wfn.data.at(0) = K.at(0).at(0).array() * wfn.data.at(0).array();
-    wfn.data.at(0) = FourierTransform::Inverse(wfn.data.at(0));
-    wfn.data.at(0) = R.at(0).at(0).array() * wfn.data.at(0).array();
+    wfn.data.col(0) = R.at(0).at(0).array() * wfn.data.col(0).array();
+    wfn.data.col(0) = FourierTransform::Forward(wfn.data.col(0));
+    wfn.data.col(0) = K.at(0).at(0).array() * wfn.data.col(0).array();
+    wfn.data.col(0) = FourierTransform::Inverse(wfn.data.col(0));
+    wfn.data.col(0) = R.at(0).at(0).array() * wfn.data.col(0).array();
 
     // return the wfn
     return wfn;
@@ -115,14 +116,14 @@ Wavefunction<2> Wavefunction<2>::propagate(const MatrixOfMatrices<2>& R, const M
     Wavefunction wfn(*this), wfnt(*this);
 
     // propagate the wavefunction
-    wfnt.data.at(0) = R.at(0).at(0).array() * wfn.data.at(0).array() + R.at(0).at(1).array() * wfn.data.at(1).array();
-    wfnt.data.at(1) = R.at(1).at(0).array() * wfn.data.at(0).array() + R.at(1).at(1).array() * wfn.data.at(1).array();
+    wfnt.data.col(0) = R.at(0).at(0).array() * wfn.data.col(0).array() + R.at(0).at(1).array() * wfn.data.col(1).array();
+    wfnt.data.col(1) = R.at(1).at(0).array() * wfn.data.col(0).array() + R.at(1).at(1).array() * wfn.data.col(1).array();
     wfn = wfnt;
-    wfnt.data.at(0) = FourierTransform::Inverse(K.at(0).at(0).array() * FourierTransform::Forward(wfn.data.at(0)).array());
-    wfnt.data.at(1) = FourierTransform::Inverse(K.at(1).at(1).array() * FourierTransform::Forward(wfn.data.at(1)).array());
+    wfnt.data.col(0) = FourierTransform::Inverse(K.at(0).at(0).array() * FourierTransform::Forward(wfn.data.col(0)).array());
+    wfnt.data.col(1) = FourierTransform::Inverse(K.at(1).at(1).array() * FourierTransform::Forward(wfn.data.col(1)).array());
     wfn = wfnt;
-    wfnt.data.at(0) = R.at(0).at(0).array() * wfn.data.at(0).array() + R.at(0).at(1).array() * wfn.data.at(1).array();
-    wfnt.data.at(1) = R.at(1).at(0).array() * wfn.data.at(0).array() + R.at(1).at(1).array() * wfn.data.at(1).array();
+    wfnt.data.col(0) = R.at(0).at(0).array() * wfn.data.col(0).array() + R.at(0).at(1).array() * wfn.data.col(1).array();
+    wfnt.data.col(1) = R.at(1).at(0).array() * wfn.data.col(0).array() + R.at(1).at(1).array() * wfn.data.col(1).array();
     wfn = wfnt;
 
     // return the wfn

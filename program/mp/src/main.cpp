@@ -18,15 +18,13 @@ int main(int argc, char** argv) {
     System system("molecule.xyz");
 
     // load the integrals in MS basis from disk
-    tp = Timer::Now(); std::cout << "V_MS MATRIX READING: " << std::flush; EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "T_MS MATRIX READING: " << std::flush; EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-    tp = Timer::Now(); std::cout << "J_MS TENSOR READING: " << std::flush; EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
-
-    // load the molecular orbital energies from disk
-    tp = Timer::Now(); std::cout << "E_MO VECTOR READING: " << std::flush; EigenMatrix<> eps = Eigen::LoadMatrix("E_MO.mat"); std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    MEASURE("NUCLEAR INTEGRALS IN MS BASIS READING: ", EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat"))
+    MEASURE("KINETIC INTEGRALS IN MS BASIS READING: ", EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat"))
+    MEASURE("COULOMB INTEGRALS IN MS BASIS READING: ", EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat"))
+    MEASURE("ORBITAL ENERGIES IN MO BASIS READING:  ", EigenMatrix<> eps = Eigen::LoadMatrix("E_MO.mat"))
 
     // extract the number of occupied and virtual orbitals and define the energy
-    int nocc = (eps.array() < 0.0).count(); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 
+    int nocc = system.nocc(); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 
 
     // initialize the antisymmetrized Coulomb integrals and the Hamiltonian matrix in MS basis
     EigenTensor<> Jmsa = Jms - Jms.shuffle(Eigen::array<int, 4>{0, 3, 2, 1}); EigenMatrix<> Hms = Tms + Vms;

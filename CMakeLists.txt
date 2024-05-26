@@ -9,11 +9,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
-# set debug flags
+# set the compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -flarge-source-files -fprofile-arcs -ftest-coverage")
-
-# set release flags
-set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -flarge-source-files -flto=auto")
+set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -flarge-source-files -funroll-loops -flto=auto")
 
 # include directories
 include_directories(include lib)
