@@ -38,7 +38,7 @@ if __name__ == "__main__":
     coords *= 1.8897261254578281
 
     # load the integrals from the files
-    S, T, V = np.loadtxt("S.mat"), np.loadtxt("T.mat"), np.loadtxt("V.mat"); J = np.loadtxt("J.mat").reshape(4 * [S.shape[1]])
+    S, T, V = np.loadtxt("S_AO.mat", skiprows=1), np.loadtxt("T_AO.mat", skiprows=1), np.loadtxt("V_AO.mat", skiprows=1); J = np.loadtxt("J_AO.mat", skiprows=1).reshape(4 * [S.shape[1]])
 
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
 
@@ -67,37 +67,51 @@ if __name__ == "__main__":
     # print the results
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
-    # MOLLER-PLESSET PERTRUBATION THEORY OF 2ND ORDER ==================================================================================================================================================
+    # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
 
     """
-    To perform the MP2 calculation, you will definitely need the Coulomb integrals in the molecular orbital basis. Please calculate them and store them in the Jmo variable.
+    To perform most of the post-HF calculations, we need to transform the Coulomb integrals to the molecular spinorbital basis. The MP2 calculation could be done using the Coulomb integral in MO basis, but for the sake of subsequent calculations, we enforce here the integrals in the MS basis. The first thing you will need for the transform is the coefficient matrix in the molecular spinorbital basis. To perform this transform using the mathematical formulation presented in the materials, the first step is to form the tiling matrix "P" which will be used to duplicate columns of a general matrix. Please calculate it here.
     """
-    Jmo = np.zeros_like(J)
+    P = np.zeros((nbf, 2 * nbf))
 
     """
-    And lastly, please calculate the MP2 correlation energy. The result should be stored in the E_MP2 variable.
+    Now, please define the spin masks "M" and "N". These masks will be used to zero out spinorbitals, that should be empty.
+    """
+    M, N = np.zeros((nbf, 2 * nbf)), np.zeros((nbf, 2 * nbf))
+
+    """
+    With the tiling matrix and spin masks defined, please transform the coefficient matrix into the molecular spinorbital basis. The resulting matrix should be stored in the "Cms" variable.
+    """
+    Cms = np.zeros(2 * np.array(C.shape))
+
+    """
+    With the coefficient matrix in the molecular spinorbital basis available, we can proceed to transform the Coulomb integrals. It's important to note that the transformed integrals will contain twice as many elements along each axis compared to their counterparts in the atomic orbital (AO) basis. This increase is due to the representation of both spin states in the molecular spinorbital basis.
+    """
+    Jms = np.zeros(2 * np.array(H.shape))
+
+    """
+    Now we have everything for the MP calculations. Please calculate the MP2 correlation energy. The result should be stored in the "E_MP2" variable.
     """
     E_MP2 = 0
 
+    """
+    Let's not stop here. We can calculate MP3 correlation energy as well. Please calculate it and store it in the "E_MP3" variable.
+    """
+    E_MP3 = 0
+
     # print the results
-    print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
+    print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 +       + VNN))
+    print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 
     # FULL CONFIGUIRATION INTERACTION ==================================================================================================================================================================
 
     """
-    The first step is to transform the matrix of coefficients into the basis of molecular spinorbitals, which we'll store in the variable "Cms". In this transformation, the resulting matrix will have twice the number of rows and columns to account for spin. To achieve this, you might use techniques like tiling matrices and applying spin masks. For practical implementation, I recommend exploring numpy functions such as np.block, np.repeat, and np.kron. These functions are highly effective for assembling and replicating blocks in the matrix to expand it appropriately for both spin up and spin down states. This method ensures that each spatial orbital is associated with both its spin components in the new basis.
+    We already transformed the Coulomb integrals to the MS basis in the MP block. For the CI we will also need to transform the core Hamiltonian. Please transform the core Hamiltonian to the MS basis and store it in the "Hms" variable.
     """
-    Cms = np.zeros(2 * np.array(C.shape))
-
-
-    """
-    With the coefficient matrix in the molecular spinorbital basis available, we can proceed to transform the core Hamiltonian and the Coulomb integrals. It's important to note that the transformed matrices will contain twice as many elements along each axis compared to their counterparts in the atomic orbital (AO) basis. This increase is due to the representation of both spin states in the molecular spinorbital basis.
-    """
-    Hms, Jms = np.zeros(2 * np.array(H.shape)), np.zeros(2 * np.array(H.shape))
-
+    Hms = np.zeros(2 * np.array(H.shape))
 
     """
-    The next step involves generating determinants. We will store these in a simple list, with each determinant represented by an array of numbers, where each number corresponds to an occupied spinorbital. Since we are programming for Full Configuration Interaction (FCI), we aim to generate all possible determinants. However, should we decide to implement methods like CIS, CID, or CISD, we could easily limit the number of excitations. It’s important to remember that for all CI methods, the rest of the code remains unchanged—the only difference lies in the determinants used. Don’t overcomplicate this. Generating all possible determinants can be efficiently achieved using a simple list comprehension. I recommend employing the combinations function from the itertools package to facilitate this task.
+    Since we already calculated the necessary integrals in the MS basis, we can proceed. The next step involves generating determinants. We will store these in a simple list, with each determinant represented by an array of numbers, where each number corresponds to an occupied spinorbital. Since we are programming for Full Configuration Interaction (FCI), we aim to generate all possible determinants. However, should we decide to implement methods like CIS, CID, or CISD, we could easily limit the number of excitations. It’s important to remember that for all CI methods, the rest of the code remains unchanged—the only difference lies in the determinants used. Don’t overcomplicate this. Generating all possible determinants can be efficiently achieved using a simple list comprehension. I recommend employing the combinations function from the itertools package to facilitate this task.
     """
     dets = list()
 

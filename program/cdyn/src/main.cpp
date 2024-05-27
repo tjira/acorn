@@ -129,10 +129,10 @@ int main(int argc, char** argv) {
 
     // write the trajectories to the disk
     MEASURE("TRAJECTORY AND POPULATION WRITING: ", 
-        if (savetraj) Eigen::Write("TRAJ_POS.mat", rt);
-        if (savetraj) Eigen::Write("TRAJ_VEL.mat", vt);
-        if (savetraj) Eigen::Write("TRAJ_ACC.mat", at);
-                     Eigen::Write("P.mat"       , P );
+        if (savetraj) Eigen::Write("TRAJ_POS_LZ.mat", rt);
+        if (savetraj) Eigen::Write("TRAJ_VEL_LZ.mat", vt);
+        if (savetraj) Eigen::Write("TRAJ_ACC_LZ.mat", at);
+                      Eigen::Write("P_LZ.mat"       , P );
     )
 
     // print the total time
