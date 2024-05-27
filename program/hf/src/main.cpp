@@ -1,7 +1,6 @@
 #include "system.h"
 #include "timer.h"
 #include <argparse.hpp>
-#include <libint2/diis.h>
 
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Hartree-Fock Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
@@ -29,8 +28,8 @@ int main(int argc, char** argv) {
     // initialize all the matrices used throughout the SCF procedure and the energy
     EigenMatrix<> H = T + V, F = H, Cmo(S.rows(), S.cols()), Dmo(S.rows(), S.cols()), Emo(S.rows(), 1);
 
-    // initialize the contraction axes, the energy placeholder and the DIIS object
-    Eigen::IndexPair<int> first(2, 0), second(3, 1); double E = 0; libint2::DIIS<EigenMatrix<>> diis(1, 5);
+    // initialize the contraction axes and the energy placeholder
+    Eigen::IndexPair<int> first(2, 0), second(3, 1); double E = 0;
 
     // print the header
     std::printf("\n%6s %20s %8s %8s %12s\n", "ITER", "ENERGY", "|dE|", "|dD|", "TIME");
@@ -46,9 +45,6 @@ int main(int argc, char** argv) {
 
         // calculate the Fock matrix and define previous values
         F = H + MATRIXMAP(VEE); EigenMatrix<> Dmop = Dmo; double Ep = E;
-
-        // exrapolate the fock matrix
-        EigenMatrix<> e = S * Dmo * F - F * Dmo * S; if (i > 1) diis.extrapolate(F, e);
 
         // solve the Roothaan equations
         Eigen::GeneralizedSelfAdjointEigenSolver<EigenMatrix<>> solver(F, S); Emo = solver.eigenvalues(), Cmo = solver.eigenvectors();

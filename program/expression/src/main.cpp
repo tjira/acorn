@@ -1,8 +1,9 @@
 #include "expression.h"
+#include "timer.h"
 #include <argparse.hpp>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Expression Evaluator", "1.0", argparse::default_arguments::none);
+    argparse::ArgumentParser program("Acorn Expression Evaluator", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -14,7 +15,10 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+
+    // print the expression timer label
+    std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
 
     // define the potential matrix
     EigenMatrix<> U(program.get<int>("-p"), program.get<std::vector<std::string>>("-e").size() + 1);
@@ -30,6 +34,12 @@ int main(int argc, char** argv) {
         Expression expr(program.get<std::vector<std::string>>("-e").at(i), {"x"}); U.col(i + 1) = expr.eval(U.col(0));
     }
 
-    // write the potential to disk
-    Eigen::Write(program.get<std::string>("-o"), U);
+    // print the elapsed time
+    std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+
+    // write the expression to disk
+    MEASURE("WRITING THE MATRIX:        ", Eigen::Write(program.get<std::string>("-o"), U));
+
+    // print the total time
+    std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;
 }

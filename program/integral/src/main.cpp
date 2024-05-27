@@ -1,6 +1,7 @@
 #include "integral.h"
 #include "timer.h"
 #include <argparse.hpp>
+#include <filesystem>
 
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
@@ -14,6 +15,11 @@ int main(int argc, char** argv) {
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+
+    // set the environment variable for the basis set location
+    if (auto path = std::filesystem::weakly_canonical(std::filesystem::path(argv[0])).parent_path(); !std::filesystem::is_directory(std::string(DATADIR) + "/basis")) {
+        setenv("LIBINT_DATA_PATH", path.c_str(), true);
+    }
 
     // load the system from disk and initialize the basis set
     std::ifstream fstream(program.get("-f")); if (!fstream.good()) throw std::runtime_error("SYSTEM FILE DOES NOT EXIST");

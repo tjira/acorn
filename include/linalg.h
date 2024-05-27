@@ -7,6 +7,7 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include <fstream>
+#include <iomanip>
 
 template <typename T = double> using EigenMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
 template <size_t D = 4, typename T = double> using EigenTensor = Eigen::Tensor<T, D, Eigen::ColMajor>;
