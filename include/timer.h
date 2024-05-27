@@ -1,6 +1,8 @@
 #pragma once
 
-#include <bits/stdc++.h>
+#define MEASURE(S, E) tp = Timer::Now(); std::cout << S << std::flush; E; std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+
+#include <chrono>
 
 namespace Timer {
     // typedefs of the timepoint and time intervals

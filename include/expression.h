@@ -1,17 +1,15 @@
 #pragma once
 
-#include "eigen.h"
-#include "numpy.h"
+#include "linalg.h"
+#include <exprtk.hpp>
 
 class Expression {
 public:
-    // constructor
-    Expression(const std::string& expr, const std::vector<std::string>& variables) : variables(variables), exprstr(expr) {}
+    Expression(const std::string& exprstr, const std::vector<std::string>& varstr);
 
-    // methods
-    double get(double x) const; double get(double x, double y) const; double get(const Vector<>& r) const;
-    Vector<> eval(const Vector<>& x) const; Matrix<> eval(const Matrix<>& x, const Matrix<>& y) const;
+    // evaluation functions
+    EigenVector<> eval(const EigenMatrix<>& r); double eval(double r);
 
 private:
-    std::vector<std::string> variables; std::string exprstr;
+    exprtk::expression<double> expression; EigenVector<> vars;
 };

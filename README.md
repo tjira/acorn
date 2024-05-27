@@ -50,32 +50,22 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ### Quantum Mechanical Methods
 
-* Numerically Exact 1D and 2D Adiabatic Quantum Dynamics
-* Numerically Exact 1D Nonadiabatic Quantum Dynamics
-* Hartree-Fock Method (RHF & UHF)
-* Møller–Plesset Perturbation Theory
-* Configuration Interaction (FCI, CISD, CID, CIS)
-
-### Additional Calculations
-
-* Analytical Gradient for RHF and Numerical for Everything Else
-* Numerical Hessians and Frequency Analysis for Every Method
-* Molecular Dynamics With Calculated or Provided Gradients
-* Mulliken Population Analysis for RHF
+* Numerically Exact Adiabatic & Nonadiabatic Quantum Dynamics
+* Hartree-Fock Method & Møller–Plesset Perturbation Theory
 
 ## Compilation
 
-The software requires the [libint](https://github.com/evaleev/libint) library. Before the compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
+The software requires the [libint](https://github.com/evaleev/libint) and [fftw](https://www.fftw.org) libraries. Before the compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
 sudo apt install libboost-dev libeigen3-dev
 ```
 
-To compile the library execute `./script/libint.sh` from the project root directory. This command creates the `libint` directory with the compiled library. Now, we export the necessary environment variables.
+To compile the libraries execute `./script/libfftw.sh && ./script/libint.sh` from the project root directory. This command creates the `libfftw` and `libint` directories. Now, we export the necessary environment variables.
 
 ```bash
-export CPLUS_INCLUDE_PATH="$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
-export LIBRARY_PATH="$PWD/libint/install/lib:$LIBRARY_PATH"
+export CPLUS_INCLUDE_PATH="$PWD/libfftw/install/include:$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
+export LIBRARY_PATH="$PWD/libfftw/install/lib:$PWD/libint/install/lib:$LIBRARY_PATH"
 ```
 
 After this, the project configuration should finish without errors.
@@ -94,24 +84,17 @@ After the compilation the bin folder will be created along with the executables.
 
 ## Examples
 
-All the example inputs are located in the `example/input` folder. They are meant to be kept there due to the relative paths to the molecules. If you are in the project root directory, you can run one of the examples with the following command.
+All the example inputs are located in the `example/calculation` folder. If you are in the project root directory with a `molecule.xyz` file, you can run the HF example with the following command.
 
 ```bash
-./bin/acorn example/input/rhf.json
+./example/calculation/hf.sh
 ```
 
-The calculation should finish without errors. Feel free to explore all the examples. Keep in mind that to execute the ORCA or BAGEL dynamics example you need the corresponding executable in your PATH variable.
+The calculation should finish without errors. Feel free to explore all the examples.
 
 ## Credits
 
 * [argparse](https://github.com/p-ranav/argparse) - Argument Parser for Modern C++.
 * [exprtk](https://github.com/ArashPartow/exprtk) - C++ Mathematical Expression Parsing and Evaluation Library.
 * [fftw](https://www.fftw.org) - C Subroutine Library for Computing the Discrete Fourier Transform .
-* [glad](https://github.com/Dav1dde/glad) - Multi-Language Vulkan/GL/GLES/EGL/GLX/WGL Loader-Generator Based on the Official Specs.
-* [glfw](https://github.com/glfw/glfw) - Multi-Platform Library for OpenGL, OpenGL ES, Vulkan, Window and Input.
-* [glm](https://github.com/g-truc/glm) - OpenGL Mathematics.
-* [imgui](https://github.com/ocornut/imgui) - Bloat-free Graphical User Interface for C++ with Minimal Dependencies.
-* [imguifiledialog](https://github.com/aiekick/ImGuiFileDialog) - File Dialog for Dear ImGui.
-* [json](https://github.com/nlohmann/json) - JSON for Modern C++.
 * [libint](https://github.com/evaleev/libint) - High-Performance Library for Computing Gaussian Integrals in Quantum Mechanics.
-* [stb](https://github.com/nothings/stb) - Single-File Public Domain Libraries for C/C++.
