@@ -3,6 +3,7 @@
 #define MEASURE(S, E) tp = Timer::Now(); std::cout << S << std::flush; E; std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
 
 #include <chrono>
+#include <string>
 
 namespace Timer {
     // typedefs of the timepoint and time intervals
