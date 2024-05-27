@@ -48,7 +48,7 @@ if __name__ == "__main__":
     E_HF, E_HF_P, nocc, nbf, thresh = 0, 1, sum(atoms) // 2, S.shape[0], 1e-8
 
     """
-    These lines set up key components for our HF calculations. The Hamiltonian matrix is defined as the sum of the kinetic and potential energy matrices. We initialize the density matrix as a zero matrix, and the coefficients start as an empty array. Although the coefficient matrix is computed within the while loop, it's defined outside to allow for its use in subsequent calculations, such as the MP2 energy computation. Similarly, the exchange tensor is accurately calculated here by transposing the Coulomb tensor. The "eps" vector, which contains the orbital energies, is also defined at this stage to facilitate access throughout the script. This setup ensures that all necessary variables are ready for iterative processing and further calculations beyond the SCF loop.
+    These lines set up key components for our HF calculations. The Hamiltonian matrix is defined as the sum of the kinetic and potential energy matrices. We initialize the density matrix as a zero matrix, and the coefficients start as an empty array. Although the coefficient matrix is computed within the while loop, it's defined outside to allow for its use in subsequent calculations, such as the MP energy computation. Similarly, the exchange tensor is accurately calculated here by transposing the Coulomb tensor. The "eps" vector, which contains the orbital energies, is also defined at this stage to facilitate access throughout the script. This setup ensures that all necessary variables are ready for iterative processing and further calculations beyond the SCF loop.
     """
     K, eps = J.transpose(0, 3, 2, 1), np.array(nbf * [0])
     H, D, C = T + V, np.zeros_like(S), np.zeros_like(S)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
 
     """
-    To perform most of the post-HF calculations, we need to transform the Coulomb integrals to the molecular spinorbital basis. The MP2 calculation could be done using the Coulomb integral in MO basis, but for the sake of subsequent calculations, we enforce here the integrals in the MS basis. The first thing you will need for the transform is the coefficient matrix in the molecular spinorbital basis. To perform this transform using the mathematical formulation presented in the materials, the first step is to form the tiling matrix "P" which will be used to duplicate columns of a general matrix. Please calculate it here.
+    To perform most of the post-HF calculations, we need to transform the Coulomb integrals to the molecular spinorbital basis. The restricted MP2 calculation could be done using the Coulomb integral in MO basis, but for the sake of subsequent calculations, we enforce here the integrals in the MS basis. The first thing you will need for the transform is the coefficient matrix in the molecular spinorbital basis. To perform this transform using the mathematical formulation presented in the materials, the first step is to form the tiling matrix "P" which will be used to duplicate columns of a general matrix. Please define it here.
     """
     P = np.zeros((nbf, 2 * nbf))
 
@@ -87,10 +87,10 @@ if __name__ == "__main__":
     """
     With the coefficient matrix in the molecular spinorbital basis available, we can proceed to transform the Coulomb integrals. It's important to note that the transformed integrals will contain twice as many elements along each axis compared to their counterparts in the atomic orbital (AO) basis. This increase is due to the representation of both spin states in the molecular spinorbital basis.
     """
-    Jms = np.zeros(2 * np.array(H.shape))
+    Jms = np.zeros(2 * np.array(J.shape))
 
     """
-    Now we have everything for the MP calculations. Please calculate the MP2 correlation energy. The result should be stored in the "E_MP2" variable.
+    Now we have everything we need for the MP calculations. Please calculate the MP2 correlation energy. The result should be stored in the "E_MP2" variable.
     """
     E_MP2 = 0
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     Hms = np.zeros(2 * np.array(H.shape))
 
     """
-    Since we already calculated the necessary integrals in the MS basis, we can proceed. The next step involves generating determinants. We will store these in a simple list, with each determinant represented by an array of numbers, where each number corresponds to an occupied spinorbital. Since we are programming for Full Configuration Interaction (FCI), we aim to generate all possible determinants. However, should we decide to implement methods like CIS, CID, or CISD, we could easily limit the number of excitations. It’s important to remember that for all CI methods, the rest of the code remains unchanged—the only difference lies in the determinants used. Don’t overcomplicate this. Generating all possible determinants can be efficiently achieved using a simple list comprehension. I recommend employing the combinations function from the itertools package to facilitate this task.
+    Since we already calculated the necessary integrals in the MS basis, we can proceed. The next step involves generating determinants. We will store these in a simple list, with each determinant represented by an array of numbers, where each number corresponds to an occupied spinorbital. Since we are programming for Full Configuration Interaction (FCI), we aim to generate all possible determinants. However, should we decide to implement methods like CIS, CID, or CISD, we could easily limit the number of excitations. It’s important to remember that for all CI methods, the rest of the code remains unchanged. The only difference lies in the determinants used. Don’t overcomplicate this. Generating all possible determinants can be efficiently achieved using a simple list comprehension. I recommend employing the combinations function from the itertools package to facilitate this task.
     """
     dets = list()
 
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     for i in range(Hci.shape[0]):
         for j in range(Hci.shape[1]):
             """
-            The challenging part of this process is aligning the determinants. In this step, I transfer the contents of the j-th determinant into the "aligned" determinant. It’s important not to alter the j-th determinant directly within its original place, as doing so could disrupt the computation of other matrix elements. Instead, carry out the alignment on the determinant now contained in the "aligned" variable. Additionally, the element sign is defined at this stage.
+            The challenging part of this process is aligning the determinants. In this step, I transfer the contents of the j-th determinant into the "aligned" determinant. It’s important not to alter the j-th determinant directly within its original place, as doing so could disrupt the computation of other matrix elements. Instead, we carry out the next steps on the determinant now contained in the "aligned" variable. Additionally, the element sign is defined at this stage. You probably want to leave this unchanged.
             """
             aligned, sign = dets[j].copy(), 1
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
             H[i, j] = 0
 
     """
-    You can finally solve the eigenvalue problem. Please, assign the correlation energy to the E_FCI variable.
+    You can finally solve the eigenvalue problem. Please, assign the correlation energy to the "E_FCI" variable.
     """
     E_FCI = 0
 
