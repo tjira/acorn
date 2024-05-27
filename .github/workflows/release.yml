@@ -73,7 +73,7 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: Remove Redundant Scripts
-        run: rm example/generate.sh
+        run: rm basis/update.sh example/generate.sh
 
       - name: Copy x86-64 Linux Binaries to the Root Folder
         run: |

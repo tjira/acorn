@@ -61,7 +61,7 @@ The software requires the [libint](https://github.com/evaleev/libint) and [fftw]
 sudo apt install libboost-dev libeigen3-dev
 ```
 
-To compile the libraries execute `./script/libfftw.sh && ./script/libint.sh` from the project root directory. This command creates the `libfftw` and `libint` directories. Now, we export the necessary environment variables.
+To compile the libraries execute `./script/libfftw.sh && ./script/libint.sh` from the project root directory. Now, we export the necessary environment variables.
 
 ```bash
 export CPLUS_INCLUDE_PATH="$PWD/libfftw/install/include:$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
