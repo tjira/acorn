@@ -1,8 +1,8 @@
 # add the executable
-add_executable(acorn_expression src/expression.cpp src/main.cpp)
+add_executable(acorn_expression src/main.cpp ../../src/expression.cpp)
 
 # include program include directories
 target_include_directories(acorn_expression PRIVATE include)
 
-# link the libraries
-target_link_libraries(acorn_expression acorn_base)
+# link libraries
+target_link_libraries(acorn_expression Eigen3::Eigen)

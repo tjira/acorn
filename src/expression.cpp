@@ -2,7 +2,7 @@
 
 Expression::Expression(const std::string& exprstr, const std::vector<std::string>& varstr) : vars(varstr.size()) {
     // define the symbol table
-    exprtk::symbol_table<double> symbols; 
+    exprtk::symbol_table<double> symbols;
 
     // add variables and constants to the expression
     for (size_t i = 0; i < varstr.size(); i++) {

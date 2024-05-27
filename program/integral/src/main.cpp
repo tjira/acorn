@@ -24,20 +24,21 @@ int main(int argc, char** argv) {
 
     // calculate the integrals
     libint2::initialize();
-    MEASURE("NUCLEAR INTEGRALS IN AO BASIS CALCULATION: ", EigenMatrix<> V = Integral::Nuclear(atoms, shells))
-    MEASURE("KINETIC INTEGRALS IN AO BASIS CALCULATION: ", EigenMatrix<> T = Integral::Kinetic(shells))
-    MEASURE("OVERLAP INTEGRALS IN AO BASIS CALCULATION: ", EigenMatrix<> S = Integral::Overlap(shells))
-    MEASURE("COULOMB INTEGRALS IN AO BASIS CALCULATION: ", EigenTensor<> J = Integral::Coulomb(shells))
+    MEASURE("INTEGRALS IN AO BASIS CALCULATION: ",
+        EigenMatrix<> V = Integral::Nuclear(atoms, shells);
+        EigenMatrix<> T = Integral::Kinetic(       shells);
+        EigenMatrix<> S = Integral::Overlap(       shells);
+        EigenTensor<> J = Integral::Coulomb(       shells);
+    )
     libint2::finalize();
-
-    // new line
-    std::cout << std::endl;
     
     // save the integrals to disk
-    MEASURE("NUCLEAR INTEGRALS IN AO BASIS WRITING: ", Eigen::Write("V_AO.mat", V))
-    MEASURE("KINETIC INTEGRALS IN AO BASIS WRITING: ", Eigen::Write("T_AO.mat", T))
-    MEASURE("OVERLAP INTEGRALS IN AO BASIS WRITING: ", Eigen::Write("S_AO.mat", S))
-    MEASURE("COULOMB INTEGRALS IN AO BASIS WRITING: ", Eigen::Write("J_AO.mat", J))
+    MEASURE("INTEGRALS IN AO BASIS WRITING    : ",
+        Eigen::Write("V_AO.mat", V);
+        Eigen::Write("T_AO.mat", T);
+        Eigen::Write("S_AO.mat", S);
+        Eigen::Write("J_AO.mat", J);
+    )
 
     // print the total time
     std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;

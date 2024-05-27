@@ -16,14 +16,14 @@ int main(int argc, char** argv) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
-    // load the system from disk
-    System system(program.get("-f"));
-
-    // load the integrals in AO basis from disk
-    MEASURE("NUCLEAR INTEGRALS IN AO BASIS READING: ", EigenMatrix<> V = Eigen::LoadMatrix("V_AO.mat"))
-    MEASURE("KINETIC INTEGRALS IN AO BASIS READING: ", EigenMatrix<> T = Eigen::LoadMatrix("T_AO.mat"))
-    MEASURE("OVERLAP INTEGRALS IN AO BASIS READING: ", EigenMatrix<> S = Eigen::LoadMatrix("S_AO.mat"))
-    MEASURE("COULOMB INTEGRALS IN AO BASIS READING: ", EigenTensor<> J = Eigen::LoadTensor("J_AO.mat"))
+    // load the integrals in AO basis and system from disk
+    MEASURE("SYSTEM AND INTEGRALS IN AO BASIS READING: ",
+        EigenMatrix<> V = Eigen::LoadMatrix("V_AO.mat");
+        EigenMatrix<> T = Eigen::LoadMatrix("T_AO.mat");
+        EigenMatrix<> S = Eigen::LoadMatrix("S_AO.mat");
+        EigenTensor<> J = Eigen::LoadTensor("J_AO.mat");
+        System system(program.get("-f"));
+    )
 
     // initialize all the matrices used throughout the SCF procedure and the energy
     EigenMatrix<> H = T + V, F = H, Cmo(S.rows(), S.cols()), Dmo(S.rows(), S.cols()), Emo(S.rows(), 1);
@@ -66,9 +66,11 @@ int main(int argc, char** argv) {
     }
 
     // save the final matrices
-    MEASURE("COEFFICIENT MATRIX WRITING: ", Eigen::Write("C_MO.mat", Cmo))
-    MEASURE("ORBITAL ENERGIES WRITING:   ", Eigen::Write("E_MO.mat", Emo))
-    MEASURE("DENSITY MATRIX WRITING:     ", Eigen::Write("D_MO.mat", Dmo))
+    MEASURE("HARTREE-FOCK RESULTS WRITING: ",
+        Eigen::Write("C_MO.mat", Cmo);
+        Eigen::Write("E_MO.mat", Emo);
+        Eigen::Write("D_MO.mat", Dmo);
+    )
 
     // print the final energy and total time
     std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", E + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());

@@ -20,12 +20,6 @@ include_directories(include lib)
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
-# create the base library
-add_library(acorn_base src/fourier.cpp src/system.cpp src/timer.cpp src/wavefunction.cpp)
-
-# link the base library
-target_link_libraries(acorn_base fftw3.a Eigen3::Eigen)
-
 # add subprograms
 add_subdirectory(program/expression)
 add_subdirectory(program/transform)

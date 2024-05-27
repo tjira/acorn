@@ -15,14 +15,14 @@ int main(int argc, char** argv) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
-    // load the system from disk
-    System system(program.get("-f"));
-
-    // load the integrals in MS basis from disk
-    MEASURE("NUCLEAR INTEGRALS IN MS BASIS READING: ", EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat"))
-    MEASURE("KINETIC INTEGRALS IN MS BASIS READING: ", EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat"))
-    MEASURE("COULOMB INTEGRALS IN MS BASIS READING: ", EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat"))
-    MEASURE("ORBITAL ENERGIES IN MS BASIS READING:  ", EigenMatrix<> Ems = Eigen::LoadMatrix("E_MS.mat"))
+    // load the system and integrals in MS basis from disk
+    MEASURE("SYSTEM AND INTEGRALS IN MS BASIS READING: ",
+        EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat");
+        EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat");
+        EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat");
+        EigenMatrix<> Ems = Eigen::LoadMatrix("E_MS.mat");
+        System system(program.get("-f"));
+    )
 
     // extract the number of occupied and virtual orbitals and define the energy
     int nocc = system.nocc(); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 

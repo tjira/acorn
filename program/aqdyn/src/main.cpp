@@ -26,11 +26,10 @@ int main(int argc, char** argv) {
     // extract boolean flags
     bool imaginary = program.get<bool>("--imaginary"), savewfn = program.get<bool>("--savewfn");
 
-    // load the potential
-    MEASURE("POTENTIAL MATRIX READING: ", EigenMatrix<> U = Eigen::LoadMatrix("U_ADIA.mat"))
-
-    // load the wavefunction
-    MEASURE("WAVEFUNCTION READING:     ", Wavefunction<1> wfn(Eigen::LoadMatrix("PSI_ADIA_GUESS.mat").rightCols(2), U.leftCols(U.cols() - 1), mass, program.get<double>("-p")))
+    // load the initial wavefunction and potential
+    MEASURE("INITIAL WAVEFUNCTION AND POTENTIAL READING: ",
+        EigenMatrix<> U = Eigen::LoadMatrix("U_ADIA.mat"); Wavefunction<1> wfn(Eigen::LoadMatrix("PSI_ADIA_GUESS.mat").rightCols(2), U.leftCols(U.cols() - 1), mass, program.get<double>("-p"));
+    )
 
     // normalize the wfn, extract the potential values from the last column
     wfn = wfn.normalized(); U.col(0) = U.rightCols(1); U.conservativeResize(U.rows(), 1);

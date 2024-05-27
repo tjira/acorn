@@ -26,10 +26,9 @@ int main(int argc, char** argv) {
     bool adiabatic = program.get<bool>("--adiabatic"), savewfn = program.get<bool>("--savewfn");
 
     // load the potential in the diabatic basis
-    MEASURE("DIABATIC POTENTIAL MATRIX READING: ", EigenMatrix<> Ud = Eigen::LoadMatrix("U_DIA.mat"))
-
-    // load the wavefunction in the diabatic basis
-    MEASURE("DIABATIC WAVEFUNCTION READING:     ", Wavefunction<2> wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(4), Ud.leftCols(1), mass, momentum);)
+    MEASURE("INITIAL WAVEFUNCTION AND POTENTIAL IN DIABATIC BASIS READING: ",
+        EigenMatrix<> Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction<2> wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(4), Ud.leftCols(1), mass, momentum);
+    )
 
     // normalize the wfn, remove first column from matrix (the independent variable column)
     wfnd = wfnd.normalized(); Ud.block(0, 0, Ud.rows(), Ud.cols() - 1) = Ud.rightCols(Ud.cols() - 1); Ud.conservativeResize(Ud.rows(), Ud.cols() - 1);
@@ -123,23 +122,14 @@ int main(int argc, char** argv) {
     // print a new line
     std::cout << std::endl;
 
-    // save the diabatic data
-    MEASURE("DIABATIC DENSITY MATRIX WRITING: ", Eigen::Write("P_DIA.mat", Pd))
-    if (savewfn) {
-        MEASURE("DIABATIC WAVEFUNCTION WRITING:   ", Eigen::Write("PSI_DIA.mat", wfndt))
-    }
-
-    // print a new line
-    if (adiabatic) std::cout << std::endl;
-
-    // save the adiabatic data
-    if (adiabatic) {
-        MEASURE("ADIABATIC DENSITY MATRIX WRITING: ", Eigen::Write("P_ADIA.mat", Pa))
-        if (savewfn) {
-            MEASURE("ADIABATIC WAVEFUNCTION WRITING:   ", Eigen::Write("PSI_ADIA.mat", wfnat))
-        }
-        MEASURE("ADIABATIC POTENTIAL WRITING:      ", Eigen::Write("U_ADIA.mat", Ua))
-    }
+    // save the resulting data data
+    MEASURE("WAVEFUNCTIONS, DENSITY MATRICES AND POTENTIAL WRITING: ",
+        if (             savewfn) Eigen::Write("PSI_DIA.mat" , wfndt);
+                                  Eigen::Write("P_DIA.mat"   , Pd   );
+        if (adiabatic           ) Eigen::Write("U_ADIA.mat"  , Ua   );
+        if (adiabatic && savewfn) Eigen::Write("PSI_ADIA.mat", wfnat);
+        if (adiabatic           ) Eigen::Write("P_ADIA.mat"  , Pa   );
+    )
 
     // print the total time
     std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;
