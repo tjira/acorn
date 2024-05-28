@@ -1,4 +1,4 @@
-.PHONY: molecule integral
+.PHONY: molecule
 
 # target to generate the 1D adiabatic wavepacket guess
 aqdyn_guess:
