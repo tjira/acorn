@@ -13,6 +13,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -flarge-source-files -fprofile-arcs -ftest-coverage")
 set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -flarge-source-files -funroll-loops -flto=auto")
 
+# create the periodic table
+set(PTABLE "H He Li Be B C N O F Ne")
+
 # include directories
 include_directories(include lib)
 

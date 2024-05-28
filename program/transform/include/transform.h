@@ -1,7 +1,6 @@
 #pragma once
 
-#include "ptable.h"
-#include "system.h"
+#include "linalg.h"
 
 namespace Transform {
     // two electron integrals

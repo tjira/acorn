@@ -1,33 +1,29 @@
-#include "ptable.h"
 #include "system.h"
 
-// variable getters
-EigenMatrix<> System::atoms() const {return AN;}
-EigenMatrix<> System::coords() const {return R;}
+#define A2BOHR 1.889726124626
 
 // information getters
 int System::nocc() const {return std::accumulate(AN.data(), AN.data() + AN.rows(), 0) / 2;}
 
 System::System(const std::string& path) {
-    // open the file stream
-    std::ifstream file(path);
+    // open the file stream, define the periodic table and initialize container variables
+    std::ifstream file(path); std::vector<std::string> ptable; std::string line, sm; int natoms;
 
     // check if the file stream is good
-    if (!file.good()) throw std::runtime_error("SYSTEM FILE DOES NOT EXIST");
+    if (!file.good()) throw std::runtime_error("SYSTEM FILE `" + path + "` DOES NOT EXIST");
 
-    // initialize the variables
-    int natoms; std::string line, sm;
+    // fill the periodic table
+    for (std::stringstream pss(PTABLE); pss.good(); ptable.push_back(""), pss >> ptable.back()) {}
 
-    // extract the number of atoms and skip the first two lines
-    std::getline(file, line); std::stringstream(line) >> natoms; std::getline(file, line);
+    // define the symbol to atomic number map
+    auto SM2AN = [&ptable](const std::string& sm) {return std::find(ptable.begin(), ptable.end(), sm) - ptable.begin();};
 
-    // initialize the atomic number and position matrices
-    AN = EigenMatrix<>(natoms, 1); R = EigenMatrix<>(natoms, 3);
+    // extract the number of atoms, skip the first two lines and initialize the atomic number and position matrices
+    std::getline(file, line); std::stringstream(line) >> natoms; std::getline(file, line); AN = EigenMatrix<>(natoms, 1); R = EigenMatrix<>(natoms, 3);
 
     // extract the atomic numbers and positions
-    for (int i = 0; i < natoms; i++) std::getline(file, line), std::stringstream(line) >> sm >> R(i, 0) >> R(i, 1) >> R(i, 2), AN(i, 0) = SM2AN[sm];
+    for (int i = 0; i < natoms; i++) std::getline(file, line), std::stringstream(line) >> sm >> R(i, 0) >> R(i, 1) >> R(i, 2), AN(i, 0) = SM2AN(sm) + 1;
 }
-
 
 double System::nuclearRepulsion() const {
     // create the variable
@@ -38,5 +34,6 @@ double System::nuclearRepulsion() const {
         double d = (R.row(i) - R.row(j)).norm(); repulsion += AN(i, 0) * AN(j, 0) / d / A2BOHR;
     }
 
-    return repulsion; // return the nuclear-nuclear repulsion of the system
+    // return the nuclear-nuclear repulsion of the system
+    return repulsion;
 }
