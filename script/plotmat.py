@@ -17,6 +17,9 @@ if __name__ == "__main__":
     # parse arguments and load data
     args = parser.parse_args(); mats = [np.loadtxt(mat, skiprows=1) for mat in args.mats]
 
+    # sort the matrices acccording to the first column
+    mats = [mat[mat[:, 0].argsort()] for mat in mats]
+
     if args.animate:
         # plot the initial plots
         plots = [[plt.plot(mat[:, 0], col)[0] for col in mat[:, 1:args.columns + 1].T] for mat in mats]

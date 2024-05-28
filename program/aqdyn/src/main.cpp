@@ -1,3 +1,4 @@
+#include "fourier.h"
 #include "timer.h"
 #include "wavefunction.h"
 #include <argparse.hpp>
@@ -37,17 +38,19 @@ int main(int argc, char** argv) {
     // calculate the propagator
     auto[R, K] = wfn.propagator(U, std::complex<double>(imaginary, !imaginary), step);
 
-    // define the energy and wfn vector
-    EigenVector<> eps(nstate); std::vector<Wavefunction<1>> states(nstate, wfn);
+    // define the energy, wfn and acf vector
+    EigenVector<> eps(nstate); EigenMatrix<> acf(iters + 1, 3); std::vector<Wavefunction<1>> states(nstate, wfn);
 
     // perform the dynamics for every state
     for (int i = 0; i < nstate; i++) {
 
-        // assign the initial wfn with its energy and define the container for wfn values for saving
-        wfn = states.at(i); double E = wfn.energy(U); EigenMatrix<> wfnt; if (savewfn) wfnt = EigenMatrix<>(U.rows(), 3 + 2 * iters);
+        // assign the initial wfn with its energy and acf value
+        wfn = states.at(i); double E = wfn.energy(U); acf(0, 0) = 0, acf(0, 1) = 1, acf(0, 2) = 0;
 
         // save the initial state
-        if (savewfn) {wfnt.col(0) = wfn.getr(); wfnt.col(1) = wfn.get().col(0).real(), wfnt.col(2) = wfn.get().col(0).imag();}
+        EigenMatrix<> wfnt; if (savewfn) {
+            wfnt = EigenMatrix<>(U.rows(), 3 + 2 * iters); wfnt.col(0) = wfn.getr(); wfnt.col(1) = wfn.get().col(0).real(), wfnt.col(2) = wfn.get().col(0).imag();
+        }
 
         // print the header
         std::printf("\nSTATE %d\n%6s %20s %8s %12s\n", i, "ITER", "ENERGY", "|dE|", "TIME");
@@ -59,10 +62,13 @@ int main(int argc, char** argv) {
             tp = Timer::Now(); double Ep = E; wfn = wfn.propagate(R, K);
 
             // subrtract the lower eigenstates
-            for (int k = 0; k < i && program.get<bool>("--imaginary"); k++) wfn = wfn - states.at(k) * wfn.overlap(states.at(k));
+            for (int k = 0; k < i && imaginary; k++) wfn = wfn - states.at(k) * wfn.overlap(states.at(k));
 
             // normalize the wavefunction and calculate the energy
-            wfn = wfn.normalized(); E = wfn.energy(U);
+            if (imaginary) {wfn = wfn.normalized();} E = wfn.energy(U);
+
+            // assign the acf value
+            std::complex<double> overlap = wfn.overlap(states.at(i)); acf(j + 1, 0) = (j + 1) * step; acf(j + 1, 1) = overlap.real(); acf(j + 1, 2) = overlap.imag();
 
             // save the wavefunction to the evolution matrix
             if (savewfn) {wfnt.col(3 + 2 * j) = wfn.get().col(0).real(); wfnt.col(4 + 2 * j) = wfn.get().col(0).imag();}
@@ -71,8 +77,23 @@ int main(int argc, char** argv) {
             std::printf("%6d %20.14f %.2e %s\n", j + 1, E, std::abs(E - Ep), Timer::Format(Timer::Elapsed(tp)).c_str());
         }
 
+        // print the new line
+        std::cout << std::endl;
+
         // append to states and energy, print the new line and save the evolution
-        states.at(i) = wfn; eps(i) = E; if (savewfn) Eigen::Write("PSI_ADIA_" + std::to_string(i) + ".mat", wfnt);
+        states.at(i) = wfn; eps(i) = E; if (savewfn) {MEASURE("SAVING THE WFN OF STATE " + std::to_string(i) + ":      ", Eigen::Write("PSI_ADIA_" + std::to_string(i) + ".mat", wfnt))}
+
+        // save the acf
+        MEASURE("SAVING THE ACF OF STATE " + std::to_string(i) + ":      ", Eigen::Write("ACF_ADIA_" + std::to_string(i) + ".mat", acf))
+
+        // calculate the spectrum
+        EigenMatrix<> spectrum(iters + 1, 2); spectrum.col(1) = FourierTransform::C2RFFT(acf.col(1) + std::complex<double>(0, 1) * acf.col(2)).array().abs();
+
+        // fill the frequency column
+        spectrum.col(0).fill(2 * M_PI / (iters + 1) / step); for (int i = 0; i < iters + 1; i++) spectrum.col(0)(i) *= i - (i < (iters + 1) / 2 ? 0 : (iters + 1));
+
+        // save the spectrum
+        MEASURE("SAVING THE SPECTRUM OF STATE " + std::to_string(i) + ": ", Eigen::Write("SPECTRUM_ADIA_" + std::to_string(i) + ".mat", spectrum))
     }
 
     // print the total time
