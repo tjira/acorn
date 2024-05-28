@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p molecule && rm -rf temp
+rm -rf temp
 
 BASIS="STO-3G"
 METHOD="RHF"
@@ -430,5 +430,5 @@ cd temp && for MOL in *.xyz; do
     while read -r LINE; do
         echo "$LINE" | awk 'NF==4 {printf("%2s % 3.8f % 3.8f % 3.8f\n", $1, $2, $3, $4)}' >> "$MOL.tmp"
         echo "$LINE" | awk 'NF==1 {printf("%s\n", $1)}' >> "$MOL.tmp"
-    done < "$MOL" && mv "$MOL.tmp" "$MOL" && mv "$MOL" "../molecule/$MOL"
+    done < "$MOL" && mv "$MOL.tmp" "$MOL" && mv "$MOL" "../$MOL"
 done && cd .. && rm -r temp

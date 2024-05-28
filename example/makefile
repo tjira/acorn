@@ -24,6 +24,10 @@ cdyn_adiabatic:
 cdyn_nonadiabatic:
 	acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 100 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" -d "0.006/cosh(0.6*x)^2" "(-0.002)*x*exp(-x^2)" "(-0.002)*x*exp(-x^2)" "(-0.006)/cosh(0.6*x)^2" --savetraj
 
+# target to perform a MP3 calculation
+fci: transform
+	acorn_ci
+
 # target to perform a Hartree-Fock calculation
 hf: integral
 	acorn_hf -i 100 -t 1e-8
@@ -37,11 +41,11 @@ molecule:
 	cp molecule/water.xyz molecule.xyz
 
 # target to perform a MP2 calculation
-mp2: hf
+mp2: transform
 	acorn_mp -o 2
 
 # target to perform a MP3 calculation
-mp3: hf
+mp3: transform
 	acorn_mp -o 3
 
 # target to generate the 1D diabatic wavepacket guess

@@ -2,38 +2,6 @@
 #include "timer.h"
 #include <argparse.hpp>
 
-inline bool VectorContains(const std::vector<int>& v, const int& e) {return std::find(v.begin(), v.end(), e) != v.end();}
-
-std::tuple<std::array<std::vector<int>, 2>, int> Align(std::array<std::vector<int>, 2> det1, const std::array<std::vector<int>, 2>& det2) {
-    // define the temporary determinant and swaps variable
-    int swaps = 0;
-    
-    // align the alpha electrons
-    for (size_t i = 0; i < det1.at(0).size(); i++) {
-        if (det1.at(0).at(i) != det2.at(0).at(i)) {
-            for (size_t j = 0; j < det1.at(0).size(); j++) {
-                if (det1.at(0).at(i) == det2.at(0).at(j)) {
-                    std::swap(det1.at(0).at(i), det1.at(0).at(j)), swaps++;
-                }
-            }
-        }
-    }
-
-    // align the beta electrons
-    for (size_t i = 0; i < det1.at(1).size(); i++) {
-        if (det1.at(1).at(i) != det2.at(1).at(i)) {
-            for (size_t j = 0; j < det1.at(1).size(); j++) {
-                if (det1.at(1).at(i) == det2.at(1).at(j)) {
-                    std::swap(det1.at(1).at(i), det1.at(1).at(j)), swaps++;
-                }
-            }
-        }
-    }
-
-    // return the aligned determinant
-    return {det1, swaps};
-}
-
 std::vector<std::vector<int>> Combinations(int n, int k) {
     // create the bitmask that will get permuted and the resulting vector
     std::string bitmask(k, 1); bitmask.resize(n, 0); std::vector<std::vector<int>> combs;
@@ -69,49 +37,57 @@ int main(int argc, char** argv) {
         System system(program.get("-f"));
     )
 
-    // define the number of basis functions, Hamiltonian in MS basis and determinant container
-    int nbf = Vms.rows() / 2; EigenMatrix<> Hms = Tms + Vms; std::vector<std::array<std::vector<int>, 2>> dets;
+    // define the number of basis functions and occupied orbitals, Hamiltonian in MS basis and determinant container
+    int nbf = Vms.rows() / 2, nocc = system.nocc(); EigenMatrix<> Hms = Tms + Vms; std::vector<std::vector<int>> dets;
 
     MEASURE("GENERATING ALL POSSIBLE DETERMINANTS:     ",
         for (const std::vector<int>& alpha : Combinations(nbf, system.nocc())) {
             for (const std::vector<int>& beta : Combinations(nbf, system.nocc())) {
-                dets.push_back(std::array<std::vector<int>, 2>{alpha, beta});
+                dets.push_back({});
+
+                for (int i = 0; i < system.nocc(); i++) dets.back().push_back(2 * alpha.at(i));
+                for (int i = 0; i < system.nocc(); i++) dets.back().push_back(2 * beta.at(i) + 1);
             }
         }
     ) std::cout << "\nNUMBER OF DETERMINANTS GENERATED: " << dets.size() << std::endl;
+
+    // print the label of Hamiltonian filling timer
+    std::cout << "\nFILLING THE CI HAMILTONIAN:  " << std::flush; tp = Timer::Now();
 
     // define the CI Hamiltonian
     EigenMatrix<> Hci = EigenMatrix<>::Zero(dets.size(), dets.size());
 
     // fill the CI Hamiltonian
     for (int i = 0; i < Hci.rows(); i++) {
-        for (int j = 0; j < Hci.cols(); j++) {
-            auto det1 = dets.at(i); auto [det2, swaps] = Align(dets.at(j), det1); int diff = 0; double elem = 0;
+        for (int j = i; j < Hci.cols(); j++) {
+            
+            // extract the determinants, define the element, differences and swaps and initialize the common and unique spinorbitals
+            std::vector<int> deta = dets.at(i), detb = dets.at(j); int diff = 0, swaps = 0; double elem = 0; std::vector<int> common, unique;
 
-             // define all needed vectors of spinorbitals
-            std::vector<int> so1(2 * det1.at(0).size()), so2(2 * det1.at(0).size()), common, unique;
+            // align the determinants
+            for (size_t i = 0; i < deta.size(); i++) {
+                if (deta.at(i) != detb.at(i)) {
+                    for (size_t j = 0; j < deta.size(); j++) {
+                        if (deta.at(i) == detb.at(j)) {
+                            std::swap(deta.at(i), deta.at(j)), swaps++;
+                        }
+                    }
+                }
+            }
 
-            // calculate the number of differences
-            for (size_t i = 0; i < det1.at(0).size(); i++) if (det1.at(0).at(i) != det2.at(0).at(i)) diff++;
-            for (size_t i = 0; i < det1.at(0).size(); i++) if (det1.at(1).at(i) != det2.at(1).at(i)) diff++;
-
-            // fill the spinorbitals of det1 and det2 determinant
-            for (size_t i = 0; i < det1.at(0).size(); i++) so2.at(i) = 2 * det2.at(0).at(i), so2.at(det2.at(0).size() + i) = 2 * det2.at(1).at(i) + 1;
-            for (size_t i = 0; i < det1.at(0).size(); i++) so1.at(i) = 2 * det1.at(0).at(i), so1.at(det1.at(0).size() + i) = 2 * det1.at(1).at(i) + 1;
-
-            // fill the common spinorbitals vector
-            for (size_t i = 0; i < so1.size(); i++) if (so1.at(i) == so2.at(i)) common.push_back(so1.at(i));
+            // fill the common spinorbitals and calculate the number of differences
+            for (int i = 0; i < 2 * nocc; i++) {if (deta.at(i) == detb.at(i)) common.push_back(deta.at(i)); else diff++;}
 
             // fill the unique spinorbitals vector
-            for (size_t i = 0; i < so1.size(); i++) if (!VectorContains(so1, so2.at(i))) unique.push_back(so2.at(i));
-            for (size_t i = 0; i < so1.size(); i++) if (!VectorContains(so2, so1.at(i))) unique.push_back(so1.at(i));
+            for (int i = 0; i < 2 * nocc; i++) if (std::find(deta.begin(), deta.end(), detb.at(i)) == deta.end()) unique.push_back(detb.at(i));
+            for (int i = 0; i < 2 * nocc; i++) if (std::find(detb.begin(), detb.end(), deta.at(i)) == detb.end()) unique.push_back(deta.at(i));
 
-            // assign the matrix element according to Slater-Condon rules
+            // apply the Slater-Condon rules to the matrix elemetnt
             if (diff == 0) {
-                for (int so : so1) elem += Hms(so, so);
-                for (size_t i = 0; i < so1.size(); i++) {
-                    for (size_t j = 0; j < so1.size(); j++) {
-                        elem += 0.5 * (Jms(so1.at(i), so1.at(i), so1.at(j), so1.at(j)) - Jms(so1.at(i), so1.at(j), so1.at(j), so1.at(i)));
+                for (int so : deta) elem += Hms(so, so);
+                for (size_t i = 0; i < deta.size(); i++) {
+                    for (size_t j = 0; j < deta.size(); j++) {
+                        elem += 0.5 * (Jms(deta.at(i), deta.at(i), deta.at(j), deta.at(j)) - Jms(deta.at(i), deta.at(j), deta.at(j), deta.at(i)));
                     }
                 }
             } else if (diff == 1) {
@@ -123,16 +99,23 @@ int main(int argc, char** argv) {
                 elem = Jms(unique.at(0), unique.at(2), unique.at(1), unique.at(3)) - Jms(unique.at(0), unique.at(3), unique.at(1), unique.at(2));
             }
 
-            // return element
-            Hci(i, j) = std::pow(-1, swaps) * elem;
+            // return element multiplied by the correct sign
+            Hci(i, j) = std::pow(-1, swaps) * elem; Hci(j, i) = Hci(i, j);
         }
     }
 
-    Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solver(Hci);
+    // print the time taken to fill the CI Hamiltonian
+    std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
 
-    EigenVector<> Eci = solver.eigenvalues();
+    // find the eigenvalues and eigenvectors of the CI Hamiltonian
+    MEASURE("SOLVING THE CI EIGENPROBLEM: ", Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solver(Hci)) EigenMatrix<> Cci = solver.eigenvectors(), Eci = solver.eigenvalues();
 
-    std::cout << solver.eigenvalues().transpose() << std::endl;
+    // write the results
+    MEASURE("WRITING THE RESULT MATRICES: ",
+        Eigen::Write("H_CI.mat", Hci);
+        Eigen::Write("C_CI.mat", Cci);
+        Eigen::Write("E_CI.mat", Eci);
+    )
 
     // print the final energy and total time
     std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", Eci(0) + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());
