@@ -84,10 +84,10 @@ After the compilation the bin folder will be created along with the executables.
 
 ## Examples
 
-All the example inputs are located in the `example/calculation` folder. If you are in the project root directory with a `molecule.xyz` file, you can run the HF example with the following command.
+All the examples are implemented as `example/makefile` targets. If you are in example directory, you can run the HF example on a water molecule simply with the following command.
 
 ```bash
-./example/calculation/hf.sh
+make hf
 ```
 
 The calculation should finish without errors. Feel free to explore all the examples.
