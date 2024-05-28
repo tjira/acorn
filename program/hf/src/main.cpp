@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     EigenMatrix<> H = T + V, F = H, Cmo(S.rows(), S.cols()), Dmo(S.rows(), S.cols()), Emo(S.rows(), 1);
 
     // initialize the contraction axes and the energy placeholder
-    Eigen::IndexPair<int> first(2, 0), second(3, 1); double E = 0;
+    Eigen::IndexPair<int> first(2, 0), second(3, 1); double Eel = 0;
 
     // print the header
     std::printf("\n%6s %20s %8s %8s %12s\n", "ITER", "ENERGY", "|dE|", "|dD|", "TIME");
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
         EigenTensor<2> VEE = (J - 0.5 * J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1})).contract(TENSORMAP(Dmo), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
 
         // calculate the Fock matrix and define previous values
-        F = H + MATRIXMAP(VEE); EigenMatrix<> Dmop = Dmo; double Ep = E;
+        F = H + MATRIXMAP(VEE); EigenMatrix<> Dmop = Dmo; double Eelp = Eel;
 
         // solve the Roothaan equations
         Eigen::GeneralizedSelfAdjointEigenSolver<EigenMatrix<>> solver(F, S); Emo = solver.eigenvalues(), Cmo = solver.eigenvectors();
@@ -53,13 +53,13 @@ int main(int argc, char** argv) {
         Dmo = 2 * Cmo.leftCols(system.nocc()) * Cmo.leftCols(system.nocc()).transpose();
 
         // calculate the new energy
-        E = 0.5 * Dmo.cwiseProduct(H + F).sum();
+        Eel = 0.5 * Dmo.cwiseProduct(H + F).sum();
 
         // print the iteration info
-        std::printf("%6d %20.14f %.2e %.2e %s\n", i + 1, E, std::abs(E - Ep), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(tp)).c_str());
+        std::printf("%6d %20.14f %.2e %.2e %s\n", i + 1, Eel, std::abs(Eel - Eelp), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(tp)).c_str());
 
         // finish if covergence reached
-        if (double thresh = program.get<double>("-t"); std::abs(E - Ep) < thresh && (Dmo - Dmop).norm() < thresh) {std::cout << std::endl; break;}
+        if (double thresh = program.get<double>("-t"); std::abs(Eel - Eelp) < thresh && (Dmo - Dmop).norm() < thresh) {std::cout << std::endl; break;}
         else if (i == program.get<int>("-i") - 1) {
             throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE SCF REACHED.");
         }
@@ -73,5 +73,5 @@ int main(int argc, char** argv) {
     )
 
     // print the final energy and total time
-    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", E + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", Eel + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());
 }
