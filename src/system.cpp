@@ -1,8 +1,7 @@
 #include "system.h"
 
-#define A2BOHR 1.889726124626
+#define PTABLE "H He Li Be B C N O F Ne"
 
-// information getters
 int System::nocc() const {return std::accumulate(AN.data(), AN.data() + AN.rows(), 0) / 2;}
 
 System::System(const std::string& path) {
@@ -31,7 +30,7 @@ double System::nuclearRepulsion() const {
 
     // calculate the repulsion
     for (int i = 0; i < AN.rows(); i++) for (int j = 0; j < i; j++) {
-        double d = (R.row(i) - R.row(j)).norm(); repulsion += AN(i, 0) * AN(j, 0) / d / A2BOHR;
+        double d = (R.row(i) - R.row(j)).norm(); repulsion += AN(i, 0) * AN(j, 0) / d / 1.889726124626;
     }
 
     // return the nuclear-nuclear repulsion of the system

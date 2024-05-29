@@ -20,18 +20,15 @@ if __name__ == "__main__":
     # sort the matrices acccording to the first column
     mats = [mat[mat[:, 0].argsort()] for mat in mats]
 
-    if args.animate:
-        # plot the initial plots
-        plots = [[plt.plot(mat[:, 0], col)[0] for col in mat[:, 1:args.columns + 1].T] for mat in mats]
+    # plot the initial plots
+    plots = [[plt.plot(mat[:, 0], col)[0] for col in mat[:, 1:1 + args.columns].T] for mat in mats]
 
+    if args.animate:
         # define the update function
-        update = lambda i: [[plots[j][k].set_ydata(mats[j][:, 1 + i * args.columns + k]) for k in range(len(plots[j]))] for j in range(len(plots))]
+        update = lambda i: [[plots[j][k].set_ydata(mats[j][:, 1 + (i * args.columns + k) % (mats[j].shape[1] - 1)]) for k in range(len(plots[j]))] for j in range(len(plots))]
 
         # create the animation
-        ani = anm.FuncAnimation(plt.gcf(), update, frames=(mats[0].shape[1] - 1) // args.columns, interval=30) # type: ignore
-
-    # otherwise, plot the static plots
-    else: [[plt.plot(mat[:, 0], col) for col in mat[:, 1:1 + args.columns].T] for mat in mats]
+        ani = anm.FuncAnimation(plt.gcf(), update, frames=(mats[0].shape[1] - 1) // min(args.columns, (mats[0].shape[1] - 1)), interval=30) # type: ignore
 
     # set the title
     plt.gcf().canvas.manager.set_window_title("Matrix Plotter") # type: ignore
