@@ -128,7 +128,7 @@ void Eigen::Write(const std::string& path, const EigenTensor<4, T>& A) {
     // write the dimensions to the header and set the formatting
     for (size_t i = 0; i < dims.size(); i++) {file << dims.at(i) << (i < dims.size() - 1 ? " " : "");} file << "\n" << std::fixed << std::setprecision(14);
 
-    // write the matrix by rows
+    // write the tensor by rows
     for (int i = 0; i < dims.at(0); i++) {
         for (int j = 0; j < dims.at(1); j++) {
             for (int k = 0; k < dims.at(2); k++) {

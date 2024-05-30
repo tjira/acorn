@@ -30,7 +30,7 @@ fci: transform
 
 # target to perform a Hartree-Fock calculation
 hf: integral
-	acorn_hf -i 100 -t 1e-8
+	acorn_hf -d 5 -i 100 -t 1e-8
 
 # target to calculate the integrals in specified basis
 integral: molecule

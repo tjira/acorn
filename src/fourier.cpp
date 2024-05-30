@@ -25,34 +25,34 @@ void FourierTransform::FFT(std::complex<double>* in, std::complex<double>* out, 
     fftw_execute(plan); fftw_destroy_plan(plan);
 }
 
-EigenMatrix<double> FourierTransform::C2RFFT(EigenMatrix<std::complex<double>> in) {
+EigenMatrix<double> FourierTransform::C2RFFT(const EigenMatrix<std::complex<double>>& data) {
     // extract dimension
-    int m = in.rows(), n = in.cols();
+    int m = data.rows(), n = data.cols();
 
     // initialize the output vector and perform the C2RFFT
-    std::vector<double> out((in.size() - 1) * 2); FourierTransform::C2RFFT(in.data(), out.data(), std::vector<int>{m, n});
+    std::vector<double> out((data.size() - 1) * 2); FourierTransform::C2RFFT(const_cast<EigenMatrix<std::complex<double>>&>(data).data(), out.data(), std::vector<int>{m, n});
 
     // transform the output to the correct format and return
-    return Eigen::Map<EigenVector<double>>(out.data(), in.size());
+    return Eigen::Map<EigenVector<double>>(out.data(), data.size());
 }
 
-EigenMatrix<std::complex<double>> FourierTransform::IFFT(EigenMatrix<std::complex<double>> data) {
+EigenMatrix<std::complex<double>> FourierTransform::IFFT(const EigenMatrix<std::complex<double>>& data) {
     // extract the dimensions
     int m = data.rows(), n = data.cols();
 
     // initialize the output vector and perform the IFFT
-    std::vector<std::complex<double>> out(data.size()); IFFT(data.data(), out.data(), std::vector<int>{m, n});
+    std::vector<std::complex<double>> out(data.size()); IFFT(const_cast<EigenMatrix<std::complex<double>>&>(data).data(), out.data(), std::vector<int>{m, n});
 
     // transform the output to the correct format and return
     return Eigen::Map<EigenMatrix<std::complex<double>>>(out.data(), m, n);
 }
 
-EigenMatrix<std::complex<double>> FourierTransform::FFT(EigenMatrix<std::complex<double>> data) {
+EigenMatrix<std::complex<double>> FourierTransform::FFT(const EigenMatrix<std::complex<double>>& data) {
     // extract dimension
     int m = data.rows(), n = data.cols();
 
     // initialize the output vector and perform the FFT
-    std::vector<std::complex<double>> out(data.size()); FFT(data.data(), out.data(), std::vector<int>{m, n});
+    std::vector<std::complex<double>> out(data.size()); FFT(const_cast<EigenMatrix<std::complex<double>>&>(data).data(), out.data(), std::vector<int>{m, n});
 
     // transform the output to the correct format and return
     return Eigen::Map<EigenMatrix<std::complex<double>>>(out.data(), m, n) / out.size();

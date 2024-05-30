@@ -32,33 +32,30 @@ EigenMatrix<> Wavefunction<S>::density() const {
 
 template <>
 double Wavefunction<1>::energy(const EigenMatrix<>& U) const {
-    // obtain the negative spatial second derivative of the wavefunction in the k-space
-    EigenMatrix<std::complex<double>> wfnk = k.array().pow(2) * FourierTransform::FFT(data).array();
-
     // calculate the kinetic energy
-    double Ek = 0.5 * (data.adjoint() * FourierTransform::IFFT(wfnk))(0).real() * dr / mass;
+    double Ek = (data.adjoint() * FourierTransform::IFFT(k.array().pow(2) * FourierTransform::FFT(data).array()))(0).real() * dr;
 
     // calculate the potential energy
     double Ep = (data.adjoint() * (U.array() * data.array()).matrix())(0).real() * dr;
 
     // return the total energy
-    return Ek + Ep;
+    return 0.5 * Ek / mass + Ep;
 }
 
 template <>
 double Wavefunction<2>::energy(const EigenMatrix<>& U) const {
     // calculate the kinetic energies
-    EigenMatrix<std::complex<double>> Ek00 = data.col(0).conjugate().array() * FourierTransform::IFFT(k.array().pow(2) * FourierTransform::FFT(data.col(0)).array()).array();
-    EigenMatrix<std::complex<double>> Ek11 = data.col(1).conjugate().array() * FourierTransform::IFFT(k.array().pow(2) * FourierTransform::FFT(data.col(1)).array()).array();
+    double Ek00 = (data.col(0).adjoint() * FourierTransform::IFFT(k.array().pow(2) * FourierTransform::FFT(data.col(0)).array()))(0).real() * dr;
+    double Ek11 = (data.col(1).adjoint() * FourierTransform::IFFT(k.array().pow(2) * FourierTransform::FFT(data.col(1)).array()))(0).real() * dr;
 
     // calculate the potential energies
-    EigenMatrix<std::complex<double>> Ep00 = data.col(0).conjugate().array() * U.col(0).array() * data.col(0).array();
-    EigenMatrix<std::complex<double>> Ep01 = data.col(0).conjugate().array() * U.col(1).array() * data.col(1).array();
-    EigenMatrix<std::complex<double>> Ep10 = data.col(1).conjugate().array() * U.col(2).array() * data.col(0).array();
-    EigenMatrix<std::complex<double>> Ep11 = data.col(1).conjugate().array() * U.col(3).array() * data.col(1).array();
+    double Ep00 = (data.col(0).adjoint() * (U.col(0).array() * data.col(0).array()).matrix())(0).real() * dr;
+    double Ep01 = (data.col(0).adjoint() * (U.col(1).array() * data.col(1).array()).matrix())(0).real() * dr;
+    double Ep10 = (data.col(1).adjoint() * (U.col(2).array() * data.col(0).array()).matrix())(0).real() * dr;
+    double Ep11 = (data.col(1).adjoint() * (U.col(3).array() * data.col(1).array()).matrix())(0).real() * dr;
 
     // return the total energy
-    return (0.5 * (Ek00 + Ek11) / mass + Ep00 + Ep01 + Ep10 + Ep11).sum().real() * dr;
+    return 0.5 * (Ek00 + Ek11) / mass + Ep00 + Ep01 + Ep10 + Ep11;
 }
 
 template <int S>
@@ -101,9 +98,7 @@ Wavefunction<1> Wavefunction<1>::propagate(const MatrixOfMatrices<1>& R, const M
 
     // propagate the wavefunction
     wfn.data.col(0) = R.at(0).at(0).array() * wfn.data.col(0).array();
-    wfn.data.col(0) = FourierTransform::FFT(wfn.data.col(0));
-    wfn.data.col(0) = K.at(0).at(0).array() * wfn.data.col(0).array();
-    wfn.data.col(0) = FourierTransform::IFFT(wfn.data.col(0));
+    wfn.data.col(0) = FourierTransform::IFFT(K.at(0).at(0).array() * FourierTransform::FFT(wfn.data.col(0)).array());
     wfn.data.col(0) = R.at(0).at(0).array() * wfn.data.col(0).array();
 
     // return the wfn
@@ -117,14 +112,11 @@ Wavefunction<2> Wavefunction<2>::propagate(const MatrixOfMatrices<2>& R, const M
 
     // propagate the wavefunction
     wfnt.data.col(0) = R.at(0).at(0).array() * wfn.data.col(0).array() + R.at(0).at(1).array() * wfn.data.col(1).array();
-    wfnt.data.col(1) = R.at(1).at(0).array() * wfn.data.col(0).array() + R.at(1).at(1).array() * wfn.data.col(1).array();
-    wfn = wfnt;
+    wfnt.data.col(1) = R.at(1).at(0).array() * wfn.data.col(0).array() + R.at(1).at(1).array() * wfn.data.col(1).array(); wfn = wfnt;
     wfnt.data.col(0) = FourierTransform::IFFT(K.at(0).at(0).array() * FourierTransform::FFT(wfn.data.col(0)).array());
-    wfnt.data.col(1) = FourierTransform::IFFT(K.at(1).at(1).array() * FourierTransform::FFT(wfn.data.col(1)).array());
-    wfn = wfnt;
+    wfnt.data.col(1) = FourierTransform::IFFT(K.at(1).at(1).array() * FourierTransform::FFT(wfn.data.col(1)).array()); wfn = wfnt;
     wfnt.data.col(0) = R.at(0).at(0).array() * wfn.data.col(0).array() + R.at(0).at(1).array() * wfn.data.col(1).array();
-    wfnt.data.col(1) = R.at(1).at(0).array() * wfn.data.col(0).array() + R.at(1).at(1).array() * wfn.data.col(1).array();
-    wfn = wfnt;
+    wfnt.data.col(1) = R.at(1).at(0).array() * wfn.data.col(0).array() + R.at(1).at(1).array() * wfn.data.col(1).array(); wfn = wfnt;
 
     // return the wfn
     return wfn;

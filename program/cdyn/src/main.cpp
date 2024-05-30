@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     EigenMatrix<> rt, vt, at; EigenMatrix<int> st(iters + 1, trajs);
 
     // initialize the container for all the trajectories
-    if (savetraj) rt = EigenMatrix<>(iters + 1, trajs), vt = EigenMatrix<>(iters + 1, trajs), at = EigenMatrix<>(iters + 1, trajs);
+    if (savetraj) rt = EigenMatrix<>(iters + 1, 2 * trajs);
 
     // print the header
     std::printf("%6s %6s %6s %14s %14s %14s %14s %s\n", "TRAJ", "ITER", "STATE", "EPOT", "EKIN", "ETOT", "FORCE", "");
@@ -69,6 +69,9 @@ int main(int argc, char** argv) {
 
         // calculate the force and potential with kinetic energy
         double F = -eval(dU, r(0))(s(0), s(0)), Epot = eval(U, r(0))(s(0), s(0)), Ekin = 0.5 * mass * v(0) * v(0);
+
+        // save the initial point in phase space
+        if (savetraj) {rt(0, 2 * i) = r(0), rt(0, 2 * i + 1) = Epot;}
 
         // print the zeroth iteration
         std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %s\n", i + 1, 0, s(0), Epot, Ekin, Epot + Ekin, F, "");
@@ -96,7 +99,7 @@ int main(int argc, char** argv) {
 
                 // change the state if the jump is accepted
                 if (de(j) * de(j + 1) < 0 && dist(mt) < P) {
-                    s(j + 1) = s(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0)*v(0) - (s(j + 1) - s(j)) * 2 * de(j + 1) / mass);
+                    s(j + 1) = s(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0) * v(0) - (s(j + 1) - s(j)) * 2 * de(j + 1) / mass);
                 }
             }
 
@@ -106,12 +109,15 @@ int main(int argc, char** argv) {
             // calculate the force
             F = -eval(dU, r(j + 1))(s(j + 1), s(j + 1));
 
+            // save the point of trajectory
+            if (savetraj) rt(j + 1, 2 * i) = r(j + 1), rt(j + 1, 2 * i + 1) = Epot;
+
             // print the iteration
             if (!((j + 1) % 1)) std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %s\n", i + 1, j + 1, s(j), Epot, Ekin, Epot + Ekin, F, "");
         }
 
-        // save the trajectory to the containers
-        if (savetraj) {rt.col(i) = r, vt.col(i) = v, at.col(i) = a;} st.col(i) = s;
+        // assign state
+        st.col(i) = s;
     }
 
     // print the new line
@@ -129,10 +135,7 @@ int main(int argc, char** argv) {
 
     // write the trajectories to the disk
     MEASURE("TRAJECTORY AND POPULATION WRITING: ", 
-        if (savetraj) Eigen::Write("TRAJ_POS_LZ.mat", rt);
-        if (savetraj) Eigen::Write("TRAJ_VEL_LZ.mat", vt);
-        if (savetraj) Eigen::Write("TRAJ_ACC_LZ.mat", at);
-                      Eigen::Write("P_LZ.mat"       , P );
+        if (savetraj) {Eigen::Write("TRAJ_LZ.mat", rt);} Eigen::Write("P_LZ.mat"   , P );
     )
 
     // print the total time
