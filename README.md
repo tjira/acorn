@@ -56,7 +56,7 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ## Compilation
 
-The software requires the [libint](https://github.com/evaleev/libint) and [fftw](https://www.fftw.org) libraries. Before the compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) installed. On debian-based distributions, you can do it with the following command.
+The software requires the [libint](https://github.com/evaleev/libint) and [fftw](https://www.fftw.org) libraries. Before compiling these libraries and proceeding with the following steps, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) library installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
 sudo apt install libboost-dev libeigen3-dev
