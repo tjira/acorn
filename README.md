@@ -85,13 +85,7 @@ After the compilation the bin folder will be created along with the executables.
 
 ## Examples
 
-All the examples are implemented as `example/makefile` targets. If you are in example directory, you can run the HF example on a water molecule simply with the following command.
-
-```bash
-make hf
-```
-
-The calculation should finish without errors. Feel free to explore all the examples.
+All the examples are implemented as `example/makefile` targets. If you are in example directory, you can run the HF example on a water molecule simply run the `make hf` command. The calculation should finish without errors. Feel free to explore all the examples.
 
 ## Credits
 
