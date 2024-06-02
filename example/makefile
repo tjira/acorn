@@ -22,7 +22,7 @@ cdyn_adiabatic:
 
 # target to perform a classical 1D real-time nonadiabatic propagation
 cdyn_nonadiabatic:
-	acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 100 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" -d "0.006/cosh(0.6*x)^2" "(-0.002)*x*exp(-x^2)" "(-0.002)*x*exp(-x^2)" "(-0.006)/cosh(0.6*x)^2" --savetraj
+	acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 100 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" -d "0.006/cosh(0.6*x)^2" "(-0.002)*x*exp(-x^2)" "(-0.002)*x*exp(-x^2)" "(-0.006)/cosh(0.6*x)^2" --adiabatic --savetraj
 
 # target to perform a MP3 calculation
 fci: transform

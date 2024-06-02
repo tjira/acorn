@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
     program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(1.0).scan<'g', double>();
     program.add_argument("-t", "--trajectories").help("-- Number of trajectories to run.").default_value(1).scan<'i', int>();
     program.add_argument("-u", "--potential").help("-- The potential curves in diabatic representation.").nargs(argparse::nargs_pattern::at_least_one).default_value(std::vector<std::string>{"0.5*x^2"});
+    program.add_argument("--adiabatic").help("-- Perform the dynamics in adiabatic basis.").default_value(false).implicit_value(true);
     program.add_argument("--savetraj").help("-- Save the trajectories.").default_value(false).implicit_value(true);
 
     // parse the command line arguments
@@ -24,18 +25,18 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
     // extract the command line parameters and define the potential expressions
-    double momentum = program.get<double>("-p"), position = program.get<double>("-c"), step = program.get<double>("-s"), mass = program.get<double>("-m"); std::vector<Expression> U, dU;
+    double momentum = program.get<double>("-p"), position = program.get<double>("-c"), step = program.get<double>("-s"), mass = program.get<double>("-m"); std::vector<Expression> Ue, dUe;
     int iters = program.get<int>("-i"), seed = program.get<int>("-r"), trajs = program.get<int>("-t"); int nstate = std::sqrt(program.get<std::vector<std::string>>("-u").size());
 
     // extract boolean flags
-    bool savetraj = program.get<bool>("--savetraj");
+    bool adiabatic = program.get<bool>("--adiabatic"), savetraj = program.get<bool>("--savetraj");
 
     // reserve the memory for the potential expressions
-    U.reserve(nstate * nstate), dU.reserve(nstate * nstate);
+    Ue.reserve(nstate * nstate), dUe.reserve(nstate * nstate);
 
     // fill the potential and potential derivative expressions
-    for (const std::string& expr : program.get<std::vector<std::string>>("-d")) dU.emplace_back(expr, std::vector<std::string>{"x"});
-    for (const std::string& expr : program.get<std::vector<std::string>>("-u")) U.emplace_back(expr, std::vector<std::string>{"x"});
+    for (const std::string& expr : program.get<std::vector<std::string>>("-d")) dUe.emplace_back(expr, std::vector<std::string>{"x"});
+    for (const std::string& expr : program.get<std::vector<std::string>>("-u")) Ue.emplace_back(expr, std::vector<std::string>{"x"});
 
     // function to obtain the potential matrices
     auto eval = [&](std::vector<Expression>& Ue, double r) {
@@ -58,17 +59,33 @@ int main(int argc, char** argv) {
         std::mt19937 mt(seed + i); std::uniform_real_distribution<double> dist(0, 1);
     
         // initialize the containers for the position, velocity, acceleration, state energy difference and state
-        EigenMatrix<> r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1), de(iters + 1, 1); EigenMatrix<int> s(iters + 1, 1);
+        EigenMatrix<> r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1), de(iters + 1, 1), dz(iters + 1, 1); EigenMatrix<int> s(iters + 1, 1);
 
         // distributions for position and momentum
         std::normal_distribution<double> positiondist(position, 0.5);
         std::normal_distribution<double> momentumdist(momentum, 1.0);
 
-        // fill the initial position, velocity, acceleration state and state difference
-        r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, s(0) = 0; if (nstate > 1) de(0) = eval(U, r(0))(1, 1) - eval(U, r(0))(0, 0);
+        // fill the initial position, velocity, acceleration and state
+        r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, s(0) = 0;
+
+        // calculate the potential and its derivative
+        EigenMatrix<> U = eval(Ue, r(0)), dU = eval(dUe, r(0));
+
+        // perform adiabatic transform
+        if (adiabatic) {
+
+            // create the eigenvalue and eigenvector solvers for U and dU
+            Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solveru(U), solverd(dU);
+
+            // transform the potential and its derivative
+            U = solveru.eigenvalues().asDiagonal(), dU = solverd.eigenvalues().asDiagonal();
+        }
+
+        // calcualte the state energy difference
+        if (nstate > 1) de(0) = U(1, 1) - U(0, 0);
 
         // calculate the force and potential with kinetic energy
-        double F = -eval(dU, r(0))(s(0), s(0)), Epot = eval(U, r(0))(s(0), s(0)), Ekin = 0.5 * mass * v(0) * v(0);
+        double F = -dU(s(0), s(0)), Epot = U(s(0), s(0)), Ekin = 0.5 * mass * v(0) * v(0);
 
         // save the initial point in phase space
         if (savetraj) {rt(0, 2 * i) = r(0), rt(0, 2 * i + 1) = Epot;}
@@ -88,26 +105,43 @@ int main(int argc, char** argv) {
             // move the system and propagate state
             r(j + 1) = r(j) + step * (v(j + 1) + 0.5 * a(j + 1) * step), s(j + 1) = s(j);
 
-            // nonadiabatic dynamics
-            if (nstate > 1) {
+            // calculate the potential and its derivative
+            U = eval(Ue, r(j + 1)), dU = eval(dUe, r(j + 1));
 
-                // calculate and save the difference in state energies
-                de(j + 1) = eval(U, r(j + 1))(1, 1) - eval(U, r(j + 1))(0, 0);
+            // perform adiabatic transform
+            if (adiabatic) {
+
+                // create the eigenvalue and eigenvector solvers for U and dU
+                Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solveru(U), solverd(dU);
+
+                // transform the potential and its derivative
+                U = solveru.eigenvalues().asDiagonal(), dU = solverd.eigenvalues().asDiagonal();
+            }
+
+            // calculate state energy difference and its numerical derivative
+            de(j + 1) = U(1, 1) - U(0, 0); dz(j + 1) = (de(j + 1) - de(j)) / step;
+
+            // nonadiabatic dynamics
+            if (double P; nstate > 1 && j > 0) {
 
                 // calculate the probability of state change according to the Landau-Zener formula
-                double gamma = std::pow(eval(U, r(j + 1))(0, 1), 2) / std::abs((de(j + 1) - de(j)) / step); double P = 1 - std::exp(-2 * M_PI * gamma);
+                if (adiabatic) {
+                    double ddz = (de(j + 1) - 2 * de(j) + de(j - 1)) / step / step; P = std::exp(-0.5 * M_PI * std::sqrt(std::pow(de(j + 1), 3) / ddz));
+                } else {
+                    double gamma = std::pow(U(0, 1), 2) / std::abs((de(j + 1) - de(j)) / step); P = 1 - std::exp(-2 * M_PI * gamma);
+                }
 
                 // change the state if the jump is accepted
-                if (de(j) * de(j + 1) < 0 && dist(mt) < P) {
+                if ((adiabatic && dz(j) * dz(j + 1) < 0 && dist(mt) < P) || (!adiabatic && de(j) * de(j + 1) < 0 && dist(mt) < P)) {
                     s(j + 1) = s(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0) * v(0) - (s(j + 1) - s(j)) * 2 * de(j + 1) / mass);
                 }
             }
 
             // calculate the potential and kinetic energy
-            Epot = eval(U, r(j + 1))(s(j + 1), s(j + 1)), Ekin = 0.5 * mass * v(j + 1) * v(j + 1);
+            Epot = U(s(j + 1), s(j + 1)), Ekin = 0.5 * mass * v(j + 1) * v(j + 1);
 
             // calculate the force
-            F = -eval(dU, r(j + 1))(s(j + 1), s(j + 1));
+            F = -dU(s(j + 1), s(j + 1));
 
             // save the point of trajectory
             if (savetraj) rt(j + 1, 2 * i) = r(j + 1), rt(j + 1, 2 * i + 1) = Epot;
