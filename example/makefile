@@ -1,5 +1,7 @@
 .PHONY: molecule
 
+# EXAMPLE TARGETS FOR EACH MODULE ==================================================================
+
 # target to generate the 1D adiabatic wavepacket guess
 aqdyn_guess:
 	acorn_expression -g -16 16 -o PSI_ADIA_GUESS.mat -p 2048 -e "exp(-(x-1)^2)" "0"
@@ -22,7 +24,7 @@ cdyn_adiabatic:
 
 # target to perform a classical 1D real-time nonadiabatic propagation
 cdyn_nonadiabatic:
-	acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 100 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" -d "0.006/cosh(0.6*x)^2" "(-0.002)*x*exp(-x^2)" "(-0.002)*x*exp(-x^2)" "(-0.006)/cosh(0.6*x)^2" --adiabatic --savetraj
+	acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --adiabatic --savetraj
 
 # target to perform a MP3 calculation
 fci: transform
@@ -63,3 +65,11 @@ nqdyn_real: nqdyn_guess nqdyn_potential
 # target to transform atomic integrals to the chosen basis
 transform: hf
 	acorn_transform -s
+
+# RANDOM TARGETS ===================================================================================
+
+random_nqdyn_tully_1:
+	acorn_expression -g -24 24 -o PSI_DIA_GUESS.mat -p 4096 -e "exp(-(x+10)^2)" "0" "0" "0"
+	acorn_expression -g -24 24 -o U_DIA.mat -p 4096 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
+	acorn_nqdyn -i 350 -m 2000 -p 10.95 -s 10 --adiabatic --savewfn
+

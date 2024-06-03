@@ -34,8 +34,7 @@ int main(int argc, char** argv) {
     // reserve the memory for the potential expressions
     Ue.reserve(nstate * nstate), dUe.reserve(nstate * nstate);
 
-    // fill the potential and potential derivative expressions
-    for (const std::string& expr : program.get<std::vector<std::string>>("-d")) dUe.emplace_back(expr, std::vector<std::string>{"x"});
+    // fill the potential expressions
     for (const std::string& expr : program.get<std::vector<std::string>>("-u")) Ue.emplace_back(expr, std::vector<std::string>{"x"});
 
     // function to obtain the potential matrices
@@ -55,8 +54,8 @@ int main(int argc, char** argv) {
     // loop over all trajectories
     for (int i = 0; i < trajs; i++) {
 
-        // initialize random number generators
-        std::mt19937 mt(seed + i); std::uniform_real_distribution<double> dist(0, 1);
+        // initialize random number generators and the potential matrix with its derivative
+        std::mt19937 mt(seed + i); std::uniform_real_distribution<double> dist(0, 1); EigenMatrix<> U, dU;
     
         // initialize the containers for the position, velocity, acceleration, state energy difference and state
         EigenMatrix<> r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1), de(iters + 1, 1), dz(iters + 1, 1); EigenMatrix<int> s(iters + 1, 1);
@@ -68,24 +67,17 @@ int main(int argc, char** argv) {
         // fill the initial position, velocity, acceleration and state
         r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, s(0) = 0;
 
-        // calculate the potential and its derivative
-        EigenMatrix<> U = eval(Ue, r(0)), dU = eval(dUe, r(0));
+        // calculate the potential and perform adiabatic transform
+        if (U = eval(Ue, r(0)); adiabatic) {Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solver(U); U = solver.eigenvalues().asDiagonal();};
 
-        // perform adiabatic transform
-        if (adiabatic) {
-
-            // create the eigenvalue and eigenvector solvers for U and dU
-            Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solveru(U), solverd(dU);
-
-            // transform the potential and its derivative
-            U = solveru.eigenvalues().asDiagonal(), dU = solverd.eigenvalues().asDiagonal();
-        }
+        // define the containers for the potential and save the first value
+        std::vector<EigenMatrix<>> Uc(iters + 1); Uc.at(0) = U;
 
         // calcualte the state energy difference
         if (nstate > 1) de(0) = U(1, 1) - U(0, 0);
 
-        // calculate the force and potential with kinetic energy
-        double F = -dU(s(0), s(0)), Epot = U(s(0), s(0)), Ekin = 0.5 * mass * v(0) * v(0);
+        // initialize the force and potential with kinetic energy
+        double F = mass * a(0), Epot = U(s(0), s(0)), Ekin = 0.5 * mass * v(0) * v(0);
 
         // save the initial point in phase space
         if (savetraj) {rt(0, 2 * i) = r(0), rt(0, 2 * i + 1) = Epot;}
@@ -105,18 +97,11 @@ int main(int argc, char** argv) {
             // move the system and propagate state
             r(j + 1) = r(j) + step * (v(j + 1) + 0.5 * a(j + 1) * step), s(j + 1) = s(j);
 
-            // calculate the potential and its derivative
-            U = eval(Ue, r(j + 1)), dU = eval(dUe, r(j + 1));
+            // calculate the potential and perform adiabatic transform
+            if (U = eval(Ue, r(j + 1)); adiabatic) {Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solver(U); U = solver.eigenvalues().asDiagonal();};
 
-            // perform adiabatic transform
-            if (adiabatic) {
-
-                // create the eigenvalue and eigenvector solvers for U and dU
-                Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solveru(U), solverd(dU);
-
-                // transform the potential and its derivative
-                U = solveru.eigenvalues().asDiagonal(), dU = solverd.eigenvalues().asDiagonal();
-            }
+            // calculate the gradient of the potential and save U and dU to the container
+            Uc.at(j + 1) = U, dU = (Uc.at(j + 1) - Uc.at(j)) / (r(j + 1) - r(j));
 
             // calculate state energy difference and its numerical derivative
             de(j + 1) = U(1, 1) - U(0, 0); dz(j + 1) = (de(j + 1) - de(j)) / step;
