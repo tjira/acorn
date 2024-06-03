@@ -3,6 +3,7 @@
 #define MATRIXMAP(A) Eigen::Map<EigenMatrix<>>(A.data(), A.dimension(0), A.dimension(1))
 #define TENSORMAP(A) Eigen::TensorMap<EigenTensor<2>>(A.data(), A.rows(), A.cols())
 
+#include <unsupported/Eigen/KroneckerProduct>
 #include <unsupported/Eigen/MatrixFunctions>
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -14,13 +15,8 @@ template <size_t D = 4, typename T = double> using EigenTensor = Eigen::Tensor<T
 template <typename T = double> using EigenVector = Eigen::Vector<T, Eigen::Dynamic>;
 
 namespace Eigen {
-    // complementary constructors
-    template <typename T = double> EigenMatrix<T> IndexFunction(int rows, int cols, const std::function<T(int, int)>& func);
-
     // general functions
     template <typename T = double> EigenTensor<4, T> Kron(const EigenMatrix<T>& A, const EigenTensor<4, T>& B);
-    template <typename T = double> EigenMatrix<   T> Kron(const EigenMatrix<T>& A, const EigenMatrix<   T>& B);
-    template <typename T = double> EigenMatrix<T> Repeat(const EigenMatrix<T>& A, int count, int axis);
 
     // file readers
     template <typename T = double> EigenTensor<4, T> LoadTensor(const std::string& path);
@@ -29,27 +25,6 @@ namespace Eigen {
     // file writers
     template <typename T = double> void Write(const std::string& path, const EigenTensor<4, T>& A);
     template <typename T = double> void Write(const std::string& path, const EigenMatrix<   T>& A);
-}
-
-template <typename T>
-EigenMatrix<T> Eigen::IndexFunction(int m, int n, const std::function<T(int, int)>& func) {
-    EigenMatrix<T> A(m, n); for (int i = 0; i < m; i++) {for (int j = 0; j < n; j++) A(i, j) = func(i, j);} return A;
-}
-
-template <typename T>
-EigenMatrix<T> Eigen::Kron(const EigenMatrix<T>& A, const EigenMatrix<T>& B) {
-    // define the matrix where the product will be stored
-    EigenMatrix<T> C(A.rows() * B.rows(), A.cols() * B.cols());
-
-    // perform the Kronecker product
-    for (int i = 0; i < C.rows(); i++) {
-        for (int j = 0; j < C.cols(); j++) {
-            C(i, j) = A(i / B.rows(), j / B.cols()) * B(i % B.rows(), j % B.cols());
-        }
-    }
-
-    // return the Kronecker product
-    return C;
 }
 
 template <typename T>
@@ -70,22 +45,6 @@ EigenTensor<4, T> Eigen::Kron(const EigenMatrix<T>& A, const EigenTensor<4, T>& 
 
     // return the Kronecker product
     return C;
-}
-
-template <typename T>
-EigenMatrix<T> Eigen::Repeat(const EigenMatrix<T>& A, int count, int axis) {
-    // create the new matrix with the repeated dimensions
-    EigenMatrix<> B(axis ? A.rows() : count * A.rows(), axis ? count * A.cols() : A.cols());
-
-    // throw error if axis is out of bounds
-    if (axis != 0 && axis != 1) throw std::runtime_error("UNKNOWN AXIS IN MATRIX REPEAT");
-
-    // repeat rows for axis 0 and columns for axis 1
-    if (axis == 0) for (int i = 0; i < A.rows(); i++) for (int j = 0; j < count; j++) B.row(i * count + j) = A.row(i);
-    else if (axis == 1) for (int i = 0; i < A.cols(); i++) for (int j = 0; j < count; j++) B.col(i * count + j) = A.col(i);
-
-    // return the repeated matrix
-    return B;
 }
 
 template <typename T>

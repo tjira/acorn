@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
             Vms = Transform::SingleSpin( V, C);
             Tms = Transform::SingleSpin( T, C);
             Sms = Transform::SingleSpin( S, C);
-            Ems = Eigen::Repeat(E, 2, 0);
+            Ems = EigenVector<>::NullaryExpr(2 * E.rows(), [&](int i){return E(i / 2);});
         )
     }
 

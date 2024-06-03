@@ -13,11 +13,11 @@ EigenTensor<> Transform::CoulombSpatial(const EigenTensor<>& Jao, EigenMatrix<>&
 
 EigenTensor<> Transform::CoulombSpin(const EigenTensor<>& Jao, const EigenMatrix<>& Cmo) {
     // create the tiling matrix P that repeats the MO columns 2 times and define the spin mask
-    EigenMatrix<> P = Eigen::Repeat<double>(EigenMatrix<>::Identity(Cmo.rows(), Cmo.rows()), 2, 1), MN(2 * Cmo.cols(), 2 * Cmo.cols());
+    EigenMatrix<> P = EigenMatrix<>::NullaryExpr(Cmo.rows(), 2 * Cmo.rows(), std::function<double(int, int)>([](int i, int j) {return j == 2 * i || j == 2 * i + 1;})), MN(2 * Cmo.cols(), 2 * Cmo.cols());
 
     // initialize the spin mask
-    MN << Eigen::IndexFunction(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 1 - j % 2;})),
-          Eigen::IndexFunction(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 0 + j % 2;}));
+    MN << EigenMatrix<>::NullaryExpr(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 1 - j % 2;})),
+          EigenMatrix<>::NullaryExpr(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 0 + j % 2;}));
 
     // transform the wfn coefficients to the spin basis
     EigenMatrix<> Cms = (Cmo * P).replicate<2, 1>().cwiseProduct(MN);
@@ -30,15 +30,15 @@ EigenMatrix<> Transform::SingleSpatial(const EigenMatrix<>& Aao, EigenMatrix<>& 
 
 EigenMatrix<> Transform::SingleSpin(const EigenMatrix<>& Aao, const EigenMatrix<>& Cmo) {
     // create the tiling matrix P that repeats the MO columns 2 times and define the spin mask
-    EigenMatrix<> P = Eigen::Repeat<double>(EigenMatrix<>::Identity(Cmo.rows(), Cmo.rows()), 2, 1), MN(2 * Cmo.cols(), 2 * Cmo.cols());
+    EigenMatrix<> P = EigenMatrix<>::NullaryExpr(Cmo.rows(), 2 * Cmo.rows(), std::function<double(int, int)>([](int i, int j) {return j == 2 * i || j == 2 * i + 1;})), MN(2 * Cmo.cols(), 2 * Cmo.cols());
 
     // initialize the spin mask
-    MN << Eigen::IndexFunction(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 1 - j % 2;})),
-          Eigen::IndexFunction(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 0 + j % 2;}));
+    MN << EigenMatrix<>::NullaryExpr(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 1 - j % 2;})),
+          EigenMatrix<>::NullaryExpr(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 0 + j % 2;}));
 
     // transform the wfn coefficients to the spin basis
     EigenMatrix<> Cms = (Cmo * P).replicate<2, 1>().cwiseProduct(MN);
 
     // return the transformed matrix
-    return SingleSpatial(Eigen::Kron<double>(EigenMatrix<>::Identity(2, 2), Aao), Cms);
+    return SingleSpatial(Eigen::kroneckerProduct(EigenMatrix<>::Identity(2, 2), Aao), Cms);
 }

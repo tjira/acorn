@@ -30,3 +30,18 @@ add_subdirectory(program/cdyn)
 add_subdirectory(program/ci)
 add_subdirectory(program/hf)
 add_subdirectory(program/mp)
+
+# enable testing
+enable_testing()
+
+# add tests
+add_test(NAME hf  COMMAND make -C ${PROJECT_SOURCE_DIR}/example hf )
+add_test(NAME mp2 COMMAND make -C ${PROJECT_SOURCE_DIR}/example mp2)
+add_test(NAME mp3 COMMAND make -C ${PROJECT_SOURCE_DIR}/example mp3)
+add_test(NAME fci COMMAND make -C ${PROJECT_SOURCE_DIR}/example fci)
+
+# add expected results
+set_property(TEST hf  PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -74.965901")
+set_property(TEST mp2 PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.004854")
+set_property(TEST mp3 PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.015455")
+set_property(TEST fci PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.020410")

@@ -36,6 +36,10 @@ jobs:
           export LIBRARY_PATH="$PWD/libfftw/install/lib:$PWD/libint/install/lib:$LIBRARY_PATH"
           cmake --build build --parallel 2
 
+      - name: Run Tests
+        working-directory: build
+        run: ctest --verbose
+
       - name: Upload Coverage Reports
         uses: codecov/codecov-action@v4.0.1
         with:
