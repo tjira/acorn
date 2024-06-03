@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
             Uc.at(j + 1) = U, dU = (Uc.at(j + 1) - Uc.at(j)) / (r(j + 1) - r(j));
 
             // calculate state energy difference and its numerical derivative
-            de(j + 1) = U(1, 1) - U(0, 0); dz(j + 1) = (de(j + 1) - de(j)) / step;
+            if (nstate > 1) {de(j + 1) = U(1, 1) - U(0, 0); dz(j + 1) = (de(j + 1) - de(j)) / step;}
 
             // nonadiabatic dynamics
             if (double P; nstate > 1 && j > 0) {

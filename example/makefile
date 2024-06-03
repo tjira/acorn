@@ -20,7 +20,7 @@ aqdyn_real: aqdyn_guess aqdyn_potential
 
 # target to perform a classical 1D real-time adiabatic propagation
 cdyn_adiabatic:
-	acorn_cdyn -c 3 -i 1000 -m 1 -p 0 -r 1 -s 0.01 -t 5 -u "0.5*x^2" -d "x" --savetraj
+	acorn_cdyn -c 3 -i 1000 -m 1 -p 0 -r 1 -s 0.01 -t 5 -u "0.5*x^2" --savetraj
 
 # target to perform a classical 1D real-time nonadiabatic propagation
 cdyn_nonadiabatic:
