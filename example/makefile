@@ -68,8 +68,11 @@ transform: hf
 
 # RANDOM TARGETS ===================================================================================
 
+random_cdyn_tully_1:
+	acorn_cdyn -c -10 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" --savetraj
+
 random_nqdyn_tully_1:
+	acorn_expression -g -24 24 -o U_DIA.mat -p 4096 -e "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
 	acorn_expression -g -24 24 -o PSI_DIA_GUESS.mat -p 4096 -e "exp(-(x+10)^2)" "0" "0" "0"
-	acorn_expression -g -24 24 -o U_DIA.mat -p 4096 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
-	acorn_nqdyn -i 350 -m 2000 -p 10.95 -s 10 --adiabatic --savewfn
+	acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --savewfn
 
