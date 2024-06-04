@@ -10,8 +10,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
 # set the compiler flags
-set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -flarge-source-files -fprofile-arcs -ftest-coverage")
-set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -flarge-source-files -funroll-loops -flto=auto")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -funroll-loops -flto=auto")
 
 # include directories
 include_directories(include lib)

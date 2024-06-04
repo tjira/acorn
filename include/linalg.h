@@ -10,7 +10,7 @@
 // general templated eigen types
 template <typename T, size_t D> using EigenTensor = Eigen::Tensor<T, D,                                 Eigen::ColMajor>;
 template <typename T>           using EigenMatrix = Eigen::Matrix<T,    Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
-template <typename T>           using EigenVector = Eigen::Vector<T,    Eigen::Dynamic                                 >;
+template <typename T>           using EigenVector = Eigen::Matrix<T,    Eigen::Dynamic, 1             , Eigen::ColMajor>;
 
 
 // specific eigen types
