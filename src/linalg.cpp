@@ -34,13 +34,9 @@ Tensor<4> Eigen::Kron(const EigenMatrix<double>& A, const EigenTensor<double, 4>
     EigenTensor<double, 4> C(B.dimension(0), B.dimension(1), A.rows() * B.dimension(2), A.cols() * B.dimension(3));
 
     // perform the Kronecker product
-    for (int i = 0; i < C.dimension(0); i++) {
-        for (int j = 0; j < C.dimension(1); j++) {
-            for (int k = 0; k < C.dimension(2); k++) {
-                for (int l = 0; l < C.dimension(3); l++) {
-                    C(i, j, k, l) = A(k / B.dimension(2), l / B.dimension(3)) * B(i, j, k % B.dimension(2), l % B.dimension(3));
-                }
-            }
+    for (int i = 0; i < A.rows(); ++i) {
+        for (int j = 0; j < A.cols(); ++j) {
+            C.slice(array<Index, 4>({0, 0, i * B.dimension(2), j * B.dimension(3)}), array<Index, 4>({B.dimension(0), B.dimension(1), B.dimension(2), B.dimension(3)})) = A(i, j) * B;
         }
     }
 
