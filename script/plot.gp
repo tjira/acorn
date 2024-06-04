@@ -3,6 +3,7 @@
 # set the text variables
 if (!exists("output")) {output="output"}
 if (!exists("format")) {format="webp"}
+if (!exists("alpha")) {alpha="00"}
 
 # set the integer variables
 if (!exists("height")) {height=480}
@@ -30,11 +31,11 @@ else {set term term animate lw 2 size width,height}
 set key autotitle columnhead; unset warnings
 
 # set the default linetypes
-set linetype  1 lc rgb "#1f77b4"; set linetype  2 lc rgb "#ff7f0e"
-set linetype  3 lc rgb "#2ca02c"; set linetype  4 lc rgb "#d62728"
-set linetype  5 lc rgb "#9467bd"; set linetype  6 lc rgb "#8c564b"
-set linetype  7 lc rgb "#e377c2"; set linetype  8 lc rgb "#7f7f7f"
-set linetype  9 lc rgb "#bcbd22"; set linetype 10 lc rgb "#17becf"
+set linetype  1 lc rgb "#" . alpha . "1f77b4"; set linetype  2 lc rgb "#" . alpha . "ff7f0e"
+set linetype  3 lc rgb "#" . alpha . "2ca02c"; set linetype  4 lc rgb "#" . alpha . "d62728"
+set linetype  5 lc rgb "#" . alpha . "9467bd"; set linetype  6 lc rgb "#" . alpha . "8c564b"
+set linetype  7 lc rgb "#" . alpha . "e377c2"; set linetype  8 lc rgb "#" . alpha . "7f7f7f"
+set linetype  9 lc rgb "#" . alpha . "bcbd22"; set linetype 10 lc rgb "#" . alpha . "17becf"
 
 # set the domain and range
 if (exists("xlabel")) set xlabel xlabel

@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     Matrix rt, vt, at; IntegerMatrix st(iters + 1, trajs);
 
     // initialize the container for all the trajectories
-    if (savetraj) rt = Matrix(iters + 1, 2 * trajs);
+    if (savetraj) rt = Matrix(iters + 1, trajs + 1);
 
     // print the header
     std::printf("%6s %6s %6s %14s %14s %14s %14s %s\n", "TRAJ", "ITER", "STATE", "EPOT", "EKIN", "ETOT", "FORCE", "");
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
         double F = mass * a(0), Epot = U(s(0), s(0)), Ekin = 0.5 * mass * v(0) * v(0);
 
         // save the initial point in phase space
-        if (savetraj) {rt(0, 2 * i) = r(0), rt(0, 2 * i + 1) = Epot;}
+        if (savetraj) {rt(0, 0) = 0, rt(0, i + 1) = Epot;}
 
         // print the zeroth iteration
         std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %s\n", i + 1, 0, s(0), Epot, Ekin, Epot + Ekin, F, "");
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
             F = -dU(s(j + 1), s(j + 1));
 
             // save the point of trajectory
-            if (savetraj) rt(j + 1, 2 * i) = r(j + 1), rt(j + 1, 2 * i + 1) = Epot;
+            if (savetraj) rt(j + 1, 0) = (j + 1) * step, rt(j + 1, i + 1) = Epot;
 
             // print the iteration
             if (!((j + 1) % 1)) std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %s\n", i + 1, j + 1, s(j), Epot, Ekin, Epot + Ekin, F, "");
