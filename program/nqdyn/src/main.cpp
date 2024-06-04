@@ -27,30 +27,30 @@ int main(int argc, char** argv) {
 
     // load the potential in the diabatic basis
     MEASURE("INITIAL WAVEFUNCTION AND POTENTIAL IN DIABATIC BASIS READING: ",
-        EigenMatrix<> Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction<2> wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(4), Ud.leftCols(1), mass, momentum);
+        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction<2> wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(4), Ud.leftCols(1), mass, momentum);
     )
 
     // normalize the wfn, remove first column from matrix (the independent variable column)
     wfnd = wfnd.normalized(); Ud.block(0, 0, Ud.rows(), Ud.cols() - 1) = Ud.rightCols(Ud.cols() - 1); Ud.conservativeResize(Ud.rows(), Ud.cols() - 1);
 
     // define wavefunction value containers, density matrices and adiabatic transformation matrices
-    EigenMatrix<> wfndt, wfnat, Pd(iters + 1, 5), Pa, Ua(Ud.rows(), 3), rho(2, 2); std::vector<EigenMatrix<>> UT; if (savewfn) wfndt = EigenMatrix<>(Ud.rows(), 5 + 4 * iters);
+    Matrix wfndt, wfnat, Pd(iters + 1, 5), Pa, Ua(Ud.rows(), 3), rho(2, 2); std::vector<Matrix> UT; if (savewfn) wfndt = Matrix(Ud.rows(), 5 + 4 * iters);
 
     // initialize the adiabatic variables
     if (adiabatic) {
-        UT = std::vector<EigenMatrix<>>(Ud.rows(), EigenMatrix<>::Identity(2, 2));
-        Ua = EigenMatrix<>(Ud.rows(), 3), Pa = EigenMatrix<>(iters + 1, 5);
-        if (savewfn) {wfnat = EigenMatrix<>(Ud.rows(), 5 + 4 * iters);}
+        UT = std::vector<Matrix>(Ud.rows(), Matrix::Identity(2, 2));
+        Ua = Matrix(Ud.rows(), 3), Pa = Matrix(iters + 1, 5);
+        if (savewfn) {wfnat = Matrix(Ud.rows(), 5 + 4 * iters);}
     }
 
     // diagonalize the potential at each point
     for (int i = 0; i < Ud.rows() && adiabatic; i++) {
 
         // define the diabatic potential at the current point and fill it
-        EigenMatrix<> UD(2, 2); UD << Ud(i, 0), Ud(i, 1), Ud(i, 2), Ud(i, 3);
+        Matrix UD(2, 2); UD << Ud(i, 0), Ud(i, 1), Ud(i, 2), Ud(i, 3);
 
         // solve the eigenvalue problem and define overlap
-        Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solver(UD); EigenMatrix<> C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(2, 1);
+        Eigen::SelfAdjointEigenSolver<Matrix> solver(UD); Matrix C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(2, 1);
 
         // fill the diabatic matrix
         Ua.row(i) << wfnd.getr()(i), eps(0), eps(1);
@@ -121,6 +121,16 @@ int main(int argc, char** argv) {
 
     // print a new line
     std::cout << std::endl;
+
+    // print the populations
+    for (int i = 0; i < (int)std::sqrt(Pd.cols() - 1); i++) {
+        std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(4).reshaped(2, 2)(i, i));
+    } std::cout << std::endl;
+
+    // print the populations
+    for (int i = 0; i < (int)std::sqrt(Pd.cols() - 1); i++) {
+        std::printf("DIABATIC STATE %d POP: %.14f\n", i, Pd.bottomRows(1).rightCols(4).reshaped(2, 2)(i, i));
+    } std::cout << std::endl;
 
     // save the resulting data data
     MEASURE("WAVEFUNCTIONS, DENSITY MATRICES AND POTENTIAL WRITING: ",

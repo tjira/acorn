@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 
     // load the initial wavefunction and potential
     MEASURE("INITIAL WAVEFUNCTION AND POTENTIAL READING: ",
-        EigenMatrix<> U = Eigen::LoadMatrix("U_ADIA.mat"); Wavefunction<1> wfn(Eigen::LoadMatrix("PSI_ADIA_GUESS.mat").rightCols(2), U.leftCols(U.cols() - 1), mass, program.get<double>("-p"));
+        Matrix U = Eigen::LoadMatrix("U_ADIA.mat"); Wavefunction<1> wfn(Eigen::LoadMatrix("PSI_ADIA_GUESS.mat").rightCols(2), U.leftCols(U.cols() - 1), mass, program.get<double>("-p"));
     )
 
     // normalize the wfn, extract the potential values from the last column
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     auto[R, K] = wfn.propagator(U, std::complex<double>(imaginary, !imaginary), step);
 
     // define the energy, wfn and acf vector
-    EigenVector<> eps(nstate); EigenMatrix<> acf(iters + 1, 3); std::vector<Wavefunction<1>> states(nstate, wfn);
+    Vector eps(nstate); Matrix acf(iters + 1, 3); std::vector<Wavefunction<1>> states(nstate, wfn);
 
     // perform the dynamics for every state
     for (int i = 0; i < nstate; i++) {
@@ -48,8 +48,8 @@ int main(int argc, char** argv) {
         wfn = states.at(i); double E = wfn.energy(U); acf(0, 0) = 0, acf(0, 1) = 1, acf(0, 2) = 0;
 
         // save the initial state
-        EigenMatrix<> wfnt; if (savewfn) {
-            wfnt = EigenMatrix<>(U.rows(), 3 + 2 * iters); wfnt.col(0) = wfn.getr(); wfnt.col(1) = wfn.get().col(0).real(), wfnt.col(2) = wfn.get().col(0).imag();
+        Matrix wfnt; if (savewfn) {
+            wfnt = Matrix(U.rows(), 3 + 2 * iters); wfnt.col(0) = wfn.getr(); wfnt.col(1) = wfn.get().col(0).real(), wfnt.col(2) = wfn.get().col(0).imag();
         }
 
         // print the header
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
         MEASURE("SAVING THE ACF OF STATE " + std::to_string(i) + ":      ", Eigen::Write("ACF_ADIA_" + std::to_string(i) + ".mat", acf))
 
         // calculate the spectrum
-        EigenMatrix<> spectrum(iters + 1, 2); spectrum.col(1) = FourierTransform::C2RFFT(acf.col(1) + std::complex<double>(0, 1) * acf.col(2)).array().abs();
+        Matrix spectrum(iters + 1, 2); spectrum.col(1) = FourierTransform::C2RFFT(acf.col(1) + std::complex<double>(0, 1) * acf.col(2)).array().abs();
 
         // fill the frequency column
         spectrum.col(0).fill(2 * M_PI / (iters + 1) / step); for (int i = 0; i < iters + 1; i++) spectrum.col(0)(i) *= i - (i < (iters + 1) / 2 ? 0 : (iters + 1));

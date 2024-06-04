@@ -22,18 +22,18 @@ int main(int argc, char** argv) {
 
     // load the integrals in AO basis and system from disk
     MEASURE("SYSTEM AND INTEGRALS IN AO BASIS READING: ",
-        EigenMatrix<> V = Eigen::LoadMatrix("V_AO.mat");
-        EigenMatrix<> T = Eigen::LoadMatrix("T_AO.mat");
-        EigenMatrix<> S = Eigen::LoadMatrix("S_AO.mat");
-        EigenTensor<> J = Eigen::LoadTensor("J_AO.mat");
+        Matrix    V = Eigen::LoadMatrix("V_AO.mat");
+        Matrix    T = Eigen::LoadMatrix("T_AO.mat");
+        Matrix    S = Eigen::LoadMatrix("S_AO.mat");
+        Tensor<4> J = Eigen::LoadTensor("J_AO.mat");
         System system(program.get("-f"));
     )
 
     // initialize all the matrices used throughout the SCF procedure and the energy
-    EigenMatrix<> H = T + V, F = H, Cmo(S.rows(), S.cols()), Dmo(S.rows(), S.cols()), Emo(S.rows(), 1);
+    Matrix H = T + V, F = H, Cmo(S.rows(), S.cols()), Dmo(S.rows(), S.cols()), Emo(S.rows(), 1);
 
     // initialize the contraction axes, the energy placeholder and the Fock and error vector container
-    Eigen::IndexPair<int> first(2, 0), second(3, 1); double Eel = 0; std::vector<EigenMatrix<>> es, fs;
+    Eigen::IndexPair<int> first(2, 0), second(3, 1); double Eel = 0; std::vector<Matrix> es, fs;
 
     // print the header
     std::printf("\n%6s %20s %8s %8s %12s\n", "ITER", "ENERGY", "|dE|", "|dD|", "TIME");
@@ -45,13 +45,13 @@ int main(int argc, char** argv) {
         tp = Timer::Now();
 
         // calculate the electron-electron repulsion
-        EigenTensor<2> VEE = (J - 0.5 * J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1})).contract(TENSORMAP(Dmo), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
+        Tensor<2> VEE = (J - 0.5 * J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1})).contract(TENSORMAP(Dmo), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
 
         // calculate the Fock matrix and define previous values
-        F = H + MATRIXMAP(VEE); EigenMatrix<> Dmop = Dmo; double Eelp = Eel;
+        F = H + MATRIXMAP(VEE); Matrix Dmop = Dmo; double Eelp = Eel;
 
         // calculate the error vector and append it to the container along with the Fock matrix
-        EigenMatrix<> e = S * Dmo * F - F * Dmo * S; if (i) es.push_back(e), fs.push_back(F);
+        Matrix e = S * Dmo * F - F * Dmo * S; if (i) es.push_back(e), fs.push_back(F);
 
         // truncate the error and Fock vector containers
         if (i > diis) {es.erase(es.begin()), fs.erase(fs.begin());}
@@ -60,20 +60,20 @@ int main(int argc, char** argv) {
         if (diis && i >= diis) {
 
             // define the DIIS subspace matrices
-            EigenMatrix<> B = EigenMatrix<>::Ones(diis + 1, diis + 1), b = EigenVector<>::Zero(diis + 1); B(diis, diis) = 0, b(diis) = 1;
+            Matrix B = Matrix::Ones(diis + 1, diis + 1), b = Vector::Zero(diis + 1); B(diis, diis) = 0, b(diis) = 1;
 
             // fill the DIIS matrix
             for (int j = 0; j < diis; j++) for (int k = j; k < diis; k++) B(j, k) = es.at(j).cwiseProduct(es.at(k)).sum(), B(k, j) = B(j, k);
 
             // solve the DIIS equations
-            EigenVector<> c = B.colPivHouseholderQr().solve(b);
+            Vector c = B.colPivHouseholderQr().solve(b);
 
             // extrapolate the Fock matrix
             F = c(0) * fs.at(0); for (int j = 1; j < diis; j++) F += c(j) * fs.at(j);
         }
 
         // solve the Roothaan equations
-        Eigen::GeneralizedSelfAdjointEigenSolver<EigenMatrix<>> solver(F, S); Emo = solver.eigenvalues(), Cmo = solver.eigenvectors();
+        Eigen::GeneralizedSelfAdjointEigenSolver<Matrix> solver(F, S); Emo = solver.eigenvalues(), Cmo = solver.eigenvectors();
 
         // calculate the new density
         Dmo = 2 * Cmo.leftCols(system.nocc()) * Cmo.leftCols(system.nocc()).transpose();

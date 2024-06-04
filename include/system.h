@@ -10,5 +10,5 @@ public:
     double nuclearRepulsion() const; int nocc() const;
 
 private:
-    EigenMatrix<> AN, R;
+    Matrix AN, R;
 };

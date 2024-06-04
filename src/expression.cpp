@@ -16,9 +16,9 @@ Expression::Expression(const std::string& exprstr, const std::vector<std::string
     exprtk::parser<double>().compile(exprstr, expression);
 }
 
-EigenVector<> Expression::eval(const EigenMatrix<>& r) {
+Vector Expression::eval(const Matrix& r) {
     // initialize the result vector
-    EigenVector<> result(r.rows());
+    Vector result(r.rows());
 
     // evaluate the expression for each row
     for (int i = 0; i < r.rows(); i++) {

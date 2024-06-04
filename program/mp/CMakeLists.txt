@@ -1,5 +1,5 @@
 # add the executable
-add_executable(acorn_mp src/main.cpp ../../src/system.cpp ../../src/timer.cpp)
+add_executable(acorn_mp src/main.cpp ../../src/linalg.cpp ../../src/system.cpp ../../src/timer.cpp)
 
 # include program include directories
 target_include_directories(acorn_mp PRIVATE include)

@@ -1,4 +1,5 @@
 #include "system.h"
+#include <fstream>
 
 #define PTABLE "H He Li Be B C N O F Ne"
 
@@ -18,7 +19,7 @@ System::System(const std::string& path) {
     auto SM2AN = [&ptable](const std::string& sm) {return std::find(ptable.begin(), ptable.end(), sm) - ptable.begin();};
 
     // extract the number of atoms, skip the first two lines and initialize the atomic number and position matrices
-    std::getline(file, line); std::stringstream(line) >> natoms; std::getline(file, line); AN = EigenMatrix<>(natoms, 1); R = EigenMatrix<>(natoms, 3);
+    std::getline(file, line); std::stringstream(line) >> natoms; std::getline(file, line); AN = Matrix(natoms, 1); R = Matrix(natoms, 3);
 
     // extract the atomic numbers and positions
     for (int i = 0; i < natoms; i++) std::getline(file, line), std::stringstream(line) >> sm >> R(i, 0) >> R(i, 1) >> R(i, 2), AN(i, 0) = SM2AN(sm) + 1;

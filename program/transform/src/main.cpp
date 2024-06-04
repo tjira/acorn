@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
     // define all the matrices and tensors used throughout the program
-    EigenMatrix<> C, E, V, T, S, Vmo, Tmo, Smo, Ems, Vms, Tms, Sms; EigenTensor<> J, Jmo, Jms;
+    Matrix C, E, V, T, S, Vmo, Tmo, Smo, Ems, Vms, Tms, Sms; Tensor<4> J, Jmo, Jms;
 
     // load the coefficient matrix and integrals in AO basis from disk
     if (program.get<bool>("-o") || program.get<bool>("-s")) {
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
             Vms = Transform::SingleSpin( V, C);
             Tms = Transform::SingleSpin( T, C);
             Sms = Transform::SingleSpin( S, C);
-            Ems = EigenVector<>::NullaryExpr(2 * E.rows(), [&](int i){return E(i / 2);});
+            Ems = Vector::NullaryExpr(2 * E.rows(), [&](int i){return E(i / 2);});
         )
     }
 

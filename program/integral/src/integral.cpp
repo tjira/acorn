@@ -1,8 +1,8 @@
 #include "integral.h"
 
-EigenMatrix<> Integral::Single(libint2::Engine& engine, const libint2::BasisSet& shells) {
+Matrix Integral::Single(libint2::Engine& engine, const libint2::BasisSet& shells) {
     // define the number of basis functions, matrix of integrals and shell to basis function map
-    int nbf = shells.nbf(); EigenMatrix<> ints(nbf, nbf); ints.setZero(); std::vector<size_t> sh2bf = shells.shell2bf();
+    int nbf = shells.nbf(); Matrix ints(nbf, nbf); ints.setZero(); std::vector<size_t> sh2bf = shells.shell2bf();
 
     // loop over all unique elements
     for (size_t i = 0; i < shells.size(); i++) {
@@ -25,9 +25,9 @@ EigenMatrix<> Integral::Single(libint2::Engine& engine, const libint2::BasisSet&
     return ints;
 }
 
-EigenTensor<> Integral::Double(libint2::Engine& engine, const libint2::BasisSet& shells) {
+Tensor<4> Integral::Double(libint2::Engine& engine, const libint2::BasisSet& shells) {
     // define the number of basis functions, matrix of integrals and shell to basis function map
-    int nbf = shells.nbf(); EigenTensor<> ints(nbf, nbf, nbf, nbf); ints.setZero(); std::vector<size_t> sh2bf = shells.shell2bf();
+    int nbf = shells.nbf(); Tensor<4> ints(nbf, nbf, nbf, nbf); ints.setZero(); std::vector<size_t> sh2bf = shells.shell2bf();
 
     // loop over all unique elements
     for (size_t i = 0; i < shells.size(); i++) {
@@ -64,22 +64,22 @@ EigenTensor<> Integral::Double(libint2::Engine& engine, const libint2::BasisSet&
     return ints;
 }
 
-EigenMatrix<> Integral::Nuclear(const std::vector<libint2::Atom>& atoms, const libint2::BasisSet& shells) {
+Matrix Integral::Nuclear(const std::vector<libint2::Atom>& atoms, const libint2::BasisSet& shells) {
     libint2::Engine engine(libint2::Operator::nuclear, shells.max_nprim(), shells.max_l(), 0, 1e-12);
     engine.set_params(libint2::make_point_charges(atoms)); return Single(engine, shells);
 }
 
-EigenMatrix<> Integral::Kinetic(const libint2::BasisSet& shells) {
+Matrix Integral::Kinetic(const libint2::BasisSet& shells) {
     libint2::Engine engine(libint2::Operator::kinetic, shells.max_nprim(), shells.max_l(), 0, 1e-12);
     return Single(engine, shells);
 }
 
-EigenMatrix<> Integral::Overlap(const libint2::BasisSet& shells) {
+Matrix Integral::Overlap(const libint2::BasisSet& shells) {
     libint2::Engine engine(libint2::Operator::overlap, shells.max_nprim(), shells.max_l(), 0, 1e-12);
     return Single(engine, shells);
 }
 
-EigenTensor<> Integral::Coulomb(const libint2::BasisSet& shells) {
+Tensor<4> Integral::Coulomb(const libint2::BasisSet& shells) {
     libint2::Engine engine(libint2::Operator::coulomb, shells.max_nprim(), shells.max_l(), 0, 1e-12);
     return Double(engine, shells);
 }

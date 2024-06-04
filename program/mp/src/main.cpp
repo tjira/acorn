@@ -17,10 +17,10 @@ int main(int argc, char** argv) {
 
     // load the system and integrals in MS basis from disk
     MEASURE("SYSTEM AND INTEGRALS IN MS BASIS READING: ",
-        EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat");
-        EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat");
-        EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat");
-        EigenMatrix<> Ems = Eigen::LoadMatrix("E_MS.mat");
+        Matrix    Vms = Eigen::LoadMatrix("V_MS.mat");
+        Matrix    Tms = Eigen::LoadMatrix("T_MS.mat");
+        Tensor<4> Jms = Eigen::LoadTensor("J_MS.mat");
+        Matrix    Ems = Eigen::LoadMatrix("E_MS.mat");
         System system(program.get("-f"));
     )
 
@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     int nocc = system.nocc(); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 
 
     // initialize the antisymmetrized Coulomb integrals and the Hamiltonian matrix in MS basis
-    EigenTensor<> Jmsa = Jms - Jms.shuffle(Eigen::array<int, 4>{0, 3, 2, 1}); EigenMatrix<> Hms = Tms + Vms;
+    Tensor<4> Jmsa = Jms - Jms.shuffle(Eigen::array<int, 4>{0, 3, 2, 1}); Matrix Hms = Tms + Vms;
 
      // define the Coulomb integrals slice indices
     Eigen::array<Eigen::Index, 4> vvvvis = {2 * nocc, 2 * nocc, 2 * nocc, 2 * nocc}, vvvvie = {2 * nvirt, 2 * nvirt, 2 * nvirt, 2 * nvirt};
@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     Eigen::array<Eigen::Index, 4> oooois = {0, 0, 0, 0}, ooooie = {2 * nocc, 2 * nocc, 2 * nocc, 2 * nocc};
 
     // obtain the Coulomb integral slices and define the amplitude tensor
-    EigenTensor<4> oooo = Jmsa.slice(oooois, ooooie), oovv = Jmsa.slice(oovvis, oovvie), ovov = Jmsa.slice(ovovis, ovovie), vvvv = Jmsa.slice(vvvvis, vvvvie); EigenTensor<4> t = ovov;
+    Tensor<4> oooo = Jmsa.slice(oooois, ooooie), oovv = Jmsa.slice(oovvis, oovvie), ovov = Jmsa.slice(ovovis, ovovie), vvvv = Jmsa.slice(vvvvis, vvvvie); Tensor<4> t = ovov;
 
     // divide the amplitudes by the orbital energy differences
     for (int i = 0; i < 2 * nocc; i++) {
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
         Eigen::IndexPair<int> a1(0, 0), a2(1, 1), a3(2, 2), a4(3, 3);
 
         // add the MP2 correlation energy
-        E -= 0.25 * EigenTensor<0>(ovov.contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{a1, a2, a3, a4}))(0);
+        E -= 0.25 * Tensor<0>(ovov.contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{a1, a2, a3, a4}))(0);
 
         // print the MP2 timing
         std::printf("MP2 CORRELATION ENERGY TIMING: %s\n", Timer::Format(Timer::Elapsed(tp)).c_str());
@@ -78,9 +78,9 @@ int main(int argc, char** argv) {
         Eigen::IndexPair<int> c11(0, 1), c12(3, 2), c21(0, 1), c22(1, 2), c23(2, 0), c24(3, 3);
 
         // add the MP3 correlation energy
-        E += 0.125 * EigenTensor<0>(t.contract(vvvv, Eigen::array<Eigen::IndexPair<int>, 2>{a11, a12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{a21, a22, a23, a24}))(0);
-        E += 0.125 * EigenTensor<0>(t.contract(oooo, Eigen::array<Eigen::IndexPair<int>, 2>{b11, b12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{b21, b22, b23, b24}))(0);
-        E -=         EigenTensor<0>(t.contract(oovv, Eigen::array<Eigen::IndexPair<int>, 2>{c11, c12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{c21, c22, c23, c24}))(0);
+        E += 0.125 * Tensor<0>(t.contract(vvvv, Eigen::array<Eigen::IndexPair<int>, 2>{a11, a12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{a21, a22, a23, a24}))(0);
+        E += 0.125 * Tensor<0>(t.contract(oooo, Eigen::array<Eigen::IndexPair<int>, 2>{b11, b12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{b21, b22, b23, b24}))(0);
+        E -=         Tensor<0>(t.contract(oovv, Eigen::array<Eigen::IndexPair<int>, 2>{c11, c12}).contract(t, Eigen::array<Eigen::IndexPair<int>, 4>{c21, c22, c23, c24}))(0);
 
         // print the MP2 timing
         std::printf("MP3 CORRELATION ENERGY TIMING: %s\n", Timer::Format(Timer::Elapsed(tp)).c_str());

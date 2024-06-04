@@ -8,8 +8,8 @@ public:
     Expression(const std::string& exprstr, const std::vector<std::string>& varstr);
 
     // evaluation functions
-    EigenVector<> eval(const EigenMatrix<>& r); double eval(double r);
+    Vector eval(const Matrix& r); double eval(double r);
 
 private:
-    exprtk::expression<double> expression; EigenVector<> vars;
+    exprtk::expression<double> expression; Vector vars;
 };

@@ -22,6 +22,10 @@ aqdyn_real: aqdyn_guess aqdyn_potential
 cdyn_adiabatic:
 	../bin/acorn_cdyn -c 3 -i 1000 -m 1 -p 0 -r 1 -s 0.01 -t 5 -u "0.5*x^2" --savetraj
 
+# target to perform a classical 1D real-time diabatic propagation
+cdyn_diabatic:
+	../bin/acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --savetraj
+
 # target to perform a classical 1D real-time nonadiabatic propagation
 cdyn_nonadiabatic:
 	../bin/acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --adiabatic --savetraj

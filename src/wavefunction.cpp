@@ -2,7 +2,7 @@
 #include "wavefunction.h"
 
 template<int S>
-Wavefunction<S>::Wavefunction(const EigenMatrix<>& data, const EigenMatrix<>& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
+Wavefunction<S>::Wavefunction(const Matrix& data, const Matrix& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
     // add the momentum to the wavefunction
     for (int i = 0; i < 2 * S; i += 2) {
         this->data.col(i / 2) = (data.col(i) + std::complex<double>(0, 1) * data.col(i + 1)).array() * (std::complex<double>(0, 1) * momentum * r.array()).exp();
@@ -13,7 +13,7 @@ Wavefunction<S>::Wavefunction(const EigenMatrix<>& data, const EigenMatrix<>& r,
 }
 
 template <int S>
-Wavefunction<S> Wavefunction<S>::adiabatize(const std::vector<EigenMatrix<>>& UT) const {
+Wavefunction<S> Wavefunction<S>::adiabatize(const std::vector<Matrix>& UT) const {
     // define adiabatic wavefunction
     Wavefunction wfn(*this);
 
@@ -25,13 +25,13 @@ Wavefunction<S> Wavefunction<S>::adiabatize(const std::vector<EigenMatrix<>>& UT
 }
 
 template <int S>
-EigenMatrix<> Wavefunction<S>::density() const {
+Matrix Wavefunction<S>::density() const {
     // return the density matrix
     return (data.transpose() * data.conjugate()).array().abs() * dr;
 }
 
 template <>
-double Wavefunction<1>::energy(const EigenMatrix<>& U) const {
+double Wavefunction<1>::energy(const Matrix& U) const {
     // calculate the kinetic energy
     double Ek = (data.adjoint() * FourierTransform::IFFT(k.array().pow(2) * FourierTransform::FFT(data).array()))(0).real() * dr;
 
@@ -43,7 +43,7 @@ double Wavefunction<1>::energy(const EigenMatrix<>& U) const {
 }
 
 template <>
-double Wavefunction<2>::energy(const EigenMatrix<>& U) const {
+double Wavefunction<2>::energy(const Matrix& U) const {
     // calculate the kinetic energies
     double Ek00 = (data.col(0).adjoint() * FourierTransform::IFFT(k.array().pow(2) * FourierTransform::FFT(data.col(0)).array()))(0).real() * dr;
     double Ek11 = (data.col(1).adjoint() * FourierTransform::IFFT(k.array().pow(2) * FourierTransform::FFT(data.col(1)).array()))(0).real() * dr;
@@ -59,9 +59,9 @@ double Wavefunction<2>::energy(const EigenMatrix<>& U) const {
 }
 
 template <int S>
-EigenVector<> Wavefunction<S>::norm() const {
+Vector Wavefunction<S>::norm() const {
     // initialize the vector
-    EigenVector<> norm(S);
+    Vector norm(S);
 
     // calculate the norm of the wavefunction and store it in the vector
     for (int i = 0; i < S; i++) norm(i) = std::sqrt(data.col(i).array().abs2().sum() * dr);
@@ -73,7 +73,7 @@ EigenVector<> Wavefunction<S>::norm() const {
 template <int S>
 Wavefunction<S> Wavefunction<S>::normalized() const {
     // copy the wavefunction and calculate the norms
-    Wavefunction wfn(*this); EigenVector<> norms(S);
+    Wavefunction wfn(*this); Vector norms(S);
 
     // calculate the norms of the wavefunction
     for (int i = 0; i < S; i++) norms(i) = std::sqrt(data.col(i).array().abs2().sum() * dr);
@@ -123,7 +123,7 @@ Wavefunction<2> Wavefunction<2>::propagate(const MatrixOfMatrices<2>& R, const M
 }
 
 template <>
-std::tuple<MatrixOfMatrices<1>, MatrixOfMatrices<1>> Wavefunction<1>::propagator(const EigenMatrix<>& U, const std::complex<double>& unit, double step) const {
+std::tuple<MatrixOfMatrices<1>, MatrixOfMatrices<1>> Wavefunction<1>::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
     // define the propagator array
     MatrixOfMatrices<1> R, K;
 
@@ -135,17 +135,17 @@ std::tuple<MatrixOfMatrices<1>, MatrixOfMatrices<1>> Wavefunction<1>::propagator
 }
 
 template <>
-std::tuple<MatrixOfMatrices<2>, MatrixOfMatrices<2>> Wavefunction<2>::propagator(const EigenMatrix<>& U, const std::complex<double>& unit, double step) const {
+std::tuple<MatrixOfMatrices<2>, MatrixOfMatrices<2>> Wavefunction<2>::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
     // define the propagator array
     MatrixOfMatrices<2> R, K;
 
     // calculate the propagator
     K.at(0).at(0) = (-0.5 * unit * k.array().pow(2) * step / mass).exp();
     K.at(1).at(1) = (-0.5 * unit * k.array().pow(2) * step / mass).exp();
-    EigenVector<std::complex<double>> D = 4 * U.col(2).array().abs().pow(2) + (U.col(0) - U.col(3)).array().pow(2);
-    EigenVector<std::complex<double>> a = (-0.25 * unit * (U.col(0) + U.col(3)) * step).array().exp();
-    EigenVector<std::complex<double>> b = (0.25 * D.array().sqrt() * step).cos();
-    EigenVector<std::complex<double>> c = unit * (0.25 * D.array().sqrt() * step).sin() / D.array().sqrt();
+    ComplexVector D = 4 * U.col(2).array().abs().pow(2) + (U.col(0) - U.col(3)).array().pow(2);
+    ComplexVector a = (-0.25 * unit * (U.col(0) + U.col(3)) * step).array().exp();
+    ComplexVector b = (0.25 * D.array().sqrt() * step).cos();
+    ComplexVector c = unit * (0.25 * D.array().sqrt() * step).sin() / D.array().sqrt();
     R.at(0).at(0) = a.array() * (b.array() + c.array() * (U.col(3) - U.col(0)).array());
     R.at(0).at(1) = -2 * a.array() * c.array() * U.col(1).array();
     R.at(1).at(0) = -2 * a.array() * c.array() * U.col(1).array();

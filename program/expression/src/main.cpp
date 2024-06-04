@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
 
     // define the potential matrix
-    EigenMatrix<> U(program.get<int>("-p"), program.get<std::vector<std::string>>("-e").size() + 1);
+    Matrix U(program.get<int>("-p"), program.get<std::vector<std::string>>("-e").size() + 1);
 
     // calculate the grid spacing
     double dr = (program.get<std::vector<double>>("-g").at(1) - program.get<std::vector<double>>("-g").at(0)) / (program.get<int>("-p") - 1);

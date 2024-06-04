@@ -31,10 +31,10 @@ int main(int argc, char** argv) {
     // calculate the integrals
     libint2::initialize();
     MEASURE("INTEGRALS IN AO BASIS CALCULATION: ",
-        EigenMatrix<> V = Integral::Nuclear(atoms, shells);
-        EigenMatrix<> T = Integral::Kinetic(       shells);
-        EigenMatrix<> S = Integral::Overlap(       shells);
-        EigenTensor<> J = Integral::Coulomb(       shells);
+        Matrix    V = Integral::Nuclear(atoms, shells);
+        Matrix    T = Integral::Kinetic(       shells);
+        Matrix    S = Integral::Overlap(       shells);
+        Tensor<4> J = Integral::Coulomb(       shells);
     )
     libint2::finalize();
     

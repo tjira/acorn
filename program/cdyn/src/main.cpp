@@ -39,14 +39,14 @@ int main(int argc, char** argv) {
 
     // function to obtain the potential matrices
     auto eval = [&](std::vector<Expression>& Ue, double r) {
-        EigenMatrix<> U(nstate, nstate); for (int i = 0; i < nstate; i++) {for (int j = 0; j < nstate; j++) U(i, j) = Ue.at(i * nstate + j).eval(r);} return U;
+        Matrix U(nstate, nstate); for (int i = 0; i < nstate; i++) {for (int j = 0; j < nstate; j++) U(i, j) = Ue.at(i * nstate + j).eval(r);} return U;
     };
 
     // define the container for all the trajectories and state
-    EigenMatrix<> rt, vt, at; EigenMatrix<int> st(iters + 1, trajs);
+    Matrix rt, vt, at; IntegerMatrix st(iters + 1, trajs);
 
     // initialize the container for all the trajectories
-    if (savetraj) rt = EigenMatrix<>(iters + 1, 2 * trajs);
+    if (savetraj) rt = Matrix(iters + 1, 2 * trajs);
 
     // print the header
     std::printf("%6s %6s %6s %14s %14s %14s %14s %s\n", "TRAJ", "ITER", "STATE", "EPOT", "EKIN", "ETOT", "FORCE", "");
@@ -55,10 +55,10 @@ int main(int argc, char** argv) {
     for (int i = 0; i < trajs; i++) {
 
         // initialize random number generators and the potential matrix with its derivative
-        std::mt19937 mt(seed + i); std::uniform_real_distribution<double> dist(0, 1); EigenMatrix<> U, dU;
+        std::mt19937 mt(seed + i); std::uniform_real_distribution<double> dist(0, 1); Matrix U, dU;
     
         // initialize the containers for the position, velocity, acceleration, state energy difference and state
-        EigenMatrix<> r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1), de(iters + 1, 1), dz(iters + 1, 1); EigenMatrix<int> s(iters + 1, 1);
+        Matrix r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1), de(iters + 1, 1), dz(iters + 1, 1); IntegerMatrix s(iters + 1, 1);
 
         // distributions for position and momentum
         std::normal_distribution<double> positiondist(position, 0.5);
@@ -68,10 +68,10 @@ int main(int argc, char** argv) {
         r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, s(0) = 0;
 
         // calculate the potential and perform adiabatic transform
-        if (U = eval(Ue, r(0)); adiabatic) {Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solver(U); U = solver.eigenvalues().asDiagonal();};
+        if (U = eval(Ue, r(0)); adiabatic) {Eigen::SelfAdjointEigenSolver<Matrix> solver(U); U = solver.eigenvalues().asDiagonal();};
 
         // define the containers for the potential and save the first value
-        std::vector<EigenMatrix<>> Uc(iters + 1); Uc.at(0) = U;
+        std::vector<Matrix> Uc(iters + 1); Uc.at(0) = U;
 
         // calcualte the state energy difference
         if (nstate > 1) de(0) = U(1, 1) - U(0, 0);
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
             r(j + 1) = r(j) + step * (v(j + 1) + 0.5 * a(j + 1) * step), s(j + 1) = s(j);
 
             // calculate the potential and perform adiabatic transform
-            if (U = eval(Ue, r(j + 1)); adiabatic) {Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solver(U); U = solver.eigenvalues().asDiagonal();};
+            if (U = eval(Ue, r(j + 1)); adiabatic) {Eigen::SelfAdjointEigenSolver<Matrix> solver(U); U = solver.eigenvalues().asDiagonal();};
 
             // calculate the gradient of the potential and save U and dU to the container
             Uc.at(j + 1) = U, dU = (Uc.at(j + 1) - Uc.at(j)) / (r(j + 1) - r(j));
@@ -139,11 +139,8 @@ int main(int argc, char** argv) {
         st.col(i) = s;
     }
 
-    // print the new line
-    std::cout << std::endl;
-
     // create the container for the state populations
-    EigenMatrix<> P(iters + 1, nstate + 1); P.setZero();
+    Matrix P(iters + 1, nstate + 1); P.setZero();
 
     // fill the state populations
     for (int i = 0; i < iters + 1; i++) {
@@ -152,9 +149,17 @@ int main(int argc, char** argv) {
         } P(i, 0) = i * step;
     }
 
+    // print the new line
+    std::cout << std::endl;
+
+    // print the populations
+    for (int i = 0; i < P.cols() - 1; i++) {
+        std::printf("%s STATE %d POP: %.14f\n", adiabatic ? "ADIABATIC" : "DIABATIC", i, P(P.rows() - 1, i + 1));
+    } std::cout << std::endl;
+
     // write the trajectories to the disk
     MEASURE("TRAJECTORY AND POPULATION WRITING: ", 
-        if (savetraj) {Eigen::Write("TRAJ_LZ.mat", rt);} Eigen::Write("P_LZ.mat"   , P );
+        if (savetraj) {Eigen::Write("TRAJ_LZ.mat", rt);} Eigen::Write("P_LZ.mat", P);
     )
 
     // print the total time

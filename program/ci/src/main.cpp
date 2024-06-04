@@ -31,14 +31,14 @@ int main(int argc, char** argv) {
 
     // load the integrals in AO basis and system from disk
     MEASURE("SYSTEM AND INTEGRALS IN MS BASIS READING: ",
-        EigenMatrix<> Vms = Eigen::LoadMatrix("V_MS.mat");
-        EigenMatrix<> Tms = Eigen::LoadMatrix("T_MS.mat");
-        EigenTensor<> Jms = Eigen::LoadTensor("J_MS.mat");
+        Matrix    Vms = Eigen::LoadMatrix("V_MS.mat");
+        Matrix    Tms = Eigen::LoadMatrix("T_MS.mat");
+        Tensor<4> Jms = Eigen::LoadTensor("J_MS.mat");
         System system(program.get("-f"));
     )
 
     // define the number of basis functions and occupied orbitals, Hamiltonian in MS basis and determinant container
-    int nbf = Vms.rows() / 2, nocc = system.nocc(); EigenMatrix<> Hms = Tms + Vms; std::vector<std::vector<int>> dets;
+    int nbf = Vms.rows() / 2, nocc = system.nocc(); Matrix Hms = Tms + Vms; std::vector<std::vector<int>> dets;
 
     MEASURE("GENERATING ALL POSSIBLE DETERMINANTS:     ",
         for (const std::vector<int>& alpha : Combinations(nbf, system.nocc())) {
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     std::cout << "\nFILLING THE CI HAMILTONIAN:  " << std::flush; tp = Timer::Now();
 
     // define the CI Hamiltonian
-    EigenMatrix<> Hci = EigenMatrix<>::Zero(dets.size(), dets.size());
+    Matrix Hci = Matrix::Zero(dets.size(), dets.size());
 
     // fill the CI Hamiltonian
     for (int i = 0; i < Hci.rows(); i++) {
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
     std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
 
     // find the eigenvalues and eigenvectors of the CI Hamiltonian
-    MEASURE("SOLVING THE CI EIGENPROBLEM: ", Eigen::SelfAdjointEigenSolver<EigenMatrix<>> solver(Hci)) EigenMatrix<> Cci = solver.eigenvectors(), Eci = solver.eigenvalues();
+    MEASURE("SOLVING THE CI EIGENPROBLEM: ", Eigen::SelfAdjointEigenSolver<Matrix> solver(Hci)) Matrix Cci = solver.eigenvectors(), Eci = solver.eigenvalues();
 
     // write the results
     MEASURE("WRITING THE RESULT MATRICES: ",
