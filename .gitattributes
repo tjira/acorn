@@ -1,2 +1,4 @@
 *.cpp linguist-language=C++
 *.h linguist-language=C++
+
+lib/** linguist-vendored
