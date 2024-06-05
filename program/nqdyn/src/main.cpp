@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 
     // load the potential in the diabatic basis
     MEASURE("INITIAL WAVEFUNCTION AND POTENTIAL IN DIABATIC BASIS READING: ",
-        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(Ud.cols() - 1), Ud.leftCols(1), mass, momentum);
+        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - 1)), Ud.leftCols(1), mass, momentum);
     )
 
     // extract the number of states
@@ -41,8 +41,8 @@ int main(int argc, char** argv) {
 
     // initialize the adiabatic variables
     if (adiabatic) {
+        Ua = Matrix(Ud.rows(), states + 1), Pa = Matrix(iters + 1, statessq + 1);
         UT = std::vector<Matrix>(Ud.rows(), Matrix::Identity(states, states));
-        Ua = Matrix(Ud.rows(), 3), Pa = Matrix(iters + 1, statessq + 1);
         if (savewfn) {wfnat = Matrix(wfndt.rows(), wfndt.cols());}
     }
 
@@ -56,11 +56,11 @@ int main(int argc, char** argv) {
         Eigen::SelfAdjointEigenSolver<Matrix> solver(UD); Matrix C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(states, 1);
 
         // fill the diabatic matrix
-        Ua(i, 0) = wfnd.getr()(i); Ua.row(i).rightCols(2) = eps.transpose();
+        Ua(i, 0) = wfnd.getr()(i); Ua.row(i).rightCols(states) = eps.transpose();
 
         // calculate the overlap of eigenvectors
         for (int j = 0; j < states; j++) {
-            overlap(j) = UT.at(std::max(i - 1, 0)).col(j).transpose() * C.col(j); overlap(j) /= std::abs(overlap(j));
+            overlap(j) = UT.at(std::max(i - 1, 0)).col(j).transpose() * C.col(j); overlap(j) = overlap(j) < 0 ? -1 : 1;
         }
 
         // maximize the overlap with the previuos transformation
@@ -77,13 +77,19 @@ int main(int argc, char** argv) {
 
     // fill the initial wavefunction values of the adiabatic evolution matrices
     if (adiabatic && savewfn) {
-        wfnat.col(1) = wfna.get().col(0).real(), wfnat.col(2) = wfna.get().col(0).imag();
-        wfnat.col(3) = wfna.get().col(1).real(), wfnat.col(4) = wfna.get().col(1).imag();
+        for (int i = 0; i < states; i++) {
+            wfnat.col(2 * i + 1) = wfna.get().col(i).real(), wfnat.col(2 * i + 2) = wfna.get().col(i).imag();
+        }
     }
 
+    std::cout << states << std::endl;
+
     // fill the initial wavefunction values of the diabatic evolution matrices
-    if (savewfn) wfndt.col(1) = wfnd.get().col(0).real(), wfndt.col(2) = wfnd.get().col(0).imag();
-    if (savewfn) wfndt.col(3) = wfnd.get().col(1).real(), wfndt.col(4) = wfnd.get().col(1).imag();
+    if (savewfn) {
+        for (int i = 0; i < states; i++) {
+            wfndt.col(2 * i + 1) = wfnd.get().col(i).real(), wfndt.col(2 * i + 2) = wfnd.get().col(i).imag();
+        }
+    }
 
     // define the real time kinetic and potential operators in diabatic basis and the energy container
     auto[R, K] = wfnd.propagator(Ud, std::complex<double>(0, 1), step); double E = wfnd.energy(Ud);
@@ -110,13 +116,17 @@ int main(int argc, char** argv) {
 
         // save the adiabatic wavefunction to the wavefunction containers
         if (adiabatic && savewfn) {
-            wfnat.col(5 + 4 * i) = wfna.get().col(0).real(), wfnat.col(6 + 4 * i) = wfna.get().col(0).imag();
-            wfnat.col(7 + 4 * i) = wfna.get().col(1).real(), wfnat.col(8 + 4 * i) = wfna.get().col(1).imag();
+            for (int j = 0; j < states; j++) {
+                wfnat.col(2 * states * (i + 1) + 2 * j + 1) = wfna.get().col(j).real(), wfnat.col(2 * states * (i + 1) + 2 * j + 2) = wfna.get().col(j).imag();
+            }
         }
 
         // save the diabatic wavefunction to the wavefunction containers
-        if (savewfn) wfndt.col(5 + 4 * i) = wfnd.get().col(0).real(), wfndt.col(6 + 4 * i) = wfnd.get().col(0).imag();
-        if (savewfn) wfndt.col(7 + 4 * i) = wfnd.get().col(1).real(), wfndt.col(8 + 4 * i) = wfnd.get().col(1).imag();
+        if (savewfn) {
+            for (int j = 0; j < states; j++) {
+                wfndt.col(2 * states * (i + 1) + 2 * j + 1) = wfnd.get().col(j).real(), wfndt.col(2 * states * (i + 1) + 2 * j + 2) = wfnd.get().col(j).imag();
+            }
+        }
 
         // print the iteration info
         std::printf("%6d %20.14f %.2e %s\n", i + 1, E, std::abs(E - Ep), Timer::Format(Timer::Elapsed(tp)).c_str());

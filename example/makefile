@@ -56,11 +56,11 @@ mp3: transform
 
 # target to generate the 1D diabatic wavepacket guess
 nqdyn_guess:
-	../bin/acorn_expression -g -24 24 -o PSI_DIA_GUESS.mat -p 4096 -e "exp(-(x+10)^2)" "0" "0" "0"
+	../bin/acorn_expression -g -32 32 -o PSI_DIA_GUESS.mat -p 4096 -e "exp(-(x+10)^2)" "0" "0" "0"
 
 # target to generate the 1D diabatic potential matrix
 nqdyn_potential:
-	../bin/acorn_expression -g -24 24 -o U_DIA.mat -p 4096 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
+	../bin/acorn_expression -g -32 32 -o U_DIA.mat -p 4096 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
 
 # target to perform a real-time propagation of 1D diabatic wavepacket
 nqdyn_real: nqdyn_guess nqdyn_potential
@@ -75,7 +75,12 @@ transform: hf
 random_cdyn_tully_1:
 	../bin/acorn_cdyn -c -10 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" --savetraj
 
+random_nqdyn_ts_1:
+	../bin/acorn_expression -g -32 32 -o U_DIA.mat -p 4096 -e "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
+	../bin/acorn_expression -g -32 32 -o PSI_DIA_GUESS.mat -p 4096 -e "0" "0" "exp(-(x+10)^2)" "0" "0" "0"
+	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
+
 random_nqdyn_tully_1:
-	../bin/acorn_expression -g -24 24 -o U_DIA.mat -p 4096 -e "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
-	../bin/acorn_expression -g -24 24 -o PSI_DIA_GUESS.mat -p 4096 -e "exp(-(x+10)^2)" "0" "0" "0"
-	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --savewfn
+	../bin/acorn_expression -g -32 32 -o U_DIA.mat -p 4096 -e "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
+	../bin/acorn_expression -g -32 32 -o PSI_DIA_GUESS.mat -p 4096 -e "exp(-(x+10)^2)" "0" "0" "0"
+	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
