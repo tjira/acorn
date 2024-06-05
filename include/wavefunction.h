@@ -15,8 +15,8 @@ public:
 
     // propagators and other quantum operators
     std::tuple<MatrixOfMatrices<S>, MatrixOfMatrices<S>> propagator(const Matrix& U, const std::complex<double>& unit, double step) const;
-    double energy(const Matrix& U) const; std::complex<double> overlap(const Wavefunction& wfn) const; Vector norm() const;
     Wavefunction<S> propagate(const MatrixOfMatrices<S>& R, const MatrixOfMatrices<S>& K) const; Wavefunction normalized() const;
+    double energy(const Matrix& U) const; std::complex<double> overlap(const Wavefunction& wfn) const; Vector norm() const;
     Matrix density() const; Wavefunction<S> adiabatize(const std::vector<Matrix>& UT) const;
 
     // getters and input/output functions

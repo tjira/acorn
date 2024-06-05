@@ -96,6 +96,9 @@ int main(int argc, char** argv) {
         MEASURE("SAVING THE SPECTRUM OF STATE " + std::to_string(i) + ": ", Eigen::Write("SPECTRUM_ADIA_" + std::to_string(i) + ".mat", spectrum))
     }
 
+    // print the state energies
+    std::cout << std::endl; for (int i = 0; i < nstate; i++) std::printf("STATE %d ENERGY: %.14f\n", i, eps(i));
+
     // print the total time
     std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;
 }

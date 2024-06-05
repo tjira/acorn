@@ -122,34 +122,30 @@ Wavefunction<2> Wavefunction<2>::propagate(const MatrixOfMatrices<2>& R, const M
     return wfn;
 }
 
-template <>
-std::tuple<MatrixOfMatrices<1>, MatrixOfMatrices<1>> Wavefunction<1>::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
+template <int S>
+std::tuple<MatrixOfMatrices<S>, MatrixOfMatrices<S>> Wavefunction<S>::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
     // define the propagator array
-    MatrixOfMatrices<1> R, K;
+    MatrixOfMatrices<S> R, K;
 
-    // calculate the propagator
-    R.at(0).at(0) = (-0.5 * unit * U.array() * step).exp(), K.at(0).at(0) = (-0.5 * unit * k.array().pow(2) * step / mass).exp();
+    // fill the momentum space propagator
+    for (int i = 0; i < S; i++) K.at(i).at(i) = (-0.5 * unit * k.array().pow(2) * step / mass).exp();
 
-    // return the propagator
-    return {R, K};
-}
+    // initialize the real space propagator
+    for (int i = 0; i < S; i++) for (int j = 0; j < S; j++) R.at(i).at(j) = Vector::Zero(U.rows());
 
-template <>
-std::tuple<MatrixOfMatrices<2>, MatrixOfMatrices<2>> Wavefunction<2>::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
-    // define the propagator array
-    MatrixOfMatrices<2> R, K;
+    // calculate the real space propagator
+    for (int i = 0; i < U.rows(); i++) {
 
-    // calculate the propagator
-    K.at(0).at(0) = (-0.5 * unit * k.array().pow(2) * step / mass).exp();
-    K.at(1).at(1) = (-0.5 * unit * k.array().pow(2) * step / mass).exp();
-    ComplexVector D = 4 * U.col(2).array().abs().pow(2) + (U.col(0) - U.col(3)).array().pow(2);
-    ComplexVector a = (-0.25 * unit * (U.col(0) + U.col(3)) * step).array().exp();
-    ComplexVector b = (0.25 * D.array().sqrt() * step).cos();
-    ComplexVector c = unit * (0.25 * D.array().sqrt() * step).sin() / D.array().sqrt();
-    R.at(0).at(0) = a.array() * (b.array() + c.array() * (U.col(3) - U.col(0)).array());
-    R.at(0).at(1) = -2 * a.array() * c.array() * U.col(1).array();
-    R.at(1).at(0) = -2 * a.array() * c.array() * U.col(1).array();
-    R.at(1).at(1) = a.array() * (b.array() + c.array() * (U.col(0) - U.col(3)).array());
+        // initialize the eigenvalue solver and diagonalize the potential
+        Eigen::SelfAdjointEigenSolver<Matrix> solver(U.row(i).reshaped(S, S));
+        ComplexMatrix C = solver.eigenvectors(), D = solver.eigenvalues();
+
+        // create the real space propagator matrix for the current point
+        ComplexMatrix RI = C * (-0.5 * unit * D.array() * step).exp().matrix().asDiagonal() * C.adjoint();
+
+        // store the propagator matrix
+        for (int j = 0; j < S; j++) for (int k = 0; k < S; k++) R.at(j).at(k)(i) = RI(j, k);
+    }
 
     // return the propagator
     return {R, K};

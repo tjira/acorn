@@ -1,6 +1,2 @@
-coverage:
-  status:
-    patch: off
-
 ignore:
   - "lib"
