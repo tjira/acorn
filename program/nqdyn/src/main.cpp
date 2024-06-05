@@ -27,36 +27,39 @@ int main(int argc, char** argv) {
 
     // load the potential in the diabatic basis
     MEASURE("INITIAL WAVEFUNCTION AND POTENTIAL IN DIABATIC BASIS READING: ",
-        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction<2> wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(4), Ud.leftCols(1), mass, momentum);
+        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(Ud.cols() - 1), Ud.leftCols(1), mass, momentum);
     )
+
+    // extract the number of states
+    int states = wfnd.states(), statessq = states * states;
 
     // normalize the wfn, remove first column from matrix (the independent variable column)
     wfnd = wfnd.normalized(); Ud.block(0, 0, Ud.rows(), Ud.cols() - 1) = Ud.rightCols(Ud.cols() - 1); Ud.conservativeResize(Ud.rows(), Ud.cols() - 1);
 
     // define wavefunction value containers, density matrices and adiabatic transformation matrices
-    Matrix wfndt, wfnat, Pd(iters + 1, 5), Pa, Ua(Ud.rows(), 3), rho(2, 2); std::vector<Matrix> UT; if (savewfn) wfndt = Matrix(Ud.rows(), 5 + 4 * iters);
+    Matrix wfndt, wfnat, Pd(iters + 1, statessq + 1), Pa, Ua(Ud.rows(), states + 1), rho(states, states); std::vector<Matrix> UT; if (savewfn) wfndt = Matrix(Ud.rows(), 2 * states * (iters + 1) + 1);
 
     // initialize the adiabatic variables
     if (adiabatic) {
-        UT = std::vector<Matrix>(Ud.rows(), Matrix::Identity(2, 2));
-        Ua = Matrix(Ud.rows(), 3), Pa = Matrix(iters + 1, 5);
-        if (savewfn) {wfnat = Matrix(Ud.rows(), 5 + 4 * iters);}
+        UT = std::vector<Matrix>(Ud.rows(), Matrix::Identity(states, states));
+        Ua = Matrix(Ud.rows(), 3), Pa = Matrix(iters + 1, statessq + 1);
+        if (savewfn) {wfnat = Matrix(wfndt.rows(), wfndt.cols());}
     }
 
     // diagonalize the potential at each point
     for (int i = 0; i < Ud.rows() && adiabatic; i++) {
 
-        // define the diabatic potential at the current point and fill it
-        Matrix UD(2, 2); UD << Ud(i, 0), Ud(i, 1), Ud(i, 2), Ud(i, 3);
+        // initialize the diabatic potential at the current point
+        Matrix UD = Ud.row(i).reshaped(states, states);
 
         // solve the eigenvalue problem and define overlap
-        Eigen::SelfAdjointEigenSolver<Matrix> solver(UD); Matrix C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(2, 1);
+        Eigen::SelfAdjointEigenSolver<Matrix> solver(UD); Matrix C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(states, 1);
 
         // fill the diabatic matrix
-        Ua.row(i) << wfnd.getr()(i), eps(0), eps(1);
+        Ua(i, 0) = wfnd.getr()(i); Ua.row(i).rightCols(2) = eps.transpose();
 
         // calculate the overlap of eigenvectors
-        for (size_t j = 0; j < 2; j++) {
+        for (int j = 0; j < states; j++) {
             overlap(j) = UT.at(std::max(i - 1, 0)).col(j).transpose() * C.col(j); overlap(j) /= std::abs(overlap(j));
         }
 
@@ -65,12 +68,12 @@ int main(int argc, char** argv) {
     }
 
     // adiabatize the guess wavefunction and fill the independent variable columns
-    Wavefunction<2> wfna; if (adiabatic) {wfna = wfnd.adiabatize(UT); if (savewfn) wfnat.col(0) = wfna.getr();} if (savewfn) wfndt.col(0) = wfnd.getr();
+    Wavefunction wfna; if (adiabatic) {wfna = wfnd.adiabatize(UT); if (savewfn) wfnat.col(0) = wfna.getr();} if (savewfn) wfndt.col(0) = wfnd.getr();
 
     // calculate the diabatic and adiabatic density matrices and save them
     if (adiabatic) {
-        rho = wfna.density(); Pa.row(0) << 0, rho(0, 0), rho(0, 1), rho(1, 0), rho(1, 1);
-    } rho = wfnd.density(); Pd.row(0) << 0, rho(0, 0), rho(0, 1), rho(1, 0), rho(1, 1);
+        rho = wfna.density(); Pa.row(0)(0) = 0, Pa.row(0).rightCols(statessq) = rho.reshaped(1, statessq);
+    } rho = wfnd.density(); Pd.row(0)(0) = 0, Pd.row(0).rightCols(statessq) = rho.reshaped(1, statessq);
 
     // fill the initial wavefunction values of the adiabatic evolution matrices
     if (adiabatic && savewfn) {
@@ -99,11 +102,11 @@ int main(int argc, char** argv) {
 
         // save the adiabatic density matrix
         if (adiabatic) {
-            rho = wfna.density(); Pa.row(i + 1) << (i + 1) * step, rho(0, 0), rho(0, 1), rho(1, 0), rho(1, 1);
+            rho = wfna.density(); Pa(i + 1, 0) = (i + 1) * step, Pa.row(i + 1).rightCols(statessq) = rho.reshaped(1, statessq);
         }
 
         // save the diabatic density matrix
-        rho = wfnd.density(); Pd.row(i + 1) << (i + 1) * step, rho(0, 0), rho(0, 1), rho(1, 0), rho(1, 1);
+        rho = wfnd.density(); Pd(i + 1, 0) = (i + 1) * step, Pd.row(i + 1).rightCols(statessq) = rho.reshaped(1, statessq);
 
         // save the adiabatic wavefunction to the wavefunction containers
         if (adiabatic && savewfn) {
@@ -123,13 +126,13 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
 
     // print the populations
-    for (int i = 0; i < (int)std::sqrt(Pd.cols() - 1); i++) {
-        std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(4).reshaped(2, 2)(i, i));
+    for (int i = 0; i < states && adiabatic; i++) {
+        std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(statessq).reshaped(states, states)(i, i));
     } std::cout << std::endl;
 
     // print the populations
-    for (int i = 0; i < (int)std::sqrt(Pd.cols() - 1); i++) {
-        std::printf("DIABATIC STATE %d POP: %.14f\n", i, Pd.bottomRows(1).rightCols(4).reshaped(2, 2)(i, i));
+    for (int i = 0; i < states; i++) {
+        std::printf("DIABATIC STATE %d POP: %.14f\n", i, Pd.bottomRows(1).rightCols(statessq).reshaped(states, states)(i, i));
     } std::cout << std::endl;
 
     // save the resulting data data

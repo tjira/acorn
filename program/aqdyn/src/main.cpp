@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 
     // load the initial wavefunction and potential
     MEASURE("INITIAL WAVEFUNCTION AND POTENTIAL READING: ",
-        Matrix U = Eigen::LoadMatrix("U_ADIA.mat"); Wavefunction<1> wfn(Eigen::LoadMatrix("PSI_ADIA_GUESS.mat").rightCols(2), U.leftCols(U.cols() - 1), mass, program.get<double>("-p"));
+        Matrix U = Eigen::LoadMatrix("U_ADIA.mat"); Wavefunction wfn(Eigen::LoadMatrix("PSI_ADIA_GUESS.mat").rightCols(2), U.leftCols(U.cols() - 1), mass, program.get<double>("-p"));
     )
 
     // normalize the wfn, extract the potential values from the last column
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     auto[R, K] = wfn.propagator(U, std::complex<double>(imaginary, !imaginary), step);
 
     // define the energy, wfn and acf vector
-    Vector eps(nstate); Matrix acf(iters + 1, 3); std::vector<Wavefunction<1>> states(nstate, wfn);
+    Vector eps(nstate); Matrix acf(iters + 1, 3); std::vector<Wavefunction> states(nstate, wfn);
 
     // perform the dynamics for every state
     for (int i = 0; i < nstate; i++) {
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
             tp = Timer::Now(); double Ep = E; wfn = wfn.propagate(R, K);
 
             // subrtract the lower eigenstates
-            for (int k = 0; k < i && imaginary; k++) wfn = wfn - states.at(k) * wfn.overlap(states.at(k));
+            for (int k = 0; k < i && imaginary; k++) wfn = wfn - states.at(k) * states.at(k).overlap(wfn);
 
             // normalize the wavefunction and calculate the energy
             if (imaginary) {wfn = wfn.normalized();} E = wfn.energy(U);

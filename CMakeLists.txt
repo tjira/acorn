@@ -20,6 +20,12 @@ include_directories(include lib)
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
+# add the base library
+add_library(acorn_base STATIC src/expression.cpp src/fourier.cpp src/linalg.cpp src/system.cpp src/timer.cpp src/wavefunction.cpp)
+
+# link the base library
+target_link_libraries(acorn_base Eigen3::Eigen)
+
 # add subprograms
 add_subdirectory(program/expression)
 add_subdirectory(program/transform)

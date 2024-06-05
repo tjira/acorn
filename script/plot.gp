@@ -1,15 +1,18 @@
 #!/bin/env -S gnuplot -c
 
 # set the text variables
-if (!exists("output")) {output="output"}
-if (!exists("format")) {format="webp"}
-if (!exists("alpha")) {alpha="00"}
+if (!exists("background")) {background=""} # file to plot in the background
+if (!exists("output")) {output="output"} # output file name
+if (!exists("format")) {format="webp"} # output file format
+if (!exists("alpha")) {alpha="00"} # transparency of the lines in hexadecimals
+if (!exists("scale")) {scale="1"} # scaling factor for the data that should have the same number of elements as there are columns
+if (!exists("shift")) {shift="0"} # shifting factor for the data that should have the same number of elements as there are columns
 
 # set the integer variables
-if (!exists("height")) {height=480}
-if (!exists("columns")) {columns=1}
-if (!exists("frames")) {frames=1}
-if (!exists("width")) {width=640}
+if (!exists("height")) {height=480} # height of the output
+if (!exists("columns")) {columns=1} # columns to plot each frame
+if (!exists("frames")) {frames=1} # number of frames to plot
+if (!exists("width")) {width=640} # width of the output
 
 # set the terminal and output name
 term = format; set output output . "." . format;
@@ -46,4 +49,6 @@ if (exists("ymin")) set yrange [ymin:]
 if (exists("ymax")) set yrange [:ymax]
 
 # plot the files
-do for [i=2:columns*frames+1:columns] {plot for [j=1:ARGC] for [k=0:columns-1] ARGV[j] u 1:i+k w li s u not}
+do for [i=2:columns*frames+1:columns] {
+    plot for [j=1:ARGC] for [k=0:columns-1] ARGV[j] u 1:(word(scale, k%words(scale)+1)*column(i+k)+word(shift, k%words(shift)+1)) w li s u not, for [i=2:*] background u 1:i w li s u not
+}
