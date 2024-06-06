@@ -4,7 +4,7 @@
 
 # target to generate the 1D adiabatic wavepacket guess
 aqdyn_guess:
-	../bin/acorn_expression -g -16 16 -o PSI_ADIA_GUESS.mat -p 2048 -e "exp(-(x-1)^2)" "0"
+	../bin/acorn_expression -g -16 16 -o PSI_ADIA_GUESS.mat -p 1024 -e "exp(-(x-1)^2)" "0"
 
 # target to perform an imaginary-time propagation of 1D adiabatic wavepacket
 aqdyn_imaginary: aqdyn_guess aqdyn_potential
@@ -12,7 +12,7 @@ aqdyn_imaginary: aqdyn_guess aqdyn_potential
 
 # target to generate the 1D adiabatic potential matrix
 aqdyn_potential:
-	../bin/acorn_expression -g -16 16 -o U_ADIA.mat -p 2048 -e "0.5*x^2"
+	../bin/acorn_expression -g -16 16 -o U_ADIA.mat -p 1024 -e "0.5*x^2"
 
 # target to perform a real-time propagation of 1D adiabatic wavepacket
 aqdyn_real: aqdyn_guess aqdyn_potential
@@ -56,11 +56,11 @@ mp3: transform
 
 # target to generate the 1D diabatic wavepacket guess
 nqdyn_guess:
-	../bin/acorn_expression -g -32 32 -o PSI_DIA_GUESS.mat -p 4096 -e "exp(-(x+10)^2)" "0" "0" "0"
+	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
 
 # target to generate the 1D diabatic potential matrix
 nqdyn_potential:
-	../bin/acorn_expression -g -32 32 -o U_DIA.mat -p 4096 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
+	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
 
 # target to perform a real-time propagation of 1D diabatic wavepacket
 nqdyn_real: nqdyn_guess nqdyn_potential
@@ -74,13 +74,22 @@ transform: hf
 
 random_cdyn_tully_1:
 	../bin/acorn_cdyn -c -10 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" --savetraj
+	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ';" -c plot.gp P_LZ.mat
 
 random_nqdyn_ts_1:
-	../bin/acorn_expression -g -32 32 -o U_DIA.mat -p 4096 -e "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
-	../bin/acorn_expression -g -32 32 -o PSI_DIA_GUESS.mat -p 4096 -e "0" "0" "exp(-(x+10)^2)" "0" "0" "0"
+	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
+	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0" "0" "0"
 	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
+	gnuplot -e "columns=9; only='1 5 9'; xmin=-20; xmax=20; ymin=-0.07; ymax=0.07; format='png'; output='U_DIA';" -c plot.gp U_DIA.mat
+	gnuplot -e "columns=9; only='1 5 9'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_DIA';" -c plot.gp P_DIA.mat
+	gnuplot -e "columns=3; xmin=-20; xmax=20; ymin=-0.07; ymax=0.07; format='png'; output='U_ADIA';" -c plot.gp U_ADIA.mat
+	gnuplot -e "columns=9; only='1 5 9'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_ADIA';" -c plot.gp P_ADIA.mat
 
 random_nqdyn_tully_1:
-	../bin/acorn_expression -g -32 32 -o U_DIA.mat -p 4096 -e "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
-	../bin/acorn_expression -g -32 32 -o PSI_DIA_GUESS.mat -p 4096 -e "exp(-(x+10)^2)" "0" "0" "0"
+	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
+	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
 	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
+	gnuplot -e "columns=4; only='1 4'; xmin=-20; xmax=20; ymin=-0.011; ymax=0.011; format='png'; output='U_DIA';" -c plot.gp U_DIA.mat
+	gnuplot -e "columns=4; only='1 4'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_DIA';" -c plot.gp P_DIA.mat
+	gnuplot -e "columns=2; xmin=-20; xmax=20; ymin=-0.011; ymax=0.011; format='png'; output='U_ADIA';" -c plot.gp U_ADIA.mat
+	gnuplot -e "columns=4; only='1 4'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_ADIA';" -c plot.gp P_ADIA.mat
