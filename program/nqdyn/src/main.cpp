@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < Ud.rows() && adiabatic; i++) {
 
         // initialize the diabatic potential at the current point
-        Matrix UD = Ud.row(i).reshaped(states, states);
+        Matrix UD = Ud.row(i).reshaped(states, states).transpose();
 
         // solve the eigenvalue problem and define overlap
         Eigen::SelfAdjointEigenSolver<Matrix> solver(UD); Matrix C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(states, 1);
@@ -72,8 +72,8 @@ int main(int argc, char** argv) {
 
     // calculate the diabatic and adiabatic density matrices and save them
     if (adiabatic) {
-        rho = wfna.density(); Pa.row(0)(0) = 0, Pa.row(0).rightCols(statessq) = rho.reshaped(1, statessq);
-    } rho = wfnd.density(); Pd.row(0)(0) = 0, Pd.row(0).rightCols(statessq) = rho.reshaped(1, statessq);
+        rho = wfna.density(); Pa.row(0)(0) = 0, Pa.row(0).rightCols(statessq) = rho.transpose().reshaped(1, statessq);
+    } rho = wfnd.density(); Pd.row(0)(0) = 0, Pd.row(0).rightCols(statessq) = rho.transpose().reshaped(1, statessq);
 
     // fill the initial wavefunction values of the adiabatic evolution matrices
     if (adiabatic && savewfn) {
@@ -108,11 +108,11 @@ int main(int argc, char** argv) {
 
         // save the adiabatic density matrix
         if (adiabatic) {
-            rho = wfna.density(); Pa(i + 1, 0) = (i + 1) * step, Pa.row(i + 1).rightCols(statessq) = rho.reshaped(1, statessq);
+            rho = wfna.density(); Pa(i + 1, 0) = (i + 1) * step, Pa.row(i + 1).rightCols(statessq) = rho.transpose().reshaped(1, statessq);
         }
 
         // save the diabatic density matrix
-        rho = wfnd.density(); Pd(i + 1, 0) = (i + 1) * step, Pd.row(i + 1).rightCols(statessq) = rho.reshaped(1, statessq);
+        rho = wfnd.density(); Pd(i + 1, 0) = (i + 1) * step, Pd.row(i + 1).rightCols(statessq) = rho.transpose().reshaped(1, statessq);
 
         // save the adiabatic wavefunction to the wavefunction containers
         if (adiabatic && savewfn) {
@@ -137,12 +137,12 @@ int main(int argc, char** argv) {
 
     // print the populations
     for (int i = 0; i < states && adiabatic; i++) {
-        std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(statessq).reshaped(states, states)(i, i));
+        std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(statessq).reshaped(states, states).transpose()(i, i));
     } std::cout << std::endl;
 
     // print the populations
     for (int i = 0; i < states; i++) {
-        std::printf("DIABATIC STATE %d POP: %.14f\n", i, Pd.bottomRows(1).rightCols(statessq).reshaped(states, states)(i, i));
+        std::printf("DIABATIC STATE %d POP: %.14f\n", i, Pd.bottomRows(1).rightCols(statessq).reshaped(states, states).transpose()(i, i));
     } std::cout << std::endl;
 
     // save the resulting data data

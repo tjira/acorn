@@ -2,16 +2,31 @@
 #include "timer.h"
 #include <argparse.hpp>
 
+std::vector<std::vector<int>> Combinations(int n, int k) {
+    // create the bitmask that will get permuted and the resulting vector
+    std::string bitmask(k, 1); bitmask.resize(n, 0); std::vector<std::vector<int>> combs;
+ 
+    // generate the combinations
+    do {std::vector<int> comb; comb.reserve(k);
+        for (int j = 0; j < n; j++) {
+            if (bitmask[j]) comb.push_back(j);
+        } combs.push_back(comb);
+    } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
+
+    // return the result
+    return combs;
+}
+
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Classical Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
 
     // add the command line arguments
-    program.add_argument("-d", "--derivative").help("-- The the derivatives of the potentials in diabatic representation.").nargs(argparse::nargs_pattern::at_least_one).default_value(std::vector<std::string>{"x"});
+    program.add_argument("-c", "--coordinate").help("-- Initial position of the system.").default_value(0.0).scan<'g', double>();
+    program.add_argument("-e", "--excstate").help("-- Initial state of the system.").default_value(0).scan<'i', int>();
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
     program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(200).scan<'i', int>();
     program.add_argument("-m", "--mass").help("-- Mass of the model system.").default_value(1.0).scan<'g', double>();
     program.add_argument("-p", "--momentum").help("-- Momentum of the model system.").default_value(0.0).scan<'g', double>();
-    program.add_argument("-c", "--coordinate").help("-- Initial position of the system.").default_value(0.0).scan<'g', double>();
     program.add_argument("-r", "--random").help("-- Random seed for the simulation.").default_value(1).scan<'i', int>();
     program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(1.0).scan<'g', double>();
     program.add_argument("-t", "--trajectories").help("-- Number of trajectories to run.").default_value(1).scan<'i', int>();
@@ -58,23 +73,25 @@ int main(int argc, char** argv) {
         std::mt19937 mt(seed + i); std::uniform_real_distribution<double> dist(0, 1); Matrix U, dU;
     
         // initialize the containers for the position, velocity, acceleration, state energy difference and state
-        Matrix r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1), de(iters + 1, 1), dz(iters + 1, 1); IntegerMatrix s(iters + 1, 1);
+        Matrix r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1), de(iters + 1, Combinations(nstate, 2).size()), dz(iters + 1, Combinations(nstate, 2).size()); IntegerMatrix s(iters + 1, 1);
 
         // distributions for position and momentum
         std::normal_distribution<double> positiondist(position, 0.5);
         std::normal_distribution<double> momentumdist(momentum, 1.0);
 
         // fill the initial position, velocity, acceleration and state
-        r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, s(0) = 0;
+        r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, s(0) = program.get<int>("-e");
 
         // calculate the potential and perform adiabatic transform
         if (U = eval(Ue, r(0)); adiabatic) {Eigen::SelfAdjointEigenSolver<Matrix> solver(U); U = solver.eigenvalues().asDiagonal();};
 
-        // define the containers for the potential and save the first value
-        std::vector<Matrix> Uc(iters + 1); Uc.at(0) = U;
+        // define the containers for the potential, save the first value and define the state combinations
+        std::vector<Matrix> Uc(iters + 1); Uc.at(0) = U; auto scombs = Combinations(nstate, 2); 
 
         // calcualte the state energy difference
-        if (nstate > 1) de(0) = U(1, 1) - U(0, 0);
+        if (nstate > 1) for (int j = 0; j < de.cols(); j++) {
+            de(0, j) = U(scombs.at(j).at(1), scombs.at(j).at(1)) - U(scombs.at(j).at(0), scombs.at(j).at(0));
+        }
 
         // initialize the force and potential with kinetic energy
         double F = mass * a(0), Epot = U(s(0), s(0)), Ekin = 0.5 * mass * v(0) * v(0);
@@ -104,21 +121,35 @@ int main(int argc, char** argv) {
             Uc.at(j + 1) = U, dU = (Uc.at(j + 1) - Uc.at(j)) / (r(j + 1) - r(j));
 
             // calculate state energy difference and its numerical derivative
-            if (nstate > 1) {de(j + 1) = U(1, 1) - U(0, 0); dz(j + 1) = (de(j + 1) - de(j)) / step;}
+            if (nstate > 1) for (int k = 0; k < de.cols(); k++) {
+                de(j + 1, k) = U(scombs.at(k).at(1), scombs.at(k).at(1)) - U(scombs.at(k).at(0), scombs.at(k).at(0)); dz(j + 1, k) = (de(j + 1, k) - de(j, k)) / step;
+            }
 
             // nonadiabatic dynamics
             if (double P; nstate > 1 && j > 0) {
 
-                // calculate the probability of state change according to the Landau-Zener formula
-                if (adiabatic) {
-                    double ddz = (de(j + 1) - 2 * de(j) + de(j - 1)) / step / step; P = std::exp(-0.5 * M_PI * std::sqrt(std::pow(de(j + 1), 3) / ddz));
-                } else {
-                    double gamma = std::pow(U(0, 1), 2) / std::abs((de(j + 1) - de(j)) / step); P = 1 - std::exp(-2 * M_PI * gamma);
-                }
+                // for every state cobination
+                for (int k = 0; k < de.cols(); k++) {
 
-                // change the state if the jump is accepted
-                if ((adiabatic && dz(j) * dz(j + 1) < 0 && dist(mt) < P) || (!adiabatic && de(j) * de(j + 1) < 0 && dist(mt) < P)) {
-                    s(j + 1) = s(j + 1) == 1 ? 0 : 1; v(0) = std::sqrt(v(0) * v(0) - (s(j + 1) - s(j)) * 2 * de(j + 1) / mass);
+                    // skip if the current state is not in the combination
+                    if (s(j + 1) != scombs.at(k).at(0) && s(j + 1) != scombs.at(k).at(1)) continue;
+
+                    // calculate the probability of state change according to the Landau-Zener formula
+                    if (adiabatic) {
+                        double ddz = (de(j + 1, k) - 2 * de(j, k) + de(j - 1, k)) / step / step; P = std::exp(-0.5 * M_PI * std::sqrt(std::pow(de(j + 1, k), 3) / ddz));
+                    } else {
+                        double gamma = std::pow(U(scombs.at(k).at(0), scombs.at(k).at(1)), 2) / std::abs((de(j + 1, k) - de(j, k)) / step); P = 1 - std::exp(-2 * M_PI * gamma);
+                    }
+
+                    // change the state and rescale the velocities if the jump is accepted
+                    if ((adiabatic && dz(j, k) * dz(j + 1, k) < 0 && dist(mt) < P) || (!adiabatic && de(j, k) * de(j + 1, k) < 0 && dist(mt) < P)) {
+
+                        // change the state
+                        s(j + 1) = s(j + 1) == scombs.at(k).at(0) ? scombs.at(k).at(1) : scombs.at(k).at(0);
+
+                        // rescale the velocity
+                        int factor = s(j + 1) > s(j) ? 1 : -1; v(0) = std::sqrt(v(0) * v(0) - factor * 2 * de(j + 1, k) / mass);
+                    }
                 }
             }
 

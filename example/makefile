@@ -20,15 +20,15 @@ aqdyn_real: aqdyn_guess aqdyn_potential
 
 # target to perform a classical 1D real-time adiabatic propagation
 cdyn_adiabatic:
-	../bin/acorn_cdyn -c 3 -i 1000 -m 1 -p 0 -r 1 -s 0.01 -t 5 -u "0.5*x^2" --savetraj
+	../bin/acorn_cdyn -c 3 -e 0 -i 1000 -m 1 -p 0 -r 1 -s 0.01 -t 5 -u "0.5*x^2" --savetraj
 
 # target to perform a classical 1D real-time diabatic propagation
 cdyn_diabatic:
-	../bin/acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --savetraj
+	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --savetraj
 
 # target to perform a classical 1D real-time nonadiabatic propagation
 cdyn_nonadiabatic:
-	../bin/acorn_cdyn -c -10 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --adiabatic --savetraj
+	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 10.95 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --adiabatic --savetraj
 
 # target to perform a MP3 calculation
 fci: transform
@@ -73,8 +73,12 @@ transform: hf
 # RANDOM TARGETS ===================================================================================
 
 random_cdyn_tully_1:
-	../bin/acorn_cdyn -c -10 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" --savetraj
+	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" --savetraj
 	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ';" -c plot.gp P_LZ.mat
+
+random_cdyn_ts_1:
+	../bin/acorn_cdyn -c -10 -e 1 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
+	gnuplot -e "columns=3; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ';" -c plot.gp P_LZ.mat
 
 random_nqdyn_ts_1:
 	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
