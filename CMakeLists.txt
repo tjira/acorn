@@ -40,24 +40,41 @@ add_subdirectory(program/mp)
 # enable testing
 enable_testing()
 
-# add tests
+# add general tests
 add_test(NAME hf                COMMAND make -C ${PROJECT_SOURCE_DIR}/example hf               )
 add_test(NAME mp2               COMMAND make -C ${PROJECT_SOURCE_DIR}/example mp2              )
 add_test(NAME mp3               COMMAND make -C ${PROJECT_SOURCE_DIR}/example mp3              )
 add_test(NAME fci               COMMAND make -C ${PROJECT_SOURCE_DIR}/example fci              )
 add_test(NAME aqdyn_imaginary   COMMAND make -C ${PROJECT_SOURCE_DIR}/example aqdyn_imaginary  )
 add_test(NAME aqdyn_real        COMMAND make -C ${PROJECT_SOURCE_DIR}/example aqdyn_real       )
-add_test(NAME nqdyn_real        COMMAND make -C ${PROJECT_SOURCE_DIR}/example nqdyn_real       )
-add_test(NAME cdyn_diabatic     COMMAND make -C ${PROJECT_SOURCE_DIR}/example cdyn_diabatic    )
-add_test(NAME cdyn_nonadiabatic COMMAND make -C ${PROJECT_SOURCE_DIR}/example cdyn_nonadiabatic)
 
-# add expected results
+# add expected results of general tests
 set_property(TEST hf                PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -74.965901")
 set_property(TEST mp2               PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.004854")
 set_property(TEST mp3               PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.015455")
 set_property(TEST fci               PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.020410")
 set_property(TEST aqdyn_imaginary   PROPERTY PASS_REGULAR_EXPRESSION "STATE 2 ENERGY: 2.500001"             )
 set_property(TEST aqdyn_real        PROPERTY PASS_REGULAR_EXPRESSION "STATE 0 ENERGY: 1.124931"             )
-set_property(TEST nqdyn_real        PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.097713"      )
-set_property(TEST cdyn_diabatic     PROPERTY PASS_REGULAR_EXPRESSION "DIABATIC STATE 0 POP: 0.896000"       )
-set_property(TEST cdyn_nonadiabatic PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.131000"      )
+
+# add random tests
+add_test(NAME random_nqdyn_ds_1             COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_nqdyn_ds_1            )
+add_test(NAME random_nqdyn_ts_1             COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_nqdyn_ts_1            )
+add_test(NAME random_nqdyn_tully_1          COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_nqdyn_tully_1         )
+add_test(NAME random_cdyn_diabatic_ds_1     COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_cdyn_diabatic_ds_1    )
+add_test(NAME random_cdyn_diabatic_ts_1     COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_cdyn_diabatic_ts_1    )
+add_test(NAME random_cdyn_diabatic_tully_1  COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_cdyn_diabatic_tully_1 )
+add_test(NAME random_cdyn_adiabatic_ds_1    COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_cdyn_adiabatic_ds_1   )
+add_test(NAME random_cdyn_adiabatic_ts_1    COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_cdyn_adiabatic_ts_1   )
+add_test(NAME random_cdyn_adiabatic_tully_1 COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_cdyn_adiabatic_tully_1)
+
+# add expected results of random tests
+set_property(TEST random_nqdyn_ds_1             PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.052824")
+set_property(TEST random_nqdyn_ts_1             PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.720077")
+set_property(TEST random_nqdyn_tully_1          PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.676839")
+set_property(TEST random_cdyn_adiabatic_ds_1    PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.102000")
+set_property(TEST random_cdyn_adiabatic_ts_1    PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.519000")
+set_property(TEST random_cdyn_adiabatic_tully_1 PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.602000")
+set_property(TEST random_cdyn_diabatic_ds_1     PROPERTY PASS_REGULAR_EXPRESSION "DIABATIC STATE 0 POP: 0.932000" )
+set_property(TEST random_cdyn_diabatic_ts_1     PROPERTY PASS_REGULAR_EXPRESSION "DIABATIC STATE 0 POP: 0.153000" )
+set_property(TEST random_cdyn_diabatic_tully_1  PROPERTY PASS_REGULAR_EXPRESSION "DIABATIC STATE 0 POP: 0.491000" )
+

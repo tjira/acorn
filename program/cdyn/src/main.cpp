@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
 
     // write the trajectories to the disk
     MEASURE("TRAJECTORY AND POPULATION WRITING: ", 
-        if (savetraj) {Eigen::Write("TRAJ_LZ.mat", rt);} Eigen::Write("P_LZ.mat", P);
+        if (savetraj) {Eigen::Write(std::string("TRAJ_LZ_") + (adiabatic ? "ADIA" : "DIA") + ".mat", rt);} Eigen::Write(std::string("P_LZ_") + (adiabatic ? "ADIA" : "DIA") + ".mat", P);
     )
 
     // print the total time
