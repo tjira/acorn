@@ -21,9 +21,14 @@ int main(int argc, char** argv) {
         setenv("LIBINT_DATA_PATH", path.c_str(), true);
     }
 
-    // load the system from disk and initialize the basis set
+    // get the name of the basis and replace stars and pluses
+    std::string basis = program.get("-b"); std::replace(basis.begin(), basis.end(), '*', 's'), std::replace(basis.begin(), basis.end(), '+', 'p');
+
+    // open the system file
     std::ifstream fstream(program.get("-f")); if (!fstream.good()) throw std::runtime_error("SYSTEM FILE DOES NOT EXIST");
-    std::vector<libint2::Atom> atoms = libint2::read_dotxyz(fstream); libint2::BasisSet shells(program.get("-b"), atoms);
+
+    // read the system file and initialize the basis set
+    std::vector<libint2::Atom> atoms = libint2::read_dotxyz(fstream); libint2::BasisSet shells(basis, atoms);
 
     // print the timing of the system initialization
     std::cout << "SYSTEM INITIALIZATION: " << Timer::Format(Timer::Elapsed(tp)) << std::endl << std::endl;
