@@ -1,5 +1,5 @@
 # add the executable
-add_executable(acorn_cdyn src/main.cpp)
+add_executable(acorn_cdyn src/main.cpp src/landauzener.cpp)
 
 # include program include directories
 target_include_directories(acorn_cdyn PRIVATE include)

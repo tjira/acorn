@@ -54,66 +54,37 @@ transform: hf
 
 random_cdyn_adiabatic_ds_1:
 	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --adiabatic
-	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ_ADIA'" -c ../script/plot.gp P_LZ_ADIA.mat
 
 random_cdyn_diabatic_ds_1:
 	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
-	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ_DIA'" -c ../script/plot.gp P_LZ_DIA.mat
 
 random_cdyn_adiabatic_ts_1:
 	../bin/acorn_cdyn -c -10 -e 2 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))" --adiabatic
-	gnuplot -e "columns=3; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ_ADIA'" -c ../script/plot.gp P_LZ_ADIA.mat
 
 random_cdyn_diabatic_ts_1:
 	../bin/acorn_cdyn -c -10 -e 1 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
-	gnuplot -e "columns=3; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ_DIA'" -c ../script/plot.gp P_LZ_DIA.mat
 
 random_cdyn_adiabatic_tully_1:
 	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" --adiabatic
-	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ_ADIA'" -c ../script/plot.gp P_LZ_ADIA.mat
 
 random_cdyn_diabatic_tully_1:
 	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
-	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_LZ_DIA'" -c ../script/plot.gp P_LZ_DIA.mat
 
 random_nqdyn_ds_1:
 	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
 	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
-	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic
-	gnuplot -e "columns=4; only='1 4'; xmin=-20; xmax=20; ymin=-0.011; ymax=0.011; format='png'; output='U_DIA'" -c ../script/plot.gp U_DIA.mat
-	gnuplot -e "columns=4; only='1 4'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_DIA'" -c ../script/plot.gp P_DIA.mat
-	gnuplot -e "columns=2; xmin=-20; xmax=20; ymin=-0.011; ymax=0.011; format='png'; output='U_ADIA'" -c ../script/plot.gp U_ADIA.mat
-	gnuplot -e "columns=4; only='1 4'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_ADIA'" -c ../script/plot.gp P_ADIA.mat
+	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
 
 random_nqdyn_ts_1:
 	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
 	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0" "0" "0"
-	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic
-	gnuplot -e "columns=9; only='1 5 9'; xmin=-20; xmax=20; ymin=-0.07; ymax=0.07; format='png'; output='U_DIA'" -c ../script/plot.gp U_DIA.mat
-	gnuplot -e "columns=9; only='1 5 9'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_DIA'" -c ../script/plot.gp P_DIA.mat
-	gnuplot -e "columns=3; xmin=-20; xmax=20; ymin=-0.07; ymax=0.07; format='png'; output='U_ADIA'" -c ../script/plot.gp U_ADIA.mat
-	gnuplot -e "columns=9; only='1 5 9'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_ADIA'" -c ../script/plot.gp P_ADIA.mat
+	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
 
 random_nqdyn_tully_1:
 	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
 	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
-	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic
-	gnuplot -e "columns=4; only='1 4'; xmin=-20; xmax=20; ymin=-0.011; ymax=0.011; format='png'; output='U_DIA'" -c ../script/plot.gp U_DIA.mat
-	gnuplot -e "columns=4; only='1 4'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_DIA'" -c ../script/plot.gp P_DIA.mat
-	gnuplot -e "columns=2; xmin=-20; xmax=20; ymin=-0.011; ymax=0.011; format='png'; output='U_ADIA'" -c ../script/plot.gp U_ADIA.mat
-	gnuplot -e "columns=4; only='1 4'; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; format='png'; output='P_ADIA'" -c ../script/plot.gp P_ADIA.mat
+	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
 
 random_dyn_ds_1: random_nqdyn_ds_1 random_cdyn_diabatic_ds_1 random_cdyn_adiabatic_ds_1
-	awk '{print $$1, $$2, $$5}' P_DIA.mat > P_DIA_PO.mat && awk '{print $$1, $$2, $$5}' P_ADIA.mat > P_ADIA_PO.mat
-	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; titles='EX1 EX2 EX3 LZ1 LZ2 LZ3'; format='png'; output='P_MIX_ADIA'" -c ../script/plot.gp P_ADIA_PO.mat P_LZ_ADIA.mat
-	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; titles='EX1 EX2 EX3 LZ1 LZ2 LZ3'; format='png'; output='P_MIX_DIA'" -c ../script/plot.gp P_DIA_PO.mat P_LZ_DIA.mat
-
 random_dyn_ts_1: random_nqdyn_ts_1 random_cdyn_diabatic_ts_1 random_cdyn_adiabatic_ts_1
-	awk '{print $$1, $$2, $$6, $$10}' P_DIA.mat > P_DIA_PO.mat && awk '{print $$1, $$2, $$6, $$10}' P_ADIA.mat > P_ADIA_PO.mat
-	gnuplot -e "columns=3; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; titles='EX1 EX2 EX3 LZ1 LZ2 LZ3'; format='png'; output='P_MIX_ADIA'" -c ../script/plot.gp P_ADIA_PO.mat P_LZ_ADIA.mat
-	gnuplot -e "columns=3; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; titles='EX1 EX2 EX3 LZ1 LZ2 LZ3'; format='png'; output='P_MIX_DIA'" -c ../script/plot.gp P_DIA_PO.mat P_LZ_DIA.mat
-
 random_dyn_tully_1: random_nqdyn_tully_1 random_cdyn_diabatic_tully_1 random_cdyn_adiabatic_tully_1
-	awk '{print $$1, $$2, $$5}' P_DIA.mat > P_DIA_PO.mat && awk '{print $$1, $$2, $$5}' P_ADIA.mat > P_ADIA_PO.mat
-	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; titles='EX1 EX2 LZ1 LZ2'; format='png'; output='P_MIX_ADIA'" -c ../script/plot.gp P_ADIA_PO.mat P_LZ_ADIA.mat
-	gnuplot -e "columns=2; xmin=0; xmax=3500; ymin=-0.05; ymax=1.05; titles='EX1 EX2 LZ1 LZ2'; format='png'; output='P_MIX_DIA'" -c ../script/plot.gp P_DIA_PO.mat P_LZ_DIA.mat

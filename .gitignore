@@ -2,7 +2,6 @@
 molecule.xyz
 
 # exts
-*.webp
 *.css
 *.dat
 *.eps
