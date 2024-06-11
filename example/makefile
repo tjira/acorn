@@ -53,37 +53,37 @@ transform: hf
 # RANDOM TARGETS ===================================================================================
 
 random_cdyn_adiabatic_ds_1:
-	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --adiabatic
+	../bin/acorn_cdyn -c -10 -e 0 -i 3500 -l 500 -m 2000 -p 15 -r 1 -s 1 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)" --adiabatic
 
 random_cdyn_diabatic_ds_1:
-	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
+	../bin/acorn_cdyn -c -10 -e 0 -i 3500 -l 500 -m 2000 -p 15 -r 1 -s 1 -t 1000 -u "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
 
 random_cdyn_adiabatic_ts_1:
-	../bin/acorn_cdyn -c -10 -e 2 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))" --adiabatic
+	../bin/acorn_cdyn -c -10 -e 2 -i 3500 -l 500 -m 2000 -p 15 -r 1 -s 1 -t 1000 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))" --adiabatic
 
 random_cdyn_diabatic_ts_1:
-	../bin/acorn_cdyn -c -10 -e 1 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
+	../bin/acorn_cdyn -c -10 -e 1 -i 3500 -l 500 -m 2000 -p 15 -r 1 -s 1 -t 1000 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
 
 random_cdyn_adiabatic_tully_1:
-	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" --adiabatic
+	../bin/acorn_cdyn -c -10 -e 0 -i 3500 -l 500 -m 2000 -p 15 -r 1 -s 1 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" --adiabatic
 
 random_cdyn_diabatic_tully_1:
-	../bin/acorn_cdyn -c -10 -e 0 -i 350 -m 2000 -p 15 -r 1 -s 10 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
+	../bin/acorn_cdyn -c -10 -e 0 -i 3500 -l 500 -m 2000 -p 15 -r 1 -s 1 -t 1000 -u "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
 
 random_nqdyn_ds_1:
 	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
 	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
-	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
+	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic
 
 random_nqdyn_ts_1:
 	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
 	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0" "0" "0"
-	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
+	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic
 
 random_nqdyn_tully_1:
 	../bin/acorn_expression -g -24 40 -o U_DIA.mat -p 1024 -e "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
 	../bin/acorn_expression -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
-	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic --savewfn
+	../bin/acorn_nqdyn -i 350 -m 2000 -p 15 -s 10 --adiabatic
 
 random_dyn_ds_1: random_nqdyn_ds_1 random_cdyn_diabatic_ds_1 random_cdyn_adiabatic_ds_1
 random_dyn_ts_1: random_nqdyn_ts_1 random_cdyn_diabatic_ts_1 random_cdyn_adiabatic_ts_1
