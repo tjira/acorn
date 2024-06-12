@@ -22,6 +22,9 @@ if __name__ == "__main__":
     for i, mat in enumerate(mats): mat.columns = [("x" if j == 0 else sum([mats[k].shape[1] - 1 for k in range(i)]) + j) for j in range(mat.shape[1])]
     data = list(map(list, zip(*[[mat[["x"] + list(mat.columns[i:args.columns + i])] for i in range(1, mat.shape[1], args.columns)] for mat in mats])))
 
+    # sort the data by first column
+    data = [[frame.sort_values("x") for frame in frames] for frames in data]
+
     # melt all the matrices in each frame
     data = [pd.concat([mat.melt("x", value_name="y", var_name="var") for mat in frame]) for frame in data]
 
