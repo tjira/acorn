@@ -102,7 +102,7 @@ Wavefunction<D> Wavefunction<D>::propagate(const std::vector<ComplexMatrix>& R, 
 }
 
 template <int D>
-std::tuple<std::vector<ComplexMatrix>,std::vector<ComplexMatrix>> Wavefunction<D>::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
+std::tuple<std::vector<ComplexMatrix>, std::vector<ComplexMatrix>> Wavefunction<D>::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
     // define the propagator array
     std::vector<ComplexMatrix> R(U.rows()), K(U.rows());
 
