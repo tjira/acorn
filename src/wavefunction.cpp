@@ -1,17 +1,20 @@
 #include "fourier.h"
 #include "wavefunction.h"
 
-const ComplexMatrix& Wavefunction::get() const {return data;} const Matrix& Wavefunction::getr() const {return r;} int Wavefunction::states() const {return data.cols();}
+template <int D> const ComplexMatrix& Wavefunction<D>::get() const {return data;} template <int D> int Wavefunction<D>::states() const {return data.cols();} template <int D> const Matrix& Wavefunction<D>::getr() const {return r;}
 
-Wavefunction Wavefunction::operator*(const std::complex<double>& scalar) const {
-    Wavefunction wfn(*this); for (int i = 0; i < data.cols(); i++) wfn.data.col(i) *= scalar; return wfn;
+template <int D>
+Wavefunction<D> Wavefunction<D>::operator*(const std::complex<double>& scalar) const {
+    Wavefunction<D> wfn(*this); wfn.data *= scalar; return wfn;
 }
 
-Wavefunction Wavefunction::operator-(const Wavefunction& wfn) const {
-    Wavefunction wfnn(*this); for (int i = 0; i < data.cols(); i++) wfnn.data.col(i) -= wfn.data.col(i); return wfnn;
+template <int D>
+Wavefunction<D> Wavefunction<D>::operator-(const Wavefunction<D>& other) const {
+    Wavefunction<D> wfn(*this); wfn.data -= other.data; return wfn;
 }
 
-Wavefunction::Wavefunction(const Matrix& data, const Matrix& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
+template <int D>
+Wavefunction<D>::Wavefunction(const Matrix& data, const Matrix& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
     // add the momentum to the wavefunction
     for (int i = 0; i < 2 * this->data.cols(); i += 2) {
         this->data.col(i / 2) = (data.col(i) + std::complex<double>(0, 1) * data.col(i + 1)).array() * (std::complex<double>(0, 1) * momentum * r.array()).exp();
@@ -21,9 +24,10 @@ Wavefunction::Wavefunction(const Matrix& data, const Matrix& r, double mass, dou
     k.fill(2 * M_PI / k.size() / dr); for (int i = 0; i < k.size(); i++) k(i) *= i - (i < k.size() / 2 ? 0 : k.size());
 }
 
-Wavefunction Wavefunction::adiabatize(const std::vector<Matrix>& UT) const {
+template <int D>
+Wavefunction<D> Wavefunction<D>::adiabatize(const std::vector<Matrix>& UT) const {
     // define adiabatic wavefunction
-    Wavefunction wfn(*this);
+    Wavefunction<D> wfn(*this);
 
     // loop over all points and transform the wavefunction
     for (int j = 0; j < data.rows(); j++) wfn.data.row(j) = UT.at(j).adjoint() * data.row(j).transpose();
@@ -32,12 +36,14 @@ Wavefunction Wavefunction::adiabatize(const std::vector<Matrix>& UT) const {
     return wfn;
 }
 
-Matrix Wavefunction::density() const {
+template <int D>
+Matrix Wavefunction<D>::density() const {
     // return the density matrix
     return (data.transpose() * data.conjugate()).array().abs() * dr;
 }
 
-double Wavefunction::energy(const Matrix& U) const {
+template <int D>
+double Wavefunction<D>::energy(const Matrix& U) const {
     // define the kinetic and potential energy
     double Ek = 0, Ep = 0;
 
@@ -53,32 +59,14 @@ double Wavefunction::energy(const Matrix& U) const {
     return 0.5 * Ek / mass + Ep;
 }
 
-Vector Wavefunction::norm() const {
-    // initialize the vector
-    Vector norm(data.cols());
-
-    // calculate the norm of the wavefunction and store it in the vector
-    for (int i = 0; i < data.cols(); i++) norm(i) = std::sqrt(data.col(i).array().abs2().sum() * dr);
-
-    // return the norm
-    return norm;
+template <int D>
+Wavefunction<D> Wavefunction<D>::normalized() const {
+    // copy the wavefunction and normalize it, then return it
+    Wavefunction<D> wfn(*this); wfn.data /= std::sqrt(std::abs(overlap(wfn))); return wfn;
 }
 
-Wavefunction Wavefunction::normalized() const {
-    // copy the wavefunction and calculate the norms
-    Wavefunction wfn(*this); Vector norms(data.cols());
-
-    // calculate the norms of the wavefunction
-    for (int i = 0; i < data.cols(); i++) norms(i) = std::sqrt(data.col(i).array().abs2().sum() * dr);
-
-    // divide the wavefunction by the norm
-    for (int i = 0; i < data.cols(); i++) if (norms(i) > 1e-14) wfn.data.col(i) /= norms(i);
-
-    // return the wfn
-    return wfn;
-}
-
-std::complex<double> Wavefunction::overlap(const Wavefunction& wfn) const {
+template <int D>
+std::complex<double> Wavefunction<D>::overlap(const Wavefunction<D>& wfn) const {
     // define the overlap container
     std::complex<double> overlap = 0;
     
@@ -89,7 +77,8 @@ std::complex<double> Wavefunction::overlap(const Wavefunction& wfn) const {
     return overlap;
 }
 
-Wavefunction Wavefunction::propagate(const std::vector<ComplexMatrix>& R, const std::vector<ComplexMatrix>& K) const {
+template <int D>
+Wavefunction<D> Wavefunction<D>::propagate(const std::vector<ComplexMatrix>& R, const std::vector<ComplexMatrix>& K) const {
     // output wavefunction
     Wavefunction wfn(*this);
 
@@ -112,7 +101,8 @@ Wavefunction Wavefunction::propagate(const std::vector<ComplexMatrix>& R, const 
     return wfn;
 }
 
-std::tuple<std::vector<ComplexMatrix>,std::vector<ComplexMatrix>> Wavefunction::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
+template <int D>
+std::tuple<std::vector<ComplexMatrix>,std::vector<ComplexMatrix>> Wavefunction<D>::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
     // define the propagator array
     std::vector<ComplexMatrix> R(U.rows()), K(U.rows());
 
@@ -121,11 +111,11 @@ std::tuple<std::vector<ComplexMatrix>,std::vector<ComplexMatrix>> Wavefunction::
 
         // initialize the eigenvalue solver and diagonalize the potential
         Eigen::SelfAdjointEigenSolver<Matrix> solver(U.row(i).reshaped(n, n));
-        ComplexMatrix C = solver.eigenvectors(), D = solver.eigenvalues();
+        ComplexMatrix C = solver.eigenvectors(), E = solver.eigenvalues();
 
         // create the real and momentum space propagator matrix for the current point
         ComplexMatrix KI = (-0.5 * unit * std::pow(k(i), 2) * step * Vector::Ones(n).array() / mass).exp();
-        ComplexMatrix RI = C * (-0.5 * unit * D.array() * step).exp().matrix().asDiagonal() * C.adjoint();
+        ComplexMatrix RI = C * (-0.5 * unit * E.array() * step).exp().matrix().asDiagonal() * C.adjoint();
 
         // store the propagator matrices
         R.at(i) = RI, K.at(i) = KI.asDiagonal();
@@ -134,3 +124,5 @@ std::tuple<std::vector<ComplexMatrix>,std::vector<ComplexMatrix>> Wavefunction::
     // return the propagator
     return {R, K};
 }
+
+template class Wavefunction<1>;

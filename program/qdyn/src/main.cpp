@@ -3,44 +3,22 @@
 #include "wavefunction.h"
 #include <argparse.hpp>
 
-int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Nonadiabatic Quantum Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+template <int D>
+Wavefunction<D> loadwfn(const std::string& path, const Matrix& U, double mass, double momentum) {
+    return Wavefunction<D>(Eigen::LoadMatrix(path).rightCols(2 * (int)std::sqrt(U.cols() - 1)), U.leftCols(1), mass, momentum);
+}
 
-    // add the command line arguments
-    program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
-    program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(200).scan<'i', int>();
-    program.add_argument("-m", "--mass").help("-- Mass of the model system.").default_value(1.0).scan<'g', double>();
-    program.add_argument("-o", "--optimize").help("-- Perform the dynamics in imaginary time for several orthogonal states.").default_value(1).scan<'i', int>();
-    program.add_argument("-p", "--momentum").help("-- Momentum of the model system.").default_value(0.0).scan<'g', double>();
-    program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(1.0).scan<'g', double>();
-    program.add_argument("--adiabatic").help("-- Enable transform to adiabatic basis.").default_value(false).implicit_value(true);
-    program.add_argument("--savewfn").help("-- Save the time evolution of the wavefunction.").default_value(false).implicit_value(true);
-
-    // parse the command line arguments
-    try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
-        if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
-
-    // extract the command line parameters
-    int iters = program.get<int>("-i"); double mass = program.get<double>("-m"), step = program.get<double>("-s"), momentum = program.get<double>("-p");
-
-    // extract boolean flags
-    bool adiabatic = program.get<bool>("--adiabatic"), imaginary = program.is_used("--optimize"), savewfn = program.get<bool>("--savewfn");
-
-    // load the potential in the diabatic basis
-    MEASURE("INITIAL WAVEFUNCTION AND POTENTIAL IN DIABATIC BASIS READING: ",
-        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - 1)), Ud.leftCols(1), mass, momentum);
-    )
-
-    // extract the number of states
-    int nstate = wfnd.states(), nstatessq = nstate * nstate;
+template <int D>
+void run(Matrix& Ud, Wavefunction<D>& wfnd, int iters, double step, int optstates, bool adiabatic, bool imaginary, bool savewfn) {
+    // extract the number of states and start the timer
+    int nstate = wfnd.states(), nstatessq = nstate * nstate; Timer::Timepoint tp = Timer::Now();
 
     // normalize the wfn, remove first column from matrix (the independent variable column)
-    wfnd = wfnd.normalized(); Ud.block(0, 0, Ud.rows(), Ud.cols() - 1) = Ud.rightCols(Ud.cols() - 1); Ud.conservativeResize(Ud.rows(), Ud.cols() - 1);
+    wfnd = wfnd.normalized(); Ud.block(0, 0, Ud.rows(), Ud.cols() - D) = Ud.rightCols(Ud.cols() - D); Ud.conservativeResize(Ud.rows(), Ud.cols() - D);
 
     // define and initialize the adiabatic variables
     Matrix Ua; std::vector<Matrix> UT; if (adiabatic) {
-        Ua = Matrix(Ud.rows(), nstate + 1); UT = std::vector<Matrix>(Ud.rows(), Matrix::Identity(nstate, nstate));
+        Ua = Matrix(Ud.rows(), nstate + D); UT = std::vector<Matrix>(Ud.rows(), Matrix::Identity(nstate, nstate));
     }
 
     // diagonalize the potential at each point
@@ -68,18 +46,21 @@ int main(int argc, char** argv) {
     auto[R, K] = wfnd.propagator(Ud, std::complex<double>(imaginary, !imaginary), step);
 
     // define the energy, wfn and acf vector
-    Vector eps(program.get<int>("-o")); Matrix acf(iters + 1, 3); std::vector<Wavefunction> states(program.get<int>("-o"), wfnd);
+    Vector eps(optstates); Matrix acf(iters + 1, 3); std::vector<Wavefunction<D>> states(optstates, wfnd);
 
     // for every orthogonal state
-    for (int i = 0; i < program.get<int>("-o"); i++) {
+    for (int i = 0; i < optstates; i++) {
 
         // set the initial wfn, energy and acf value
         wfnd = states.at(i); double E = wfnd.energy(Ud); acf(0, 0) = 0, acf(0, 1) = 1, acf(0, 2) = 0;
 
-        Wavefunction wfna; Matrix wfndt, wfnat, Pd(iters + 1, nstatessq + 1), Pa(iters + 1, nstatessq + 1), rho(nstate, nstate);
+        // define the diabatic and adiabatic wavefunction and density matrix containers
+        Wavefunction<D> wfna; Matrix wfndt, wfnat, Pd(iters + 1, nstatessq + 1), Pa(iters + 1, nstatessq + 1), rho(nstate, nstate);
 
+        // transform the wfn to the adiabatic basis
         if (adiabatic) wfna = wfnd.adiabatize(UT);
 
+        // save the diabatic wavefunction and fill the independent variable columns
         if (savewfn) {
             wfndt = Matrix(Ud.rows(), 2 * nstate * (iters + 1) + 1);
             for (int i = 0; i < nstate; i++) {
@@ -87,7 +68,7 @@ int main(int argc, char** argv) {
             } wfndt.col(0) = wfnd.getr();
         }
 
-        // adiabatize the guess wavefunction and fill the independent variable columns
+        // save the adiabatic wavefunction and fill the independent variable columns
         if (adiabatic && savewfn) {
             wfnat = Matrix(Ua.rows(), 2 * nstate * (iters + 1) + 1);
             for (int i = 0; i < nstate; i++) {
@@ -176,7 +157,42 @@ int main(int argc, char** argv) {
     }
 
     // print the state energies
-    std::cout << std::endl; for (int i = 0; i < program.get<int>("-o"); i++) std::printf("EIGENSTATE %d ENERGY: %.14f\n", i, eps(i));
+    std::cout << std::endl; for (int i = 0; i < optstates; i++) std::printf("FINAL WFN %d ENERGY: %.14f\n", i, eps(i));
+}
+
+int main(int argc, char** argv) {
+    argparse::ArgumentParser program("Acorn Quantum Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+
+    // add the command line arguments
+    program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
+    program.add_argument("-d", "--dimension").help("-- Dimension of the provided potential and wavefunction.").default_value(1).scan<'i', int>();
+    program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(200).scan<'i', int>();
+    program.add_argument("-m", "--mass").help("-- Mass of the model system.").default_value(1.0).scan<'g', double>();
+    program.add_argument("-o", "--optimize").help("-- Perform the dynamics in imaginary time for several orthogonal states.").default_value(1).scan<'i', int>();
+    program.add_argument("-p", "--momentum").help("-- Momentum of the model system.").default_value(0.0).scan<'g', double>();
+    program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(1.0).scan<'g', double>();
+    program.add_argument("--adiabatic").help("-- Enable transform to adiabatic basis.").default_value(false).implicit_value(true);
+    program.add_argument("--savewfn").help("-- Save the time evolution of the wavefunction.").default_value(false).implicit_value(true);
+
+    // parse the command line arguments
+    try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
+        if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+
+    // extract the command line parameters
+    int iters = program.get<int>("-i"), optstates = program.get<int>("-o"); double mass = program.get<double>("-m"), step = program.get<double>("-s"), momentum = program.get<double>("-p");
+
+    // extract boolean flags
+    bool adiabatic = program.get<bool>("--adiabatic"), imaginary = program.is_used("--optimize"), savewfn = program.get<bool>("--savewfn");
+
+    // load the potential and initial wavefunction and run the dynamics
+    if (program.get<int>("-d") == 1) {
+        MEASURE("READING POTENTIAL AND INITIAL WAVEFUNCTION",
+                Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); auto wfnd = loadwfn<1>("PSI_DIA_GUESS.mat", Ud, mass, momentum)
+        ) run<1>(Ud, wfnd, iters, step, optstates, adiabatic, imaginary, savewfn);
+    } else {
+        throw std::runtime_error(std::to_string(program.get<int>("-d")) + "-DIMENSIONAL DYNAMICS NOT SUPPORTED");
+    }
 
     // print the total time
     std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;

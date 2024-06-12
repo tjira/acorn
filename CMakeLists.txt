@@ -52,8 +52,8 @@ set_property(TEST hf                PROPERTY PASS_REGULAR_EXPRESSION "FINAL SING
 set_property(TEST mp2               PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.004854")
 set_property(TEST mp3               PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.015455")
 set_property(TEST fci               PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.020410")
-set_property(TEST aqdyn_imaginary   PROPERTY PASS_REGULAR_EXPRESSION "EIGENSTATE 2 ENERGY: 2.500001"        )
-set_property(TEST aqdyn_real        PROPERTY PASS_REGULAR_EXPRESSION "EIGENSTATE 0 ENERGY: 1.124931"        )
+set_property(TEST aqdyn_imaginary   PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 2 ENERGY: 2.500001"         )
+set_property(TEST aqdyn_real        PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 0 ENERGY: 1.124931"         )
 
 # add random tests
 add_test(NAME random_qdyn_ds_1              COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_qdyn_ds_1             )
