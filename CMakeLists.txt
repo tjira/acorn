@@ -46,6 +46,10 @@ add_test(NAME mp3                  COMMAND make -C ${PROJECT_SOURCE_DIR}/example
 add_test(NAME fci                  COMMAND make -C ${PROJECT_SOURCE_DIR}/example fci                 )
 add_test(NAME aqdyn_1d_imaginary   COMMAND make -C ${PROJECT_SOURCE_DIR}/example aqdyn_1d_imaginary  )
 add_test(NAME aqdyn_1d_real        COMMAND make -C ${PROJECT_SOURCE_DIR}/example aqdyn_1d_real       )
+add_test(NAME aqdyn_2d_imaginary   COMMAND make -C ${PROJECT_SOURCE_DIR}/example aqdyn_2d_imaginary  )
+add_test(NAME aqdyn_2d_real        COMMAND make -C ${PROJECT_SOURCE_DIR}/example aqdyn_2d_real       )
+add_test(NAME aqdyn_3d_imaginary   COMMAND make -C ${PROJECT_SOURCE_DIR}/example aqdyn_3d_imaginary  )
+add_test(NAME aqdyn_3d_real        COMMAND make -C ${PROJECT_SOURCE_DIR}/example aqdyn_3d_real       )
 
 # add expected results of general tests
 set_property(TEST hf                   PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -74.965901")
@@ -53,7 +57,11 @@ set_property(TEST mp2                  PROPERTY PASS_REGULAR_EXPRESSION "FINAL S
 set_property(TEST mp3                  PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.015455")
 set_property(TEST fci                  PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.020410")
 set_property(TEST aqdyn_1d_imaginary   PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 2 ENERGY: 2.500001"         )
-set_property(TEST aqdyn_1d_real        PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 0 ENERGY: 1.124931"         )
+set_property(TEST aqdyn_1d_real        PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 0 ENERGY: 0.625207"         )
+set_property(TEST aqdyn_2d_imaginary   PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 2 ENERGY: 2.000001"         )
+set_property(TEST aqdyn_2d_real        PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 0 ENERGY: 1.250415"         )
+set_property(TEST aqdyn_3d_imaginary   PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 2 ENERGY: 2.500001"         )
+set_property(TEST aqdyn_3d_real        PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 0 ENERGY: 1.875623"         )
 
 # add random tests
 add_test(NAME random_qdyn_1d_ds_1              COMMAND make -C ${PROJECT_SOURCE_DIR}/example random_qdyn_1d_ds_1             )

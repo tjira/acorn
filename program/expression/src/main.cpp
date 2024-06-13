@@ -24,8 +24,11 @@ int main(int argc, char** argv) {
     // define the variables vector
     std::vector<std::string> vars(dim);
 
-    // fill the variables vector
-    for (int i = 0; i < dim && dim < 4; i++) {vars.at(i) = std::vector<std::string>{"x", "y", "z"}.at(i);}
+    // fill the variables vector if the dimension is less than 4
+    for (int i = 0; i < dim && dim < 4; i++) vars.at(i) = std::vector<std::string>{"x", "y", "z"}.at(i);
+
+    // fill the variables vector if the dimension is greater than 3
+    for (int i = 0; i < dim && dim > 3; i++) vars.at(i) = "x" + std::to_string(i + 1);
 
     // print the expression timer label
     std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
@@ -36,34 +39,20 @@ int main(int argc, char** argv) {
     // calculate the grid spacing
     double dr = (limits.at(1) - limits.at(0)) / (points - 1);
 
-    // fill the independent variable column
-    if (dim == 1) {
-        for (int i = 0; i < points; i++) {
-            U(i, 0) = limits.at(0) + i * dr;
+    // fill the leftmost independent variable column
+    for (int i = 0; i < U.rows(); i++) {
+        U.rightCols(exprs.size() + 1).col(0)(i) = limits.at(0) + (i % points) * dr;
+    }
+
+    // fill the rest of the independent variable columns
+    for (int i = 0; i < U.cols() - exprs.size() - 1; i++) {
+        for (int j = 0; j < U.rows(); j++) {
+            U(j, i) = U(j / (int)std::round(std::pow(points, U.cols() - exprs.size() - i - 1)), U.cols() - exprs.size() - 1);
         }
-    } else if (dim == 2) {
-        for (int i = 0; i < points; i++) {
-            for (int j = 0; j < points; j++) {
-                U(i * points + j, 0) = limits.at(0) + i * dr;
-                U(i * points + j, 1) = limits.at(0) + j * dr;
-            }
-        }
-    } else if (dim == 3) {
-        for (int i = 0; i < points; i++) {
-            for (int j = 0; j < points; j++) {
-                for (int k = 0; k < points; k++) {
-                    U(i * points * points + j * points + k, 0) = limits.at(0) + i * dr;
-                    U(i * points * points + j * points + k, 1) = limits.at(0) + j * dr;
-                    U(i * points * points + j * points + k, 2) = limits.at(0) + k * dr;
-                }
-            }
-        }
-    } else {
-        throw std::runtime_error(std::to_string(dim) + "-DIMENSIONAL EXPRESSIONS NOT SUPPORTED");
     }
 
     // fill the function value matrix columns
-    for (int i = 0; i < U.cols() - dim; i++) {
+    for (int i = 0; i < exprs.size(); i++) {
         Expression expr(exprs.at(i), vars); for (int j = 0; j < U.rows(); j++) U(j, i + dim) = expr.eval(Vector(U.row(j).leftCols(dim)));
     }
 

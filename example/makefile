@@ -4,9 +4,9 @@
 
 # target to perform an imaginary-time propagation of 1D adiabatic wavepacket
 aqdyn_1d_imaginary:
-	../bin/acorn_expression -g -8 8 -o U_DIA.mat -p 1024 -e "0.5*x^2"
-	../bin/acorn_expression -g -8 8 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x-1)^2)" "0"
-	../bin/acorn_qdyn -i 200 -m 1 -o 3 -p 0 -s 0.1 --savewfn
+	../bin/acorn_expression -d 1 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*x^2"
+	../bin/acorn_expression -d 1 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-x^2)" "0"
+	../bin/acorn_qdyn -d 1 -i 1000 -m 1 -o 3 -p 0 -s 0.1 --savewfn
 
 # target to perform an imaginary-time propagation of 2D adiabatic wavepacket
 aqdyn_2d_imaginary:
@@ -18,25 +18,37 @@ aqdyn_2d_imaginary:
 aqdyn_3d_imaginary:
 	../bin/acorn_expression -d 3 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*(x^2+y^2+z^2)"
 	../bin/acorn_expression -d 3 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-(x^2+y^2+z^2))" "0"
-	../bin/acorn_qdyn -d 3 -i 200 -m 1 -o 3 -p 0 -s 0.1 --savewfn
+	../bin/acorn_qdyn -d 3 -i 1000 -m 1 -o 3 -p 0 -s 0.1
+
+# target to perform an imaginary-time propagation of 4D adiabatic wavepacket
+aqdyn_4d_imaginary:
+	../bin/acorn_expression -d 4 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*(x1^2+x2^2+x3^2+x4^2)"
+	../bin/acorn_expression -d 4 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-(x1^2+x2^2+x3^2+x4^2))" "0"
+	../bin/acorn_qdyn -d 4 -i 1000 -m 1 -o 3 -p 0 -s 0.1
 
 # target to perform a real-time propagation of 1D adiabatic wavepacket
 aqdyn_1d_real:
-	../bin/acorn_expression -g -8 8 -o U_DIA.mat -p 1024 -e "0.5*x^2"
-	../bin/acorn_expression -g -8 8 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x-1)^2)" "0"
-	../bin/acorn_qdyn -i 1000 -m 1 -p 0 -s 0.1 --savewfn
+	../bin/acorn_expression -d 1 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*x^2"
+	../bin/acorn_expression -d 1 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-x^2)" "0"
+	../bin/acorn_qdyn -d 1 -i 1000 -m 1 -p 0 -s 0.1 --savewfn
 
 # target to perform a real-time propagation of 2D adiabatic wavepacket
 aqdyn_2d_real:
 	../bin/acorn_expression -d 2 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*(x^2+y^2)"
 	../bin/acorn_expression -d 2 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-(x^2+y^2))" "0"
-	../bin/acorn_qdyn -d 2 -i 200 -m 1 -p 0 -s 0.1 --savewfn
+	../bin/acorn_qdyn -d 2 -i 1000 -m 1 -p 0 -s 0.1 --savewfn
 
-# target to perform an imaginary-time propagation of 3D adiabatic wavepacket
+# target to perform an real-time propagation of 3D adiabatic wavepacket
 aqdyn_3d_real:
 	../bin/acorn_expression -d 3 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*(x^2+y^2+z^2)"
 	../bin/acorn_expression -d 3 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-(x^2+y^2+z^2))" "0"
-	../bin/acorn_qdyn -d 3 -i 200 -m 1 -o 1 -p 0 -s 0.1 --savewfn
+	../bin/acorn_qdyn -d 3 -i 1000 -m 1 -p 0 -s 0.1
+
+# target to perform an real-time propagation of 4D adiabatic wavepacket
+aqdyn_4d_real:
+	../bin/acorn_expression -d 4 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*(x1^2+x2^2+x3^2+x4^2)"
+	../bin/acorn_expression -d 4 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-(x1^2+x2^2+x3^2+x4^2))" "0"
+	../bin/acorn_qdyn -d 4 -i 1000 -m 1 -p 0 -s 0.1
 
 # target to perform a classical 1D real-time adiabatic propagation
 cdyn_1d_adiabatic:

@@ -18,7 +18,7 @@ Wavefunction::Wavefunction(const Matrix& data, const Matrix& r, double mass, dou
     }
 
     // calculate the rest of the k-space grid
-    for (int i = 0; i < r.cols() - 1; i++) for (int j = 0; j < r.rows(); j++) k(j, i) = k(j / (int)std::round(std::pow(n, r.cols() - 1 - i)), r.cols() - 1);
+    for (int i = 0; i < r.cols() - 1; i++) for (int j = 0; j < r.rows(); j++) k(j, i) = k(j / (int)std::round(std::pow(n, r.cols() - i - 1)), r.cols() - 1);
 }
 
 Wavefunction Wavefunction::operator*(const std::complex<double>& scalar) const {
