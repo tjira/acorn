@@ -2,10 +2,9 @@
 
 #include "linalg.h"
 
-template <int D>
 class Wavefunction {
 public:
-    Wavefunction(const Matrix& data, const Matrix& r, double mass = 1, double momentum = 0); Wavefunction() = default;
+    Wavefunction(const Matrix& data, const Matrix& r, double mass = 1, double momentum = 0); Wavefunction();
 
     // arithmetic operators
     Wavefunction operator-(const Wavefunction& other) const; Wavefunction operator*(const std::complex<double>& scalar) const;
@@ -17,8 +16,8 @@ public:
     Matrix density() const; Wavefunction adiabatize(const std::vector<Matrix>& UT) const;
 
     // getters
-    const ComplexMatrix& get() const; const Matrix& getr() const; int states() const;
+    const ComplexMatrix& get() const; const Matrix& getr() const;
 
 private:
-    ComplexMatrix data; Matrix r, k; double mass, dr;
+    ComplexMatrix data; Matrix r, k; std::vector<int> shape; double mass, dr;
 };

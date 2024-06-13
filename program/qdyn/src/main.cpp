@@ -3,11 +3,6 @@
 #include "wavefunction.h"
 #include <argparse.hpp>
 
-template <int D>
-Wavefunction<D> loadwfn(const std::string& path, const Matrix& U, double mass, double momentum) {
-    return Wavefunction<D>(Eigen::LoadMatrix(path).rightCols(2 * (int)std::sqrt(U.cols() - D)), U.leftCols(D), mass, momentum);
-}
-
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Quantum Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
 
@@ -34,12 +29,12 @@ int main(int argc, char** argv) {
     bool adiabatic = program.get<bool>("--adiabatic"), imaginary = program.is_used("--optimize"), savewfn = program.get<bool>("--savewfn");
 
     // load the potential and initial wavefunction
-    MEASURE("READING POTENTIAL AND INITIAL WAVEFUNCTION",
-        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); auto wfnd = loadwfn<1>("PSI_DIA_GUESS.mat", Ud, mass, momentum)
+    MEASURE("READING POTENTIAL AND INITIAL WAVEFUNCTION: ",
+        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - dim)), Ud.leftCols(dim), mass, momentum)
     )
 
     // extract the number of states
-    int nstate = wfnd.states(), nstatessq = nstate * nstate;
+    int nstate = wfnd.get().cols(), nstatessq = nstate * nstate;
 
     // normalize the wfn, remove first column from matrix (the independent variable column)
     wfnd = wfnd.normalized(); Ud.block(0, 0, Ud.rows(), Ud.cols() - dim) = Ud.rightCols(Ud.cols() - dim); Ud.conservativeResize(Ud.rows(), Ud.cols() - dim);
@@ -74,7 +69,7 @@ int main(int argc, char** argv) {
     auto[R, K] = wfnd.propagator(Ud, std::complex<double>(imaginary, !imaginary), step);
 
     // define the energy, wfn and acf vector
-    Vector eps(optstates); Matrix acf(iters + 1, 3); std::vector<decltype(wfnd)> states(optstates, wfnd);
+    Vector eps(optstates); Matrix acf(iters + 1, 3); std::vector<Wavefunction> states(optstates, wfnd);
 
     // for every orthogonal state
     for (int i = 0; i < optstates; i++) {
@@ -83,25 +78,25 @@ int main(int argc, char** argv) {
         wfnd = states.at(i); double E = wfnd.energy(Ud); acf(0, 0) = 0, acf(0, 1) = 1, acf(0, 2) = 0;
 
         // define the diabatic and adiabatic wavefunction and density matrix containers
-        decltype(wfnd) wfna; Matrix wfndt, wfnat, Pd(iters + 1, nstatessq + 1), Pa(iters + 1, nstatessq + 1), rho(nstate, nstate);
+        Wavefunction wfna; Matrix wfndt, wfnat, Pd(iters + 1, nstatessq + 1), Pa(iters + 1, nstatessq + 1), rho(nstate, nstate);
 
         // transform the wfn to the adiabatic basis
         if (adiabatic) wfna = wfnd.adiabatize(UT);
 
         // save the diabatic wavefunction and fill the independent variable columns
         if (savewfn) {
-            wfndt = Matrix(Ud.rows(), 2 * nstate * (iters + 1) + 1);
+            wfndt = Matrix(Ud.rows(), 2 * nstate * (iters + 1) + dim);
             for (int i = 0; i < nstate; i++) {
-                wfndt.col(2 * i + 1) = wfnd.get().col(i).real(), wfndt.col(2 * i + 2) = wfnd.get().col(i).imag();
-            } wfndt.col(0) = wfnd.getr();
+                wfndt.col(2 * i + dim) = wfnd.get().col(i).real(), wfndt.col(2 * i + dim + 1) = wfnd.get().col(i).imag();
+            } wfndt.leftCols(dim) = wfnd.getr();
         }
 
         // save the adiabatic wavefunction and fill the independent variable columns
         if (adiabatic && savewfn) {
-            wfnat = Matrix(Ua.rows(), 2 * nstate * (iters + 1) + 1);
+            wfnat = Matrix(Ua.rows(), 2 * nstate * (iters + 1) + dim);
             for (int i = 0; i < nstate; i++) {
-                wfnat.col(2 * i + 1) = wfna.get().col(i).real(), wfnat.col(2 * i + 2) = wfna.get().col(i).imag();
-            } wfnat.col(0) = wfna.getr();
+                wfnat.col(2 * i + dim) = wfna.get().col(i).real(), wfnat.col(2 * i + dim + 1) = wfna.get().col(i).imag();
+            } wfnat.leftCols(dim) = wfna.getr();
         }
 
         // calculate the diabatic and adiabatic density matrices and save them
@@ -138,14 +133,14 @@ int main(int argc, char** argv) {
             // save the diabatic wavefunction to the wavefunction containers
             if (savewfn) {
                 for (int k = 0; k < nstate; k++) {
-                    wfndt.col(2 * nstate * (j + 1) + 2 * k + 1) = wfnd.get().col(k).real(), wfndt.col(2 * nstate * (j + 1) + 2 * k + 2) = wfnd.get().col(k).imag();
+                    wfndt.col(2 * nstate * (j + 1) + 2 * k + dim) = wfnd.get().col(k).real(), wfndt.col(2 * nstate * (j + 1) + 2 * k + dim + 1) = wfnd.get().col(k).imag();
                 }
             }
 
             // save the adiabatic wavefunction to the wavefunction containers
             if (adiabatic && savewfn) {
                 for (int k = 0; k < nstate; k++) {
-                    wfnat.col(2 * nstate * (j + 1) + 2 * k + 1) = wfna.get().col(k).real(), wfnat.col(2 * nstate * (j + 1) + 2 * k + 2) = wfna.get().col(k).imag();
+                    wfnat.col(2 * nstate * (j + 1) + 2 * k + dim) = wfna.get().col(k).real(), wfnat.col(2 * nstate * (j + 1) + 2 * k + dim + 1) = wfna.get().col(k).imag();
                 }
             }
 
