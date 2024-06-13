@@ -36,8 +36,6 @@ int main(int argc, char** argv) {
     // calculate the grid spacing
     double dr = (limits.at(1) - limits.at(0)) / (points - 1);
 
-    std::cout << U.rows() << " " << U.cols() << std::endl;
-
     // fill the independent variable column
     if (dim == 1) {
         for (int i = 0; i < points; i++) {

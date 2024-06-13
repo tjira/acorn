@@ -18,7 +18,7 @@ Wavefunction<D>::Wavefunction(const Matrix& data, const Matrix& r, double mass, 
     // add the momentum to the wavefunction
     for (int i = 0; i < 2 * this->data.cols(); i += 2) {
         this->data.col(i / 2) = (data.col(i) + std::complex<double>(0, 1) * data.col(i + 1)).array() * (std::complex<double>(0, 1) * momentum * r.array()).exp();
-    } dr = r(1) - r(0);
+    } dr = r(1, r.cols() - 1) - r(0, r.cols() - 1);
 
     // calculate the k-space grid
     k.fill(2 * M_PI / k.size() / dr); for (int i = 0; i < k.size(); i++) k(i) *= i - (i < k.size() / 2 ? 0 : k.size());
