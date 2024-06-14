@@ -29,15 +29,15 @@ int main(int argc, char** argv) {
     bool adiabatic = program.get<bool>("--adiabatic"), imaginary = program.is_used("--optimize"), savewfn = program.get<bool>("--savewfn");
 
     // load the potential and initial wavefunction
-    MEASURE("READING POTENTIAL AND INITIAL WAVEFUNCTION: ",
-        Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); Wavefunction wfnd(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - dim)), Ud.leftCols(dim), mass, momentum)
+    MEASURE("READING POTENTIAL AND INITIAL WAVEFUNCTION: ", Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); 
+        std::vector<Wavefunction> states(optstates, Wavefunction(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - dim)), Ud.leftCols(dim), mass, momentum).normalized());
     )
 
     // extract the number of states
-    int nstate = wfnd.get().cols(), nstatessq = nstate * nstate;
+    int nstate = states.at(0).get().cols(), nstatessq = nstate * nstate;
 
-    // normalize the wfn, remove first column from matrix (the independent variable column)
-    wfnd = wfnd.normalized(); Ud.block(0, 0, Ud.rows(), Ud.cols() - dim) = Ud.rightCols(Ud.cols() - dim); Ud.conservativeResize(Ud.rows(), Ud.cols() - dim);
+    // remove the first column from matrix (the independent variable column)
+    Ud.block(0, 0, Ud.rows(), Ud.cols() - dim) = Ud.rightCols(Ud.cols() - dim); Ud.conservativeResize(Ud.rows(), Ud.cols() - dim);
 
     // define and initialize the adiabatic variables
     Matrix Ua; std::vector<Matrix> UT; if (adiabatic) {
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
         Eigen::SelfAdjointEigenSolver<Matrix> solver(UD); Matrix C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(nstate, 1);
 
         // fill the diabatic matrix
-        Ua(i, 0) = wfnd.getr()(i); Ua.row(i).rightCols(nstate) = eps.transpose();
+        Ua(i, 0) = states.at(0).getr()(i); Ua.row(i).rightCols(nstate) = eps.transpose();
 
         // calculate the overlap of eigenvectors
         for (int j = 0; j < nstate; j++) {
@@ -65,20 +65,23 @@ int main(int argc, char** argv) {
         UT.at(i) = C * overlap.asDiagonal();
     }
 
+    // save the adiabatic potential
+    if (adiabatic) {MEASURE("\nSAVING THE ADIABATIC POTENTIAL: ", Eigen::Write("U_ADIA.mat", Ua))}
+
     // define the real time kinetic and potential operators in diabatic basis
-    auto[R, K] = wfnd.propagator(Ud, std::complex<double>(imaginary, !imaginary), step);
+    auto[R, K] = states.at(0).propagator(Ud, std::complex<double>(imaginary, !imaginary), step);
 
     // define the energy, wfn and acf vector
-    Vector eps(optstates); Matrix acf(iters + 1, 3); std::vector<Wavefunction> states(optstates, wfnd);
+    Vector eps(optstates); Matrix acf(imaginary ? 0 : iters + 1, imaginary ? 0 : 3);
 
     // for every orthogonal state
     for (int i = 0; i < optstates; i++) {
 
         // set the initial wfn, energy and acf value
-        wfnd = states.at(i); double E = wfnd.energy(Ud); acf(0, 0) = 0, acf(0, 1) = 1, acf(0, 2) = 0;
+        Wavefunction wfnd = states.at(i); double E = wfnd.energy(Ud); if (!imaginary) acf(0, 0) = 0, acf(0, 1) = 1, acf(0, 2) = 0;
 
         // define the diabatic and adiabatic wavefunction and density matrix containers
-        Wavefunction wfna; Matrix wfndt, wfnat, Pd(iters + 1, nstatessq + 1), Pa(iters + 1, nstatessq + 1), rho(nstate, nstate);
+        Wavefunction wfna; Matrix wfndt, wfnat, Pd, Pa, rho; if (nstate > 1) Pd = Matrix(iters + 1, nstatessq + 1), Pa = Matrix(iters + 1, nstatessq + 1), rho = Matrix(nstate, nstate);
 
         // transform the wfn to the adiabatic basis
         if (adiabatic) wfna = wfnd.adiabatize(UT);
@@ -100,9 +103,11 @@ int main(int argc, char** argv) {
         }
 
         // calculate the diabatic and adiabatic density matrices and save them
-        if (adiabatic) {
-            rho = wfna.density(); Pa.row(0)(0) = 0, Pa.row(0).rightCols(nstatessq) = rho.transpose().reshaped(1, nstatessq);
-        } rho = wfnd.density(); Pd.row(0)(0) = 0, Pd.row(0).rightCols(nstatessq) = rho.transpose().reshaped(1, nstatessq);
+        if (nstate > 1) {
+            if (adiabatic) {
+                rho = wfna.density(); Pa.row(0)(0) = 0, Pa.row(0).rightCols(nstatessq) = rho.transpose().reshaped(1, nstatessq);
+            } rho = wfnd.density(); Pd.row(0)(0) = 0, Pd.row(0).rightCols(nstatessq) = rho.transpose().reshaped(1, nstatessq);
+        }
 
         // print the header
         std::printf("\n%6s %20s %8s %12s\n", "ITER", "ENERGY", "|dE|", "TIME");
@@ -120,15 +125,15 @@ int main(int argc, char** argv) {
             if (imaginary) {wfnd = wfnd.normalized();} E = wfnd.energy(Ud);
 
             // assign the ACF value
-            std::complex<double> overlap = states.at(i).overlap(wfnd); acf(j + 1, 0) = (j + 1) * step; acf(j + 1, 1) = overlap.real(); acf(j + 1, 2) = overlap.imag();
+            std::complex<double> overlap; if (!imaginary) {overlap = states.at(i).overlap(wfnd); acf(j + 1, 0) = (j + 1) * step; acf(j + 1, 1) = overlap.real(); acf(j + 1, 2) = overlap.imag();}
 
             // transform the wfn to the adiabatic basis and save the adiabatic density matrix
             if (adiabatic) {
-                wfna = wfnd.adiabatize(UT); rho = wfna.density(); Pa(j + 1, 0) = (j + 1) * step, Pa.row(j + 1).rightCols(nstatessq) = rho.transpose().reshaped(1, nstatessq);
+                wfna = wfnd.adiabatize(UT); if (nstate > 1) {rho = wfna.density(); Pa(j + 1, 0) = (j + 1) * step, Pa.row(j + 1).rightCols(nstatessq) = rho.transpose().reshaped(1, nstatessq);}
             }
 
             // save the diabatic density matrix
-            rho = wfnd.density(); Pd(j + 1, 0) = (j + 1) * step, Pd.row(j + 1).rightCols(nstatessq) = rho.transpose().reshaped(1, nstatessq);
+            if (nstate > 1) {rho = wfnd.density(); Pd(j + 1, 0) = (j + 1) * step, Pd.row(j + 1).rightCols(nstatessq) = rho.transpose().reshaped(1, nstatessq);}
 
             // save the diabatic wavefunction to the wavefunction containers
             if (savewfn) {
@@ -151,31 +156,37 @@ int main(int argc, char** argv) {
         // assign results and print a new line
         states.at(i) = wfnd; eps(i) = E; std::cout << std::endl;
 
+        // define the spectrum matrix
+        Matrix spectrum(imaginary ? 0 : iters + 1, imaginary ? 0 : 2);
+
         // calculate the spectrum
-        Matrix spectrum(iters + 1, 2); spectrum.col(1) = FourierTransform::C2RFFT(acf.col(1) + std::complex<double>(0, 1) * acf.col(2)).array().abs();
+        if (!imaginary) {
 
-        // fill the frequency column of the spectrum
-        spectrum.col(0).fill(2 * M_PI / (iters + 1) / step); for (int i = 0; i < iters + 1; i++) spectrum.col(0)(i) *= i - (i < (iters + 1) / 2 ? 0 : (iters + 1));
+            // perform the fourier transform of the ACF
+            spectrum.col(1) = FourierTransform::C2RFFT(acf.col(1) + std::complex<double>(0, 1) * acf.col(2)).array().abs();
+
+            // fill the frequency column of the spectrum
+            spectrum.col(0).fill(2 * M_PI / (iters + 1) / step); for (int i = 0; i < iters + 1; i++) spectrum.col(0)(i) *= i - (i < (iters + 1) / 2 ? 0 : (iters + 1));
+        }
 
         // print the populations
-        for (int i = 0; i < nstate && adiabatic; i++) {
+        for (int i = 0; i < nstate && nstate > 1 && adiabatic; i++) {
             std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(nstatessq).reshaped(nstate, nstate).transpose()(i, i));
-        } if (adiabatic) std::cout << std::endl;
+        } if (nstate > 1 && adiabatic) std::cout << std::endl;
 
         // print the populations
-        for (int i = 0; i < nstate; i++) {
+        for (int i = 0; i < nstate && nstate > 1; i++) {
             std::printf("DIABATIC STATE %d POP: %.14f\n", i, Pd.bottomRows(1).rightCols(nstatessq).reshaped(nstate, nstate).transpose()(i, i));
-        } std::cout << std::endl;
+        } if (nstate > 1) std::cout << std::endl;
 
         // save the resulting data data
-        MEASURE("WAVEFUNCTIONS, DENSITY MATRICES, ACF, SPECTRUM AND POTENTIAL WRITING: ",
+        MEASURE("WAVEFUNCTIONS, DENSITY MATRICES, ACF AND SPECTRUM WRITING: ",
             if (             savewfn) Eigen::Write("PSI_DIA_"      + std::to_string(i) + ".mat", wfndt   );
-                                      Eigen::Write("P_DIA_"        + std::to_string(i) + ".mat", Pd      );
-            if (adiabatic           ) Eigen::Write("U_ADIA_"       + std::to_string(i) + ".mat", Ua      );
+            if (nstate > 1          ) Eigen::Write("P_DIA_"        + std::to_string(i) + ".mat", Pd      );
             if (adiabatic && savewfn) Eigen::Write("PSI_ADIA_"     + std::to_string(i) + ".mat", wfnat   );
             if (adiabatic           ) Eigen::Write("P_ADIA_"       + std::to_string(i) + ".mat", Pa      );
-                                      Eigen::Write("ACF_DIA_"      + std::to_string(i) + ".mat", acf     );
-                                      Eigen::Write("SPECTRUM_DIA_" + std::to_string(i) + ".mat", spectrum);
+            if (!imaginary          ) Eigen::Write("ACF_DIA_"      + std::to_string(i) + ".mat", acf     );
+            if (!imaginary          ) Eigen::Write("SPECTRUM_DIA_" + std::to_string(i) + ".mat", spectrum);
         )
     }
 
