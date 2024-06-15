@@ -5,7 +5,9 @@ cmake_minimum_required(VERSION 3.16)
 project(Acorn)
 
 # set policies
+set(CMAKE_POLICY_DEFAULT_CMP0153 OLD)
 set(CMAKE_POLICY_DEFAULT_CMP0148 OLD)
+set(CMAKE_POLICY_DEFAULT_CMP0146 OLD)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 # set the standard and compile commands export
@@ -24,26 +26,48 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY         ${PROJECT_SOURCE_DIR}/bin)
 set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTS OFF)
 
-# set the compiler flags
-if (MSVC)
-    set(CMAKE_CXX_FLAGS "/bigobj /Zc:__cplusplus /EHsc")
+# disable eigen qt tests
+set(EIGEN_TEST_NOQT ON)
+
+# set the base compiler flags
+set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -funroll-loops")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra --coverage")
+
+# set platform specific flags
+if (WIN32)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -static -Wa,-mbig-obj")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -static -Wa,-mbig-obj")
 else()
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -fprofile-arcs -ftest-coverage")
-    set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -funroll-loops -flto=auto")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=auto")
 endif()
 
 if (WIN32)
     # include the fetch plugin
     include(FetchContent)
 
-    # declare libraries that are better to be downloaded on windows
+    # declare the libint library on github releases
+    FetchContent_Declare(libint SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz)
+
+    # declare the eigen release for linear algebra
+    FetchContent_Declare(eigen SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz)
+
+    # declare the fftw library on the fftw webpage
     FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www.fftw.org/fftw-3.3.10.tar.gz)
 
     # download these libraries
-    FetchContent_MakeAvailable(fftw)
+    FetchContent_MakeAvailable(eigen fftw libint)
+
+    # read the problematic libint file
+    file(READ ${libint_SOURCE_DIR}/include/libint2/boys.h CONTENT)
+
+    # fix the bug in the file
+    string(REPLACE "#ifdef _MSC_VER" "#ifdef WIN32" CONTENT "${CONTENT}")
+
+    # write back to the file
+    file(WRITE ${libint_SOURCE_DIR}/include/libint2/boys.h "${CONTENT}")
 
     # include additional directories
-    include_directories(${fftw_SOURCE_DIR}/api)
+    include_directories(${CMAKE_BINARY_DIR}/include ${fftw_SOURCE_DIR}/api)
 endif()
 
 # include directories
@@ -62,14 +86,12 @@ target_link_libraries(acorn_base Eigen3::Eigen)
 # add subprograms
 add_subdirectory(program/expression)
 add_subdirectory(program/transform)
+add_subdirectory(program/integral)
 add_subdirectory(program/cdyn)
 add_subdirectory(program/qdyn)
 add_subdirectory(program/ci)
 add_subdirectory(program/hf)
 add_subdirectory(program/mp)
-if (NOT WIN32)
-    add_subdirectory(program/integral)
-endif()
 
 # enable testing
 enable_testing()

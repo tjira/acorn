@@ -18,7 +18,11 @@ int main(int argc, char** argv) {
 
     // set the environment variable for the basis set location
     if (auto path = std::filesystem::weakly_canonical(std::filesystem::path(argv[0])).parent_path(); !std::filesystem::is_directory(std::string(DATADIR) + "/basis")) {
+        #ifdef _WIN32
+        _putenv_s("LIBINT_DATA_PATH", path.string().c_str());
+        #else
         setenv("LIBINT_DATA_PATH", path.c_str(), true);
+        #endif
     }
 
     // get the name of the basis and replace stars and pluses
