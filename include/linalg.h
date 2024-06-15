@@ -32,6 +32,3 @@ namespace Eigen {
     void Write(const std::string& path, const EigenTensor<double, 4>& A);
     void Write(const std::string& path, const EigenMatrix<double   >& A);
 }
-
-// operators
-std::ostream& operator<<(std::ostream& os, const Matrix& A);

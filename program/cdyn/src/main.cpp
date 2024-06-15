@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
     program.add_argument("-e", "--excstate").help("-- Initial state of the system.").default_value(0).scan<'i', int>();
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
     program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(200).scan<'i', int>();
+    program.add_argument("-l", "--log").help("-- Log interval for the simulation.").default_value(10).scan<'i', int>();
     program.add_argument("-m", "--mass").help("-- Mass of the model system.").default_value(1.0).scan<'g', double>();
     program.add_argument("-p", "--momentum").help("-- Momentum of the model system.").default_value(0.0).scan<'g', double>();
     program.add_argument("-r", "--random").help("-- Random seed for the simulation.").default_value(1).scan<'i', int>();
@@ -29,8 +30,8 @@ int main(int argc, char** argv) {
     double momentum = program.get<double>("-p"), position = program.get<double>("-c"), step = program.get<double>("-s"), mass = program.get<double>("-m"); std::vector<Expression> Ue, dUe;
     int iters = program.get<int>("-i"), seed = program.get<int>("-r"), trajs = program.get<int>("-t"); int nstate = std::sqrt(program.get<std::vector<std::string>>("-u").size());
 
-    // extract boolean flags
-    bool adiabatic = program.get<bool>("--adiabatic"), savetraj = program.get<bool>("--savetraj");
+    // extract boolean flags and the log interval
+    bool adiabatic = program.get<bool>("--adiabatic"), savetraj = program.get<bool>("--savetraj"); int log = program.get<int>("-l");
 
     // reserve the memory for the potential expressions
     Ue.reserve(nstate * nstate), dUe.reserve(nstate * nstate);
@@ -55,20 +56,23 @@ int main(int argc, char** argv) {
     // loop over all trajectories
     for (int i = 0; i < trajs; i++) {
 
-        // initialize the containers for the position, velocity, acceleration, state energy difference and state
-        Matrix U, dU, r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1); IntegerMatrix s(iters + 1, 1); LandauZener lz(nstate, adiabatic, iters + 1, seed + i);
-
         // distributions for position and momentum
-        std::mt19937 mt(seed + i); std::normal_distribution<double> positiondist(position, 0.5), momentumdist(momentum, 1.0);
+        std::mt19937 mt(trajs * (seed + i)); std::normal_distribution<double> positiondist(position, 0.5), momentumdist(momentum, 1.0);
+
+        // initialize the containers for the position, velocity, acceleration, state energy difference and state
+        Matrix U, dU, r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1); IntegerMatrix s(iters + 1, 1);
 
         // fill the initial position, velocity, acceleration and state
         r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, s(0) = program.get<int>("-e");
+
+        // initialize the Landau-Zener algorithm
+        LandauZener lz = nstate > 1 ? LandauZener(nstate, adiabatic, iters + 1, mt) : LandauZener();
 
         // calculate the potential and perform adiabatic transform
         if (U = eval(Ue, r(0)); adiabatic) {Eigen::SelfAdjointEigenSolver<Matrix> solver(U); U = solver.eigenvalues().asDiagonal();};
 
         // define the container for the potential and attempt a LZ jump
-        std::vector<Matrix> Uc(iters + 1); Uc.at(0) = U; lz.jump(U, s(0), 0, step);
+        std::vector<Matrix> Uc(iters + 1); Uc.at(0) = U; if (nstate > 1) lz.jump(U, s(0), 0, step);
 
         // initialize the force and potential with kinetic energy
         double F = mass * a(0), Epot = U(s(0), s(0)), Ekin = 0.5 * mass * v(0) * v(0);
@@ -97,8 +101,9 @@ int main(int argc, char** argv) {
             // calculate the gradient of the potential and save U and dU to the container
             Uc.at(j + 1) = U, dU = (Uc.at(j + 1) - Uc.at(j)) / (r(j + 1) - r(j));
 
-            if (int ns = lz.jump(U, s(j + 1), j + 1, step); ns != s(j + 1)) {
-                v(j + 1) = std::sqrt(v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j), s(j))) / mass); s(j + 1) = ns;
+            // perform the LZ jump and update rescale velocity
+            if (nstate > 1) if (int ns = lz.jump(U, s(j + 1), j + 1, step); ns != s(j + 1)) {
+                v(j + 1) = std::sqrt(v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j + 1), s(j + 1))) / mass); s(j + 1) = ns;
             }
 
             // calculate the potential and kinetic energy
@@ -111,7 +116,7 @@ int main(int argc, char** argv) {
             if (savetraj) rt(j + 1, 0) = (j + 1) * step, rt(j + 1, i + 1) = Epot;
 
             // print the iteration
-            if (!((j + 1) % 1)) std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %s\n", i + 1, j + 1, s(j), Epot, Ekin, Epot + Ekin, F, "");
+            if (!((j + 1) % log)) std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %s\n", i + 1, j + 1, s(j), Epot, Ekin, Epot + Ekin, F, "");
         }
 
         // assign state

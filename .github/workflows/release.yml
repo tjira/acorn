@@ -41,14 +41,13 @@ jobs:
 
       - name: Rename Binaries
         run: |
-          mv bin/acorn_aqdyn bin/acorn_aqdyn_linux_x86-64
           mv bin/acorn_cdyn bin/acorn_cdyn_linux_x86-64
           mv bin/acorn_ci bin/acorn_ci_linux_x86-64
           mv bin/acorn_expression bin/acorn_expression_linux_x86-64
           mv bin/acorn_hf bin/acorn_hf_linux_x86-64
           mv bin/acorn_integral bin/acorn_integral_linux_x86-64
           mv bin/acorn_mp bin/acorn_mp_linux_x86-64
-          mv bin/acorn_nqdyn bin/acorn_nqdyn_linux_x86-64
+          mv bin/acorn_qdyn bin/acorn_qdyn_linux_x86-64
           mv bin/acorn_transform bin/acorn_transform_linux_x86-64
 
       - name: Upload Artifacts
@@ -56,14 +55,13 @@ jobs:
         with:
           name: linux
           path: |
-            bin/acorn_aqdyn_linux_x86-64
             bin/acorn_cdyn_linux_x86-64
             bin/acorn_ci_linux_x86-64
             bin/acorn_expression_linux_x86-64
             bin/acorn_hf_linux_x86-64
             bin/acorn_integral_linux_x86-64
             bin/acorn_mp_linux_x86-64
-            bin/acorn_nqdyn_linux_x86-64
+            bin/acorn_qdyn_linux_x86-64
             bin/acorn_transform_linux_x86-64
 
   release:
@@ -81,19 +79,18 @@ jobs:
 
       - name: Copy x86-64 Linux Binaries to the Root Folder
         run: |
-          cp linux/acorn_aqdyn_linux_x86-64 acorn_aqdyn
           cp linux/acorn_cdyn_linux_x86-64 acorn_cdyn
           cp linux/acorn_ci_linux_x86-64 acorn_ci
           cp linux/acorn_expression_linux_x86-64 acorn_expression
           cp linux/acorn_hf_linux_x86-64 acorn_hf
           cp linux/acorn_integral_linux_x86-64 acorn_integral
           cp linux/acorn_mp_linux_x86-64 acorn_mp
-          cp linux/acorn_nqdyn_linux_x86-64 acorn_nqdyn
+          cp linux/acorn_qdyn_linux_x86-64 acorn_qdyn
           cp linux/acorn_transform_linux_x86-64 acorn_transform
 
       - name: Create x86-64 Linux Packages
         run: |
-          tar -czf acorn_linux_x86-64.tar.gz acorn_aqdyn acorn_cdyn acorn_ci acorn_expression acorn_hf acorn_integral acorn_mp acorn_nqdyn acorn_transform basis example script/plotmat.py LICENSE.md
+          tar -czf acorn_linux_x86-64.tar.gz acorn_cdyn acorn_ci acorn_expression acorn_hf acorn_integral acorn_mp acorn_qdyn acorn_transform basis example script/plot.py LICENSE.md
 
       - name: Release linux_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2

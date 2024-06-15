@@ -9,7 +9,7 @@ namespace FourierTransform {
     void C2RFFT(std::complex<double>* in, double* out, const std::vector<int>& sizes);
 
     // forward and inverse Fourier transforms
-    ComplexMatrix IFFT(const ComplexMatrix& data);
-    ComplexMatrix FFT(const ComplexMatrix& data);
-    Matrix C2RFFT(const ComplexMatrix& data);
+    ComplexVector IFFT(const ComplexVector& data, const std::vector<int>& sizes = {});
+    ComplexVector FFT(const ComplexVector& data, const std::vector<int>& sizes = {});
+    Vector C2RFFT(const ComplexVector& data, const std::vector<int>& sizes = {});
 }

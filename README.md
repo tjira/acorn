@@ -41,7 +41,7 @@
 </p>
 
 <p align="center">
-Quantum Acorn, a collection of electronic structure methods compiled into a dependency-free binary. If you are here for the educational scripts, you can find them in the education folder.
+Quantum Acorn, a collection of electronic structure methods compiled into a dependency-free binaries. If you are here for the educational scripts, you can find them in the education folder.
 </p>
 
 ## Features

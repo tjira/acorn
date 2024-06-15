@@ -2,33 +2,6 @@
 #include <fstream>
 #include <iomanip>
 
-std::ostream& operator<<(std::ostream& os, const EigenMatrix<double>& A) {
-    // print the dimensions and set the formatting
-    os << "(" << A.rows() << "x" << A.cols() << "): " << std::fixed << std::setprecision(14); int maxcols = 7;
-
-    // for every printed range of columns
-    for (int i = 0; i < A.cols() / maxcols + !!(A.cols() % maxcols); i++) {
-        // print the column range
-        os << i * maxcols + 1 << "-" << std::min((int)A.cols(), maxcols * (i + 1)) << "\n";
-
-        // for every row and column in range print the value
-        for (int j = 0; j < A.rows(); j++) {
-            for (int k = i * maxcols; k < std::min((int)A.cols(), (i + 1) * maxcols); k++) {
-                os << std::setw(20) << A(j, k) << " ";
-            }
-
-            // print the new line at the end of line
-            if (j < A.rows() - 1) os << "\n";
-        }
-
-        // print the new line at the end of column range
-        if (i != A.cols() / maxcols + !!(A.cols() % maxcols) - 1) os << "\n";
-    }
-
-    // return stream
-    return os;
-}
-
 Tensor<4> Eigen::Kron(const EigenMatrix<double>& A, const EigenTensor<double, 4>& B) {
     // define the tensor where the product will be stored
     EigenTensor<double, 4> C(B.dimension(0), B.dimension(1), A.rows() * B.dimension(2), A.cols() * B.dimension(3));

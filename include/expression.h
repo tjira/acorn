@@ -8,7 +8,7 @@ public:
     Expression(const std::string& exprstr, const std::vector<std::string>& varstr);
 
     // evaluation functions
-    Vector eval(const Matrix& r); double eval(double r);
+    double eval(double r); double eval(const Vector& r);
 
 private:
     exprtk::expression<double> expression; Vector vars;

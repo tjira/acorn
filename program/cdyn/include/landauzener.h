@@ -4,7 +4,7 @@
 
 class LandauZener {
 public:
-    LandauZener(int nstate, bool adiabatic, int points, int seed);
+    LandauZener(int nstate, bool adiabatic, int points, std::mt19937& mt); LandauZener() = default;
 
     // function to perform the Landau-Zener jump
     int jump(const Matrix& U, int state, int i, double tstep);

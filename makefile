@@ -16,9 +16,9 @@ cdyn_1d_HO:
 
 # target to perform an imaginary-time propagation of 1D adiabatic wavepacket
 qdyn_1d_HO_imaginary:
-	"../bin/acorn_expression" -d 1 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*x^2"
-	"../bin/acorn_expression" -d 1 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-x^2)" "0"
-	"../bin/acorn_qdyn" -d 1 -i 1000 -m 1 -o 3 -p 0 -s 0.1 --savewfn
+	"./bin/Debug/acorn_expression" -d 1 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*x^2"
+	"./bin/Debug/acorn_expression" -d 1 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-x^2)" "0"
+	"./bin/Debug/acorn_qdyn" -d 1 -i 1000 -m 1 -o 3 -p 0 -s 0.1 --savewfn
 
 # target to perform an imaginary-time propagation of 2D adiabatic wavepacket
 qdyn_2d_HO_imaginary:
