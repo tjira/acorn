@@ -79,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument("mats", nargs="+", help="The matrix files to plot.")
 
     # parse arguments and load data
-    args = parser.parse_args(); mats = [pd.read_csv(mat, delim_whitespace=True, header=None, skiprows=1) for mat in args.mats]; data = pd.DataFrame();
+    args = parser.parse_args(); mats = [pd.read_csv(mat, header=None, sep="\\s+", skiprows=1) for mat in args.mats]; data = pd.DataFrame();
 
     # create the figure and update function
     if args.dimension == 1: fig, update = one(args, mats)
