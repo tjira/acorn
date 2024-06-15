@@ -4,9 +4,16 @@ cmake_minimum_required(VERSION 3.16)
 # project name
 project(Acorn)
 
+# set policies
+set(CMAKE_POLICY_DEFAULT_CMP0148 OLD)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 # set the standard and compile commands export
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
+
+# disable deprecation warning caused by fftw
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 
 # set the output paths
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
@@ -19,8 +26,7 @@ set(BUILD_TESTS OFF)
 
 # set the compiler flags
 if (MSVC)
-    set(CMAKE_CXX_FLAGS_DEBUG "/bigobj /Zc:__cplusplus")
-    set(CMAKE_CXX_FLAGS_RELEASE "/bigobj /Zc:__cplusplus")
+    set(CMAKE_CXX_FLAGS "/bigobj /Zc:__cplusplus /EHsc")
 else()
     set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -fprofile-arcs -ftest-coverage")
     set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -funroll-loops -flto=auto")
