@@ -1,5 +1,7 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #define MATRIXMAP(A) Eigen::      Map<Matrix   >(A.data(), A.dimension(0), A.dimension(1))
 #define TENSORMAP(A) Eigen::TensorMap<Tensor<2>>(A.data(), A.rows(),       A.cols()      )
 

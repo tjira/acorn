@@ -9,9 +9,32 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
+# set the build variables
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_TESTS OFF)
+
 # set the compiler flags
-set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -fprofile-arcs -ftest-coverage")
-set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -funroll-loops -flto=auto")
+if (MSVC)
+    set(CMAKE_CXX_FLAGS_DEBUG "/bigobj /Zc:__cplusplus")
+    set(CMAKE_CXX_FLAGS_RELEASE "/bigobj /Zc:__cplusplus")
+else()
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -funroll-loops -flto=auto")
+endif()
+
+if (WIN32)
+    # include the fetch plugin
+    include(FetchContent)
+
+    # declare libraries that are better to be downloaded on windows
+    FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www.fftw.org/fftw-3.3.10.tar.gz)
+
+    # download these libraries
+    FetchContent_MakeAvailable(fftw)
+
+    # include additional directories
+    include_directories(${fftw_SOURCE_DIR}/api)
+endif()
 
 # include directories
 include_directories(include lib)
@@ -29,13 +52,15 @@ target_link_libraries(acorn_base Eigen3::Eigen)
 # add subprograms
 add_subdirectory(program/expression)
 add_subdirectory(program/transform)
-add_subdirectory(program/integral)
 add_subdirectory(program/aqdyn)
 add_subdirectory(program/nqdyn)
 add_subdirectory(program/cdyn)
 add_subdirectory(program/ci)
 add_subdirectory(program/hf)
 add_subdirectory(program/mp)
+if (NOT WIN32)
+    add_subdirectory(program/integral)
+endif()
 
 # enable testing
 enable_testing()
