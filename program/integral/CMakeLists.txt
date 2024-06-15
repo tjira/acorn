@@ -8,4 +8,4 @@ target_include_directories(acorn_integral PRIVATE include)
 target_compile_definitions(acorn_integral PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
 # link the libraries
-target_link_libraries(acorn_integral acorn_base libint2$<$<NOT:$<BOOL:WIN32>>:.a>)
+target_link_libraries(acorn_integral acorn_base libint2$<$<PLATFORM_ID:Linux>:.a>)
