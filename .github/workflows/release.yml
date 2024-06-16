@@ -136,7 +136,7 @@ jobs:
           cp windows/acorn_integral_windows_x86-64.exe acorn_integral.exe
           cp windows/acorn_mp_windows_x86-64.exe acorn_mp.exe
           cp windows/acorn_qdyn_windows_x86-64.exe acorn_qdyn.exe
-          cp windows/acorn_transform_windows_x86-64 acorn_transform.exe
+          cp windows/acorn_transform_windows_x86-64.exe acorn_transform.exe
 
       - name: Create x86-64 Static Windows Packages
         run: |
