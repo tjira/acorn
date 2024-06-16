@@ -28,7 +28,7 @@ jobs:
         run: ./script/libint.sh
 
       - name: Configure Acorn
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTATIC=ON
 
       - name: Build Acorn
         run: |
@@ -61,14 +61,14 @@ jobs:
             bin/acorn_qdyn_linux_x86-64
             bin/acorn_transform_linux_x86-64
 
-  build_windows_static_x86-64:
+  build_windows_x86-64:
     runs-on: windows-2022
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Configure Acorn
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTATIC=ON
 
       - name: Build Acorn
         run: |
@@ -76,32 +76,32 @@ jobs:
 
       - name: Rename Binaries
         run: |
-          mv bin/acorn_cdyn.exe bin/acorn_cdyn_windows_static_x86-64.exe
-          mv bin/acorn_ci.exe bin/acorn_ci_windows_static_x86-64.exe
-          mv bin/acorn_expression.exe bin/acorn_expression_windows_static_x86-64.exe
-          mv bin/acorn_hf.exe bin/acorn_hf_windows_static_x86-64.exe
-          mv bin/acorn_integral.exe bin/acorn_integral_windows_static_x86-64.exe
-          mv bin/acorn_mp.exe bin/acorn_mp_windows_static_x86-64.exe
-          mv bin/acorn_qdyn.exe bin/acorn_qdyn_windows_static_x86-64.exe
-          mv bin/acorn_transform.exe bin/acorn_transform_windows_static_x86-64.exe
+          mv bin/acorn_cdyn.exe bin/acorn_cdyn_windows_x86-64.exe
+          mv bin/acorn_ci.exe bin/acorn_ci_windows_x86-64.exe
+          mv bin/acorn_expression.exe bin/acorn_expression_windows_x86-64.exe
+          mv bin/acorn_hf.exe bin/acorn_hf_windows_x86-64.exe
+          mv bin/acorn_integral.exe bin/acorn_integral_windows_x86-64.exe
+          mv bin/acorn_mp.exe bin/acorn_mp_windows_x86-64.exe
+          mv bin/acorn_qdyn.exe bin/acorn_qdyn_windows_x86-64.exe
+          mv bin/acorn_transform.exe bin/acorn_transform_windows_x86-64.exe
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows_static
+          name: windows
           path: |
-            bin/acorn_cdyn_windows_static_x86-64.exe
-            bin/acorn_ci_windows_static_x86-64.exe
-            bin/acorn_expression_windows_static_x86-64.exe
-            bin/acorn_hf_windows_static_x86-64.exe
-            bin/acorn_integral_windows_static_x86-64.exe
-            bin/acorn_mp_windows_static_x86-64.exe
-            bin/acorn_qdyn_windows_static_x86-64.exe
-            bin/acorn_transform_windows_static_x86-64.exe
+            bin/acorn_cdyn_windows_x86-64.exe
+            bin/acorn_ci_windows_x86-64.exe
+            bin/acorn_expression_windows_x86-64.exe
+            bin/acorn_hf_windows_x86-64.exe
+            bin/acorn_integral_windows_x86-64.exe
+            bin/acorn_mp_windows_x86-64.exe
+            bin/acorn_qdyn_windows_x86-64.exe
+            bin/acorn_transform_windows_x86-64.exe
 
   release:
     runs-on: ubuntu-latest
-    needs: [build_linux_x86-64, build_windows_static_x86-64]
+    needs: [build_linux_x86-64, build_windows_x86-64]
 
     steps:
       - uses: actions/checkout@v4
@@ -129,18 +129,18 @@ jobs:
 
       - name: Copy x86-64 Windows Static Binaries to the Root Folder
         run: |
-          cp windows_static/acorn_cdyn_windows_static_x86-64 acorn_cdyn.exe
-          cp windows_static/acorn_ci_windows_static_x86-64 acorn_ci.exe
-          cp windows_static/acorn_expression_windows_static_x86-64 acorn_expression.exe
-          cp windows_static/acorn_hf_windows_static_x86-64 acorn_hf.exe
-          cp windows_static/acorn_integral_windows_static_x86-64 acorn_integral.exe
-          cp windows_static/acorn_mp_windows_static_x86-64 acorn_mp.exe
-          cp windows_static/acorn_qdyn_windows_static_x86-64 acorn_qdyn.exe
-          cp windows_static/acorn_transform_windows_static_x86-64 acorn_transform.exe
+          cp windows/acorn_cdyn_windows_x86-64.exe acorn_cdyn.exe
+          cp windows/acorn_ci_windows_x86-64.exe acorn_ci.exe
+          cp windows/acorn_expression_windows_x86-64.exe acorn_expression.exe
+          cp windows/acorn_hf_windows_x86-64.exe acorn_hf.exe
+          cp windows/acorn_integral_windows_x86-64.exe acorn_integral.exe
+          cp windows/acorn_mp_windows_x86-64.exe acorn_mp.exe
+          cp windows/acorn_qdyn_windows_x86-64.exe acorn_qdyn.exe
+          cp windows/acorn_transform_windows_x86-64 acorn_transform.exe
 
       - name: Create x86-64 Static Windows Packages
         run: |
-          tar -czf acorn_windows_static_x86-64.tar.gz acorn_cdyn.exe acorn_ci.exe acorn_expression.exe acorn_hf.exe acorn_integral.exe acorn_mp.exe acorn_qdyn.exe acorn_transform.exe basis example script/plot.py LICENSE.md
+          zip -r acorn_windows_x86-64.tar.gz acorn_cdyn.exe acorn_ci.exe acorn_expression.exe acorn_hf.exe acorn_integral.exe acorn_mp.exe acorn_qdyn.exe acorn_transform.exe basis example script/plot.py LICENSE.md
 
       - name: Release linux_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
@@ -149,9 +149,9 @@ jobs:
           file: acorn_linux_x86-64.tar.gz
           tag: ${{github.ref}}
 
-      - name: Release windows_static_x86-64 Version of Acorn
+      - name: Release windows_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn_windows_static_x86-64.tar.gz
+          file: acorn_windows_x86-64.tar.gz
           tag: ${{github.ref}}
