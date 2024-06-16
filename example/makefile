@@ -6,7 +6,7 @@ clean:
 
 # target to copy the molecule file to the current folder
 molecule:
-	cp molecule/water.xyz molecule.xyz
+	cp "molecule/water.xyz" molecule.xyz
 
 # EXAMPLE TARGETS FOR EACH MODULE ==================================================================
 
