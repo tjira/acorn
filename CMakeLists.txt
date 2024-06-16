@@ -4,51 +4,41 @@ cmake_minimum_required(VERSION 3.16)
 # project name
 project(Acorn)
 
-# set policies
+# set the c++ standard
+set(CMAKE_CXX_STANDARD 20)
+
+# set policies and compile commands
 set(CMAKE_POLICY_DEFAULT_CMP0153 OLD)
 set(CMAKE_POLICY_DEFAULT_CMP0148 OLD)
 set(CMAKE_POLICY_DEFAULT_CMP0146 OLD)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-
-# set the standard and compile commands export
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 20)
 
-# disable deprecation warning caused by fftw
+# disable deprecation warning caused by fftw and set output path
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 
-# set the output paths
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${PROJECT_SOURCE_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY         ${PROJECT_SOURCE_DIR}/bin)
-
-# set the build variables
+# set the library  build variables
 set(BUILD_SHARED_LIBS OFF)
+set(EIGEN_TEST_NOQT ON)
 set(BUILD_TESTS OFF)
 
-# disable eigen qt tests
-set(EIGEN_TEST_NOQT ON)
-
 # set the base compiler flags
-set(CMAKE_CXX_FLAGS_RELEASE "-march=native -s -O3 -funroll-loops")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra --coverage")
+set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -funroll-loops")
 
 if (STATIC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -static")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -static")
 endif()
 
-# set platform specific flags
-if (WIN32)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wa,-mbig-obj")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wa,-mbig-obj")
-else()
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=auto")
-endif()
-
 if (WIN32)
     # include the fetch plugin
     include(FetchContent)
+
+    # set additional compiler flags for windows
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wa,-mbig-obj")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wa,-mbig-obj")
 
     # declare the libint library on github releases
     FetchContent_Declare(libint SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz)
@@ -73,6 +63,8 @@ if (WIN32)
 
     # include additional directories
     include_directories(${CMAKE_BINARY_DIR}/include ${fftw_SOURCE_DIR}/api)
+else()
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native -flto=auto")
 endif()
 
 # include directories
