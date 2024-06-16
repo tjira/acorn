@@ -140,7 +140,7 @@ jobs:
 
       - name: Create x86-64 Static Windows Packages
         run: |
-          zip -r acorn_windows_x86-64.tar.gz acorn_cdyn.exe acorn_ci.exe acorn_expression.exe acorn_hf.exe acorn_integral.exe acorn_mp.exe acorn_qdyn.exe acorn_transform.exe basis example script/plot.py LICENSE.md
+          zip -r acorn_windows_x86-64.zip acorn_cdyn.exe acorn_ci.exe acorn_expression.exe acorn_hf.exe acorn_integral.exe acorn_mp.exe acorn_qdyn.exe acorn_transform.exe basis example script/plot.py LICENSE.md
 
       - name: Release linux_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
@@ -153,5 +153,5 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn_windows_x86-64.tar.gz
+          file: acorn_windows_x86-64.zip
           tag: ${{github.ref}}
