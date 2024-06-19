@@ -4,15 +4,14 @@
 
 class LandauZener {
 public:
-    LandauZener(int nstate, bool adiabatic, int points, std::mt19937& mt); LandauZener() = default;
+    LandauZener(int nstate, int points); LandauZener();
 
     // function to perform the Landau-Zener jump
-    int jump(const Matrix& U, int state, int i, double tstep);
+    std::vector<std::tuple<int, double, bool>> jump(const Matrix& U, int state, int i, double tstep);
+
+    // matrix getters
+    const Matrix& getEd() const {return ed;} const Matrix& getDed() const {return ded;}
 
 private:
-    // general variables necessary for the Landau-Zener algorithm
-    Matrix de, dz, ddz; std::vector<std::vector<int>> combs; bool adiabatic;
-
-    // random number generator with uniform distribution
-    std::mt19937 mt; std::uniform_real_distribution<double> dist;
+    Matrix ed, ded; std::vector<std::vector<int>> combs;
 };

@@ -4,12 +4,17 @@ import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, nu
 
 
 def one(args, mats):
-    # set the column names so that the column names of function values are unique and format the data, first index is the frame, second index is the provided matrix
+    # set the column names of the data so that the first column is independent variable and the rest are unique dependent variables
     for i, mat in enumerate(mats): mat.columns = [("x" if j == 0 else sum([mats[k].shape[1] - 1 for k in range(i)]) + j) for j in range(mat.shape[1])]
+
+    # split the dat into frames based on the args.columns variable
     data = list(map(list, zip(*[[mat[["x"] + list(mat.columns[i:args.columns + i])] for i in range(1, mat.shape[1], args.columns)] for mat in mats])))
 
+    # extract the specific columns if provided in the arguments
+    if args.specific: data = [[mat[["x"] + list(mat.columns[args.specific])] for mat in frame] for frame in data]
+
     # sort the data by first column
-    data = [[frame.sort_values("x") for frame in frames] for frames in data]
+    data = [[mat.sort_values("x") for mat in frame] for frame in data]
 
     # melt the data
     data = [pd.concat([mat.melt("x", value_name="y", var_name="var") for mat in frame]) for frame in data]
@@ -29,8 +34,10 @@ def one(args, mats):
     plt.tight_layout(); return fig, update
 
 def two(args, mats):
-    # set the column names so that the column names of function values are unique and format the data, first index is the frame, second index is the provided matrix
+    # set the column names of the data so that the first two columns are independent variables and the rest are unique dependent variables
     for i, mat in enumerate(mats): mat.columns = [("x" if j == 0 else "y" if j == 1 else sum([mats[k].shape[1] - 2 for k in range(i)]) + j - 1) for j in range(mat.shape[1])]
+
+    # split the dat into frames based on the args.columns variable
     data = list(map(list, zip(*[[mat[["x", "y"] + list(mat.columns[i:args.columns + i])] for i in range(2, mat.shape[1], args.columns)] for mat in mats])))
 
     # create the meshgrid for the data
@@ -65,10 +72,11 @@ if __name__ == "__main__":
     parser = ap.ArgumentParser(prog="Acorn Matrix Plotter", description="Matrix plotting script for the Quantum Acorn package.", add_help=False)
 
     # add the arguments
-    parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
     parser.add_argument("-c", "--columns", type=int, default=1, help="The number of columns to plot in the matrix.")
     parser.add_argument("-d", "--dimension", type=int, default=1, help="Dimension of the data.")
     parser.add_argument("-f", "--frames", type=int, default=1, help="The number of frames to plot.")
+    parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
+    parser.add_argument("-s", "--specific", type=int, default=0, nargs="+", help="Extract the specific columns from the provided column interval.")
     parser.add_argument("--last", action="store_true", help="Display only the last frame.")
     parser.add_argument("--mp4", action="store_true", help="Save the plot as a gif.")
     parser.add_argument("--gif", action="store_true", help="Save the plot as an mp4.")
