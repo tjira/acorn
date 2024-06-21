@@ -9,12 +9,14 @@ int main(int argc, char** argv) {
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
     program.add_argument("-d", "--dimension").help("-- Dimension of the provided potential and wavefunction.").default_value(1).scan<'i', int>();
+    program.add_argument("-f", "--factor").help("-- Factor for scaling the saved wavefunction.").default_value(1.0).scan<'g', double>();
     program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(200).scan<'i', int>();
     program.add_argument("-m", "--mass").help("-- Mass of the model system.").default_value(1.0).scan<'g', double>();
     program.add_argument("-o", "--optimize").help("-- Perform the dynamics in imaginary time for several orthogonal states.").default_value(1).scan<'i', int>();
     program.add_argument("-p", "--momentum").help("-- Momentum of the model system.").default_value(0.0).scan<'g', double>();
     program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(1.0).scan<'g', double>();
     program.add_argument("--adiabatic").help("-- Enable transform to adiabatic basis.").default_value(false).implicit_value(true);
+    program.add_argument("--align").help("-- Align the wavefunction values to the potential.").default_value(false).implicit_value(true);
     program.add_argument("--savewfn").help("-- Save the time evolution of the wavefunction.").default_value(false).implicit_value(true);
 
     // parse the command line arguments
@@ -23,10 +25,10 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
     // extract the command line parameters
-    int dim = program.get<int>("-d"), iters = program.get<int>("-i"), optstates = program.get<int>("-o"); double mass = program.get<double>("-m"), step = program.get<double>("-s"), momentum = program.get<double>("-p");
+    int dim = program.get<int>("-d"), iters = program.get<int>("-i"), optstates = program.get<int>("-o"); double factor = program.get<double>("-f"), mass = program.get<double>("-m"), step = program.get<double>("-s"), momentum = program.get<double>("-p");
 
     // extract boolean flags
-    bool adiabatic = program.get<bool>("--adiabatic"), imaginary = program.is_used("--optimize"), savewfn = program.get<bool>("--savewfn");
+    bool adiabatic = program.get<bool>("--adiabatic"), align = program.get<bool>("--align"), imaginary = program.is_used("--optimize"), savewfn = program.get<bool>("--savewfn");
 
     // load the potential and initial wavefunction
     MEASURE("READING POTENTIAL AND INITIAL WAVEFUNCTION: ", Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); 
@@ -90,7 +92,11 @@ int main(int argc, char** argv) {
         if (savewfn) {
             wfndt = Matrix(Ud.rows(), 2 * nstate * (iters + 1) + dim);
             for (int i = 0; i < nstate; i++) {
-                wfndt.col(2 * i + dim) = wfnd.get().col(i).real(), wfndt.col(2 * i + dim + 1) = wfnd.get().col(i).imag();
+                wfndt.col(2 * i + dim) = factor * wfnd.get().col(i).real(), wfndt.col(2 * i + dim + 1) = factor * wfnd.get().col(i).imag();
+                if (align) {
+                    wfndt.col(2 * i + dim + 0) = wfndt.col(2 * i + dim + 0).array() + Ud.col(i * (nstate + 1)).array();
+                    wfndt.col(2 * i + dim + 1) = wfndt.col(2 * i + dim + 1).array() + Ud.col(i * (nstate + 1)).array();
+                }
             } wfndt.leftCols(dim) = wfnd.getr();
         }
 
@@ -98,7 +104,11 @@ int main(int argc, char** argv) {
         if (adiabatic && savewfn) {
             wfnat = Matrix(Ua.rows(), 2 * nstate * (iters + 1) + dim);
             for (int i = 0; i < nstate; i++) {
-                wfnat.col(2 * i + dim) = wfna.get().col(i).real(), wfnat.col(2 * i + dim + 1) = wfna.get().col(i).imag();
+                wfnat.col(2 * i + dim) = factor * wfna.get().col(i).real(), wfnat.col(2 * i + dim + 1) = factor * wfna.get().col(i).imag();
+                if (align) {
+                    wfnat.col(2 * i + dim + 0) = wfnat.col(2 * i + dim + 0).array() + Ua.col(1 + i).array();
+                    wfnat.col(2 * i + dim + 1) = wfnat.col(2 * i + dim + 1).array() + Ua.col(1 + i).array();
+                }
             } wfnat.leftCols(dim) = wfna.getr();
         }
 
@@ -138,14 +148,22 @@ int main(int argc, char** argv) {
             // save the diabatic wavefunction to the wavefunction containers
             if (savewfn) {
                 for (int k = 0; k < nstate; k++) {
-                    wfndt.col(2 * nstate * (j + 1) + 2 * k + dim) = wfnd.get().col(k).real(), wfndt.col(2 * nstate * (j + 1) + 2 * k + dim + 1) = wfnd.get().col(k).imag();
+                    wfndt.col(2 * nstate * (j + 1) + 2 * k + dim) = factor * wfnd.get().col(k).real(), wfndt.col(2 * nstate * (j + 1) + 2 * k + dim + 1) = factor * wfnd.get().col(k).imag();
+                    if (align) {
+                        wfndt.col(2 * nstate * (j + 1) + 2 * k + dim + 0) = wfndt.col(2 * nstate * (j + 1) + 2 * k + dim + 0).array() + Ud.col(k * (nstate + 1)).array();
+                        wfndt.col(2 * nstate * (j + 1) + 2 * k + dim + 1) = wfndt.col(2 * nstate * (j + 1) + 2 * k + dim + 1).array() + Ud.col(k * (nstate + 1)).array();
+                    }
                 }
             }
 
             // save the adiabatic wavefunction to the wavefunction containers
             if (adiabatic && savewfn) {
                 for (int k = 0; k < nstate; k++) {
-                    wfnat.col(2 * nstate * (j + 1) + 2 * k + dim) = wfna.get().col(k).real(), wfnat.col(2 * nstate * (j + 1) + 2 * k + dim + 1) = wfna.get().col(k).imag();
+                    wfnat.col(2 * nstate * (j + 1) + 2 * k + dim) = factor * wfna.get().col(k).real(), wfnat.col(2 * nstate * (j + 1) + 2 * k + dim + 1) = factor * wfna.get().col(k).imag();
+                    if (align) {
+                        wfnat.col(2 * nstate * (j + 1) + 2 * k + dim + 0) = wfnat.col(2 * nstate * (j + 1) + 2 * k + dim + 0).array() + Ua.col(1 + k).array();
+                        wfnat.col(2 * nstate * (j + 1) + 2 * k + dim + 1) = wfnat.col(2 * nstate * (j + 1) + 2 * k + dim + 1).array() + Ua.col(1 + k).array();
+                    }
                 }
             }
 
@@ -170,14 +188,14 @@ int main(int argc, char** argv) {
         }
 
         // print the populations
-        for (int i = 0; i < nstate && nstate > 1 && adiabatic; i++) {
-            std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(nstatessq).reshaped(nstate, nstate).transpose()(i, i));
-        } if (nstate > 1 && adiabatic) std::cout << std::endl;
-
-        // print the populations
         for (int i = 0; i < nstate && nstate > 1; i++) {
             std::printf("DIABATIC STATE %d POP: %.14f\n", i, Pd.bottomRows(1).rightCols(nstatessq).reshaped(nstate, nstate).transpose()(i, i));
         } if (nstate > 1) std::cout << std::endl;
+
+        // print the populations
+        for (int i = 0; i < nstate && nstate > 1 && adiabatic; i++) {
+            std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(nstatessq).reshaped(nstate, nstate).transpose()(i, i));
+        } if (nstate > 1 && adiabatic) std::cout << std::endl;
 
         // save the resulting data data
         MEASURE("WAVEFUNCTIONS, DENSITY MATRICES, ACF AND SPECTRUM WRITING: ",

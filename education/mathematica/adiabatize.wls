@@ -4,11 +4,75 @@
 ClearAll["Global`*"];
 
 
-Ud[x_]:={
-{0.01*Tanh[0.6*x],0.001*Exp[-x^2],0.001*Exp[-x^2]},
+PlotPotentials[Ud_,xmin_,xmax_]:=GraphicsRow[{Plot[Evaluate@Diagonal@Ud,{x,xmin,xmax}],Plot[Evaluate@Sort@Eigenvalues@Ud,{x,xmin,xmax}]}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Double State #1*)
+
+
+Subscript[Ud,2,1]:={
+{0.01*Tanh[0.6*x],0.001*Exp[-x^2]},
+{0.001*Exp[-x^2],-0.01*Tanh[0.6*x]}
+};Subscript[Ud,2,1]//MatrixForm
+
+
+PlotPotentials[Subscript[Ud,2,1],-8,8]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Triple State #1*)
+
+
+Subscript[Ud,3,1]:={
+{0.03*(Tanh[1.6*x]+Tanh[1.6*(x+7)]),0.005*Exp[-x^2],0.005*Exp[-(x+7)^2]},
+{0.005*Exp[-x^2],-0.03*(Tanh[1.6*x]+Tanh[1.6*(x-7)]),0.005*Exp[-(x-7)^2]},
+{0.005*Exp[-(x+7)^2],0.005*Exp[-(x-7)^2],-0.03*(Tanh[1.6*(x+7)]-Tanh[1.6*(x-7)])}
+};Subscript[Ud,3,1]//MatrixForm
+
+
+PlotPotentials[Subscript[Ud,3,1],-12,12]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Triple State #2*)
+
+
+Subscript[Ud,3,2]:={
+{0.01*Tanh[0.6*x],0.001*Exp[-x^2],0.005*Exp[-x^2]},
 {0.001*Exp[-x^2],0,0.001*Exp[-x^2]},
-{0.001*Exp[-x^2],0.001*Exp[-x^2],-0.01*Tanh[0.6*x]}
-};Ud[x]//MatrixForm
+{0.005*Exp[-x^2],0.001*Exp[-x^2],-0.01*Tanh[0.6*x]}
+};Subscript[Ud,3,2]//MatrixForm
 
 
-GraphicsRow[{Plot[Evaluate@Diagonal@Ud[x],{x,-8,8}],Plot[Evaluate@Sort@Eigenvalues[Ud[x]],{x,-8,8}]}]
+PlotPotentials[Subscript[Ud,3,2],-8,8]
+
+
+(* ::Subsubsection:: *)
+(*Quadruple State #1*)
+
+
+Subscript[Ud,4,1]:={
+{0.03*(Tanh[1.6*(x+7)]-Tanh[1.6*(x-7)])+0.03,0.005*Exp[-(x-7)^2],0.005*Exp[-(x+7)^2],0},
+{0.005*Exp[-(x-7)^2],0.03*(Tanh[1.6*(x-7)]+Tanh[1.6*x]+Tanh[1.6*(x+7)]),0.005*Exp[-x^2],0.005*Exp[-(x+7)^2]},
+{0.005*Exp[-(x+7)^2],0.005*Exp[-x^2],-0.03*(Tanh[1.6*x]+Tanh[1.6*(x-7)]+Tanh[1.6*(x+7)]),0.005*Exp[-(x-7)^2]},
+{0,0.005*Exp[-(x+7)^2],0.005*Exp[-(x-7)^2],-0.03*(Tanh[1.6*(x+7)]-Tanh[1.6*(x-7)])-0.03}
+};Subscript[Ud,4,1]//MatrixForm
+
+
+PlotPotentials[Subscript[Ud,4,1],-12,12]
+
+
+(* ::Subsubsection:: *)
+(*Quadruple State #2*)
+
+
+Subscript[Ud,4,2]:={
+{0.01*Tanh[0.6*x],0.001*Exp[-x^2],0.001*Exp[-x^2],0.005*Exp[-x^2]},
+{0.001*Exp[-x^2],0.004*Tanh[0.6*x],0.005*Exp[-x^2],0.001*Exp[-x^2]},
+{0.001*Exp[-x^2],0.005*Exp[-x^2],-0.004*Tanh[0.6*x],0.001*Exp[-x^2]},
+{0.005*Exp[-x^2],0.001*Exp[-x^2],0.001*Exp[-x^2],-0.01*Tanh[0.6*x]}
+};Subscript[Ud,4,2]//MatrixForm
+
+
+PlotPotentials[Subscript[Ud,4,2],-8,8]

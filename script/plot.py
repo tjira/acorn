@@ -7,31 +7,37 @@ def one(args, mats):
     # set the column names of the data so that the first column is independent variable and the rest are unique dependent variables
     for i, mat in enumerate(mats): mat.columns = [("x" if j == 0 else sum([mats[k].shape[1] - 1 for k in range(i)]) + j) for j in range(mat.shape[1])]
 
-    # split the dat into frames based on the args.columns variable
+    # split the data into frames based on the args.columns variable
     data = list(map(list, zip(*[[mat[["x"] + list(mat.columns[i:args.columns + i])] for i in range(1, mat.shape[1], args.columns)] for mat in mats])))
 
-    # extract the specific columns if provided in the arguments
-    if args.specific: data = [[mat[["x"] + list(mat.columns[args.specific])] for mat in frame] for frame in data]
-
-    # sort the data by first column
-    data = [[mat.sort_values("x") for mat in frame] for frame in data]
-
-    # melt the data
-    data = [pd.concat([mat.melt("x", value_name="y", var_name="var") for mat in frame]) for frame in data]
+    # extract, sort and melt the data
+    data = [pd.concat([mat[["x"] + list(mat.columns[args.extract])].sort_values("x").melt("x", value_name="y", var_name="var") for mat in frame]) for frame in data]
 
     # initialize the figure and axis
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(args.resolution[0]/plt.rcParams["figure.dpi"], args.resolution[1]/plt.rcParams["figure.dpi"]));
+
+    # set the x and y limits
+    minx = min([frame.x.min() for frame in data]); maxx = max([frame.x.max() for frame in data])
+    miny = min([frame.y.min() for frame in data]); maxy = max([frame.y.max() for frame in data])
+    ax.set_xlim(minx, maxx); ax.set_ylim(miny - 0.05* (maxy - miny), maxy + 0.05* (maxy - miny))
 
     # plot the lines
-    sns.lineplot(ax=ax, data=data[len(data) - 1 if args.last else 0], x="x", y="y", hue="var", palette="colorblind")
+    sns.lineplot(ax=ax, data=data[len(data) - 1 if args.last else 0], x="x", y="y", hue="var", palette="colorblind"); ax.legend(title="Column", loc="upper right")
+
+    # remove the legend if not specified
+    if not args.legend or args.image: ax.get_legend().set_visible(False)
+
+    if args.image:
+        ax.set_xticks([]); ax.set_yticks([]); ax.set_xlabel(""); ax.set_ylabel(""); sns.despine(ax=ax, left=True, bottom=True, right=True); plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    else: plt.tight_layout()
 
     # define the animation update function
     def update(frame):
-        for i in range(args.columns):
-            ax.lines[i].set_ydata(data[frame][pd.DataFrame(data[frame])["var"] == frame * args.columns + i + 1]["y"])
+        for i in range(len(args.extract)):
+            ax.lines[i].set_ydata(data[frame][pd.DataFrame(data[frame])["var"] == frame * args.columns + args.extract[i]]["y"])
 
-    # set the tight layout and return
-    plt.tight_layout(); return fig, update
+    # deturn the figure and update function
+    return fig, update
 
 def two(args, mats):
     # set the column names of the data so that the first two columns are independent variables and the rest are unique dependent variables
@@ -74,10 +80,13 @@ if __name__ == "__main__":
     # add the arguments
     parser.add_argument("-c", "--columns", type=int, default=1, help="The number of columns to plot in the matrix.")
     parser.add_argument("-d", "--dimension", type=int, default=1, help="Dimension of the data.")
+    parser.add_argument("-e", "--extract", type=int, default=0, nargs="+", help="Extract the specific columns from the provided column interval.")
     parser.add_argument("-f", "--frames", type=int, default=1, help="The number of frames to plot.")
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
-    parser.add_argument("-s", "--specific", type=int, default=0, nargs="+", help="Extract the specific columns from the provided column interval.")
+    parser.add_argument("-r", "--resolution", type=int, nargs=2, default=[800, 600], help="The resolution of the image.")
+    parser.add_argument("--image", action="store_true", help="Display only the image without frames, ticks and labels.")
     parser.add_argument("--last", action="store_true", help="Display only the last frame.")
+    parser.add_argument("--legend", action="store_true", help="Display the legend.")
     parser.add_argument("--mp4", action="store_true", help="Save the plot as a gif.")
     parser.add_argument("--gif", action="store_true", help="Save the plot as an mp4.")
     parser.add_argument("--png", action="store_true", help="Save the plot as a png.")
@@ -88,6 +97,9 @@ if __name__ == "__main__":
 
     # parse arguments and load data
     args = parser.parse_args(); mats = [pd.read_csv(mat, header=None, sep="\\s+", skiprows=1) for mat in args.mats]; data = pd.DataFrame();
+
+    # set the extract variable if not provided
+    if not args.extract: args.extract = range(1, args.columns + 1)
 
     # create the figure and update function
     if args.dimension == 1: fig, update = one(args, mats)
