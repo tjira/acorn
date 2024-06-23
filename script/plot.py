@@ -40,6 +40,9 @@ def one(args, mats):
     return fig, update
 
 def two(args, mats):
+    # raise and exception when more than one column is requested to plot
+    if len(args.extract) > 1: raise Exception("YOU HAVE TO SPECIFY ONLY ONE COLUMN TO EXTRACT")
+
     # set the column names of the data so that the first two columns are independent variables and the rest are unique dependent variables
     for i, mat in enumerate(mats): mat.columns = [("x" if j == 0 else "y" if j == 1 else sum([mats[k].shape[1] - 2 for k in range(i)]) + j - 1) for j in range(mat.shape[1])]
 
@@ -53,7 +56,7 @@ def two(args, mats):
     rows = [i for i in range(2, len(data[0]) + 1) if len(data[0]) % i == 0 and i * i <= len(data[0])]; rows = rows[-1] if len(rows) > 0 else 1; cols = len(data[0]) // rows
 
     # calculate min and max of the data
-    zmin = np.min([[np.min(mat.iloc[:, 2]) for mat in frame] for frame in data]); zmax = np.max([[np.max(mat.iloc[:, 2]) for mat in frame] for frame in data])
+    zmin = np.min([[np.min(mat.iloc[:, 1 + args.extract[0]]) for mat in frame] for frame in data]); zmax = np.max([[np.max(mat.iloc[:, 1 + args.extract[0]]) for mat in frame] for frame in data])
 
     # set the heatmap parameters
     params = {"cbar":False, "xticklabels":False, "yticklabels":False, "vmin":zmin, "vmax":zmax, "rasterized":True, "cmap":"icefire"}
@@ -63,12 +66,12 @@ def two(args, mats):
 
     # plot the heatmaps
     for i, mat in enumerate(data[len(data) - 1 if args.last else 0]):
-        sns.heatmap(ax=np.array([ax]).flatten()[i], data=si.griddata((mat.x, mat.y), mat.iloc[:, 2], (x, y), method="cubic"), **params)
+        sns.heatmap(ax=np.array([ax]).flatten()[i], data=si.griddata((mat.x, mat.y), mat.iloc[:, 1 + args.extract[0]], (x, y), method="cubic"), **params)
 
     # define the animation update function
     def update(frame):
         for i, mat in enumerate(data[frame]): 
-            ax.collections[i].remove(); sns.heatmap(ax=np.array([ax]).flatten()[i], data=si.griddata((mat.x, mat.y), mat.iloc[:, 2], (x, y), method="cubic"), **params)
+            ax.collections[i].remove(); sns.heatmap(ax=np.array([ax]).flatten()[i], data=si.griddata((mat.x, mat.y), mat.iloc[:, 1 + args.extract[0]], (x, y), method="cubic"), **params)
 
     # set the tight layout and return
     plt.tight_layout(); return fig, update
