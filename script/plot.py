@@ -40,9 +40,6 @@ def one(args, mats):
     return fig, update
 
 def two(args, mats):
-    # raise and exception when more than one column is requested to plot
-    if len(args.extract) > 1: raise Exception("YOU HAVE TO SPECIFY ONLY ONE COLUMN TO EXTRACT")
-
     # set the column names of the data so that the first two columns are independent variables and the rest are unique dependent variables
     for i, mat in enumerate(mats): mat.columns = [("x" if j == 0 else "y" if j == 1 else sum([mats[k].shape[1] - 2 for k in range(i)]) + j - 1) for j in range(mat.shape[1])]
 
@@ -52,26 +49,41 @@ def two(args, mats):
     # create the meshgrid for the data
     x, y = np.meshgrid(*[np.linspace(data[0][0][v].min(), data[0][0][v].max(), 128) for v in ["x", "y"]])
 
+    # take the norm of the data if more than one column is extracted
+    if len(args.extract) > 1:
+        for frame in data:
+            for mat in frame:
+                mat.iloc[:, 2] = np.sqrt((mat.iloc[:, 2:]**2).sum(axis=1)); mat = mat.iloc[:, [0, 1, 2]]
+    else: data = [[mat.iloc[:, [0, 1, 1 + args.extract[0]]] for mat in frame] for frame in data]
+
     # calculate the number of rows and columns the resulting image will have
     rows = [i for i in range(2, len(data[0]) + 1) if len(data[0]) % i == 0 and i * i <= len(data[0])]; rows = rows[-1] if len(rows) > 0 else 1; cols = len(data[0]) // rows
 
     # calculate min and max of the data
-    zmin = np.min([[np.min(mat.iloc[:, 1 + args.extract[0]]) for mat in frame] for frame in data]); zmax = np.max([[np.max(mat.iloc[:, 1 + args.extract[0]]) for mat in frame] for frame in data])
+    zmin = np.min([[np.min(mat.iloc[:, 2]) for mat in frame] for frame in data]); zmax = np.max([[np.max(mat.iloc[:, 2]) for mat in frame] for frame in data])
 
-    # set the heatmap parameters
-    params = {"cbar":False, "xticklabels":False, "yticklabels":False, "vmin":zmin, "vmax":zmax, "rasterized":True, "cmap":"icefire"}
+    # set the heatmap and surface plot parameters
+    hmparams = {"cbar":False, "xticklabels":False, "yticklabels":False, "vmin":zmin, "vmax":zmax, "rasterized":True, "cmap":"icefire"}
+    spparams = {"rasterized":True, "cmap":"icefire", "vmin":zmin, "vmax":zmax}
 
     # initialize the figure and axis
-    fig, ax = plt.subplots(rows, cols, figsize=(3 * cols, 3 * rows))
+    fig, ax = plt.subplots(rows, cols, figsize=(3 * cols, 3 * rows), subplot_kw={"projection": "3d" if args.surface else None})
+
+    # set the z limits for the surface plot
+    if args.surface:
+        for i, axis in enumerate(np.array([ax]).flatten()): axis.set_zlim(zmin - 0.05 * (zmax - zmin), zmax + 0.05 * (zmax - zmin))
 
     # plot the heatmaps
     for i, mat in enumerate(data[len(data) - 1 if args.last else 0]):
-        sns.heatmap(ax=np.array([ax]).flatten()[i], data=si.griddata((mat.x, mat.y), mat.iloc[:, 1 + args.extract[0]], (x, y), method="cubic"), **params)
+        if not args.surface: sns.heatmap(ax=np.array([ax]).flatten()[i], data=si.griddata((mat.x, mat.y), mat.iloc[:, 2], (x, y), method="cubic"), **hmparams)
+        else: np.array([ax]).flatten()[i].plot_trisurf(mat.x, mat.y, mat.iloc[:, 2], **spparams)
 
     # define the animation update function
     def update(frame):
+        [[coll.remove() for coll in axis.collections] for axis in np.array([ax]).flatten()]
         for i, mat in enumerate(data[frame]): 
-            ax.collections[i].remove(); sns.heatmap(ax=np.array([ax]).flatten()[i], data=si.griddata((mat.x, mat.y), mat.iloc[:, 1 + args.extract[0]], (x, y), method="cubic"), **params)
+            if not args.surface: sns.heatmap(ax=np.array([ax]).flatten()[i], data=si.griddata((mat.x, mat.y), mat.iloc[:, 2], (x, y), method="cubic"), **hmparams)
+            else: np.array([ax]).flatten()[i].plot_trisurf(mat.x, mat.y, mat.iloc[:, 2], **spparams)
 
     # set the tight layout and return
     plt.tight_layout(); return fig, update
@@ -90,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--image", action="store_true", help="Display only the image without frames, ticks and labels.")
     parser.add_argument("--last", action="store_true", help="Display only the last frame.")
     parser.add_argument("--legend", action="store_true", help="Display the legend.")
+    parser.add_argument("--surface", action="store_true", help="Display the data as a surface plot.")
     parser.add_argument("--mp4", action="store_true", help="Save the plot as a gif.")
     parser.add_argument("--gif", action="store_true", help="Save the plot as an mp4.")
     parser.add_argument("--png", action="store_true", help="Save the plot as a png.")
