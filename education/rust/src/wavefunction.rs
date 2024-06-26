@@ -20,9 +20,6 @@ impl Wavefunction {
     pub fn epot(&self, u: &Array<Complex>) -> Complex {
         self.data.clone().apply(|x| x * x.conj()).dot(u) * self.dr
     }
-    pub fn mass(&self) -> Real {
-        self.m
-    }
     pub fn normalized(self) -> Wavefunction {
         let norm = self.norm(); Wavefunction{data: self.data.apply(|x| x / norm), dr: self.dr, m: self.m}
     }

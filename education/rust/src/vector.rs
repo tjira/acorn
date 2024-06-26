@@ -1,4 +1,4 @@
-use number::Real;
+use number::{Real, NumberTrait};
 
 pub fn fftfreq(size: usize, step: Real) -> Vec<Real> {
     // create the container for the data
@@ -22,4 +22,8 @@ pub fn linspace(start: Real, end: Real, size: usize) -> Vec<Real> {
     }
 
     return data; // return the data
+}
+
+pub fn repeat<T: NumberTrait>(vec: Vec<T>, n: usize) -> Vec<T> {
+    (0..n).flat_map(|_| vec.iter().cloned()).collect()
 }
