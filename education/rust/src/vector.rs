@@ -1,22 +1,25 @@
-#[derive(Clone, Debug, Default)]
-pub struct Vector<T> {
-    data: Vec<T>, shape: Vec<usize>
+use number::Real;
+
+pub fn fftfreq(size: usize, step: Real) -> Vec<Real> {
+    // create the container for the data
+    let mut data = vec![2.0 * std::f64::consts::PI / (step * size as Real); size];
+
+    // fill the container with the data
+    for i in 0..size {
+        data[i] = data[i] * (i as Real - if i < size / 2 {0.0} else {size as Real});
+    }
+
+    return data; // return the data
 }
 
-impl<T: Clone + Default> Vector<T> {
-    pub fn data(&mut self) -> &mut Vec<T> {
-        return &mut self.data
+pub fn linspace(start: Real, end: Real, size: usize) -> Vec<Real> {
+    // create the container for the data
+    let mut data = Vec::with_capacity(size);
+
+    // fill the container with the data
+    for i in 0..size {
+        data.push(start + (end - start) / (size - 1) as Real * i as Real);
     }
-    pub fn init(shape: Vec<usize>) -> Vector<T> {
-        return Vector {data: vec![T::default(); shape.iter().product()], shape: shape}
-    }
-    pub fn new(data: Vec<T>) -> Vector<T> {
-        return Vector {shape: vec![data.len()], data: data}
-    }
-    pub fn shape(&self) -> &Vec<usize> {
-        return &self.shape
-    }
-    pub fn size(&self) -> usize {
-        return self.data.len()
-    }
+
+    return data; // return the data
 }
