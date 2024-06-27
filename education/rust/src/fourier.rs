@@ -1,9 +1,12 @@
-use num::complex::Complex; use ndarray::{Array, Ix1};
-extern crate fftw; use fourier::fftw::plan::C2CPlan;
+// extern crate imports
+extern crate fftw;
+
+// crate includes
+use num::complex::Complex; use ndarray::{Array, Ix1}; use fourier::fftw::plan::C2CPlan;
 
 pub fn fftcc(mut data: Array<Complex<f64>, Ix1>, d: usize) -> Array<Complex<f64>, Ix1> {
     // calculate the shape
-    let shape = vec![(data.len() as f64).powf(1.0 / d as f64) as usize; d];
+    let shape = vec![(data.len() as f64).powf(1.0 / d as f64).round() as usize; d];
 
     // define the plan of the fft
     let mut plan: fftw::plan::C2CPlan64 = C2CPlan::aligned(&shape, fftw::types::Sign::Forward, fftw::types::Flag::MEASURE).unwrap();
@@ -17,7 +20,7 @@ pub fn fftcc(mut data: Array<Complex<f64>, Ix1>, d: usize) -> Array<Complex<f64>
 
 pub fn ifftcc(mut data: Array<Complex<f64>, Ix1>, d: usize) -> Array<Complex<f64>, Ix1> {
     // calculate the shape
-    let shape = vec![(data.len() as f64).powf(1.0 / d as f64) as usize; d];
+    let shape = vec![(data.len() as f64).powf(1.0 / d as f64).round() as usize; d];
 
     // define the plan of the ifft
     let mut plan: fftw::plan::C2CPlan64 = C2CPlan::aligned(&shape, fftw::types::Sign::Backward, fftw::types::Flag::MEASURE).unwrap();

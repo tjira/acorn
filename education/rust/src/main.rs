@@ -2,64 +2,42 @@
 extern crate num; extern crate ndarray;
 
 // module imports
-mod fourier; mod wavefunction;
+mod fourier; mod matrix; mod qdyn; mod state; mod wavefunction;
 
-// system imports
-use std::time::{Instant};
+// system includes
+use std::time::Instant;
 
-// crate function and object imports
-use num::complex::Complex; use ndarray::{Array, ArrayView, Axis, Ix1, Ix2};
+// crate includes
+use ndarray::{ArrayView, Ix1};
 
-// object imports
-use wavefunction::{State, Wavefunction};
-
-// function imports
-use fourier::{fftfreq};
+// personal includes
+use matrix::writemat;
 
 fn main() {
+    // define the qdyn option struct
+    let qdyn = qdyn::QuantumDynamics{d: 1, iters: 1000, nstate: 2, points: 64, rmin: -8.0, rmax: 8.0, imaginary: true, savewfn: false};
+
+    // define potential and initial wavefunction functions
+    let ufv = vec![|r: ArrayView<f64, Ix1>| 0.5 * r.mapv(|x| x * x).sum()]; let wfv = vec![|r: ArrayView<f64, Ix1>| (-r.mapv(|x| (x - 1.0) * (x - 1.0)).sum()).exp()];
+
     // start the timer
     let start = Instant::now();
 
-    // define the variables
-    let d: usize = 2; let iters: usize = 1000; let points: usize = 64; let rmin: f64 = -8.0; let rmax: f64 = 8.0;
+    // perform the dynamics and save the potential
+    let (u, wt, ei) = qdyn.run(ufv, wfv); writemat("U.mat", &u);
 
-    // define potential and initial wavefunction functions
-    let uf = |r: ArrayView<f64, Ix1>| 0.5 * r.mapv(|x| x * x).sum(); let wf = |r: ArrayView<f64, Ix1>| (-r.mapv(|x| x * x).sum()).exp();
+    // print the energy and save the wavefunctions
+    for (i, e) in ei.iter().enumerate() {
+        println!("FINAL WFN {:02} ENERGY: {:.14}", i, e);
+    }
 
-    // define the r-space and k-space array in one dimension
-    let rr = Array::<f64, Ix1>::linspace(rmin, rmax, points); let kk = fftfreq(rr.len(), rr[1] - rr[0]);
-
-    // define the r-space and k-space array in d dimensions
-    let mut r = Array::<f64, Ix2>::zeros((points.pow(d as u32), d)); let mut k = Array::<f64, Ix2>::zeros((points.pow(d as u32), d));
-
-    // fill the r-space and k-space arrays
-    for i in 0..r.shape()[0] {
-        for j in 0..r.shape()[1] {
-            r[[i, d - j - 1]] = rr[i / points.pow(j as u32) % points];
-            k[[i, d - j - 1]] = kk[i / points.pow(j as u32) % points];
+    // save the wavefunctions
+    if wt.is_some() {
+        for (i, w) in wt.unwrap().iter().enumerate() {
+            writemat(&format!("PSI_DIA_{:02}.mat", i), &w)
         }
     }
 
-    // define the k-space array squared
-    let ksq = k.axis_iter(Axis(0)).map(|x| Complex::from(x.mapv(|x| x * x).sum())).collect::<Array::<Complex<f64>, Ix1>>();
-
-    // define the potential array
-    let u = r.axis_iter(Axis(0)).map(uf).collect::<Array<f64, Ix1>>().mapv(|x| Complex::<f64>::from(x));
-
-    // define the initial wavefunction
-    let mut w = State::new(&r, wf, 1.0).normalized();
-
-    // define the propagators
-    let (rp, kp) = w.propagators(&ksq, &u, 0.1);
-
-    // propagation loop
-    for _ in 0..iters {
-        w = w.propagated(&rp, &kp).normalized();
-    }
-
-    // print the energy
-    println!("FINAL WFN ENERGY: {:?}", Wavefunction::new(vec![w]).hamilton(&ksq, &u).re);
-
     // print the elapsed time
-    println!("ELAPSED TIME: {:?}", start.elapsed());
+    println!("\nELAPSED TIME: {:?}", start.elapsed())
 }
