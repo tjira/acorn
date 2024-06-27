@@ -11,7 +11,7 @@ use std::time::{Instant};
 use num::complex::Complex; use ndarray::{Array, ArrayView, Axis, Ix1, Ix2};
 
 // object imports
-use wavefunction::Wavefunction;
+use wavefunction::{State, Wavefunction};
 
 // function imports
 use fourier::{fftfreq};
@@ -24,7 +24,7 @@ fn main() {
     let d: usize = 2; let iters: usize = 1000; let points: usize = 64; let rmin: f64 = -8.0; let rmax: f64 = 8.0;
 
     // define potential and initial wavefunction functions
-    let uf = |r: ArrayView<f64, Ix1>| 0.5 * (r[0] * r[0] + r[1] * r[1]); let wf = |r: ArrayView<f64, Ix1>| (-(r[0] * r[0] + r[1] * r[1])).exp();
+    let uf = |r: ArrayView<f64, Ix1>| 0.5 * r.mapv(|x| x * x).sum(); let wf = |r: ArrayView<f64, Ix1>| (-r.mapv(|x| x * x).sum()).exp();
 
     // define the r-space and k-space array in one dimension
     let rr = Array::<f64, Ix1>::linspace(rmin, rmax, points); let kk = fftfreq(rr.len(), rr[1] - rr[0]);
@@ -47,7 +47,7 @@ fn main() {
     let u = r.axis_iter(Axis(0)).map(uf).collect::<Array<f64, Ix1>>().mapv(|x| Complex::<f64>::from(x));
 
     // define the initial wavefunction
-    let mut w = Wavefunction::new(&r, wf, 1.0).normalized();
+    let mut w = State::new(&r, wf, 1.0).normalized();
 
     // define the propagators
     let (rp, kp) = w.propagators(&ksq, &u, 0.1);
@@ -58,7 +58,7 @@ fn main() {
     }
 
     // print the energy
-    println!("FINAL WFN ENERGY: {:?}", w.energy(&ksq, &u).norm());
+    println!("FINAL WFN ENERGY: {:?}", Wavefunction::new(vec![w]).hamilton(&ksq, &u).re);
 
     // print the elapsed time
     println!("ELAPSED TIME: {:?}", start.elapsed());
