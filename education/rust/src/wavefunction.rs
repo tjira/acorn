@@ -1,38 +1,39 @@
-use number::Real; use number::Complex; use array::Array; use fourier::{fftcc, ifftcc};
+use num::complex::Complex; use ndarray::{Array, ArrayView, Axis, Ix1, Ix2}; use fourier::{fftcc, ifftcc};
 
+#[derive(Clone, Debug)]
 pub struct Wavefunction {
-    pub data: Array<Complex>, pub dr: Real, pub m: Real
+    data: Array<Complex<f64>, Ix1>, dr: f64, m: f64, d: usize
 }
 
 impl Wavefunction {
     // constructors for the wavefunction
-    pub fn new<F: Fn(Real) -> Real>(r: &Array<Real>, f: F, m: Real) -> Wavefunction {
-        Wavefunction{data: r.clone().apply(f).cast::<Complex>(), dr: r[1] - r[0], m: m}
+    pub fn new<F: Fn(ArrayView<f64, Ix1>) -> f64>(r: &Array<f64, Ix2>, f: F, m: f64) -> Wavefunction {
+        Wavefunction{data: r.axis_iter(Axis(0)).map(f).collect::<Array<f64, Ix1>>().mapv(|x| Complex::from(x)), dr: r[[1, r.shape()[1] - 1]] - r[[0, r.shape()[1] - 1]], m: m, d: r.shape()[1]}
     }
 
     // wavefunction operators and functionals
-    pub fn energy(&self, ksq: &Array<Complex>, u: &Array<Complex>) -> Complex {
+    pub fn energy(&self, ksq: &Array<Complex<f64>, Ix1>, u: &Array<Complex<f64>, Ix1>) -> Complex<f64> {
         self.ekin(ksq) + self.epot(u)
     }
-    pub fn ekin(&self, ksq: &Array<Complex>) -> Complex {
-        self.data.clone().conj().dot(&ifftcc(ksq.clone() * fftcc(self.data.clone()))) * self.dr / (2.0 * self.m)
+    pub fn ekin(&self, ksq: &Array<Complex<f64>, Ix1>) -> Complex<f64> {
+        self.data.mapv(|x| x.conj()).dot(&ifftcc(ksq * fftcc(self.data.clone(), self.d), self.d)) * self.dr / (2.0 * self.m)
     }
-    pub fn epot(&self, u: &Array<Complex>) -> Complex {
-        self.data.clone().apply(|x| x * x.conj()).dot(u) * self.dr
+    pub fn epot(&self, u: &Array<Complex<f64>, Ix1>) -> Complex<f64> {
+        self.data.mapv(|x| x * x.conj()).dot(u) * self.dr
     }
     pub fn normalized(self) -> Wavefunction {
-        let norm = self.norm(); Wavefunction{data: self.data.apply(|x| x / norm), dr: self.dr, m: self.m}
+        let norm = self.norm(); Wavefunction{data: self.data.mapv(|x| x / norm), dr: self.dr, m: self.m, d: self.d}
     }
-    pub fn norm(&self) -> Real {
+    pub fn norm(&self) -> f64 {
         self.overlap().norm().sqrt()
     }
-    pub fn overlap(&self) -> Complex {
-        self.data.clone().apply(|x| x * x.conj()).sum() * self.dr
+    pub fn overlap(&self) -> Complex<f64> {
+        self.data.mapv(|x| x * x.conj()).sum() * self.dr
     }
-    pub fn propagated(&self, rp: &Array<Complex>, kp: &Array<Complex>) -> Wavefunction {
-        Wavefunction{data: rp.clone() * ifftcc(kp.clone() * fftcc(rp.clone() * self.data.clone())), dr: self.dr, m: self.m}
+    pub fn propagated(&self, rp: &Array<Complex<f64>, Ix1>, kp: &Array<Complex<f64>, Ix1>) -> Wavefunction {
+        Wavefunction{data: rp * ifftcc(kp * fftcc(rp * &self.data, self.d), self.d), dr: self.dr, m: self.m, d: self.d}
     }
-    pub fn propagators(&self, ksq: &Array<Complex>, u: &Array<Complex>, dt: Real) -> (Array<Complex>, Array<Complex>) {
-        (u.clone().apply(|x| (-0.5 * x * dt).exp()), ksq.clone().apply(|x| (-0.5 * x * dt / self.m).exp()))
+    pub fn propagators(&self, ksq: &Array<Complex<f64>, Ix1>, u: &Array<Complex<f64>, Ix1>, dt: f64) -> (Array<Complex<f64>, Ix1>, Array<Complex<f64>, Ix1>) {
+        (u.mapv(|x| (-0.5 * x * dt).exp()), ksq.mapv(|x| (-0.5 * x * dt / self.m).exp()))
     }
 }
