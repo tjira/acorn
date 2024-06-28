@@ -4,9 +4,10 @@ version = "0.1.0"
 authors = ["Tomas Jira"]
 
 [dependencies]
+ndarray-linalg = "=0.9.0" # https://crates.io/crates/ndarray-linalg
+num-complex = "=0.4.6" # https://crates.io/crates/num-complex
 ndarray = "=0.15.6" # https://crates.io/crates/ndarray
 fftw = "=0.8.0" # https://crates.io/crates/fftw
-num = "=0.4.3" # https://crates.io/crates/num
 
 [profile.dev]
 opt-level = 0

@@ -1,43 +1,77 @@
-// extern crate imports
-extern crate num; extern crate ndarray;
+extern crate ndarray; extern crate num_complex; use num_complex::{Complex64 as c64}; use ndarray::prelude::{array, s}; use ndarray::{Array1 as Vector, ArrayView1 as VectorView, Array2 as Matrix, Axis, concatenate};
 
-// module imports
-mod fourier; mod matrix; mod qdyn; mod wavefunction;
+mod qdyn;
 
-// system includes
-use std::time::Instant;
+use std::fs; use std::io::{BufWriter, Write}; use std::ops; use std::time;
 
-// crate includes
-use ndarray::{ArrayView, Ix1};
+pub fn fftfreq(size: usize, step: f64) -> Vector<f64> {
+    (0..size).map(|i| 2.0 * std::f64::consts::PI / (step * size as f64) * (i as f64 - if i < size / 2 {0.0} else {size as f64})).collect()
+}
 
-// personal includes
-use matrix::writemat;
+pub fn writemat(path: &str, mat: &Matrix<f64>) {
+    // open the file
+    let file = fs::File::create(path).expect("UNABLE TO WRITE");
+
+    // create the buffer
+    let mut buffer = BufWriter::new(file);
+
+    // write the header
+    write!(buffer, "{} {}\n", mat.nrows(), mat.ncols()).expect("UNABLE TO WRITE");
+
+    for i in 0..mat.nrows() {
+        for j in 0..mat.ncols() {
+            write!(buffer, "{:20.14}{}", mat[[i, j]], if j == mat.ncols() - 1 {"\n"} else {" "}).expect("UNABLE TO WRITE");
+        }
+    }
+}
 
 fn main() {
-    // define the qdyn option struct
-    let qdyn = qdyn::QuantumDynamics{d: 2, iters: 1000, nstate: 9, points: 64, rmin: -8.0, rmax: 8.0, imaginary: true, savewfn: true};
+    // define the quantum dynamics parameters
+    let qdyn = qdyn::QuantumDynamics{d: 1, iters: 1000, nstate: 9, points: 8, dt: 0.1, mass: 1.0, rmax: 8.0, rmin: -8.0, imaginary: true, savewfn: true};
 
-    // define potential and initial wavefunction functions
-    let ufv = vec![|r: ArrayView<f64, Ix1>| 0.5 * r.mapv(|x| x * x).sum()]; let wfv = vec![|r: ArrayView<f64, Ix1>| (-r.mapv(|x| (x - 1.0) * (x - 1.0)).sum()).exp()];
+    // define the potential function
+    let uf = |r: &VectorView<f64>| -> Matrix<f64> {array![
+        [0.5 * r.mapv(|x| x.powi(2)).sum()]
+    ]};
 
-    // start the timer
-    let start = Instant::now();
+    // define the wavefunction function
+    let wf = |r: &Vector<f64>| -> Vector<c64> {array!
+        [(-0.5 * r.mapv(|x| x.powi(2)).sum()).exp()].mapv(|x| c64::new(x, 0.0))
+    };
 
-    // perform the dynamics and save the potential
-    let (u, wt, ei) = qdyn.run(ufv, wfv); writemat("U.mat", &u);
+    // println!("{:?}", wf(&array![2.0]));
 
-    // print the energy and save the wavefunctions
-    for (i, e) in ei.iter().enumerate() {
-        println!("FINAL WFN {:02} ENERGY: {:.14}", i, e);
-    }
+    // define the r-space and k-space grids
+    let mut r = Matrix::<f64>::zeros((qdyn.points.pow(qdyn.d as u32), qdyn.d));
+    let mut k = Matrix::<f64>::zeros((qdyn.points.pow(qdyn.d as u32), qdyn.d));
 
-    // save the wavefunctions
-    if wt.is_some() {
-        for (i, w) in wt.unwrap().iter().enumerate() {
-            writemat(&format!("PSI_DIA_{:02}.mat", i), &w)
+    // define the delta r
+    let dr = (qdyn.rmax - qdyn.rmin) / (qdyn.points - 1) as f64;
+
+    // assign the linspace values to the 1D sector of the r-space grid
+    r.slice_mut(s![0..qdyn.points, qdyn.d - 1]).assign(&Vector::linspace(qdyn.rmin, qdyn.rmax, qdyn.points));
+
+    // assign the linspace values to the 1D sector of the k-space grid
+    k.slice_mut(s![0..qdyn.points, qdyn.d - 1]).assign(&fftfreq(qdyn.points, dr));
+
+    // fill the additional dimensions
+    for i in 0..r.shape()[0] {
+        for j in 0..r.shape()[1] {
+            r[[i, qdyn.d - j - 1]] = r[[i / qdyn.points.pow(j as u32) % qdyn.points, qdyn.d - 1]];
+            k[[i, qdyn.d - j - 1]] = k[[i / qdyn.points.pow(j as u32) % qdyn.points, qdyn.d - 1]];
         }
     }
 
-    // print the elapsed time
-    println!("\nELAPSED TIME: {:?}", start.elapsed())
+    // define the wavefunction
+    // let mut psi = Matrix::<c64>::zeros((qdyn.points.pow(qdyn.d as u32), 1));
+    let mut w = r.axis_iter(Axis(0)).map(|x| wf(&x.to_owned())).collect::<Vec<Vector<c64>>>();
+
+    // assign the wavefunction values
+    // for i in 0..psi.shape()[0] {
+    //     psi.slice_mut(s![i, ..]).assign(&wf(&r.slice(s![i, ..]).to_owned()));
+    // }
+
+    // writemat("PSI.mat", &concatenate![Axis(1), r, w.mapv(|x| x.re), w.mapv(|x| x.im)]);
+    println!("{:?}", w);
+
 }
