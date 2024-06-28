@@ -209,7 +209,7 @@ int main(int argc, char** argv) {
     }
 
     // print the state energies
-    std::cout << std::endl; for (int i = 0; i < optstates; i++) std::printf("FINAL WFN %d ENERGY: %.14f\n", i, eps(i));
+    std::cout << std::endl; for (int i = 0; i < optstates; i++) std::printf("FINAL WFN %02d ENERGY: %.14f\n", i, eps(i));
 
     // print the total time
     std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;

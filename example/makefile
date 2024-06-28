@@ -24,7 +24,7 @@ qdyn_1d_HO_imaginary:
 qdyn_2d_HO_imaginary:
 	"../bin/acorn_expression" -d 2 -g -8 8 -o U_DIA.mat -p 64 -e "0.5*(x^2+y^2)"
 	"../bin/acorn_expression" -d 2 -g -8 8 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-(x^2+y^2))" "0"
-	"../bin/acorn_qdyn" -d 2 -i 1000 -m 1 -o 12 -p 0 -s 0.1 --savewfn
+	"../bin/acorn_qdyn" -d 2 -i 1000 -m 1 -o 3 -p 0 -s 0.1 --savewfn
 
 # target to perform an imaginary-time propagation of 3D adiabatic wavepacket
 qdyn_3d_HO_imaginary:
