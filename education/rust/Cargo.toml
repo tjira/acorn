@@ -4,9 +4,7 @@ version = "0.1.0"
 authors = ["Tomas Jira"]
 
 [dependencies]
-nalgebra = "=0.30.1" # https://crates.io/crates/nalgebra
 ndarray = "=0.15.6" # https://crates.io/crates/ndarray
-nshare = "0.9.0" # https://crates.io/crates/nshare
 fftw = "=0.8.0" # https://crates.io/crates/fftw
 num = "=0.4.3" # https://crates.io/crates/num
 

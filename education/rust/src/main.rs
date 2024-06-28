@@ -2,7 +2,7 @@
 extern crate num; extern crate ndarray;
 
 // module imports
-mod fourier; mod matrix; mod qdyn; mod state; mod wavefunction;
+mod fourier; mod matrix; mod qdyn; mod wavefunction;
 
 // system includes
 use std::time::Instant;
@@ -15,7 +15,7 @@ use matrix::writemat;
 
 fn main() {
     // define the qdyn option struct
-    let qdyn = qdyn::QuantumDynamics{d: 1, iters: 1000, nstate: 2, points: 64, rmin: -8.0, rmax: 8.0, imaginary: true, savewfn: false};
+    let qdyn = qdyn::QuantumDynamics{d: 2, iters: 1000, nstate: 9, points: 64, rmin: -8.0, rmax: 8.0, imaginary: true, savewfn: true};
 
     // define potential and initial wavefunction functions
     let ufv = vec![|r: ArrayView<f64, Ix1>| 0.5 * r.mapv(|x| x * x).sum()]; let wfv = vec![|r: ArrayView<f64, Ix1>| (-r.mapv(|x| (x - 1.0) * (x - 1.0)).sum()).exp()];

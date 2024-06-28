@@ -2,7 +2,7 @@
 use num::complex::{Complex}; use ndarray::{Array, ArrayView, Axis, Ix1, Ix2, concatenate, prelude::array};
 
 // personal includes
-use fourier::{fftfreq}; use state::State; use wavefunction::Wavefunction;
+use fourier::{fftfreq}; use wavefunction::Wavefunction;
 
 pub struct QuantumDynamics {
     pub d: usize, pub iters: usize, pub nstate: usize, pub points: usize, pub rmin: f64, pub rmax: f64, pub imaginary: bool, pub savewfn: bool
@@ -32,7 +32,7 @@ impl QuantumDynamics {
         let (r, ksq) = self.coords(); let u = r.axis_iter(Axis(0)).map(ufv[0].clone()).collect::<Array<f64, Ix1>>();
 
         // define the initial wavefunction for every state
-        let mut states = vec![State::new(&r, wfv[0].clone(), 1.0).normalized(); self.nstate];
+        let mut states = vec![Wavefunction::new(&r, wfv[0].clone(), 1.0).normalized(); self.nstate];
 
         // define the wavefunction and energy containers
         let mut wt = vec![array![[]]; self.nstate]; let mut ei = vec![0.0; self.nstate];
@@ -66,7 +66,7 @@ impl QuantumDynamics {
             }
 
             // assign energy and print empty line
-            ei[i] = Wavefunction::new(vec![states[i].clone()]).hamilton(&ksq, &u).re; println!("")
+            ei[i] = states[i].hamilton(&ksq, &u, &states[i]).re; println!("")
         }
 
         // return the data
