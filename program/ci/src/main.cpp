@@ -1,4 +1,4 @@
-#include "system.h"
+#include "linalg.h"
 #include "timer.h"
 #include <argparse.hpp>
 
@@ -34,19 +34,19 @@ int main(int argc, char** argv) {
         Matrix    Vms = Eigen::LoadMatrix("V_MS.mat");
         Matrix    Tms = Eigen::LoadMatrix("T_MS.mat");
         Tensor<4> Jms = Eigen::LoadTensor("J_MS.mat");
-        System system(program.get("-f"));
+        Vector    N   = Eigen::LoadMatrix("N.mat"   );
     )
 
     // define the number of basis functions and occupied orbitals, Hamiltonian in MS basis and determinant container
-    int nbf = Vms.rows() / 2, nocc = system.nocc(); Matrix Hms = Tms + Vms; std::vector<std::vector<int>> dets;
+    int nbf = Vms.rows() / 2, nocc = N(0); Matrix Hms = Tms + Vms; std::vector<std::vector<int>> dets;
 
     MEASURE("GENERATING ALL POSSIBLE DETERMINANTS:     ",
-        for (const std::vector<int>& alpha : Combinations(nbf, system.nocc())) {
-            for (const std::vector<int>& beta : Combinations(nbf, system.nocc())) {
+        for (const std::vector<int>& alpha : Combinations(nbf, nocc)) {
+            for (const std::vector<int>& beta : Combinations(nbf, nocc)) {
                 dets.push_back({});
 
-                for (int i = 0; i < system.nocc(); i++) dets.back().push_back(2 * alpha.at(i));
-                for (int i = 0; i < system.nocc(); i++) dets.back().push_back(2 * beta.at(i) + 1);
+                for (int i = 0; i < nocc; i++) dets.back().push_back(2 * alpha.at(i));
+                for (int i = 0; i < nocc; i++) dets.back().push_back(2 * beta.at(i) + 1);
             }
         }
     ) std::cout << "\nNUMBER OF DETERMINANTS GENERATED: " << dets.size() << std::endl;
@@ -118,5 +118,5 @@ int main(int argc, char** argv) {
     )
 
     // print the final energy and total time
-    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", Eci(0) + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", Eci(0) + N(1), Timer::Format(Timer::Elapsed(start)).c_str());
 }

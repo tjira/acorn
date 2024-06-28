@@ -75,7 +75,7 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # add the base library
-add_library(acorn_base STATIC src/expression.cpp src/fourier.cpp src/linalg.cpp src/system.cpp src/timer.cpp src/wavefunction.cpp)
+add_library(acorn_base STATIC src/expression.cpp src/linalg.cpp src/timer.cpp)
 
 # link the base library
 target_link_libraries(acorn_base Eigen3::Eigen)
@@ -110,12 +110,12 @@ set_property(TEST hf                   PROPERTY PASS_REGULAR_EXPRESSION "FINAL S
 set_property(TEST mp2                  PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.004854")
 set_property(TEST mp3                  PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.015455")
 set_property(TEST fci                  PROPERTY PASS_REGULAR_EXPRESSION "FINAL SINGLE POINT ENERGY: -75.020410")
-set_property(TEST qdyn_1d_HO_imaginary PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 2 ENERGY: 2.500001"         )
-set_property(TEST qdyn_1d_HO_real      PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 0 ENERGY: 1.124931"         )
-set_property(TEST qdyn_2d_HO_imaginary PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 2 ENERGY: 2.000001"         )
-set_property(TEST qdyn_2d_HO_real      PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 0 ENERGY: 2.249863"         )
-set_property(TEST qdyn_3d_HO_imaginary PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 2 ENERGY: 2.500001"         )
-set_property(TEST qdyn_3d_HO_real      PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 0 ENERGY: 3.374795"         )
+set_property(TEST qdyn_1d_HO_imaginary PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 02 ENERGY: 2.500001"        )
+set_property(TEST qdyn_1d_HO_real      PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 00 ENERGY: 1.124931"        )
+set_property(TEST qdyn_2d_HO_imaginary PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 02 ENERGY: 2.000001"        )
+set_property(TEST qdyn_2d_HO_real      PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 00 ENERGY: 2.249863"        )
+set_property(TEST qdyn_3d_HO_imaginary PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 02 ENERGY: 2.500001"        )
+set_property(TEST qdyn_3d_HO_real      PROPERTY PASS_REGULAR_EXPRESSION "FINAL WFN 00 ENERGY: 3.374795"        )
 
 # add random tests
 add_test(NAME random_qdyn_1d_tully_1    COMMAND ${CMAKE_MAKE_PROGRAM} random_qdyn_1d_tully_1    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/example)

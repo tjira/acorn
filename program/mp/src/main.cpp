@@ -1,4 +1,4 @@
-#include "system.h"
+#include "linalg.h"
 #include "timer.h"
 #include <argparse.hpp>
 
@@ -21,11 +21,11 @@ int main(int argc, char** argv) {
         Matrix    Tms = Eigen::LoadMatrix("T_MS.mat");
         Tensor<4> Jms = Eigen::LoadTensor("J_MS.mat");
         Matrix    Ems = Eigen::LoadMatrix("E_MS.mat");
-        System system(program.get("-f"));
+        Vector    N   = Eigen::LoadMatrix("N.mat"   );
     )
 
     // extract the number of occupied and virtual orbitals and define the energy
-    int nocc = system.nocc(); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 
+    int nocc = N(0); int nvirt = Jms.dimension(0) / 2 - nocc; double E = 0; 
 
     // initialize the antisymmetrized Coulomb integrals and the Hamiltonian matrix in MS basis
     Tensor<4> Jmsa = Jms - Jms.shuffle(Eigen::array<int, 4>{0, 3, 2, 1}); Matrix Hms = Tms + Vms;
@@ -87,5 +87,5 @@ int main(int argc, char** argv) {
     }
 
     // print the final energy
-    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", E + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", E + N(1), Timer::Format(Timer::Elapsed(start)).c_str());
 }

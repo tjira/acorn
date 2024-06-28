@@ -89,13 +89,17 @@ int main(int argc, char** argv) {
         else if (i == iters - 1) throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE SCF REACHED.");
     }
 
+    // calculate the nuclear repulsion
+    Vector N(2); N << system.nocc(), system.nuclearRepulsion();
+
     // save the final matrices
     MEASURE("HARTREE-FOCK RESULTS WRITING: ",
         Eigen::Write("C_MO.mat", Cmo);
         Eigen::Write("E_MO.mat", Emo);
         Eigen::Write("D_MO.mat", Dmo);
+        Eigen::Write("N.mat",    N  );
     )
 
     // print the final energy and total time
-    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", Eel + system.nuclearRepulsion(), Timer::Format(Timer::Elapsed(start)).c_str());
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", Eel + N(1), Timer::Format(Timer::Elapsed(start)).c_str());
 }
