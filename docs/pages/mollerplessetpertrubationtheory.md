@@ -65,7 +65,7 @@ Having computed the Coulomb integral in the molecular spinorbital (MS) basis and
 The 2nd-order correlation energy:
 
 \begin{equation}
-E_{corr}^{MP2}=-\frac{1}{4}\sum_{ijab}t_{ij}^{ab}[ia||jb]
+E_{corr}^{MP2}=\frac{1}{4}\sum_{ijab}t_{ij}^{ab}[ia||jb]
 \end{equation}
 
 The 3rd-order correlation energy:
