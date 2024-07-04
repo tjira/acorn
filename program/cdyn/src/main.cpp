@@ -2,6 +2,9 @@
 #include "landauzener.h"
 #include "timer.h"
 #include <argparse.hpp>
+#include <format>
+
+int nthread = 1;
 
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Classical Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
@@ -13,6 +16,7 @@ int main(int argc, char** argv) {
     program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(200).scan<'i', int>();
     program.add_argument("-l", "--log").help("-- Log interval for the simulation.").default_value(10).scan<'i', int>();
     program.add_argument("-m", "--mass").help("-- Mass of the model system.").default_value(1.0).scan<'g', double>();
+    program.add_argument("-n", "--nthreads").help("-- Number of threads to use.").default_value(nthread).scan<'i', int>();
     program.add_argument("-p", "--momentum").help("-- Momentum of the model system.").default_value(0.0).scan<'g', double>();
     program.add_argument("-r", "--random").help("-- Random seed for the simulation.").default_value(1).scan<'i', int>();
     program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(1.0).scan<'g', double>();
@@ -26,18 +30,18 @@ int main(int argc, char** argv) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
 
-    // extract the command line parameters and define the potential expressions
-    double momentum = program.get<double>("-p"), position = program.get<double>("-c"), step = program.get<double>("-s"), mass = program.get<double>("-m"); std::vector<Expression> Ue, dUe;
+    // extract the command line parameters
+    double momentum = program.get<double>("-p"), position = program.get<double>("-c"), step = program.get<double>("-s"), mass = program.get<double>("-m"); nthread = program.get<int>("-n");
     int iters = program.get<int>("-i"), seed = program.get<int>("-r"), trajs = program.get<int>("-t"); int nstate = std::sqrt(program.get<std::vector<std::string>>("-u").size());
 
     // extract boolean flags and the log interval
     bool adiabatic = program.get<bool>("--adiabatic"), savetraj = program.get<bool>("--savetraj"); int log = program.get<int>("-l");
 
-    // reserve the memory for the potential expressions
-    Ue.reserve(nstate * nstate), dUe.reserve(nstate * nstate);
+    // define the potential expressions and allocate the memory
+    std::vector<std::vector<Expression>> Ues(nthread); for (auto& Ue : Ues) Ue.reserve(nstate * nstate);
 
     // fill the potential expressions
-    for (const std::string& expr : program.get<std::vector<std::string>>("-u")) Ue.emplace_back(expr, std::vector<std::string>{"x"});
+    for (auto& Ue : Ues) for (const std::string& expr : program.get<std::vector<std::string>>("-u")) Ue.emplace_back(expr, std::vector<std::string>{"x"});
 
     // function to obtain the potential matrices
     auto eval = [&](std::vector<Expression>& Ue, double r) {
@@ -51,7 +55,17 @@ int main(int argc, char** argv) {
     std::printf("%6s %6s %6s %14s %14s %14s %14s\n", "TRAJ", "ITER", "STATE", "EPOT", "EKIN", "ETOT", "FORCE");
 
     // loop over all trajectories
+    #ifdef _OPENMP
+    #pragma omp parallel for num_threads(nthread)
+    #endif
     for (int i = 0; i < trajs; i++) {
+
+        // get the thread id
+        #ifdef _OPENMP
+        int id = omp_get_thread_num();
+        #else
+        int id = 0;
+        #endif
 
         // distributions for position and momentum, mersenne twister and uniform distribution
         std::mt19937 mt(trajs * (seed + i) + 1); std::uniform_real_distribution<double> dist(0, 1);
@@ -61,7 +75,7 @@ int main(int argc, char** argv) {
         Matrix U, dU, r(iters + 1, 1), v(iters + 1, 1), a(iters + 1, 1); IntegerMatrix sd(iters + 1, 1); double rn;
 
         // fill the initial position, velocity, acceleration and state and evaluate the potential
-        r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, sd(0) = program.get<int>("-e"); U = eval(Ue, r(0));
+        r(0) = positiondist(mt), v(0) = momentumdist(mt) / mass, a(0) = 0, sd(0) = program.get<int>("-e"); U = eval(Ues.at(id), r(0));
 
         // initialize the Landau-Zener algorithm and the transition probabilities
         LandauZener lz = nstate > 1 ? LandauZener(nstate, iters + 1) : LandauZener(); std::vector<std::tuple<int, double, bool>> transitions;
@@ -88,7 +102,7 @@ int main(int argc, char** argv) {
             r(j + 1) = r(j) + step * (v(j + 1) + 0.5 * a(j + 1) * step), sd(j + 1) = sd(j);
 
             // evaluate the potential
-            U = eval(Ue, r(j + 1)); Uc.at(j + 1) = eval(Ue, r(j + 1)), dU = (Uc.at(j + 1) - Uc.at(j)) / (r(j + 1) - r(j));
+            U = eval(Ues.at(id), r(j + 1)); Uc.at(j + 1) = U, dU = (Uc.at(j + 1) - Uc.at(j)) / (r(j + 1) - r(j));
 
             // calculate the Landau-Zener jump probabilities
             if (nstate > 1) transitions = lz.jump(U, sd(j + 1), j + 1, step);
@@ -107,11 +121,11 @@ int main(int argc, char** argv) {
             F = -dU(sd(j + 1), sd(j + 1));
 
             // print the iteration
-            if (!((j + 1) % log)) {
-                std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f", i + 1, j + 1, sd(j), Epot, Ekin, Epot + Ekin, F); if (nstate > 1) std::printf(" %.4f", rn);
+            if (std::string probs; !((j + 1) % log)) {
                 for (size_t k = 0; k < transitions.size(); k++) {
-                    std::printf("%s%d->%d=%.3f(%d)", k ? ", " : " ", sd(j), std::get<0>(transitions.at(k)), std::get<1>(transitions.at(k)), std::get<2>(transitions.at(k)));
-                } std::cout << std::endl;
+                    probs += std::format("{}{}->{}={:.3f}({})", k ? ", " : " ", sd(j), std::get<0>(transitions.at(k)), std::get<1>(transitions.at(k)), std::get<2>(transitions.at(k)));
+                }
+                std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %.4f %s\n", i + 1, j + 1, sd(j), Epot, Ekin, Epot + Ekin, F, rn, probs.c_str());
             }
         }
 

@@ -70,7 +70,7 @@ if __name__ == "__main__":
     H, D, C = T + V, np.zeros_like(S), np.zeros_like(S)
 
     # calculate the X matrix which is the inverse of the square root of the overlap matrix
-    SEP = np.linalg.eigh(S); X = np.linalg.inv(SEP[1] * np.sqrt(SEP[0]) @ np.linalg.inv(SEP[1]))
+    SEP = np.linalg.eigh(S); X = SEP[1] @ np.diag(1 / np.sqrt(SEP[0])) @ SEP[1].T
 
     while abs(E_HF - E_HF_P) > args.threshold:
         # build the Fock matrix
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     # print the results
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
-    # INTEGRAL TRANSFORM FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
+    # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
     if args.mp2 or args.mp3 or args.cisd or args.fci:
 
         # define the tiling matrix for the MO coefficients and energy placeholders
@@ -177,9 +177,9 @@ if __name__ == "__main__":
         slater2 = lambda so: Jms[so[0], so[2], so[1], so[3]] - Jms[so[0], so[3], so[1], so[2]]
 
         # fill the CI Hamiltonian
-        for i in range(Hci.shape[0]):
-            for j in range(Hci.shape[1]):
-                # define the aligned determinant and the sign
+        for i in range(0, Hci.shape[0]):
+            for j in range(i, Hci.shape[1]):
+                # aligned determinant and the sign
                 aligned, sign = dets[j].copy(), 1
 
                 # align the determinant "j" to "i" and calculate the sign
@@ -195,9 +195,12 @@ if __name__ == "__main__":
                 ]).astype(int)
 
                 # apply the Slater-Condon rules and multiply by the sign
-                if (aligned - dets[i] != 0).sum() == 0: Hci[i, j] = slater0(so) * sign
-                if (aligned - dets[i] != 0).sum() == 1: Hci[i, j] = slater1(so) * sign
-                if (aligned - dets[i] != 0).sum() == 2: Hci[i, j] = slater2(so) * sign
+                if ((aligned - dets[i]) != 0).sum() == 0: Hci[i, j] = slater0(so) * sign
+                if ((aligned - dets[i]) != 0).sum() == 1: Hci[i, j] = slater1(so) * sign
+                if ((aligned - dets[i]) != 0).sum() == 2: Hci[i, j] = slater2(so) * sign
+
+                # fill the lower triangle
+                Hci[j, i] = Hci[i, j]
 
         # solve the eigensystem and assign energy
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF

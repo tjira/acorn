@@ -89,6 +89,9 @@ TULLY_2 = "0"                    "0.015*exp(-0.06*x^2)"       \
 DS_1 = "0.01*tanh(0.6*x)" "0.001*exp(-x^2)"     \
        "0.001*exp(-x^2)"  "(-0.01)*tanh(0.6*x)"
 
+DS_2 = "0.001*(x+3)^2"   "0.002*exp(-x^2)"  \
+       "0.002*exp(-x^2)" "0.001*(x-3)^2"
+
 TS_1 = "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)"                       "0.005*exp(-(x+7)^2)"                       \
        "0.005*exp(-x^2)"                    "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)"                       \
        "0.005*exp(-(x+7)^2)"                "0.005*exp(-(x-7)^2)"                   "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
@@ -118,11 +121,17 @@ random_cdyn_lz_1d_tully_2:
 random_cdyn_lz_1d_ds_1:
 	"../bin/acorn_cdyn" -c -10 -e 0 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(DS_1) --adiabatic
 
+random_cdyn_lz_1d_ds_2:
+	"../bin/acorn_cdyn" -c -10 -e 0 -i 35000 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(DS_2) --adiabatic
+
 random_cdyn_lz_1d_ts_1:
 	"../bin/acorn_cdyn" -c -10 -e 1 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TS_1) --adiabatic
 
 random_cdyn_lz_1d_ts_2:
 	"../bin/acorn_cdyn" -c -10 -e 0 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TS_2) --adiabatic
+
+test:
+	"../bin/acorn_cdyn" -c -10 -e 0 -i 150 -l 1 -m 2000 -p $(P) -r 1 -s 10 -t 1 -u $(DS_1) --adiabatic
 
 random_cdyn_lz_1d_qs_1:
 	"../bin/acorn_cdyn" -c -10 -e 2 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(QS_1) --adiabatic
@@ -144,6 +153,11 @@ random_qdyn_1d_ds_1:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e $(DS_1)
 	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
 	"../bin/acorn_qdyn" -i 350 -m 2000 -p $(P) -s 10 --adiabatic --savewfn --align --factor 0.01
+
+random_qdyn_1d_ds_2:
+	"../bin/acorn_expression" -g -24 24 -o U_DIA.mat -p 1024 -e $(DS_2)
+	"../bin/acorn_expression" -g -24 24 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
+	"../bin/acorn_qdyn" -i 3500 -m 2000 -p $(P) -s 10 --adiabatic --savewfn --align --factor 1.0
 
 random_qdyn_1d_ts_1:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e $(TS_1)
@@ -170,14 +184,10 @@ random_qdyn_hydrogen_imaginary:
 	"../bin/acorn_expression" -d 3 -g -16 16 -o PSI_DIA_GUESS.mat -p 128 -e "exp(-(x^2+y^2+z^2))" "0"
 	"../bin/acorn_qdyn" -d 3 -i 1000 -m 0.999455 -o 1 -p 0 -s 0.1
 
-random_qdyn_kepler_real:
-	"../bin/acorn_expression" -d 2 -g -16 16 -o U_DIA.mat -p 64 -e "10/(x^2+y^2)-10/sqrt(x^2+y^2)"
-	"../bin/acorn_expression" -d 2 -g -16 16 -o PSI_DIA_GUESS.mat -p 64 -e "exp(-((x-1)^2+(y-1)^2))" "0"
-	"../bin/acorn_qdyn" -d 2 -i 1000 -m 1 -p 0 -s 0.1 --savewfn
-
 random_dyn_1d_tully_1: random_qdyn_1d_tully_1 random_cdyn_lz_1d_tully_1
 random_dyn_1d_tully_2: random_qdyn_1d_tully_2 random_cdyn_lz_1d_tully_2
 random_dyn_1d_ds_1: random_qdyn_1d_ds_1 random_cdyn_lz_1d_ds_1
+random_dyn_1d_ds_2: random_qdyn_1d_ds_2 random_cdyn_lz_1d_ds_2
 random_dyn_1d_ts_1: random_qdyn_1d_ts_1 random_cdyn_lz_1d_ts_1
 random_dyn_1d_ts_2: random_qdyn_1d_ts_2 random_cdyn_lz_1d_ts_2
 random_dyn_1d_qs_1: random_qdyn_1d_qs_1 random_cdyn_lz_1d_qs_1

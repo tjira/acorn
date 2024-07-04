@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     }
 
     // fill the rest of the independent variable columns
-    for (int i = 0; i < U.cols() - exprs.size() - 1; i++) {
+    for (size_t i = 0; i < U.cols() - exprs.size() - 1; i++) {
         for (int j = 0; j < U.rows(); j++) {
             U(j, i) = U(j / (int)std::round(std::pow(points, U.cols() - exprs.size() - i - 1)), U.cols() - exprs.size() - 1);
         }

@@ -7,7 +7,7 @@ ClearAll["Global`*"];
 PlotPotentials[Ud_,xmin_,xmax_]:=GraphicsRow[{Plot[Evaluate@Diagonal@Ud,{x,xmin,xmax}],Plot[Evaluate@Sort@Eigenvalues@Ud,{x,xmin,xmax}]}]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Double State #1*)
 
 
@@ -20,7 +20,24 @@ Subscript[Ud,2,1]:={
 PlotPotentials[Subscript[Ud,2,1],-8,8]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
+(*Double State #2*)
+
+
+Subscript[Ud,2,1]:={
+{(x+3)^2,0.001*Exp[-x^2]},
+{0.001*Exp[-x^2],(x-3)^2}
+};Subscript[Ud,2,1]//MatrixForm
+
+
+PlotPotentials[Subscript[Ud,2,1],-8,8]
+
+
+(* ::Input:: *)
+(**)
+
+
+(* ::Subsubsection:: *)
 (*Triple State #1*)
 
 
@@ -34,7 +51,7 @@ Subscript[Ud,3,1]:={
 PlotPotentials[Subscript[Ud,3,1],-12,12]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Triple State #2*)
 
 
