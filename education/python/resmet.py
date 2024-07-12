@@ -38,6 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp2", help="Perform the second order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp3", help="Perform the third order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--mp4", help="Perform the fourth order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
 
     # parse the arguments
     args = parser.parse_args()
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
     # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
-    if args.mp2 or args.mp3 or args.cisd or args.fci:
+    if args.mp2 or args.mp3 or args.mp4 or args.cisd or args.fci:
 
         # define the tiling matrix for the MO coefficients and energy placeholders
         P = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T
@@ -112,31 +113,59 @@ if __name__ == "__main__":
         Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True); Jmsa = Jms - Jms.swapaxes(1, 3)
 
     # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
-    if args.mp2 or args.mp3:
+    if args.mp2 or args.mp3 or args.mp4:
 
-        # define the orbital slices and energy placeholders
-        o, v, E_MP2, E_MP3 = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf), 0, 0
+        # define the orbital slices
+        o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)
 
-        # define slices of the antisymmetrized coulomb integrals
-        oooo, oovv, ovov, vvvv = Jmsa[o, o, o, o], Jmsa[o, o, v, v], Jmsa[o, v, o, v], Jmsa[v, v, v, v]
+        def loadeq(n):
+            C = []
+            with open(f"MBPT/Order-{n}/CD_output.txt", "r") as f:
+                for line in f.read().split("\n")[:-2]:
+                    factor = 1 / eval(line.split(",")[0].split("{")[1])
+                    contr = ",".join(["".join(c.split(", ")) for c in line.split("{{")[1].strip(" ,{}").split("}, {")])
+                    contr += "," + ",".join(["".join(c.split(", ")) for c in line.split("{{")[2].strip(" ;}").split("}, {")])
+                    C.append((contr, factor))
+            return C
 
-        # define the amplitudes
-        tovov = ovov / np.array([[[[ea + eb - ei - ej for eb in epsms[v]] for ej in epsms[o]] for ea in epsms[v]] for ei in epsms[o]])
+        # define the contractions and factors for the MP energies
+        # MP2_C = [
+        #     ("abij,ijab,abij", 0.25),
+        # ]
+        # MP3_C = [
+        #     ("abij,ijkl,klab,abij,abkl", 0.125),
+        #     ("abij,cdab,ijcd,abij,cdij", 0.125),
+        #     ("abij,icak,jkbc,abij,bcjk", 1.000),
+        # ]
+
+        MP2_C = loadeq(2)
+        MP3_C = loadeq(3)
+        MP4_C = loadeq(4)
+        print(MP4_C)
+
+        # function to return corresponding Coulomb integral slices
+        def slices(n, contr):
+            views = [Jmsa.swapaxes(1, 2)[tuple([(o if x in "abcdefgh" else v) for x in contr.split(",")[term]])] for term in range(n)]
+            epsvec = [[(epsms[o] if char in "abcdefgh" else -epsms[v]) for char in contr.split(",")[i]] for i in range(n, 2 * n - 1)]
+            return views + [1 / sum([v[i].reshape(-1, *[1 for _ in range(len(v) - i - 1)]) for i in range(len(v))]) for v in epsvec]
 
         # calculate the MP2 correlation energy
-        E_MP2 -= 0.25 * np.einsum("iajb,iajb", ovov, tovov, optimize=True)
+        E_MP2 = sum([contr[1] * np.einsum(contr[0], *slices(2, contr[0]), optimize=True) for contr in MP2_C]) if args.mp2 or args.mp3 or args.mp4 else 0
 
         # print the MP2 energy
         print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
 
-        # calculate the MP3 correlation energy
-        if args.mp3:
-            E_MP3 += 0.125 * np.einsum("iajb,acbd,icjd", tovov, vvvv, tovov, optimize=True)
-            E_MP3 += 0.125 * np.einsum("iajb,kilj,kalb", tovov, oooo, tovov, optimize=True)
-            E_MP3 -=         np.einsum("iajb,kibc,kajc", tovov, oovv, tovov, optimize=True)
+        # calculate the MP2 correlation energy
+        E_MP3 = sum([contr[1] * np.einsum(contr[0], *slices(3, contr[0]), optimize=True) for contr in MP3_C]) if args.mp3 or args.mp4 else 0
 
         # print the MP3 energy
-        if args.mp3: print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
+        if args.mp3 or args.mp4: print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
+
+        # calculate the MP4 correlation energy
+        E_MP4 = sum([contr[1] * np.einsum(contr[0], *slices(4, contr[0]), optimize=True) for contr in MP4_C]) if args.mp4 else 0
+
+        # print the MP4 energy
+        if args.mp4: print("MP4 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + E_MP4 + VNN))
 
     # CONFIGUIRATION INTERACTION =======================================================================================================================================================================
     if args.cisd or args.fci:
