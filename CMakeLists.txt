@@ -126,9 +126,9 @@ add_test(NAME random_qdyn_1d_ts_1       COMMAND ${CMAKE_MAKE_PROGRAM} random_qdy
 add_test(NAME random_cdyn_lz_1d_ts_1    COMMAND ${CMAKE_MAKE_PROGRAM} random_cdyn_lz_1d_ts_1    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/example)
 
 # add expected results of random tests
-set_property(TEST random_qdyn_1d_tully_1    PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.676839")
-set_property(TEST random_cdyn_lz_1d_tully_1 PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.496000")
-set_property(TEST random_qdyn_1d_ds_1       PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.052824")
-set_property(TEST random_cdyn_lz_1d_ds_1    PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.066000")
+set_property(TEST random_qdyn_1d_tully_1    PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.410505")
+set_property(TEST random_cdyn_lz_1d_tully_1 PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.488000")
+set_property(TEST random_qdyn_1d_ds_1       PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.960702")
+set_property(TEST random_cdyn_lz_1d_ds_1    PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.942000")
 set_property(TEST random_qdyn_1d_ts_1       PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.720077")
-set_property(TEST random_cdyn_lz_1d_ts_1    PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.708000")
+set_property(TEST random_cdyn_lz_1d_ts_1    PROPERTY PASS_REGULAR_EXPRESSION "ADIABATIC STATE 0 POP: 0.720000")

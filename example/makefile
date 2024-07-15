@@ -113,50 +113,47 @@ QS_2 = "0.01*tanh(0.6*x)" "0.001*exp(-x^2)"   "0.001*exp(-x^2)"      "0.005*exp(
 P = 15
 
 random_cdyn_lz_1d_tully_1:
-	"../bin/acorn_cdyn" -c -10 -e 0 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TULLY_1) --adiabatic
+	"../bin/acorn_cdyn" -c -10 -e 1 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TULLY_1) --adiabatic
 
 random_cdyn_lz_1d_tully_2:
-	"../bin/acorn_cdyn" -c -10 -e 0 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TULLY_2) --adiabatic
+	"../bin/acorn_cdyn" -c -10 -e 1 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TULLY_2) --adiabatic
 
 random_cdyn_lz_1d_ds_1:
-	"../bin/acorn_cdyn" -c -10 -e 0 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(DS_1) --adiabatic
+	"../bin/acorn_cdyn" -c -10 -e 1 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(DS_1) --adiabatic
 
 random_cdyn_lz_1d_ds_2:
-	"../bin/acorn_cdyn" -c -10 -e 0 -i 35000 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(DS_2) --adiabatic
+	"../bin/acorn_cdyn" -c -10 -e 1 -i 35000 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(DS_2) --adiabatic
 
 random_cdyn_lz_1d_ts_1:
-	"../bin/acorn_cdyn" -c -10 -e 1 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TS_1) --adiabatic
+	"../bin/acorn_cdyn" -c -10 -e 2 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TS_1) --adiabatic
 
 random_cdyn_lz_1d_ts_2:
-	"../bin/acorn_cdyn" -c -10 -e 0 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TS_2) --adiabatic
-
-test:
-	"../bin/acorn_cdyn" -c -10 -e 0 -i 150 -l 1 -m 2000 -p $(P) -r 1 -s 10 -t 1 -u $(DS_1) --adiabatic
+	"../bin/acorn_cdyn" -c -10 -e 2 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(TS_2) --adiabatic
 
 random_cdyn_lz_1d_qs_1:
-	"../bin/acorn_cdyn" -c -10 -e 2 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(QS_1) --adiabatic
+	"../bin/acorn_cdyn" -c -10 -e 3 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(QS_1) --adiabatic
 
 random_cdyn_lz_1d_qs_2:
-	"../bin/acorn_cdyn" -c -10 -e 0 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(QS_2) --adiabatic
+	"../bin/acorn_cdyn" -c -10 -e 3 -i 3500 -l 500 -m 2000 -p $(P) -r 1 -s 1 -t 1000 -u $(QS_2) --adiabatic
 
 random_qdyn_1d_tully_1:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e $(TULLY_1)
-	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
+	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0"
 	"../bin/acorn_qdyn" -i 350 -m 2000 -p $(P) -s 10 --adiabatic --savewfn --align --factor 0.01
 
 random_qdyn_1d_tully_2:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e $(TULLY_2)
-	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
+	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0"
 	"../bin/acorn_qdyn" -i 350 -m 2000 -p $(P) -s 10 --adiabatic --savewfn --align --factor 0.01
 
 random_qdyn_1d_ds_1:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e $(DS_1)
-	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
+	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0"
 	"../bin/acorn_qdyn" -i 350 -m 2000 -p $(P) -s 10 --adiabatic --savewfn --align --factor 0.01
 
 random_qdyn_1d_ds_2:
 	"../bin/acorn_expression" -g -24 24 -o U_DIA.mat -p 1024 -e $(DS_2)
-	"../bin/acorn_expression" -g -24 24 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0"
+	"../bin/acorn_expression" -g -24 24 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0"
 	"../bin/acorn_qdyn" -i 3500 -m 2000 -p $(P) -s 10 --adiabatic --savewfn --align --factor 1.0
 
 random_qdyn_1d_ts_1:
@@ -166,7 +163,7 @@ random_qdyn_1d_ts_1:
 
 random_qdyn_1d_ts_2:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e $(TS_2)
-	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0" "0" "0"
+	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "0" "0" "exp(-(x+10)^2)" "0"
 	"../bin/acorn_qdyn" -i 350 -m 2000 -p $(P) -s 10 --adiabatic --savewfn --align --factor 0.01
 
 random_qdyn_1d_qs_1:
@@ -176,7 +173,7 @@ random_qdyn_1d_qs_1:
 
 random_qdyn_1d_qs_2:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e $(QS_2)
-	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "exp(-(x+10)^2)" "0" "0" "0" "0" "0" "0" "0"
+	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "0" "0" "0" "0" "exp(-(x+10)^2)" "0"
 	"../bin/acorn_qdyn" -i 350 -m 2000 -p $(P) -s 10 --adiabatic --savewfn --align --factor 0.01
 
 random_qdyn_hydrogen_imaginary:
