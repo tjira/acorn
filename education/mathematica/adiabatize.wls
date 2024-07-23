@@ -24,17 +24,13 @@ PlotPotentials[Subscript[Ud,2,1],-8,8]
 (*Double State #2*)
 
 
-Subscript[Ud,2,2]:={
-{(x+3)^2,0.001*Exp[-x^2]},
-{0.001*Exp[-x^2],(x-3)^2}
-};Subscript[Ud,2,2]//MatrixForm
+Subscript[Ud,2,1]:={
+{0.001*x,0.001*Exp[-0.05*x^2]},
+{0.001*Exp[-0.05*x^2],-0.001*x}
+};Subscript[Ud,2,1]//MatrixForm
 
 
-PlotPotentials[Subscript[Ud,2,2],-8,8]
-
-
-(* ::Input:: *)
-(**)
+PlotPotentials[Subscript[Ud,2,1],-8,8]
 
 
 (* ::Subsubsection:: *)
@@ -56,9 +52,9 @@ PlotPotentials[Subscript[Ud,3,1],-12,12]
 
 
 Subscript[Ud,3,2]:={
-{0.01*Tanh[0.6*x],0.001*Exp[-x^2],0.001*Exp[-x^2]},
-{0.001*Exp[-x^2],0,0.001*Exp[-x^2]},
-{0.001*Exp[-x^2],0.001*Exp[-x^2],-0.01*Tanh[0.6*x]}
+{0.001*x,0.001*Exp[-0.01*x^2],0.002*Exp[-0.01*x^2]},
+{0.001*Exp[-0.01*x^2],0,0.001*Exp[-0.01*x^2]},
+{0.002*Exp[-0.01*x^2],0.001*Exp[-0.01*x^2],-0.001*x}
 };Subscript[Ud,3,2]//MatrixForm
 
 
@@ -70,9 +66,9 @@ PlotPotentials[Subscript[Ud,3,2],-8,8]
 
 
 Subscript[Ud,3,3]:={
-{(x+3)^2,0.001*Exp[-x^2],0.001*Exp[-x^2]},
-{0.001*Exp[-x^2],x^2+9,0.001*Exp[-x^2]},
-{0.001*Exp[-x^2],0.001*Exp[-x^2],(x-3)^2}
+{0.01*Tanh[0.6*x],0.002*Exp[-x^2],0.001*Exp[-x^2]},
+{0.002*Exp[-x^2],0,0.002*Exp[-x^2]},
+{0.001*Exp[-x^2],0.002*Exp[-x^2],-0.01*Tanh[0.6*x]}
 };Subscript[Ud,3,3]//MatrixForm
 
 

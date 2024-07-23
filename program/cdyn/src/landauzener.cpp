@@ -30,9 +30,13 @@ std::vector<std::tuple<int, double, bool>> LandauZener::jump(const Matrix& U, in
 
         // calculate the second derivative of the energy difference
         if (i > 1) dded(i, j) = (ed(i, j) - 2 * ed(i - 1, j) + ed(i - 2, j)) / (tstep * tstep);
+        // if (i > 2) dded(i, j) = (2 * ed(i, j) - 5 * ed(i - 1, j) + 4 * ed(i - 2, j) - ed(i - 3, j)) / (tstep * tstep);
+        // if (i > 3) dded(i, j) = ((35.0/12) * ed(i, j) - (26.0/3) * ed(i - 1, j) + 9.5 * ed(i - 2, j) - (14.0/3) * ed(i - 3, j) + (11.0/12) * ed(i - 4, j)) / (tstep * tstep);
 
         // calculate the first derivative of the energy difference
         if (i > 0) ded(i, j) = (ed(i, j) - ed(i - 1, j)) / tstep;
+        // if (i > 1) ded(i, j) = (1.5 * ed(i, j) - 2 * ed(i - 1, j) + 0.5 * ed(i - 2, j)) / tstep;
+        // if (i > 2) ded(i, j) = ((11.0/6) * ed(i, j) - 3 * ed(i - 1, j) + 1.5 * ed(i - 2, j) - (1.0/3) * ed(i - 3, j)) / tstep;
     }
 
     // define the container for the accepted transitions
@@ -45,19 +49,39 @@ std::vector<std::tuple<int, double, bool>> LandauZener::jump(const Matrix& U, in
         double P; if (state != combs.at(j).at(0) && state != combs.at(j).at(1)) continue;
 
         // calculate the probability of state change
-        if (!adiabatic) P = 1 - std::exp(-2 * M_PI * std::pow(U(combs.at(j).at(0), combs.at(j).at(1)), 2) / std::abs(ded(i, j)));
-        if ( adiabatic) P = std::exp(-0.5 * M_PI * std::sqrt(std::pow(ed(i, j), 3) / dded(i, j)));
+        if (!adiabatic) {
+            // if (combs.size() == 3) {
+            //     double l12 = std::sqrt(M_PI / std::abs(ded(i, 0))) * U(combs.at(0).at(0), combs.at(0).at(1));
+            //     double l13 = std::sqrt(M_PI / std::abs(ded(i, 1))) * U(combs.at(1).at(0), combs.at(1).at(1));
+            //     double l23 = std::sqrt(M_PI / std::abs(ded(i, 2))) * U(combs.at(2).at(0), combs.at(2).at(1));
+            //     if (state == combs.at(j).at(0)) {
+            //         if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 1) P = 2 * l12 * l12 + 2 * l12 * l13 * l23 + l13 * l13 * l23 * l23 - l12 * l12 * (3 * l13 * l13 + l23 * l23 + 2 * l12 * l12);
+            //         if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 2) P = 2 * l13 * l13 - 2 * l12 * l13 * l23 + l12 * l12 * l23 * l23 - l13 * l13 * (1 * l12 * l12 + l23 * l23 + 2 * l13 * l13);
+            //         if (combs.at(j).at(0) == 1 && combs.at(j).at(1) == 2) P = 2 * l23 * l23 + 2 * l12 * l13 * l23 + l12 * l12 * l13 * l13 - l23 * l23 * (l12 * l12 + 2 * l23 * l23 + 3 * l13 * l13);
+            //     } else {
+            //         if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 1) P = 2 * l12 * l12 - 2 * l12 * l13 * l23 + l13 * l13 * l23 * l23 - l12 * l12 * (3 * l13 * l13 + l23 * l23 + 2 * l12 * l12);
+            //         if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 2) P = 2 * l13 * l13 + 2 * l12 * l13 * l23 + l12 * l12 * l23 * l23 - l13 * l13 * (1 * l12 * l12 + l23 * l23 + 2 * l13 * l13);
+            //         if (combs.at(j).at(0) == 1 && combs.at(j).at(1) == 2) P = 2 * l23 * l23 - 2 * l12 * l13 * l23 + l12 * l12 * l13 * l13 - l23 * l23 * (l12 * l12 + 2 * l23 * l23 + 3 * l13 * l13);
+            //     }
+            // } else {
+            //     P = 1 - std::exp(-2 * M_PI * std::pow(U(combs.at(j).at(0), combs.at(j).at(1)), 2) / std::abs(ded(i, j)));
+            // }
+            P = 1 - std::exp(-2 * M_PI * std::pow(U(combs.at(j).at(0), combs.at(j).at(1)), 2) / std::abs(ded(i, j)));
+        } else P = std::exp(-0.5 * M_PI * std::sqrt(std::pow(ed(i, j), 3) / dded(i, j)));
 
         // add the transition to the container with the probability of the jump
         transitions.push_back(std::make_tuple(state == combs.at(j).at(0) ? combs.at(j).at(1) : combs.at(j).at(0), std::isnan(P) ? 0 : P, false));
 
         // if the trajectory is at a crossing point, enable the roll for the jump
-        if (!adiabatic &&  ed(i, j) *  ed(i - 1, j) < 0) std::get<2>(transitions.back()) = true;
-        if ( adiabatic && ded(i, j) * ded(i - 1, j) < 0) std::get<2>(transitions.back()) = true;
+        if (!adiabatic &&  ed(i, j) *  ed(i - 1, j) <= 0) std::get<2>(transitions.back()) = true;
+        if ( adiabatic && ded(i, j) * ded(i - 1, j) <= 0) std::get<2>(transitions.back()) = true;
     }
 
     // sort the transitions by probabilities from smallest to largest
     std::sort(transitions.begin(), transitions.end(), [](const auto& a, const auto& b) {return std::get<1>(a) < std::get<1>(b);});
+
+    // add the cumulative probabilities
+    for(int i = 0; i < transitions.size(); i++) std::get<1>(transitions.at(i)) += i ? std::get<1>(transitions.at(i - 1)) : 0;
 
     // return transitions
     return transitions;

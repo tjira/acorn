@@ -47,8 +47,8 @@ int main(int argc, char** argv) {
         Matrix U(nstate, nstate); for (int i = 0; i < nstate; i++) {for (int j = 0; j < nstate; j++) U(i, j) = Ue.at(i * nstate + j).eval(r);} return U;
     };
 
-    // define the container for all the trajectories and states
-    Matrix sdt(iters + 1, nstate * trajs), sat(iters + 1, nstate * trajs);
+    // define the container for all the states and hopping geometries
+    Matrix sdt(iters + 1, nstate * trajs), sat(iters + 1, nstate * trajs); std::vector<double> hg;
 
     // print the header
     std::printf("%6s %6s %6s %14s %14s %14s %14s\n", "TRAJ", "ITER", "STATE", "EPOT", "EKIN", "ETOT", "FORCE");
@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
             // calculate the velocity and accceleration
             a(j + 1) = F / mass; v(j + 1) = v(j) + 0.5 * (a(j) + a(j + 1)) * step;
 
-            // move the system and propagate state
+            // move the system and set the next state to the same as before
             r(j + 1) = r(j) + step * (v(j + 1) + 0.5 * a(j + 1) * step), s(j + 1) = s(j);
 
             // evaluate the potential and transform it to adiabatic basis if needed
@@ -113,10 +113,12 @@ int main(int argc, char** argv) {
             if (nstate > 1) transitions = lz.jump(U, s(j + 1), j + 1, step);
 
             // loop over all the transitions
-            if (rn = dist(mt); nstate > 1) for (const auto& transition : transitions) {
-                if (int ns = std::get<0>(transition); std::get<2>(transition) && rn < std::get<1>(transition)) {
-                    if (double vn = v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j + 1), s(j + 1))) / mass; vn > 0) {
-                        v(j + 1) = std::sqrt(v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j + 1), s(j + 1))) / mass); s(j + 1) = ns; break;
+            if (rn = dist(mt); nstate > 1) for (size_t k = 0; k < transitions.size(); k++) {
+                if (int ns = std::get<0>(transitions.at(k)); std::get<2>(transitions.at(k))) {
+                    if (rn > (k ? std::get<1>(transitions.at(k - 1)) : 0) && rn < std::get<1>(transitions.at(k))) {
+                        if (double vn = v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j + 1), s(j + 1))) / mass; vn > 0) {
+                            v(j + 1) = std::sqrt(v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j + 1), s(j + 1))) / mass); s(j + 1) = ns; hg.push_back(r(j + 1)); break;
+                        }
                     }
                 }
             }
@@ -128,11 +130,11 @@ int main(int argc, char** argv) {
             F = -dU(s(j + 1), s(j + 1));
 
             // print the iteration
-            if (std::string probs; !((j + 1) % log)) {
-                std::printf("%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %.4f", i + 1, j + 1, s(j), Epot, Ekin, Epot + Ekin, F, rn);
+            if (std::string print; !((j + 1) % log) || s(j+1) != s(j)) {
+                char buffer[100]; std::sprintf(buffer, "%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %.4f", i + 1, j + 1, s(j), Epot, Ekin, Epot + Ekin, F, rn); print = buffer;
                 for (size_t k = 0; k < transitions.size(); k++) {
-                    std::printf("%s%d->%d=%.3f(%s)", k ? ", " : " ", s(j), std::get<0>(transitions.at(k)), std::get<1>(transitions.at(k)), std::get<2>(transitions.at(k)) ? "true" : "false");
-                } std::cout << std::endl;
+                    std::sprintf(buffer, "%s%d->%d=%.3f(%d)", k ? ", " : " ", s(j), std::get<0>(transitions.at(k)), std::get<1>(transitions.at(k)), std::get<2>(transitions.at(k))); print += buffer;
+                } std::printf("%s\n", print.c_str());
             }
         }
 
@@ -144,7 +146,7 @@ int main(int argc, char** argv) {
         for (int j = 0; j < iters + 1; j++) {
 
             // diagonalize the potential for each time step of the trajectory
-            Eigen::SelfAdjointEigenSolver<Matrix> solver(eval(Ues.at(0), r(j))); Matrix C = solver.eigenvectors();
+            Eigen::SelfAdjointEigenSolver<Matrix> solver(eval(Ues.at(id), r(j))); Matrix C = solver.eigenvectors();
 
             // assign the state to the time dependent container
             if (!adiabatic) sat.block(j, i * nstate, 1, nstate) = (C.adjoint() * sdt.block(j, i * nstate, 1, nstate).transpose().asDiagonal().toDenseMatrix() * C).diagonal().transpose();
@@ -155,22 +157,30 @@ int main(int argc, char** argv) {
         if (savetraj) {
 
             // create the matrices
-            Matrix E(iters + 1, 2), ED(iters + 1, lz.getEd().cols() + 1), DED(iters + 1, lz.getDed().cols() + 1), RT(iters + 1, 2), VT(iters + 1, 2), AT(iters + 1, 2);
+            Matrix E(iters + 1, 2), ETOT(iters + 1, 2), ED(iters + 1, lz.getEd().cols() + 1), DED(iters + 1, lz.getDed().cols() + 1), DDED(iters + 1, lz.getDded().cols() + 1), RT(iters + 1, 2), VT(iters + 1, 2), AT(iters + 1, 2);
 
             // fill the position, velocity and acceleration matrices
             RT << Vector::LinSpaced(iters + 1, 0, iters) * step, r; VT << Vector::LinSpaced(iters + 1, 0, iters) * step, v; AT << Vector::LinSpaced(iters + 1, 0, iters) * step, a;
 
             // write the position, velocity and acceleration matrices to disk
-            Eigen::Write("R_LZ_" + std::to_string(i + 1) + ".mat", RT); Eigen::Write("V_LZ_" + std::to_string(i + 1) + ".mat", VT); Eigen::Write("A_LZ_" + std::to_string(i + 1) + ".mat", AT);
+            Eigen::Write(std::string("R_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", RT);
+            Eigen::Write(std::string("V_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", VT);
+            Eigen::Write(std::string("A_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", AT);
 
             // fill the energy matrix
-            for (int j = 0; j < iters + 1; j++) E(j, 0) = j * step, E(j, 1) = Uc.at(j)(s(j), s(j));
+            for (int j = 0; j < iters + 1; j++) E(j, 0) = j * step, ETOT(j, 0) = j * step, E(j, 1) = Uc.at(j)(s(j), s(j)), ETOT(j, 1) = Uc.at(j)(s(j), s(j)) + 0.5 * mass * v(j) * v(j);
 
             // fill the energy difference matrices
-            ED << Vector::LinSpaced(iters + 1, 0, iters) * step, lz.getEd(); DED << Vector::LinSpaced(iters + 1, 0, iters) * step, lz.getDed();
+            ED << Vector::LinSpaced(iters + 1, 0, iters) * step, lz.getEd(); DED << Vector::LinSpaced(iters + 1, 0, iters) * step, lz.getDed(); DDED << Vector::LinSpaced(iters + 1, 0, iters) * step, lz.getDded();
 
-            // write the energy matrices to disk
-            Eigen::Write("E_LZ_" + std::to_string(i + 1) + ".mat", E); Eigen::Write("ED_LZ_" + std::to_string(i + 1) + ".mat", ED); Eigen::Write("DED_LZ_" + std::to_string(i + 1) + ".mat", DED);
+            // write the potential energy matrices to disk
+            Eigen::Write(std::string("DDED_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", DDED);
+            Eigen::Write(std::string("DED_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", DED);
+            Eigen::Write(std::string("ED_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", ED);
+            Eigen::Write(std::string("E_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", E);
+
+            // write the total energy matrix to disk
+            Eigen::Write(std::string("ETOT_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", ETOT);
         }
     }
 
@@ -200,10 +210,13 @@ int main(int argc, char** argv) {
         std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(nstate * nstate).reshaped(nstate, nstate)(i, i));
     } std::cout << std::endl;
 
-    // write the trajectories to disk
+    // write the populations to disk
     MEASURE("POPULATION WRITING: ", 
-        Eigen::Write("P_LZ_DIA.mat", Pd); Eigen::Write("P_LZ_ADIA.mat", Pa);
+        Eigen::Write(std::string("P_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_DIA.mat", Pd); Eigen::Write(std::string("P_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_ADIA.mat", Pa);
     )
+
+    // write the hopping geometries to disk
+    Eigen::Write(std::string("HG_LZ-") + (adiabatic ? "ADIA" : "DIA") + "_.mat", Eigen::Map<Matrix>(hg.data(), hg.size(), 1));
 
     // print the total time
     std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;

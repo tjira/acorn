@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, pandas as pd, scipy.interpolate as si, seaborn as sns
+import argparse as ap, matplotlib.animation as anm, matplotlib.colors as mc, matplotlib.pyplot as plt, numpy as np, pandas as pd, scipy.interpolate as si, seaborn as sns
 
 
 def one(args, mats):
@@ -21,8 +21,11 @@ def one(args, mats):
     miny = min([frame.y.min() for frame in data]); maxy = max([frame.y.max() for frame in data])
     ax.set_xlim(minx, maxx); ax.set_ylim(miny - 0.05* (maxy - miny), maxy + 0.05* (maxy - miny))
 
+    # define the color palette
+    palette = sns.color_palette([args.palette], len(data[0]["var"].unique())) if args.palette in mc.BASE_COLORS | mc.CSS4_COLORS | mc.TABLEAU_COLORS | mc.XKCD_COLORS else args.palette
+
     # plot the lines
-    sns.lineplot(ax=ax, data=data[len(data) - 1 if args.last else 0], x="x", y="y", hue="var", palette="colorblind"); ax.legend(title="Column", loc="upper right")
+    sns.lineplot(ax=ax, data=data[len(data) - 1 if args.last else 0], x="x", y="y", hue="var", palette=palette, alpha=args.alpha); ax.legend(title="Column", loc="upper right")
 
     # remove the legend if not specified
     if not args.legend or args.image: ax.get_legend().set_visible(False)
@@ -93,11 +96,14 @@ if __name__ == "__main__":
     parser = ap.ArgumentParser(prog="Acorn Matrix Plotter", description="Matrix plotting script for the Quantum Acorn package.", add_help=False)
 
     # add the arguments
+    parser.add_argument("-a", "--alpha", type=float, default=1, help="The transparency of the plot.")
     parser.add_argument("-c", "--columns", type=int, default=1, help="The number of columns to plot in the matrix.")
     parser.add_argument("-d", "--dimension", type=int, default=1, help="Dimension of the data.")
     parser.add_argument("-e", "--extract", type=int, default=0, nargs="+", help="Extract the specific columns from the provided column interval.")
     parser.add_argument("-f", "--frames", type=int, default=1, help="The number of frames to plot.")
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
+    parser.add_argument("-p", "--palette", type=str, default="colorblind", help="The color palette to use.")
+    parser.add_argument("-t", "--title", type=str, default="", help="The title of the plot.")
     parser.add_argument("-r", "--resolution", type=int, nargs=2, default=[800, 600], help="The resolution of the image.")
     parser.add_argument("--image", action="store_true", help="Display only the image without frames, ticks and labels.")
     parser.add_argument("--last", action="store_true", help="Display only the last frame.")
@@ -120,6 +126,10 @@ if __name__ == "__main__":
     # create the figure and update function
     if args.dimension == 1: fig, update = one(args, mats)
     if args.dimension == 2: fig, update = two(args, mats)
+
+    # set the title of the plot
+    if args.title:
+        fig.gca().set_title(args.title); plt.subplots_adjust(top=0.96) # type: ignore
 
     # create the animation
     if args.frames > 1: anim = anm.FuncAnimation(fig, update, frames=args.frames, interval=30) # type: ignore
