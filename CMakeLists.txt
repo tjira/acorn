@@ -11,65 +11,23 @@ include(FetchContent)
 set(CMAKE_CXX_STANDARD 20)
 
 # set policies and compile commands
-set(CMAKE_POLICY_DEFAULT_CMP0153 OLD)
-set(CMAKE_POLICY_DEFAULT_CMP0148 OLD)
-set(CMAKE_POLICY_DEFAULT_CMP0146 OLD)
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# disable deprecation warning caused by fftw and set output path
+# set output path
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
-
-# set the library  build variables
-set(BUILD_SHARED_LIBS OFF)
-set(EIGEN_TEST_NOQT ON)
-set(BUILD_TESTING OFF)
-set(BUILD_TESTS OFF)
 
 # set the base compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra --coverage")
-set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -funroll-loops")
-
-if (STATIC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -static")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -static")
-endif()
+set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native")
 
 # declare Torch library for fast tensor contractions
 FetchContent_Declare(torch SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.4.0%2Bcpu.zip)
-FetchContent_Declare(libint SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz)
-FetchContent_Declare(eigen SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz)
-FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www.fftw.org/fftw-3.3.10.tar.gz)
 
 # download the Torch library
 FetchContent_MakeAvailable(torch)
 
 # add torch prefix path
-list(APPEND CMAKE_PREFIX_PATH ${torch_SOURCE_DIR}/share/cmake/Torch)
-
-if (WIN32)
-    # set additional compiler flags for windows
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wa,-mbig-obj")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wa,-mbig-obj")
-
-    # download the eigen, fftw and libint library
-    FetchContent_MakeAvailable(eigen fftw libint)
-
-    # read the problematic libint file
-    file(READ ${libint_SOURCE_DIR}/include/libint2/boys.h CONTENT)
-
-    # fix the bug in the file
-    string(REPLACE "#ifdef _MSC_VER" "#ifdef WIN32" CONTENT "${CONTENT}")
-
-    # write back to the file
-    file(WRITE ${libint_SOURCE_DIR}/include/libint2/boys.h "${CONTENT}")
-
-    # include additional directories
-    include_directories(${CMAKE_BINARY_DIR}/include ${fftw_SOURCE_DIR}/api)
-else()
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native -flto=auto")
-endif()
+set(Torch_DIR ${torch_SOURCE_DIR}/share/cmake/Torch)
 
 # include directories
 include_directories(example/diagram include lib)
@@ -79,9 +37,6 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Torch  REQUIRED)
 
-# add torch compiler flags
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${TORCH_CXX_FLAGS}")
-
 # add the base library
 add_library(acorn_base STATIC src/expression.cpp src/linalg.cpp src/timer.cpp)
 
@@ -89,13 +44,13 @@ add_library(acorn_base STATIC src/expression.cpp src/linalg.cpp src/timer.cpp)
 target_link_libraries(acorn_base Eigen3::Eigen)
 
 # add subprograms
-# add_subdirectory(program/expression)
-# add_subdirectory(program/transform)
-# add_subdirectory(program/integral)
-# add_subdirectory(program/cdyn)
-# add_subdirectory(program/qdyn)
-# add_subdirectory(program/ci)
-# add_subdirectory(program/hf)
+add_subdirectory(program/expression)
+add_subdirectory(program/transform)
+add_subdirectory(program/integral)
+add_subdirectory(program/cdyn)
+add_subdirectory(program/qdyn)
+add_subdirectory(program/ci)
+add_subdirectory(program/hf)
 add_subdirectory(program/mp)
 
 # enable testing
