@@ -36,22 +36,24 @@ if (STATIC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -static")
 endif()
 
-if (WIN32)
+# declare Torch library for fast tensor contractions
+FetchContent_Declare(torch SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.4.0%2Bcpu.zip)
+FetchContent_Declare(libint SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz)
+FetchContent_Declare(eigen SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz)
+FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www.fftw.org/fftw-3.3.10.tar.gz)
 
+# download the Torch library
+FetchContent_MakeAvailable(torch)
+
+# add torch prefix path
+list(APPEND CMAKE_PREFIX_PATH ${torch_SOURCE_DIR}/share/cmake/Torch)
+
+if (WIN32)
     # set additional compiler flags for windows
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wa,-mbig-obj")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wa,-mbig-obj")
 
-    # declare the libint library on github releases
-    FetchContent_Declare(libint SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://github.com/evaleev/libint/releases/download/v2.8.2/libint-2.8.2-mpqc4.tgz)
-
-    # declare the eigen release for linear algebra
-    FetchContent_Declare(eigen SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz)
-
-    # declare the fftw library on the fftw webpage
-    FetchContent_Declare(fftw SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://www.fftw.org/fftw-3.3.10.tar.gz)
-
-    # download these libraries
+    # download the eigen, fftw and libint library
     FetchContent_MakeAvailable(eigen fftw libint)
 
     # read the problematic libint file
@@ -75,6 +77,10 @@ include_directories(example/diagram include lib)
 # find the necessary packages
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(Torch  REQUIRED)
+
+# add torch compiler flags
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${TORCH_CXX_FLAGS}")
 
 # add the base library
 add_library(acorn_base STATIC src/expression.cpp src/linalg.cpp src/timer.cpp)
@@ -83,13 +89,13 @@ add_library(acorn_base STATIC src/expression.cpp src/linalg.cpp src/timer.cpp)
 target_link_libraries(acorn_base Eigen3::Eigen)
 
 # add subprograms
-add_subdirectory(program/expression)
-add_subdirectory(program/transform)
-add_subdirectory(program/integral)
-add_subdirectory(program/cdyn)
-add_subdirectory(program/qdyn)
-add_subdirectory(program/ci)
-add_subdirectory(program/hf)
+# add_subdirectory(program/expression)
+# add_subdirectory(program/transform)
+# add_subdirectory(program/integral)
+# add_subdirectory(program/cdyn)
+# add_subdirectory(program/qdyn)
+# add_subdirectory(program/ci)
+# add_subdirectory(program/hf)
 add_subdirectory(program/mp)
 
 # enable testing
