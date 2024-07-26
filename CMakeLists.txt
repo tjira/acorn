@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.16)
 # project name
 project(Acorn)
 
+# include the fetch plugin
+include(FetchContent)
+
 # set the c++ standard
 set(CMAKE_CXX_STANDARD 20)
 
@@ -21,6 +24,7 @@ set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 # set the library  build variables
 set(BUILD_SHARED_LIBS OFF)
 set(EIGEN_TEST_NOQT ON)
+set(BUILD_TESTING OFF)
 set(BUILD_TESTS OFF)
 
 # set the base compiler flags
@@ -33,8 +37,6 @@ if (STATIC)
 endif()
 
 if (WIN32)
-    # include the fetch plugin
-    include(FetchContent)
 
     # set additional compiler flags for windows
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wa,-mbig-obj")
@@ -68,7 +70,7 @@ else()
 endif()
 
 # include directories
-include_directories(include lib)
+include_directories(example/diagram include lib)
 
 # find the necessary packages
 find_package(Eigen3 REQUIRED)

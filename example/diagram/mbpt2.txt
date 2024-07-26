@@ -1,1 +1,3 @@
-abij,ijab,abij;0.25
+TOSTRING(
+abij-ijab-abij;0.25
+)

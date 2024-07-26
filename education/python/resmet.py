@@ -142,7 +142,7 @@ if __name__ == "__main__":
             epsvec = [[(-epsms[v] if char in "abcdefgh" else epsms[o]) for char in contr.split(",")[i]] for i in range(n, 2 * n - 1)]
             return views + [1 / sum([v[i].reshape(-1, *[1 for _ in range(len(v) - i - 1)]) for i in range(len(v))]) for v in epsvec]
         for i in range(4, args.mpn + 1):
-            exprs = [(x.split(";")[0], eval(x.split(";")[1]))for x in open(f"../../example/diagram/mbpt{i}.txt").readlines()]
+            exprs = [(x.split(";")[0].replace("-", ","), eval(x.split(";")[1])) for x in open(f"../../example/diagram/mbpt{i}.txt").readlines()[1:-1]]
             E_MPN.append(sum([contr[1] * np.einsum(contr[0], *slices(i, contr[0]), optimize=True) for contr in exprs]))
             print("MP{} ENERGY: {:.8f}".format(i, E_HF + E_MP2 + E_MP3 + sum(E_MPN) + VNN))
 

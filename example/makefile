@@ -140,6 +140,14 @@ mp2: molecule
 mp3: molecule
 	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_mp -o 3
 
+# target to perform a MP4 calculation
+mp4: molecule
+	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_mp -o 4
+
+# target to perform a MP5 calculation
+mp5: molecule
+	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_mp -o 5
+
 # target to perform a FCI calculation
 fci: molecule
 	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_ci

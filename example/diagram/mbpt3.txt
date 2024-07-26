@@ -1,3 +1,5 @@
-abij,ijkl,klab,abij,abkl;0.125
-abij,icak,jkbc,abij,bcjk;1.0
-abij,cdab,ijcd,abij,cdij;0.125
+TOSTRING(
+abij-ijkl-klab-abij-abkl;0.125
+abij-icak-jkbc-abij-bcjk;1.0
+abij-cdab-ijcd-abij-cdij;0.125
+)
