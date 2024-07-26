@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # set output path
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
 # set the base compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra --coverage")
