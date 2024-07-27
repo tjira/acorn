@@ -51,11 +51,11 @@ int main(int argc, char** argv) {
 
     // load the system and integrals in MS basis from disk
     MEASURE("SYSTEM AND INTEGRALS IN MS BASIS READING: ",
-        torch::Tensor Jms = torch::ReadTensor<4>("J_MS.mat").squeeze();
-        torch::Tensor Vms = torch::ReadTensor<2>("V_MS.mat").squeeze();
-        torch::Tensor Tms = torch::ReadTensor<2>("T_MS.mat").squeeze();
-        torch::Tensor Ems = torch::ReadTensor<2>("E_MS.mat").squeeze();
-        torch::Tensor N   = torch::ReadTensor<2>("N.mat"   ).squeeze();
+        torch::Tensor Jms = torch::ReadTensor("J_MS.mat").squeeze();
+        torch::Tensor Vms = torch::ReadTensor("V_MS.mat").squeeze();
+        torch::Tensor Tms = torch::ReadTensor("T_MS.mat").squeeze();
+        torch::Tensor Ems = torch::ReadTensor("E_MS.mat").squeeze();
+        torch::Tensor N   = torch::ReadTensor("N.mat"   ).squeeze();
     )
 
     // extract the number of occupied and virtual orbitals
