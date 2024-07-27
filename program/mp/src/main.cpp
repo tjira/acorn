@@ -1,7 +1,6 @@
-#include "linalg.h"
+#include "tensor.h"
 #include "timer.h"
 #include <argparse.hpp>
-#include <torch/torch.h>
 
 using namespace torch::indexing;
 
@@ -35,7 +34,7 @@ std::vector<std::string> split(const std::string &str, char delim) {
 }
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Moller-Plesset Pertrubation Theory Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+    argparse::ArgumentParser program("Acorn Moller-Plesset Pertrubation Theory Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -45,28 +44,32 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now(), mpit = Timer::Now();
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
+
+    // set the number of threads
+    nthread = program.get<int>("-n");
 
     // load the system and integrals in MS basis from disk
-    MEASURE("SYSTEM AND ONE-ELECTRON INTEGRALS IN MS BASIS READING: ",
-        Matrix Vms = Eigen::LoadMatrix("V_MS.mat");
-        Matrix Tms = Eigen::LoadMatrix("T_MS.mat");
-        Vector N   = Eigen::LoadMatrix("N.mat"   );
-    )
-    MEASURE("SYSTEM AND TWO-ELECTRON INTEGRALS IN MS BASIS READING: ",
-        torch::Tensor Jms = torch::from_blob(Eigen::LoadTensor("J_MS.mat").data(), {Vms.rows(), Vms.rows(), Vms.rows(), Vms.rows()}, torch::TensorOptions().dtype(torch::kDouble)).clone();
-        torch::Tensor Ems = torch::from_blob(Eigen::LoadMatrix("E_MS.mat").data(), {Vms.rows()                                    }, torch::TensorOptions().dtype(torch::kDouble)).clone();
+    MEASURE("SYSTEM AND INTEGRALS IN MS BASIS READING: ",
+        torch::Tensor Jms = torch::ReadTensor<4>("J_MS.mat").squeeze();
+        torch::Tensor Vms = torch::ReadTensor<2>("V_MS.mat").squeeze();
+        torch::Tensor Tms = torch::ReadTensor<2>("T_MS.mat").squeeze();
+        torch::Tensor Ems = torch::ReadTensor<2>("E_MS.mat").squeeze();
+        torch::Tensor N   = torch::ReadTensor<2>("N.mat"   ).squeeze();
     )
 
-    // extract the number of occupied and virtual orbitals and define the energy
-    int nocc = N(0); int nvirt = Vms.rows() / 2 - nocc; int nos = 2 * nocc, nvs = 2 * nvirt; double E = 0; std::vector<double> Empn; nthread = program.get<int>("-n");
+    // extract the number of occupied and virtual orbitals
+    int nocc = N.index({0}).item().toInt(); int nvirt = Ems.sizes().at(0) / 2 - nocc; int nos = 2 * nocc, nvs = 2 * nvirt;
+
+    // define the energy containers
+    std::vector<double> Empn; double E = 0;
 
     // initialize the antisymmetrized Coulomb integrals in Physicist's notation and the Hamiltonian matrix in MS basis
-    torch::Tensor Jmsa = (Jms - Jms.permute({0, 3, 2, 1})).permute({0, 2, 1, 3}); Matrix Hms = Tms + Vms;
+    torch::Tensor Jmsa = (Jms - Jms.permute({0, 3, 2, 1})).permute({0, 2, 1, 3}); torch::Tensor Hms = Vms + Tms;
 
     // calculate the HF energy
     for (int i = 0; i < 2 * nocc; i++) {
-        E += Hms(i, i); for (int j = 0; j < 2 * nocc; j++) E += 0.5 * Jmsa.index({i, j, i, j}).item().toDouble();
+        E += Hms.index({i, i}).item().toDouble(); for (int j = 0; j < 2 * nocc; j++) E += 0.5 * Jmsa.index({i, j, i, j}).item().toDouble();
     }
 
     // print new line
@@ -75,8 +78,11 @@ int main(int argc, char** argv) {
     // loop over the orders of MP perturbation theory
     for (int i = 2; i <= program.get<int>("-o"); i++) {
 
-        // start the timer and define contractions with energy
-        mpit = Timer::Now(); std::vector<std::string> contributions = split(mbptf.at(i - 2), ' '); std::vector<double> Empi(contributions.size());
+        // start the timer
+        Timer::Timepoint mpit = Timer::Now();
+
+        // define contributions with energy
+        std::vector<std::string> contributions = split(mbptf.at(i - 2), ' '); std::vector<double> Empi(contributions.size());
 
         // print the required number of contributions
         std::printf("MP%02d ENERGY CALCULATION\n%13s %17s %12s\n", i, "CONTR", "VALUE", "TIME");
@@ -87,8 +93,11 @@ int main(int argc, char** argv) {
         #endif
         for (int j = 0; j < (int)contributions.size(); j++) {
 
-            // start the timer, split the contribution and replace the dashes with commas
-            tp = Timer::Now(); std::vector<std::string> contribution = split(contributions.at(j), ';'); std::replace(contribution.at(0).begin(), contribution.at(0).end(), '-', ',');
+            // start the timer
+            Timer::Timepoint mpiit = Timer::Now();
+
+            // define the contribution and replace the dashes witrh commas in the contributions
+            std::vector<std::string> contribution = split(contributions.at(j), ';'); std::replace(contribution.at(0).begin(), contribution.at(0).end(), '-', ',');
             
             // define the tensor slices with axes, array of orbital energy slices and vector of ones for reshaping
             std::vector<torch::Tensor> views; std::vector<Slice> axes(4); std::vector<torch::Tensor> epsts; std::vector<int64_t> ones = {-1};
@@ -123,7 +132,7 @@ int main(int argc, char** argv) {
             double Empii = std::stod(contribution.at(1)) * torch::einsum(contribution.at(0), views).item().toDouble(); Empi.at(j) = Empii;
 
             // print the contribution
-            std::printf("%06d/%06d %17.14f %s\n", j + 1, (int)contributions.size(), Empii, Timer::Format(Timer::Elapsed(tp)).c_str());
+            std::printf("%06d/%06d %17.14f %s\n", j + 1, (int)contributions.size(), Empii, Timer::Format(Timer::Elapsed(mpiit)).c_str());
         }
 
         // print the MPN energy
@@ -140,5 +149,5 @@ int main(int argc, char** argv) {
     E += std::accumulate(Empn.begin(), Empn.end(), 0.0);
 
     // print the final energy
-    std::printf("\nFINAL SINGLE POINT ENERGY: %.13f\n\nTOTAL TIME: %s\n", E + N(1), Timer::Format(Timer::Elapsed(start)).c_str());
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.13f\n\nTOTAL TIME: %s\n", E + N.index({1}).item().toDouble(), Timer::Format(Timer::Elapsed(start)).c_str());
 }

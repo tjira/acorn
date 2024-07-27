@@ -3,7 +3,7 @@
 #include <argparse.hpp>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Hartree-Fock Integral Transform Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+    argparse::ArgumentParser program("Acorn Hartree-Fock Integral Transform Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // define all the matrices and tensors used throughout the program
     Matrix C, E, V, T, S, Vmo, Tmo, Smo, Ems, Vms, Tms, Sms; Tensor<4> J, Jmo, Jms;
@@ -37,9 +37,9 @@ int main(int argc, char** argv) {
     if (program.get<bool>("-o")) {
         MEASURE("INTEGRAL TRANSFORMS TO MO BASIS: ",
             Jmo = Transform::CoulombSpatial(J, C);
-            Vmo = Transform::SingleSpatial( V, C);
-            Tmo = Transform::SingleSpatial( T, C);
-            Smo = Transform::SingleSpatial( S, C);
+            Vmo = Transform::SingleSpatial (V, C);
+            Tmo = Transform::SingleSpatial (T, C);
+            Smo = Transform::SingleSpatial (S, C);
         )
     }
 
@@ -47,9 +47,9 @@ int main(int argc, char** argv) {
     if (program.get<bool>("-s")) {
         MEASURE("INTEGRAL TRANSFORMS TO MS BASIS: ",
             Jms = Transform::CoulombSpin(J, C);
-            Vms = Transform::SingleSpin( V, C);
-            Tms = Transform::SingleSpin( T, C);
-            Sms = Transform::SingleSpin( S, C);
+            Vms = Transform::SingleSpin (V, C);
+            Tms = Transform::SingleSpin (T, C);
+            Sms = Transform::SingleSpin (S, C);
             Ems = Vector::NullaryExpr(2 * E.rows(), [&](int i){return E(i / 2);});
         )
     }

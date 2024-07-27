@@ -34,13 +34,12 @@ jobs:
         run: ./script/libint.sh
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_MODULE_PATH=$PWD/libtorch/install/share/cmake
 
       - name: Build Acorn
         run: |
           export CPLUS_INCLUDE_PATH="$PWD/libfftw/install/include:$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
           export LIBRARY_PATH="$PWD/libfftw/install/lib:$PWD/libint/install/lib:$LIBRARY_PATH"
-          export CMAKE_PREFIX_PATH="$PWD/libtorch/install:$CMAKE_PREFIX_PATH"
           cmake --build build --parallel 2
 
       - name: Run Tests

@@ -4,7 +4,7 @@
 #include <filesystem>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+    argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
     // add the command line arguments
     program.add_argument("-b", "--basis").help("-- Basis set used for integrals.").default_value("STO-3G");
@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // set the environment variable for the basis set location
     if (auto path = std::filesystem::weakly_canonical(std::filesystem::path(argv[0])).parent_path(); !std::filesystem::is_directory(std::string(DATADIR) + "/basis")) {

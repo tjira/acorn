@@ -3,7 +3,7 @@
 #include <argparse.hpp>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Hartree-Fock Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+    argparse::ArgumentParser program("Acorn Hartree-Fock Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // extract the command line parameters
     int diis = program.get<int>("-d"), iters = program.get<int>("-i"); double thresh = program.get<double>("-t");
@@ -41,8 +41,8 @@ int main(int argc, char** argv) {
     // start the SCF procedure
     for (int i = 0; i < iters; i++) {
 
-        // reset the timer
-        tp = Timer::Now();
+        // start the iteration timer
+        Timer::Timepoint scfit = Timer::Now();
 
         // calculate the electron-electron repulsion
         Tensor<2> VEE = (J - 0.5 * J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1})).contract(TENSORMAP(Dmo), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
         Eel = 0.5 * Dmo.cwiseProduct(H + F).sum();
 
         // print the iteration info
-        std::printf("%6d %20.14f %.2e %.2e %s %s\n", i + 1, Eel, std::abs(Eel - Eelp), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(tp)).c_str(), diis && i >= diis ? "DIIS" : "");
+        std::printf("%6d %20.14f %.2e %.2e %s %s\n", i + 1, Eel, std::abs(Eel - Eelp), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(scfit)).c_str(), diis && i >= diis ? "DIIS" : "");
 
         // finish if covergence reached
         if (std::abs(Eel - Eelp) < thresh && (Dmo - Dmop).norm() < thresh) {std::cout << std::endl; break;}
