@@ -20,15 +20,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra --coverage")
 set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native")
 
-# declare Torch library for fast tensor contractions
-FetchContent_Declare(torch SYSTEM DOWNLOAD_EXTRACT_TIMESTAMP TRUE URL https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.4.0%2Bcpu.zip)
-
-# download the Torch library
-FetchContent_MakeAvailable(torch)
-
-# add torch prefix path
-set(Torch_DIR ${torch_SOURCE_DIR}/share/cmake/Torch)
-
 # include directories
 include_directories(example/diagram include lib)
 
