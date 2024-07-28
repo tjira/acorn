@@ -21,12 +21,18 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra --coverage")
 set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native")
 
 # include directories
-include_directories(example/diagram include lib)
+include_directories(example/diagram external/include external/include/torch/csrc/api/include include lib)
 
 # find the necessary packages
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(Torch  REQUIRED)
+
+# find installed libraries
+find_library(LIBTORCH_CPU NAMES torch_cpu PATHS external/lib)
+find_library(LIBTORCH NAMES torch PATHS external/lib)
+find_library(LIBFFTW NAMES fftw3 PATHS external/lib)
+find_library(LIBINT NAMES int2 PATHS external/lib)
+find_library(LIBC10 NAMES c10 PATHS external/lib)
 
 # add the base library
 add_library(acorn_base STATIC src/expression.cpp src/linalg.cpp src/timer.cpp)
