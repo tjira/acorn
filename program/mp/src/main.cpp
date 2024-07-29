@@ -21,9 +21,6 @@ std::string {
 std::string {
 #include "mbpt5.txt"
 },
-std::string {
-#include "mbpt6.txt"
-}
 };
 
 int nthread = 1;
@@ -59,7 +56,7 @@ int main(int argc, char** argv) {
     )
 
     // extract the number of occupied and virtual orbitals
-    int nocc = N.index({0}).item().toInt(); int nvirt = Ems.sizes().at(0) / 2 - nocc; int nos = 2 * nocc, nvs = 2 * nvirt;
+    int nocc = N.index({0}).item<int>(); int nvirt = Ems.sizes().at(0) / 2 - nocc; int nos = 2 * nocc, nvs = 2 * nvirt;
 
     // define the energy containers
     std::vector<double> Empn; double E = 0;
@@ -69,7 +66,7 @@ int main(int argc, char** argv) {
 
     // calculate the HF energy
     for (int i = 0; i < 2 * nocc; i++) {
-        E += Hms.index({i, i}).item().toDouble(); for (int j = 0; j < 2 * nocc; j++) E += 0.5 * Jmsa.index({i, j, i, j}).item().toDouble();
+        E += Hms.index({i, i}).item<double>(); for (int j = 0; j < 2 * nocc; j++) E += 0.5 * Jmsa.index({i, j, i, j}).item<double>();
     }
 
     // print new line
@@ -88,16 +85,18 @@ int main(int argc, char** argv) {
         std::printf("MP%02d ENERGY CALCULATION\n%13s %17s %12s\n", i, "CONTR", "VALUE", "TIME");
 
         // loop over the contractions
-        #ifdef _OPENMP
         #pragma omp parallel for num_threads(nthread)
-        #endif
         for (int j = 0; j < (int)contributions.size(); j++) {
 
             // start the timer
             Timer::Timepoint mpiit = Timer::Now();
 
-            // define the contribution and replace the dashes witrh commas in the contributions
-            std::vector<std::string> contribution = split(contributions.at(j), ';'); std::replace(contribution.at(0).begin(), contribution.at(0).end(), '-', ',');
+            // define the contribution and split it
+            std::vector<std::string> contribution = split(contributions.at(j), ';');
+
+            // replace the plus sign with a comma
+            std::replace(contribution.at(0).begin(), contribution.at(0).end(), '+', ',');
+            std::replace(contribution.at(1).begin(), contribution.at(1).end(), '+', ',');
             
             // define the tensor slices with axes, array of orbital energy slices and vector of ones for reshaping
             std::vector<torch::Tensor> views; std::vector<Slice> axes(4); std::vector<torch::Tensor> epsts; std::vector<int64_t> ones = {-1};
@@ -128,8 +127,27 @@ int main(int argc, char** argv) {
                 views.push_back(1 / (std::accumulate(epsts.begin() + 1, epsts.end(), epsts.at(0))));
             }
 
+            // define the contraction path
+            std::vector<std::tuple<std::string, std::array<int, 2>>> path;
+
+            // split the nodes and add them to the path
+            for (const std::string& node: split(contribution.at(1), ':')) {
+                path.push_back({split(node, '/').at(1), {std::stoi(split(split(node, '/').at(0), '-').at(0)), std::stoi(split(split(node, '/').at(0), '-').at(1))}});
+            }
+
+            // contract over every node
+            for (const auto& node : path) {
+
+                // contract the nodes
+                views.push_back(torch::einsum(std::get<0>(node), {views.at(std::get<1>(node).at(0)), views.at(std::get<1>(node).at(1))}));
+
+                // erase the contracted nodes
+                views.erase(views.begin() + std::get<1>(node).at(std::get<1>(node).at(0) < std::get<1>(node).at(1)));
+                views.erase(views.begin() + std::get<1>(node).at(std::get<1>(node).at(0) > std::get<1>(node).at(1)));
+            }
+
             // add the contribution to the energy
-            double Empii = std::stod(contribution.at(1)) * torch::einsum(contribution.at(0), views).item().toDouble(); Empi.at(j) = Empii;
+            double Empii = std::stod(contribution.at(2)) * views.at(0).item<double>(); Empi.at(j) = Empii;
 
             // print the contribution
             std::printf("%06d/%06d %17.14f %s\n", j + 1, (int)contributions.size(), Empii, Timer::Format(Timer::Elapsed(mpiit)).c_str());
@@ -149,5 +167,5 @@ int main(int argc, char** argv) {
     E += std::accumulate(Empn.begin(), Empn.end(), 0.0);
 
     // print the final energy
-    std::printf("\nFINAL SINGLE POINT ENERGY: %.13f\n\nTOTAL TIME: %s\n", E + N.index({1}).item().toDouble(), Timer::Format(Timer::Elapsed(start)).c_str());
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.13f\n\nTOTAL TIME: %s\n", E + N.index({1}).item<double>(), Timer::Format(Timer::Elapsed(start)).c_str());
 }

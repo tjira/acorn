@@ -1,5 +1,5 @@
 TOSTRING(
-abij-ijkl-klab-abij-abkl;0.125
-abij-icak-jkbc-abij-bcjk;1.0
-abij-cdab-ijcd-abij-cdij;0.125
+abij+ijkl+klab+abij+abkl;3-0/abij+abij->abij:2-1/abkl+klab->abkl:1-0/abij+ijkl->abkl:1-0/abkl+abkl->;0.125
+abij+icak+jkbc+abij+bcjk;3-0/abij+abij->abij:2-1/bcjk+jkbc->bcjk:1-0/abij+icak->bjck:1-0/bjck+bcjk->;1.0
+abij+cdab+ijcd+abij+cdij;3-0/abij+abij->abij:2-1/cdij+ijcd->cdij:1-0/abij+cdab->ijcd:1-0/ijcd+cdij->;0.125
 )
