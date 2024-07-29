@@ -27,11 +27,11 @@ jobs:
       - name: Build Libfftw
         run: ./script/libfftw.sh
 
-      - name: Build Libtorch
-        run: ./script/libtorch.sh
-
       - name: Build Libint
         run: ./script/libint.sh
+
+      - name: Build Libtorch
+        run: ./script/libtorch.sh
 
       - name: Configure Acorn
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}

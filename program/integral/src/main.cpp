@@ -4,7 +4,7 @@
 #include <filesystem>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
+    argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp = Timer::Now();
 
     // add the command line arguments
     program.add_argument("-b", "--basis").help("-- Basis set used for integrals.").default_value("STO-3G");

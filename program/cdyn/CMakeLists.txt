@@ -8,6 +8,6 @@ target_include_directories(acorn_cdyn PRIVATE include)
 target_link_libraries(acorn_cdyn acorn_base)
 
 # link OpenMP
-if(OpenMP_CXX_FOUND AND CMAKE_BUILD_TYPE STREQUAL "Release")
+if(OpenMP_CXX_FOUND)
     target_link_libraries(acorn_cdyn OpenMP::OpenMP_CXX)
 endif()
