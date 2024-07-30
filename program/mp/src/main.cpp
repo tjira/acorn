@@ -4,10 +4,10 @@
 
 using namespace torch::indexing;
 
-#define TOSTRING(x) #x
-#define OCC "ijklmnop"
-#define VRT "abcdefgh"
+#define OCC "abcdefghijklmnopqrstuvwxyz"
+#define VRT "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+#define TOSTRING(x) #x
 std::vector<std::string> mbptf {
 std::string {
 #include "mbpt2.txt"
@@ -20,6 +20,9 @@ std::string {
 },
 std::string {
 #include "mbpt5.txt"
+},
+std::string {
+#include "mbpt6.txt"
 },
 };
 

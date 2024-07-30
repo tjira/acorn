@@ -1,5 +1,5 @@
 TOSTRING(
-abij+ijkl+klab+abij+abkl;3-0/abij+abij->abij:2-1/abkl+klab->abkl:1-0/abij+ijkl->abkl:1-0/abkl+abkl->;0.125
-abij+icak+jkbc+abij+bcjk;3-0/abij+abij->abij:2-1/bcjk+jkbc->bcjk:1-0/abij+icak->bjck:1-0/bjck+bcjk->;1.0
-abij+cdab+ijcd+abij+cdij;3-0/abij+abij->abij:2-1/cdij+ijcd->cdij:1-0/abij+cdab->ijcd:1-0/ijcd+cdij->;0.125
+ABab+abcd+cdAB+ABab+ABcd;3-0/ABab+ABab->ABab:2-1/ABcd+cdAB->ABcd:1-0/ABab+abcd->ABcd:1-0/ABcd+ABcd->;0.125
+ABab+aCAc+bcBC+ABab+BCbc;3-0/ABab+ABab->ABab:2-1/BCbc+bcBC->BCbc:1-0/ABab+aCAc->BbCc:1-0/BbCc+BCbc->;1.0
+ABab+CDAB+abCD+ABab+CDab;3-0/ABab+ABab->ABab:2-1/CDab+abCD->CDab:1-0/ABab+CDAB->abCD:1-0/abCD+CDab->;0.125
 )

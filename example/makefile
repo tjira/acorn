@@ -106,7 +106,7 @@ cdyn_lz-dia_1d_ds_1:
 
 # target to perform a non-adiabatic 1D LZSH simulation of first triple state model with diabatic algorithm
 cdyn_lz-dia_1d_ts_1:
-	"../bin/acorn_cdyn" -c -10 -e 1 -i 3500 -l 500 -m 2000 -p 15 -r 1 -s 1 -t 1000 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
+	"../bin/acorn_cdyn" -c -10 -e 1 -i 3500 -l 500 -m 2000 -p 15 -r 1 -s 1 -t 20 -u "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))" --savetraj
 
 # ADIABATIC LANDAU-ZENER ALGORITHM =====================================================================================================================================================================
 
