@@ -17,3 +17,6 @@ cp -r external/libint/install/include external/libint/install/lib external/
 
 # remove redundant files
 rm -rf external/libint external/lib/cmake external/lib/pkgconfig
+
+# rename the library
+mv external/lib/libint2.a external/lib/libint.a

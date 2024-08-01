@@ -45,7 +45,7 @@ QS_2="0.01*tanh(0.6*x) 0.001*exp(-x^2)   0.001*exp(-x^2)      0.001*exp(-x^2)
       0.001*exp(-x^2)  0.001*exp(-x^2)   0.001*exp(-x^2)      (-0.01)*tanh(0.6*x)"
 QS_2_DIS=3; QS_2_AIS=3; QS_2_IX=-10; QS_2_IP=15
 
-A=0.05; C=("tab:blue" "tab:orange" "tab:green" "tab:red" "tab:purple" "tab:brown"); FC=${C[0]}; I=3500; L=500; M=2000; R=1; T=100
+A=0.05; C=("tab:blue" "tab:orange" "tab:green" "tab:red" "tab:purple" "tab:brown"); FC=${C[0]}; I=3500; L=500; M=2000; R=1; T=1000
 
 for POT in TULLY_1 TULLY_2 DS_1 DS_2 TS_1 TS_2 TS_3 QS_1 QS_2; do
 # for POT in QS_1; do

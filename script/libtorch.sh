@@ -12,8 +12,8 @@ cd external/libtorch && cmake -B build -DBUILD_PYTHON=OFF -DBUILD_SHARED_LIBS=ON
 # compile and install libtorch
 cd external/libtorch && cmake --build build --parallel 2 && cmake --install build && cd -
 
-# copy the compiled library
-cp -r external/libtorch/install/include external/libtorch/install/lib external/
+# remove static libraries and copy the compiled library
+rm external/libtorch/install/lib/*.a && cp -r external/libtorch/install/include external/libtorch/install/lib external/
 
 # remove redundant files
-rm -rf external/libtorch external/lib/cmake external/lib/pkgconfig external/lib/libtorch_global_deps.so external/lib/*.a
+rm -rf external/libtorch external/lib/cmake external/lib/pkgconfig external/lib/libtorch_global_deps.so

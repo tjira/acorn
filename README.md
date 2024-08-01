@@ -56,20 +56,13 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ## Compilation
 
-The software requires the [libint](https://github.com/evaleev/libint) and [fftw](https://www.fftw.org) libraries. Before compiling these libraries and proceeding with the following steps, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) library installed. On debian-based distributions, you can do it with the following command.
+The software requires the [fftw](https://www.fftw.org), [libint](https://github.com/evaleev/libint) and [pytorch](https://github.com/pytorch/pytorch) libraries. Before compiling these libraries and proceeding with the following steps, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) libraries installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
 sudo apt install libboost-dev libeigen3-dev
 ```
 
-To compile the libraries execute `./script/libfftw.sh && ./script/libint.sh` from the project root directory. Now, we export the necessary environment variables.
-
-```bash
-export CPLUS_INCLUDE_PATH="$PWD/libfftw/install/include:$PWD/libint/install/include:$CPLUS_INCLUDE_PATH"
-export LIBRARY_PATH="$PWD/libfftw/install/lib:$PWD/libint/install/lib:$LIBRARY_PATH"
-```
-
-After this, the project configuration should finish without errors.
+To compile the libraries execute `./script/libfftw.sh && ./script/libint.sh && ./script/libtorch.sh` from the project root directory. After this, the project configuration should finish without errors.
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -90,6 +83,8 @@ All the examples are implemented as `example/makefile` targets. If you are in ex
 ## Credits
 
 * [argparse](https://github.com/p-ranav/argparse) - Argument Parser for Modern C++.
+* [eigen](https://gitlab.com/libeigen/eigen) - C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms.
 * [exprtk](https://github.com/ArashPartow/exprtk) - C++ Mathematical Expression Parsing and Evaluation Library.
-* [fftw](https://www.fftw.org) - C Subroutine Library for Computing the Discrete Fourier Transform .
+* [fftw](https://www.fftw.org) - C Subroutine Library for Computing the Discrete Fourier Transform.
 * [libint](https://github.com/evaleev/libint) - High-Performance Library for Computing Gaussian Integrals in Quantum Mechanics.
+* [pytorch](https://github.com/pytorch/pytorch) - Tensors and Dynamic neural networks in Python with strong GPU acceleration.

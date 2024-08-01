@@ -17,3 +17,6 @@ cp -r external/libfftw/install/include external/libfftw/install/lib external/
 
 # remove redundant files
 rm -rf external/libfftw external/include/*.f external/include/*.f03 external/lib/cmake external/lib/pkgconfig
+
+# rename the library
+mv external/lib/libfftw3.a external/lib/libfftw.a

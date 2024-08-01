@@ -4,9 +4,6 @@ cmake_minimum_required(VERSION 3.16)
 # project name
 project(Acorn)
 
-# include the fetch plugin
-include(FetchContent)
-
 # set the c++ standard
 set(CMAKE_CXX_STANDARD 20)
 
@@ -17,8 +14,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
 # set the base compiler flags
-set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra --coverage")
-set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -Wl,-rpath,'$ORIGIN' --coverage")
+set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native -Wl,-rpath,'$ORIGIN'")
 
 # include directories
 include_directories(example/diagram external/include external/include/torch/csrc/api/include include lib)
@@ -30,8 +27,8 @@ find_package(OpenMP REQUIRED)
 # find installed libraries
 find_library(LIBTORCH_CPU NAMES torch_cpu PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBTORCH NAMES torch PATHS external/lib NO_DEFAULT_PATH)
-find_library(LIBFFTW NAMES fftw3 PATHS external/lib NO_DEFAULT_PATH)
-find_library(LIBINT NAMES int2 PATHS external/lib NO_DEFAULT_PATH)
+find_library(LIBFFTW NAMES fftw PATHS external/lib NO_DEFAULT_PATH)
+find_library(LIBINT NAMES int PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBC10 NAMES c10 PATHS external/lib NO_DEFAULT_PATH)
 
 # add the base library
