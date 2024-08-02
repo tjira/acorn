@@ -18,5 +18,8 @@ cp -r external/libfftw/install/include external/libfftw/install/lib external/
 # remove redundant files
 rm -rf external/libfftw external/include/*.f external/include/*.f03 external/lib/cmake external/lib/pkgconfig
 
-# rename the library
-mv external/lib/libfftw3.a external/lib/libfftw.a
+# rename the shared library
+cd external/lib && [[ -f libfftw3.so.3 ]] && mv libfftw3.so.3 libfftw.so && patchelf --set-soname libfftw.so libfftw.so && rm libfftw3.* ; cd -
+
+# rename the static library
+cd external/lib && [[ -f libfftw3.a ]] && mv libfftw3.a libfftw.a ; cd -

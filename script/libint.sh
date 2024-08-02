@@ -19,4 +19,4 @@ cp -r external/libint/install/include external/libint/install/lib external/
 rm -rf external/libint external/lib/cmake external/lib/pkgconfig
 
 # rename the library
-mv external/lib/libint2.a external/lib/libint.a
+cd external/lib && [[ -f libint2.a ]] && mv libint2.a libint.a ; cd -
