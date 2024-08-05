@@ -1,4 +1,5 @@
 #include "landauzener.h"
+#include <iostream>
 
 LandauZener::LandauZener() = default;
 
@@ -46,35 +47,37 @@ std::vector<std::tuple<int, double, bool>> LandauZener::jump(const Matrix& U, in
     for (size_t j = 0; j < combs.size() && i > 0; j++) {
 
         // skip if the current state is not in the combination and define the probability
-        double P; if (state != combs.at(j).at(0) && state != combs.at(j).at(1)) continue;
+        double P = 0; if (state != combs.at(j).at(0) && state != combs.at(j).at(1)) continue;
 
         // calculate the probability of state change
         if (!adiabatic) {
-            // if (combs.size() == 3) {
-            //     double l12 = std::sqrt(M_PI / std::abs(ded(i, 0))) * U(combs.at(0).at(0), combs.at(0).at(1));
-            //     double l13 = std::sqrt(M_PI / std::abs(ded(i, 1))) * U(combs.at(1).at(0), combs.at(1).at(1));
-            //     double l23 = std::sqrt(M_PI / std::abs(ded(i, 2))) * U(combs.at(2).at(0), combs.at(2).at(1));
-            //     if (state == combs.at(j).at(0)) {
-            //         if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 1) P = 2 * l12 * l12 + 2 * l12 * l13 * l23 + l13 * l13 * l23 * l23 - l12 * l12 * (3 * l13 * l13 + l23 * l23 + 2 * l12 * l12);
-            //         if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 2) P = 2 * l13 * l13 - 2 * l12 * l13 * l23 + l12 * l12 * l23 * l23 - l13 * l13 * (1 * l12 * l12 + l23 * l23 + 2 * l13 * l13);
-            //         if (combs.at(j).at(0) == 1 && combs.at(j).at(1) == 2) P = 2 * l23 * l23 + 2 * l12 * l13 * l23 + l12 * l12 * l13 * l13 - l23 * l23 * (l12 * l12 + 2 * l23 * l23 + 3 * l13 * l13);
-            //     } else {
-            //         if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 1) P = 2 * l12 * l12 - 2 * l12 * l13 * l23 + l13 * l13 * l23 * l23 - l12 * l12 * (3 * l13 * l13 + l23 * l23 + 2 * l12 * l12);
-            //         if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 2) P = 2 * l13 * l13 + 2 * l12 * l13 * l23 + l12 * l12 * l23 * l23 - l13 * l13 * (1 * l12 * l12 + l23 * l23 + 2 * l13 * l13);
-            //         if (combs.at(j).at(0) == 1 && combs.at(j).at(1) == 2) P = 2 * l23 * l23 - 2 * l12 * l13 * l23 + l12 * l12 * l13 * l13 - l23 * l23 * (l12 * l12 + 2 * l23 * l23 + 3 * l13 * l13);
-            //     }
-            // } else {
-            //     P = 1 - std::exp(-2 * M_PI * std::pow(U(combs.at(j).at(0), combs.at(j).at(1)), 2) / std::abs(ded(i, j)));
-            // }
-            P = 1 - std::exp(-2 * M_PI * std::pow(U(combs.at(j).at(0), combs.at(j).at(1)), 2) / std::abs(ded(i, j)));
+            if (combs.size() == 3) {
+                double l12 = std::sqrt(M_PI / std::abs(ded(i, 0))) * U(combs.at(0).at(0), combs.at(0).at(1));
+                double l13 = std::sqrt(M_PI / std::abs(ded(i, 1))) * U(combs.at(1).at(0), combs.at(1).at(1));
+                double l23 = std::sqrt(M_PI / std::abs(ded(i, 2))) * U(combs.at(2).at(0), combs.at(2).at(1));
+
+                double P12 = 2 * std::pow(l12, 2) - 2 * l12 * l13 * l23 + std::pow(l13 * l23, 2) - std::pow(l12, 2) * (2 * std::pow(l12, 2) + 3 * std::pow(l13, 2) + 1 * std::pow(l23, 2));
+                double P13 = 2 * std::pow(l13, 2) + 2 * l12 * l13 * l23 + std::pow(l12 * l23, 2) - std::pow(l13, 2) * (1 * std::pow(l12, 2) + 2 * std::pow(l13, 2) + 1 * std::pow(l23, 2));
+                double P23 = 2 * std::pow(l23, 2) - 2 * l12 * l13 * l23 + std::pow(l12 * l13, 2) - std::pow(l23, 2) * (1 * std::pow(l12, 2) + 3 * std::pow(l13, 2) + 2 * std::pow(l23, 2));
+
+                double P21 = 2 * std::pow(l12, 2) - 2 * l12 * l13 * l23 + std::pow(l13 * l23, 2) + std::pow(l12, 2) * (2 * std::pow(l12, 2) + 3 * std::pow(l13, 2) + 1 * std::pow(l23, 2));
+                double P31 = 2 * std::pow(l13, 2) + 2 * l12 * l13 * l23 + std::pow(l12 * l23, 2) + std::pow(l13, 2) * (1 * std::pow(l12, 2) + 2 * std::pow(l13, 2) + 1 * std::pow(l23, 2));
+                double P32 = 2 * std::pow(l23, 2) - 2 * l12 * l13 * l23 + std::pow(l12 * l13, 2) + std::pow(l23, 2) * (1 * std::pow(l12, 2) + 3 * std::pow(l13, 2) + 2 * std::pow(l23, 2));
+
+                if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 1) P = state == combs.at(0).at(0) ? P12 : P21;
+                if (combs.at(j).at(0) == 0 && combs.at(j).at(1) == 2) P = state == combs.at(1).at(0) ? P13 : P31;
+                if (combs.at(j).at(0) == 1 && combs.at(j).at(1) == 2) P = state == combs.at(2).at(0) ? P23 : P32;
+            } else {
+                P = 1 - std::exp(-2 * M_PI * std::pow(U(combs.at(j).at(0), combs.at(j).at(1)), 2) / std::abs(ded(i, j)));
+            }
         } else P = std::exp(-0.5 * M_PI * std::sqrt(std::pow(ed(i, j), 3) / dded(i, j)));
 
         // add the transition to the container with the probability of the jump
         transitions.push_back(std::make_tuple(state == combs.at(j).at(0) ? combs.at(j).at(1) : combs.at(j).at(0), std::isnan(P) ? 0 : P, false));
 
         // if the trajectory is at a crossing point, enable the roll for the jump
-        if (!adiabatic &&  ed(i, j) *  ed(i - 1, j) <= 0) std::get<2>(transitions.back()) = true;
-        if ( adiabatic && ded(i, j) * ded(i - 1, j) <= 0) std::get<2>(transitions.back()) = true;
+        if (!adiabatic &&  ed(i, j) *  ed(i - 1, j) <= 0                  ) std::get<2>(transitions.back()) = true;
+        if ( adiabatic && ded(i, j) * ded(i - 1, j) <= 0 && dded(i, j) > 0) std::get<2>(transitions.back()) = true;
     }
 
     // sort the transitions by probabilities from smallest to largest
@@ -82,6 +85,12 @@ std::vector<std::tuple<int, double, bool>> LandauZener::jump(const Matrix& U, in
 
     // add the cumulative probabilities
     for(int i = 0; i < transitions.size(); i++) std::get<1>(transitions.at(i)) += i ? std::get<1>(transitions.at(i - 1)) : 0;
+
+    // caluclate the sum of the probabilities
+    double sum = 0; for(int i = 0; i < transitions.size(); i++) sum += std::get<1>(transitions.at(i));
+
+    // divide the probabilities by the maximum probability if the sum is greated than one
+    for(int i = 0; i < transitions.size() && sum > 1; i++) std::get<1>(transitions.at(i)) /= std::get<1>(transitions.back());
 
     // return transitions
     return transitions;

@@ -113,10 +113,10 @@ int main(int argc, char** argv) {
             if (nstate > 1) transitions = lz.jump(U, s(j + 1), j + 1, step);
 
             // loop over all the transitions
-            if (rn = dist(mt); nstate > 1) for (size_t k = 0; k < transitions.size(); k++) {
-                if (int ns = std::get<0>(transitions.at(k)); std::get<2>(transitions.at(k))) {
-                    if (rn > (k ? std::get<1>(transitions.at(k - 1)) : 0) && rn < std::get<1>(transitions.at(k))) {
-                        if (double vn = v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j + 1), s(j + 1))) / mass; vn > 0) {
+            if (rn = dist(mt); nstate > 1) for (size_t k = 0; k < transitions.size(); k++) { // loop over all the transitions
+                if (int ns = std::get<0>(transitions.at(k)); std::get<2>(transitions.at(k))) { // if the jump attempt is performed
+                    if (rn > (k ? std::get<1>(transitions.at(k - 1)) : 0) && rn < std::get<1>(transitions.at(k))) { // if the jump is accepted
+                        if (double vn = v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j + 1), s(j + 1))) / mass; vn > 0) { // if the system has enough kinetic energy
                             v(j + 1) = std::sqrt(v(j + 1) * v(j + 1) - 2 * (U(ns, ns) - U(s(j + 1), s(j + 1))) / mass); s(j + 1) = ns; hg.push_back(r(j + 1)); break;
                         }
                     }

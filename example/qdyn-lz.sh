@@ -23,15 +23,15 @@ TS_1="0.03*(tanh(1.6*x)+tanh(1.6*(x+7))) 0.005*exp(-x^2)                       0
       0.005*exp(-(x+7)^2)                0.005*exp(-(x-7)^2)                   (-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
 TS_1_DIS=1; TS_1_AIS=2; TS_1_IX=-10; TS_1_IP=15
 
-TS_2="0.001*x         0.001*exp(-0.01*x^2) 0.002*exp(-0.01*x^2)
-      0.001*exp(-0.01*x^2) 0                0.001*exp(-0.01*x^2)
-      0.002*exp(-0.01*x^2) 0.001*exp(-0.01*x^2) (-0.001)*x"
+TS_2="0.001*x              0.001*exp(-0.01*x^2) 0.004*exp(-0.01*x^2)
+      0.001*exp(-0.01*x^2) 0                    0.001*exp(-0.01*x^2)
+      0.004*exp(-0.01*x^2) 0.001*exp(-0.01*x^2) (-0.001)*x"
 TS_2_DIS=2; TS_2_AIS=2; TS_2_IX=-15; TS_2_IP=15
 
-TS_3="0.01*tanh(0.6*x) 0.001*exp(-x^2) 0.001*exp(-x^2)
-      0.002*exp(-x^2)  0               0.002*exp(-x^2)
-      0.001*exp(-x^2)  0.002*exp(-x^2) (-0.01)*tanh(0.6*x)"
-TS_3_DIS=2; TS_3_AIS=2; TS_3_IX=-10; TS_3_IP=15
+TS_3="0.01*tanh(0.5*x) 0.001*exp(-x^2) 0.002*exp(-x^2)
+      0.001*exp(-x^2)  0               0.001*exp(-x^2)
+      0.002*exp(-x^2)  0.001*exp(-x^2) (-0.01)*tanh(0.5*x)"
+TS_3_DIS=2; TS_3_AIS=2; TS_3_IX=-10; TS_3_IP=12
 
 QS_1="0.03*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))+0.03 0.005*exp(-(x-7)^2)                                0.005*exp(-(x+7)^2)                                   0
       0.005*exp(-(x-7)^2)                         0.03*(tanh(1.6*(x-7))+tanh(1.6*x)+tanh(1.6*(x+7))) 0.005*exp(-x^2)                                       0.005*exp(-(x+7)^2)
@@ -48,7 +48,7 @@ QS_2_DIS=3; QS_2_AIS=3; QS_2_IX=-10; QS_2_IP=15
 A=0.05; C=("tab:blue" "tab:orange" "tab:green" "tab:red" "tab:purple" "tab:brown"); FC=${C[0]}; I=3500; L=500; M=2000; R=1; T=1000
 
 for POT in TULLY_1 TULLY_2 DS_1 DS_2 TS_1 TS_2 TS_3 QS_1 QS_2; do
-# for POT in QS_1; do
+# for POT in TS_2; do
     P=${POT}_IP; X=${POT}_IX; DIS=${POT}_DIS; AIS=${POT}_AIS; STATES=$(echo "sqrt($(echo ${!POT} | wc -w))" | bc)
 
     case $STATES in
