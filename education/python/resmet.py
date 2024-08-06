@@ -36,6 +36,8 @@ if __name__ == "__main__":
     # method switches
     parser.add_argument("--cisd", help="Perform the singles/doubles configuration interaction calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--ccd", help="Perform the coupled clusters doubles calculation.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--lccd", help="Perform the linearized coupled clusters doubles calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp2", help="Perform the second order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp3", help="Perform the third order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
 
@@ -46,7 +48,7 @@ if __name__ == "__main__":
     if args.help: parser.print_help(); exit()
 
     # forward declaration of integrals and energies in MS basis (just to avoid NameError in linting)
-    Hms, Jms, Jmsa, epsms = np.zeros(2 * [0]), np.zeros(4 * [0]), np.zeros(4 * [0]), np.array([])
+    Hms, Jms, Jmsa, epsms = np.zeros(2 * [0]), np.zeros(4 * [0]), np.zeros(4 * [0]), np.array([[[[]]]])
 
     # OBTAIN THE MOLECULE AND ATOMIC INTEGRALS =========================================================================================================================================================
 
@@ -54,15 +56,15 @@ if __name__ == "__main__":
     atoms = np.array([ATOM[line.split()[0]] for line in open(args.molecule).readlines()[2:]], dtype=int)
     coords = np.array([line.split()[1:] for line in open(args.molecule).readlines()[2:]], dtype=float)
 
-    # convert coordinates to bohrs
-    coords *= 1.8897261254578281
+    # convert coordinates to bohrs and forward declare orbital slices
+    coords *= 1.8897261254578281; o, v = slice(0, 0), slice(0, 0)
 
     # load the integrals from the files
     S, T, V = np.loadtxt(args.int[0], skiprows=1), np.loadtxt(args.int[1], skiprows=1), np.loadtxt(args.int[2], skiprows=1); J = np.loadtxt(args.int[3], skiprows=1).reshape(4 * [S.shape[1]])
 
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
 
-    # define energies, number of occupied orbitals and nbf
+    # define energies, number of occupied and virtual orbitals and the number of basis functions
     E_HF, E_HF_P, VNN, nocc, nvirt, nbf = 0, 1, 0, sum(atoms) // 2, S.shape[0] - sum(atoms) // 2, S.shape[0]
 
     # define some matrices and tensors
@@ -72,6 +74,7 @@ if __name__ == "__main__":
     # calculate the X matrix which is the inverse of the square root of the overlap matrix
     SEP = np.linalg.eigh(S); X = SEP[1] @ np.diag(1 / np.sqrt(SEP[0])) @ SEP[1].T
 
+    # the scf loop
     while abs(E_HF - E_HF_P) > args.threshold:
         # build the Fock matrix
         F = H + np.einsum("ijkl,ij", J - 0.5 * K, D, optimize=True)
@@ -93,14 +96,17 @@ if __name__ == "__main__":
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
     # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
-    if args.mp2 or args.mp3 or args.cisd or args.fci:
+    if args.mp2 or args.mp3 or args.lccd or args.ccd or args.cisd or args.fci:
+
+        # define the occ and virt slices shorthand
+        o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)
 
         # define the tiling matrix for the MO coefficients and energy placeholders
         P = np.array([np.eye(nbf)[:, i // 2] for i in range(2 * nbf)]).T
 
         # define the spin masks
         M = np.repeat([1 - np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
-        N = np.repeat([np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
+        N = np.repeat([    np.arange(2 * nbf, dtype=int) % 2], nbf, axis=0)
 
         # tile the coefficient matrix, apply the spin mask and tile the orbital energies
         Cms, epsms = np.block([[C @ P], [C @ P]]) * np.block([[M], [N]]), np.repeat(eps, 2)
@@ -108,32 +114,90 @@ if __name__ == "__main__":
         # transform the core Hamiltonian to the molecular spinorbital basis
         Hms = np.einsum("ip,ij,jq", Cms, np.kron(np.eye(2), H), Cms, optimize=True)
 
-        # transform the coulomb integrals to the MS basis in chemists' notation and define the antisymmetrized version
-        Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True); Jmsa = Jms - Jms.swapaxes(1, 3)
+        # transform the coulomb integrals to the MS basis in chemist's notation
+        Jms = np.einsum("ip,jq,ijkl,kr,ls", Cms, Cms, np.kron(np.eye(2), np.kron(np.eye(2), J).T), Cms, Cms, optimize=True);
+
+        # antisymmetrized two-electron integrals in physicist's notation
+        Jmsa = (Jms - Jms.swapaxes(1, 3)).transpose(0, 2, 1, 3)
+
+        # replace the epsms vector with a tensor of the form epsms[v, v, o, o] = -1 / (eps[v] + eps[v] - eps[o] - eps[o])
+        epsms = -1 / (epsms[v].reshape(-1, 1, 1, 1) + epsms[v].reshape(-1, 1, 1) - epsms[o].reshape(-1, 1) - epsms[o].reshape(-1))
 
     # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
     if args.mp2 or args.mp3:
 
-        # define the orbital slices and containers for MP2, MP3 and higher order energies
-        o, v, E_MP2, E_MP3, E_MPN = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf), 0, 0, []
-
-        # define a tensor with MP expression denominators
-        epsms_vovo = 1 / (-epsms[v].reshape(-1, 1, 1, 1) + epsms[o].reshape(-1, 1, 1) - epsms[v].reshape(-1, 1) + epsms[o].reshape(-1))
+        # energy containers
+        E_MP2, E_MP3 = 0, 0
 
         # calculate the MP2 correlation energy
-        E_MP2 += 0.25 * np.einsum("aibj,iajb,aibj", Jmsa[v, o, v, o], Jmsa[o, v, o, v], epsms_vovo, optimize=True)
-
-        # print the MP2 energy
-        print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
+        if args.mp2 or args.mp3:
+            E_MP2 += 0.25 * np.einsum("abij,ijab,abij", Jmsa[v, v, o, o], Jmsa[o, o, v, v], epsms, optimize=True)
+            print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
 
         # calculate the MP3 correlation energy
         if args.mp3:
-            E_MP3 += 0.125 * np.einsum("aibj,ikjl,kalb,aibj,akbl", Jmsa[v, o, v, o], Jmsa[o, o, o, o], Jmsa[o, v, o, v], epsms_vovo, epsms_vovo, optimize=True)
-            E_MP3 += 0.125 * np.einsum("aibj,cadb,icjd,aibj,cidj", Jmsa[v, o, v, o], Jmsa[v, v, v, v], Jmsa[o, v, o, v], epsms_vovo, epsms_vovo, optimize=True)
-            E_MP3 +=         np.einsum("aibj,iack,jbkc,aibj,bjck", Jmsa[v, o, v, o], Jmsa[o, v, v, o], Jmsa[o, v, o, v], epsms_vovo, epsms_vovo, optimize=True)
+            E_MP3 += 0.125 * np.einsum("abij,cdab,ijcd,abij,cdij", Jmsa[v, v, o, o], Jmsa[v, v, v, v], Jmsa[o, o, v, v], epsms, epsms, optimize=True)
+            E_MP3 += 0.125 * np.einsum("abij,ijkl,klab,abij,abkl", Jmsa[v, v, o, o], Jmsa[o, o, o, o], Jmsa[o, o, v, v], epsms, epsms, optimize=True)
+            E_MP3 +=         np.einsum("abij,cjkb,ikac,abij,acik", Jmsa[v, v, o, o], Jmsa[v, o, o, v], Jmsa[o, o, v, v], epsms, epsms, optimize=True)
+            print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 
-        # print the MP3 energy
-        if args.mp3: print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
+    # COUPLED ELECTRON PAIR & COUPLED CLUSTERS =========================================================================================================================================================
+    if args.lccd or args.ccd:
+
+        # energy containers
+        E_LCCD, E_LCCD_P, E_CCD, E_CCD_P = 0, 1, 0, 1
+
+        # initialize the first guess for the t-amplitudes
+        t = np.zeros((2 * nvirt, 2 * nvirt, 2 * nocc, 2 * nocc))
+
+        # LCCD loop
+        if args.lccd:
+            while abs(E_LCCD - E_LCCD_P) > args.threshold:
+                # collect all the distinct terms
+                lccd1 = 0.5 * np.einsum("abcd,cdij", Jmsa[v, v, v, v], t, optimize=True)
+                lccd2 = 0.5 * np.einsum("klij,abkl", Jmsa[o, o, o, o], t, optimize=True)
+                lccd3 =       np.einsum("akic,bcjk", Jmsa[v, o, o, v], t, optimize=True)
+
+                # apply the permuation operator and add it to the corresponding term
+                lccd3 = lccd3 + lccd3.transpose(1, 0, 3, 2) - lccd3.transpose(1, 0, 2, 3) - lccd3.transpose(0, 1, 3, 2)
+
+                # update the t-amplitudes
+                t = epsms * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3)
+
+                # evaluate the energy
+                E_LCCD_P, E_LCCD = E_LCCD, (1 / 4) * np.einsum("ijab,abij", Jmsa[o, o, v, v], t, optimize=True)
+
+            # print the LCCD energy
+            print("LCCD ENERGY: {:.8f}".format(E_HF + E_LCCD + VNN))
+
+        # CCD loop
+        if args.ccd:
+            while abs(E_CCD - E_CCD_P) > args.threshold:
+                # collect all the distinct LCCD terms
+                lccd1 = 0.5 * np.einsum("abcd,cdij", Jmsa[v, v, v, v], t, optimize=True)
+                lccd2 = 0.5 * np.einsum("klij,abkl", Jmsa[o, o, o, o], t, optimize=True)
+                lccd3 =       np.einsum("akic,bcjk", Jmsa[v, o, o, v], t, optimize=True)
+
+                # apply the permuation operator and add it to the corresponding LCCD terms
+                lccd3 = lccd3 + lccd3.transpose(1, 0, 3, 2) - lccd3.transpose(1, 0, 2, 3) - lccd3.transpose(0, 1, 3, 2)
+
+                # collect all the distinct first CCD terms
+                ccd1 = -0.50 * np.einsum("klcd,acij,bdkl", Jmsa[o, o, v, v], t, t, optimize=True)
+                ccd2 = -0.50 * np.einsum("klcd,abik,cdjl", Jmsa[o, o, v, v], t, t, optimize=True)
+                ccd3 =  0.25 * np.einsum("klcd,cdij,abkl", Jmsa[o, o, v, v], t, t, optimize=True)
+                ccd4 =         np.einsum("klcd,acik,bdjl", Jmsa[o, o, v, v], t, t, optimize=True)
+
+                # apply the permuation operator and add it to the corresponding CCD terms
+                ccd1, ccd2, ccd4 = ccd1 - ccd1.transpose(1, 0, 2, 3), ccd2 - ccd2.transpose(0, 1, 3, 2), ccd4 - ccd4.transpose(0, 1, 3, 2)
+
+                # update the t-amplitudes
+                t = epsms * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3 + ccd1 + ccd2 + ccd3 + ccd4)
+
+                # evaluate the energy
+                E_CCD_P, E_CCD = E_CCD, 0.25 * np.einsum("ijab,abij", Jmsa[o, o, v, v], t, optimize=True)
+
+            # print the CCD energy
+            print("CCD ENERGY: {:.8f}".format(E_HF + E_CCD + VNN))
 
     # CONFIGUIRATION INTERACTION =======================================================================================================================================================================
     if args.cisd or args.fci:
@@ -169,11 +233,11 @@ if __name__ == "__main__":
         Hci = np.zeros([len(dets), len(dets)])
 
         # define the Slater-Condon rules, "so" is an array of unique and common spinorbitals [unique, common]
-        slater0 = lambda so: sum([Hms[m, m] for m in so]) + sum([0.5 * (Jms[m, m, n, n] - Jms[m, n, n, m]) for m, n in it.product(so, so)])
-        slater1 = lambda so: Hms[so[0], so[1]] + sum([Jms[so[0], so[1], m, m] - Jms[so[0], m, m, so[1]] for m in so[2:]])
-        slater2 = lambda so: Jms[so[0], so[2], so[1], so[3]] - Jms[so[0], so[3], so[1], so[2]]
+        slater0 = lambda so: sum([Hms[m, m] for m in so]) + sum([0.5 * Jmsa[m, n, m, n] for m, n in it.product(so, so)])
+        slater1 = lambda so: Hms[so[0], so[1]] + sum([Jmsa[so[0], m, so[1], m] for m in so[2:]])
+        slater2 = lambda so: Jmsa[so[0], so[1], so[2], so[3]]
 
-        # fill the CI Hamiltonian
+        # filling of the CI Hamiltonian
         for i in range(0, Hci.shape[0]):
             for j in range(i, Hci.shape[1]):
                 # aligned determinant and the sign

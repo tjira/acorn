@@ -40,23 +40,13 @@ where $\odot$ denotes the Hadamard product. This transformed matrix $\mathbf{C}^
 J_{pqrs}^{MS}=C_{\mu p}^{MS}C_{\nu q}^{MS}(\mathbf{I}\_{2}\otimes_K(\mathbf{I}\_{2}\otimes_K\mathbf{J})^{(4,3,2,1)})\_{\mu\nu\kappa\lambda}C_{\kappa r}^{MS}C_{\lambda s}^{MS}
 \end{equation}
 
-where the superscript $(4,3,2,1)$ denotes the axes transposition. This notation accounts for the spin modifications and ensures that the transformations adhere to quantum mechanical principles. Let's also define the antisymmetrized Coulomb integrals in the MS basis as
+where the superscript $(4,3,2,1)$ denotes the axes transposition. This notation accounts for the spin modifications and ensures that the transformations adhere to quantum mechanical principles. Since we will formulate most of the post-HF methods in physicists' notation, let's also define the antisymmetrized Coulomb integrals in the MS basis and physicists' notation as
 
 \begin{equation}
-[pq||rs]=J_{pqrs}^{MS}-J_{psrq}^{MS}
+\braket{pq||rs}=(J_{pqrs}^{MS}-J_{psrq}^{MS})^{(1,3,2,4)}
 \end{equation}
 
 These integrals are calculated just to simplify the notation in the following formulas.
-
-### The Double Excitation Amplitudes
-
-For the definition of general n-th order formulas we well need an expression for the double excitation amplitudes, which are defined as
-
-\begin{equation}
-t_{ij}^{ab}=\frac{[ia||jb]}{\varepsilon_a+\varepsilon_b-\varepsilon_i-\varepsilon_j}
-\end{equation}
-
-where $a$ and $b$ are unoccupied (virtual) spinorbitals and $i$ and $j$ are occupied spinorbitals. The vector $\varepsilon$ encompasses energies of spinorbitals, obtained through the solution of the Roothaan equations.
 
 ### Correlation Energy Calculation
 
@@ -65,21 +55,23 @@ Having computed the Coulomb integral in the molecular spinorbital (MS) basis and
 The 2nd-order correlation energy:
 
 \begin{equation}
-E_{corr}^{MP2}=-\frac{1}{4}\sum_{ijab}t_{ij}^{ab}[ia||jb]
+E_{corr}^{MP2}=\frac{1}{4}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b}
 \end{equation}
 
 The 3rd-order correlation energy:
 
-\begin{equation}
-E_{corr}^{MP3}=\frac{1}{8}\sum_{ijab}t_{ij}^{ab}[ac||bd]t_{ij}^{cd}+\frac{1}{8}\sum_{ijab}t_{ij}^{ab}[ki||lj]t_{kl}^{ab}-\sum_{ijab}t_{ij}^{ab}[ki||bc]t_{kj}^{ac}
-\end{equation}
+\begin{align}
+E_{corr}^{MP3}=&\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{cd||ab}\braket{ij||cd}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_i+\varepsilon_j-\varepsilon_c-\varepsilon_d)}+ \\\\\
+&+\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||kl}\braket{kl||ab}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_k+\varepsilon_l-\varepsilon_a-\varepsilon_b)}+ \\\\\
+&+\sum_{ijab}\frac{\braket{ab||ij}\braket{cj||kb}\braket{ik||ac}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_i+\varepsilon_k-\varepsilon_a-\varepsilon_c)}
+\end{align}
 
 Remember that the sums over $i$, $j$, $k$, and $l$ are over occupied spinorbitals, while the sums over $a$, $b$, $c$, and $d$ are over virtual spinorbitals.
 
 {:.note}
 > Keep in mind that for the MP2 method we could integrate out the spin and obtain the correlation energy as
 > \begin{equation}
-> E_{corr}^{MP2}=\sum_{iajb}\frac{J_{iajb}^{MO}(2J_{iajb}^{MO}-J_{ibja}^{MO})}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b}
+> E_{corr}^{MP2}=\frac{1}{4}\sum_{iajb}\frac{J_{iajb}^{MO}(2J_{iajb}^{MO}-J_{ibja}^{MO})}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b}
 > \end{equation}
 > where $J_{pqrs}^{MO}$ are the Coulomb integrals in the molecular orbital (MO) basis calculated as
 > \begin{equation}

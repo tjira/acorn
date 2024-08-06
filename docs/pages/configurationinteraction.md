@@ -48,9 +48,9 @@ Having generated all possible determinants, we can now proceed to compute the ma
 \begin{equation}
 \mathbf{H}_{ij}^{CI}=
 \begin{cases} 
-\displaystyle \sum_kH\_{kk}^{core,MS}+\frac{1}{2}\sum_k\sum_lJ\_{kkll}^{MS}-J\_{kllk}^{MS}&D_i=D_j \\\\\
-\displaystyle H\_{pr}^{core,MS}+\sum_kJ\_{prkk}^{MS}-J\_{pkkr}^{MS}&D_i=\\{\dotsi p\dotsi\\}\land D_j=\\{\dotsi r\dotsi\\} \\\\\
-\displaystyle \vphantom{\sum_k}J\_{prqs}^{MS}-J\_{psqr}^{MS}&D_i=\\{\dotsi p\dotsi q\dotsi\\}\land D_j=\\{\dotsi r\dotsi s\dotsi\\} \\\\\
+\displaystyle \sum_kH\_{kk}^{core,MS}+\frac{1}{2}\sum_k\sum_l\braket{kl||kl}&D_i=D_j \\\\\
+\displaystyle H\_{pr}^{core,MS}+\sum_k\braket{pk||lk}&D_i=\\{\dotsi p\dotsi\\}\land D_j=\\{\dotsi r\dotsi\\} \\\\\
+\displaystyle \vphantom{\sum_k}\braket{pq||rs}&D_i=\\{\dotsi p\dotsi q\dotsi\\}\land D_j=\\{\dotsi r\dotsi s\dotsi\\} \\\\\
 \displaystyle \vphantom{\sum_k}0&\text{otherwise}
 \end{cases}
 \end{equation}
