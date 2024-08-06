@@ -148,24 +148,24 @@ if __name__ == "__main__":
         E_LCCD, E_LCCD_P, E_CCD, E_CCD_P = 0, 1, 0, 1
 
         # initialize the first guess for the t-amplitudes
-        t = np.zeros((2 * nvirt, 2 * nvirt, 2 * nocc, 2 * nocc))
+        t2 = np.zeros((2 * nvirt, 2 * nvirt, 2 * nocc, 2 * nocc))
 
         # LCCD loop
         if args.lccd:
             while abs(E_LCCD - E_LCCD_P) > args.threshold:
                 # collect all the distinct terms
-                lccd1 = 0.5 * np.einsum("abcd,cdij", Jmsa[v, v, v, v], t, optimize=True)
-                lccd2 = 0.5 * np.einsum("klij,abkl", Jmsa[o, o, o, o], t, optimize=True)
-                lccd3 =       np.einsum("akic,bcjk", Jmsa[v, o, o, v], t, optimize=True)
+                lccd1 = 0.5 * np.einsum("abcd,cdij", Jmsa[v, v, v, v], t2, optimize=True)
+                lccd2 = 0.5 * np.einsum("klij,abkl", Jmsa[o, o, o, o], t2, optimize=True)
+                lccd3 =       np.einsum("akic,bcjk", Jmsa[v, o, o, v], t2, optimize=True)
 
                 # apply the permuation operator and add it to the corresponding term
                 lccd3 = lccd3 + lccd3.transpose(1, 0, 3, 2) - lccd3.transpose(1, 0, 2, 3) - lccd3.transpose(0, 1, 3, 2)
 
                 # update the t-amplitudes
-                t = epsms * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3)
+                t2 = epsms * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3)
 
                 # evaluate the energy
-                E_LCCD_P, E_LCCD = E_LCCD, (1 / 4) * np.einsum("ijab,abij", Jmsa[o, o, v, v], t, optimize=True)
+                E_LCCD_P, E_LCCD = E_LCCD, (1 / 4) * np.einsum("ijab,abij", Jmsa[o, o, v, v], t2, optimize=True)
 
             # print the LCCD energy
             print("LCCD ENERGY: {:.8f}".format(E_HF + E_LCCD + VNN))
@@ -174,27 +174,27 @@ if __name__ == "__main__":
         if args.ccd:
             while abs(E_CCD - E_CCD_P) > args.threshold:
                 # collect all the distinct LCCD terms
-                lccd1 = 0.5 * np.einsum("abcd,cdij", Jmsa[v, v, v, v], t, optimize=True)
-                lccd2 = 0.5 * np.einsum("klij,abkl", Jmsa[o, o, o, o], t, optimize=True)
-                lccd3 =       np.einsum("akic,bcjk", Jmsa[v, o, o, v], t, optimize=True)
+                lccd1 = 0.5 * np.einsum("abcd,cdij", Jmsa[v, v, v, v], t2, optimize=True)
+                lccd2 = 0.5 * np.einsum("klij,abkl", Jmsa[o, o, o, o], t2, optimize=True)
+                lccd3 =       np.einsum("akic,bcjk", Jmsa[v, o, o, v], t2, optimize=True)
 
                 # apply the permuation operator and add it to the corresponding LCCD terms
                 lccd3 = lccd3 + lccd3.transpose(1, 0, 3, 2) - lccd3.transpose(1, 0, 2, 3) - lccd3.transpose(0, 1, 3, 2)
 
                 # collect all the distinct first CCD terms
-                ccd1 = -0.50 * np.einsum("klcd,acij,bdkl", Jmsa[o, o, v, v], t, t, optimize=True)
-                ccd2 = -0.50 * np.einsum("klcd,abik,cdjl", Jmsa[o, o, v, v], t, t, optimize=True)
-                ccd3 =  0.25 * np.einsum("klcd,cdij,abkl", Jmsa[o, o, v, v], t, t, optimize=True)
-                ccd4 =         np.einsum("klcd,acik,bdjl", Jmsa[o, o, v, v], t, t, optimize=True)
+                ccd1 = -0.50 * np.einsum("klcd,acij,bdkl", Jmsa[o, o, v, v], t2, t2, optimize=True)
+                ccd2 = -0.50 * np.einsum("klcd,abik,cdjl", Jmsa[o, o, v, v], t2, t2, optimize=True)
+                ccd3 =  0.25 * np.einsum("klcd,cdij,abkl", Jmsa[o, o, v, v], t2, t2, optimize=True)
+                ccd4 =         np.einsum("klcd,acik,bdjl", Jmsa[o, o, v, v], t2, t2, optimize=True)
 
                 # apply the permuation operator and add it to the corresponding CCD terms
                 ccd1, ccd2, ccd4 = ccd1 - ccd1.transpose(1, 0, 2, 3), ccd2 - ccd2.transpose(0, 1, 3, 2), ccd4 - ccd4.transpose(0, 1, 3, 2)
 
                 # update the t-amplitudes
-                t = epsms * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3 + ccd1 + ccd2 + ccd3 + ccd4)
+                t2 = epsms * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3 + ccd1 + ccd2 + ccd3 + ccd4)
 
                 # evaluate the energy
-                E_CCD_P, E_CCD = E_CCD, 0.25 * np.einsum("ijab,abij", Jmsa[o, o, v, v], t, optimize=True)
+                E_CCD_P, E_CCD = E_CCD, 0.25 * np.einsum("ijab,abij", Jmsa[o, o, v, v], t2, optimize=True)
 
             # print the CCD energy
             print("CCD ENERGY: {:.8f}".format(E_HF + E_CCD + VNN))
