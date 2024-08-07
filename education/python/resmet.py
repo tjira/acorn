@@ -217,35 +217,40 @@ if __name__ == "__main__":
                                                           + 0.5 * np.einsum("mnef,efin->mi", Jmsa[o, o, v, v], ttau, optimize=True)
                 Fme =                           Fms[o, v] +       np.einsum("mnef,fn->me",   Jmsa[o, o, v, v], t1,   optimize=True)
 
+                # define some complementary variables used in the following expressions
+                Fmea =            np.einsum("bm,me->be",   t1, Fme, optimize=True)
+                Fmeb =            np.einsum("ej,me->mj",   t1, Fme, optimize=True)
+                t12  = 0.5 * t2 + np.einsum("fj,bn->fbjn", t1, t1,  optimize=True)
+
+                # define the permutation arguments for all terms the W intermediates
+                P1 = np.einsum("ej,mnie->mnij", t1, Jmsa[o, o, o, v], optimize=True)
+                P2 = np.einsum("bm,amef->abef", t1, Jmsa[v, o, v, v], optimize=True)
+
                 # calculate the 4D two-particle intermediates
-                Wmnij = Jmsa[o, o, o, o] +        np.einsum("ej,mnie->mnij",   t1,                                          Jmsa[o, o, o, v], optimize=True).swapaxes(0, 0) \
-                                         -        np.einsum("ej,mnie->mnij",   t1,                                          Jmsa[o, o, o, v], optimize=True).swapaxes(2, 3) \
-                                         + 0.25 * np.einsum("efij,mnef->mnij", tau,                                         Jmsa[o, o, v, v], optimize=True).swapaxes(0, 0)
-                Wabef = Jmsa[v, v, v, v] -        np.einsum("bm,amef->abef",   t1,                                          Jmsa[v, o, v, v], optimize=True).swapaxes(0, 0) \
-                                         +        np.einsum("bm,amef->abef",   t1,                                          Jmsa[v, o, v, v], optimize=True).swapaxes(0, 1) \
-                                         + 0.25 * np.einsum("abmn,mnef->abef", tau,                                         Jmsa[o, o, v, v], optimize=True).swapaxes(0, 0)
-                Wmbej = Jmsa[o, v, v, o] +        np.einsum("fj,mbef->mbej",   t1,                                          Jmsa[o, v, v, v], optimize=True).swapaxes(0, 0) \
-                                         -        np.einsum("bn,mnej->mbej",   t1,                                          Jmsa[o, o, v, o], optimize=True).swapaxes(0, 0) \
-                                         -        np.einsum("fbjn,mnef->mbej", 0.5 * t2 + np.einsum("fj,bn->fbjn", t1, t1), Jmsa[o, o, v, v], optimize=True).swapaxes(0, 0)
+                Wmnij = Jmsa[o, o, o, o] + 0.25 * np.einsum("efij,mnef->mnij", tau, Jmsa[o, o, v, v], optimize=True) + P1 - P1.swapaxes(2, 3)
+                Wabef = Jmsa[v, v, v, v] + 0.25 * np.einsum("abmn,mnef->abef", tau, Jmsa[o, o, v, v], optimize=True) - P2 + P2.swapaxes(0, 1)
+                Wmbej = Jmsa[o, v, v, o] +        np.einsum("fj,mbef->mbej",   t1,  Jmsa[o, v, v, v], optimize=True) \
+                                         -        np.einsum("bn,mnej->mbej",   t1,  Jmsa[o, o, v, o], optimize=True) \
+                                         -        np.einsum("fbjn,mnef->mbej", t12, Jmsa[o, o, v, v], optimize=True)
 
                 # define the right hand side of the T1 and T2 amplitude equations
                 rhs_T1, rhs_T2 = Fms[v, o].copy(), Jmsa[v, v, o, o].copy()
 
                 # calculate the right hand side of the CCSD equation for T1
-                rhs_T1 +=       np.einsum("ei,ae->ai",     t1, Fae             , optimize=True)
-                rhs_T1 -=       np.einsum("am,mi->ai",     t1, Fmi             , optimize=True)
-                rhs_T1 +=       np.einsum("aeim,me->ai",   t2, Fme             , optimize=True)
+                rhs_T1 +=       np.einsum("ei,ae->ai",     t1, Fae,              optimize=True)
+                rhs_T1 -=       np.einsum("am,mi->ai",     t1, Fmi,              optimize=True)
+                rhs_T1 +=       np.einsum("aeim,me->ai",   t2, Fme,              optimize=True)
                 rhs_T1 -=       np.einsum("fn,naif->ai",   t1, Jmsa[o, v, o, v], optimize=True)
                 rhs_T1 -= 0.5 * np.einsum("efim,maef->ai", t2, Jmsa[o, v, v, v], optimize=True)
                 rhs_T1 -= 0.5 * np.einsum("aemn,nmei->ai", t2, Jmsa[o, o, v, o], optimize=True)
 
                 # define the permutation arguments for all terms in the equation for T2
-                P1  = np.einsum("aeij,be->abij",    t2,     Fae - 0.5 * np.einsum("bm,me->be", t1, Fme), optimize=True)
-                P2  = np.einsum("abim,mj->abij",    t2,     Fmi + 0.5 * np.einsum("ej,me->mj", t1, Fme), optimize=True)
-                P3  = np.einsum("aeim,mbej->abij",  t2,     Wmbej                                      , optimize=True)
-                P3 -= np.einsum("ei,am,mbej->abij", t1, t1, Jmsa[o, v, v, o]                           , optimize=True)
-                P4  = np.einsum("ei,abej->abij",    t1,     Jmsa[v, v, v, o]                           , optimize=True)
-                P5  = np.einsum("am,mbij->abij",    t1,     Jmsa[o, v, o, o]                           , optimize=True)
+                P1  = np.einsum("aeij,be->abij",    t2,     Fae - 0.5 * Fmea, optimize=True)
+                P2  = np.einsum("abim,mj->abij",    t2,     Fmi + 0.5 * Fmeb, optimize=True)
+                P3  = np.einsum("aeim,mbej->abij",  t2,     Wmbej,            optimize=True)
+                P3 -= np.einsum("ei,am,mbej->abij", t1, t1, Jmsa[o, v, v, o], optimize=True)
+                P4  = np.einsum("ei,abej->abij",    t1,     Jmsa[v, v, v, o], optimize=True)
+                P5  = np.einsum("am,mbij->abij",    t1,     Jmsa[o, v, o, o], optimize=True)
 
                 # calculate the right hand side of the CCSD equation for T2
                 rhs_T2 += 0.5 * np.einsum("abmn,mnij->abij", tau, Wmnij, optimize=True)
