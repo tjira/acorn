@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse as ap, itertools as it, numpy as np, time as tm
+import argparse as ap, itertools as it, numpy as np
 
 ATOM = {
     "H" :  1,                                                                                                                                                                 "He":  2,
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccd", help="Perform the doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccsd", help="Perform the singles/doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
-    parser.add_argument("--lccd", help="Perform the linearized coupled clusters doubles calculation.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--lccd", help="Perform the linearized doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp2", help="Perform the second order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp3", help="Perform the third order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
 
@@ -122,11 +122,10 @@ if __name__ == "__main__":
         # antisymmetrized two-electron integrals in physicist's notation
         Jmsa = (Jms - Jms.swapaxes(1, 3)).transpose(0, 2, 1, 3)
 
-        # replace the epsms vector with a tensor of the form epsms[v, v, o, o] = -1 / (eps[v] + eps[v] - eps[o] - eps[o])
-        Emsd = -1 / (epsms[v].reshape(-1, 1, 1, 1) + epsms[v].reshape(-1, 1, 1) - epsms[o].reshape(-1, 1) - epsms[o].reshape(-1))
-        Emss = -1 / (epsms[v].reshape(-1, 1) - epsms[o].reshape(-1))
+        # create the tensors of reciprocal differences of orbital energies in MS basis used in post-HF methods
+        Emss, Emsd = 1 / (epsms[o].reshape(-1) - epsms[v].reshape(-1, 1)), 1 / (epsms[o].reshape(-1) + epsms[o].reshape(-1, 1) - epsms[v].reshape(-1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1))
 
-    # JmsaLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
+    # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
     if args.mp2 or args.mp3:
 
         # energy containers
@@ -179,7 +178,7 @@ if __name__ == "__main__":
                 # collect all the distinct LCCD terms
                 lccd1 = 0.5 * np.einsum("abcd,cdij->abij", Jmsa[v, v, v, v], t2, optimize=True)
                 lccd2 = 0.5 * np.einsum("klij,abkl->abij", Jmsa[o, o, o, o], t2, optimize=True)
-                lccd3 = 1.0 * np.einsum("akic,bcjk->abij", Jmsa[v, o, o, v], t2, optimize=True)
+                lccd3 =       np.einsum("akic,bcjk->abij", Jmsa[v, o, o, v], t2, optimize=True)
 
                 # apply the permuation operator and add it to the corresponding LCCD terms
                 lccd3 = lccd3 + lccd3.transpose(1, 0, 3, 2) - lccd3.transpose(1, 0, 2, 3) - lccd3.transpose(0, 1, 3, 2)
@@ -188,7 +187,7 @@ if __name__ == "__main__":
                 ccd1 = -0.50 * np.einsum("klcd,acij,bdkl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
                 ccd2 = -0.50 * np.einsum("klcd,abik,cdjl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
                 ccd3 =  0.25 * np.einsum("klcd,cdij,abkl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
-                ccd4 =  1.00 * np.einsum("klcd,acik,bdjl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
+                ccd4 =         np.einsum("klcd,acik,bdjl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
 
                 # apply the permuation operator and add it to the corresponding CCD terms
                 ccd1, ccd2, ccd4 = ccd1 - ccd1.transpose(1, 0, 2, 3), ccd2 - ccd2.transpose(0, 1, 3, 2), ccd4 - ccd4.transpose(0, 1, 3, 2)
@@ -206,45 +205,57 @@ if __name__ == "__main__":
         if args.ccsd:
             while abs(E_CCSD - E_CCSD_P) > args.threshold:
                 # calculate the effective two-particle excitation operators
-                ttau = t2 + 0.5 * np.einsum("ai,bj->abij", t1, t1) - 0.5 * np.einsum("ai,bj->abij", t1, t1).swapaxes(2, 3)
-                tau  = t2 + 1.0 * np.einsum("ai,bj->abij", t1, t1) - 1.0 * np.einsum("ai,bj->abij", t1, t1).swapaxes(2, 3)
+                ttau = t2 + 0.5 * np.einsum("ai,bj->abij", t1, t1, optimize=True) - 0.5 * np.einsum("ai,bj->abij", t1, t1, optimize=True).swapaxes(2, 3)
+                tau  = t2 +       np.einsum("ai,bj->abij", t1, t1, optimize=True) -       np.einsum("ai,bj->abij", t1, t1, optimize=True).swapaxes(2, 3)
 
                 # calculate the 2D two-particle intermediates
-                Fae = (1 - np.eye(2 * nvirt)) * Fms[v, v] - 0.5 * np.einsum("me,am->ae", Fms[o, v], t1) + np.einsum("fm,mafe->ae", t1, Jmsa[o, v, v, v]) - 0.5 * np.einsum("afmn,mnef->ae", ttau, Jmsa[o, o, v, v])
-                Fmi = (1 - np.eye(2 * nocc )) * Fms[o, o] + 0.5 * np.einsum("ei,me->mi", t1, Fms[o, v]) + np.einsum("en,mnie->mi", t1, Jmsa[o, o, o, v]) + 0.5 * np.einsum("efin,mnef->mi", ttau, Jmsa[o, o, v, v])
-                Fme = Fms[o, v] + np.einsum("fn,mnef->me", t1, Jmsa[o, o, v, v])
+                Fae = (1 - np.eye(2 * nvirt)) * Fms[v, v] - 0.5 * np.einsum("me,am->ae",     Fms[o, v],        t1,   optimize=True) \
+                                                          +       np.einsum("mafe,fm->ae",   Jmsa[o, v, v, v], t1,   optimize=True) \
+                                                          - 0.5 * np.einsum("mnef,afmn->ae", Jmsa[o, o, v, v], ttau, optimize=True)
+                Fmi = (1 - np.eye(2 * nocc )) * Fms[o, o] + 0.5 * np.einsum("me,ei->mi",     Fms[o, v],        t1,   optimize=True) \
+                                                          +       np.einsum("mnie,en->mi",   Jmsa[o, o, o, v], t1,   optimize=True) \
+                                                          + 0.5 * np.einsum("mnef,efin->mi", Jmsa[o, o, v, v], ttau, optimize=True)
+                Fme =                           Fms[o, v] +       np.einsum("mnef,fn->me",   Jmsa[o, o, v, v], t1,   optimize=True)
 
                 # calculate the 4D two-particle intermediates
-                Wmnij = Jmsa[o, o, o, o] + np.einsum("ej,mnie->mnij", t1, Jmsa[o, o, o, v]) - np.einsum("ej,mnie->mnij", t1, Jmsa[o, o, o, v]).swapaxes(2, 3) + 0.25 * np.einsum("efij,mnef->mnij", tau, Jmsa[o, o, v, v])
-                Wabef = Jmsa[v, v, v, v] - np.einsum("bm,amef->abef", t1, Jmsa[v, o, v, v]) + np.einsum("bm,amef->abef", t1, Jmsa[v, o, v, v]).swapaxes(0, 1) + 0.25 * np.einsum("abmn,mnef->abef", tau, Jmsa[o, o, v, v])
-                Wmbej = Jmsa[o, v, v, o] + np.einsum("fj,mbef->mbej", t1, Jmsa[o, v, v, v]) - np.einsum("bn,mnej->mbej", t1, Jmsa[o, o, v, o]) - np.einsum("fbjn,mnef->mbej", 0.5 * t2 + np.einsum("fj,bn->fbjn", t1, t1), Jmsa[o, o, v, v])
+                Wmnij = Jmsa[o, o, o, o] +        np.einsum("ej,mnie->mnij",   t1,                                          Jmsa[o, o, o, v], optimize=True).swapaxes(0, 0) \
+                                         -        np.einsum("ej,mnie->mnij",   t1,                                          Jmsa[o, o, o, v], optimize=True).swapaxes(2, 3) \
+                                         + 0.25 * np.einsum("efij,mnef->mnij", tau,                                         Jmsa[o, o, v, v], optimize=True).swapaxes(0, 0)
+                Wabef = Jmsa[v, v, v, v] -        np.einsum("bm,amef->abef",   t1,                                          Jmsa[v, o, v, v], optimize=True).swapaxes(0, 0) \
+                                         +        np.einsum("bm,amef->abef",   t1,                                          Jmsa[v, o, v, v], optimize=True).swapaxes(0, 1) \
+                                         + 0.25 * np.einsum("abmn,mnef->abef", tau,                                         Jmsa[o, o, v, v], optimize=True).swapaxes(0, 0)
+                Wmbej = Jmsa[o, v, v, o] +        np.einsum("fj,mbef->mbej",   t1,                                          Jmsa[o, v, v, v], optimize=True).swapaxes(0, 0) \
+                                         -        np.einsum("bn,mnej->mbej",   t1,                                          Jmsa[o, o, v, o], optimize=True).swapaxes(0, 0) \
+                                         -        np.einsum("fbjn,mnef->mbej", 0.5 * t2 + np.einsum("fj,bn->fbjn", t1, t1), Jmsa[o, o, v, v], optimize=True).swapaxes(0, 0)
 
                 # define the right hand side of the T1 and T2 amplitude equations
                 rhs_T1, rhs_T2 = Fms[v, o].copy(), Jmsa[v, v, o, o].copy()
 
                 # calculate the right hand side of the CCSD equation for T1
-                rhs_T1 += np.einsum("ei,ae->ai", t1, Fae)
-                rhs_T1 -= np.einsum("am,mi->ai", t1, Fmi)
-                rhs_T1 += np.einsum("aeim,me->ai", t2, Fme)
-                rhs_T1 -= np.einsum("fn,naif->ai", t1, Jmsa[o, v, o, v])
-                rhs_T1 -= 0.5 * np.einsum("efim,maef->ai", t2, Jmsa[o, v, v, v])
-                rhs_T1 -= 0.5 * np.einsum("aemn,nmei->ai", t2, Jmsa[o, o, v, o])
+                rhs_T1 +=       np.einsum("ei,ae->ai",     t1, Fae             , optimize=True)
+                rhs_T1 -=       np.einsum("am,mi->ai",     t1, Fmi             , optimize=True)
+                rhs_T1 +=       np.einsum("aeim,me->ai",   t2, Fme             , optimize=True)
+                rhs_T1 -=       np.einsum("fn,naif->ai",   t1, Jmsa[o, v, o, v], optimize=True)
+                rhs_T1 -= 0.5 * np.einsum("efim,maef->ai", t2, Jmsa[o, v, v, v], optimize=True)
+                rhs_T1 -= 0.5 * np.einsum("aemn,nmei->ai", t2, Jmsa[o, o, v, o], optimize=True)
+
+                # define the permutation arguments for all terms in the equation for T2
+                P1  = np.einsum("aeij,be->abij",    t2,     Fae - 0.5 * np.einsum("bm,me->be", t1, Fme), optimize=True)
+                P2  = np.einsum("abim,mj->abij",    t2,     Fmi + 0.5 * np.einsum("ej,me->mj", t1, Fme), optimize=True)
+                P3  = np.einsum("aeim,mbej->abij",  t2,     Wmbej                                      , optimize=True)
+                P3 -= np.einsum("ei,am,mbej->abij", t1, t1, Jmsa[o, v, v, o]                           , optimize=True)
+                P4  = np.einsum("ei,abej->abij",    t1,     Jmsa[v, v, v, o]                           , optimize=True)
+                P5  = np.einsum("am,mbij->abij",    t1,     Jmsa[o, v, o, o]                           , optimize=True)
 
                 # calculate the right hand side of the CCSD equation for T2
-                rhs_T2 += np.einsum("aeij,be->abij", t2, Fae - 0.5 * np.einsum("bm,me->be", t1, Fme)).swapaxes(0, 0)
-                rhs_T2 -= np.einsum("aeij,be->abij", t2, Fae - 0.5 * np.einsum("bm,me->be", t1, Fme)).swapaxes(2, 3)
-                rhs_T2 -= np.einsum("abim,mj->abij", t2, Fmi + 0.5 * np.einsum("ej,me->mj", t1, Fme)).swapaxes(0, 0)
-                rhs_T2 += np.einsum("abim,mj->abij", t2, Fmi + 0.5 * np.einsum("ej,me->mj", t1, Fme)).swapaxes(0, 1)
-                rhs_T2 += 0.5 * np.einsum("abmn,mnij->abij", tau, Wmnij)
-                rhs_T2 += 0.5 * np.einsum("efij,abef->abij", tau, Wabef)
-                rhs_T2 += (np.einsum("aeim,mbej->abij", t2, Wmbej) - np.einsum("ei,am,mbej->abij", t1, t1, Jmsa[o, v, v, o])).swapaxes(0, 0).swapaxes(0, 0)
-                rhs_T2 -= (np.einsum("aeim,mbej->abij", t2, Wmbej) - np.einsum("ei,am,mbej->abij", t1, t1, Jmsa[o, v, v, o])).swapaxes(2, 3).swapaxes(0, 0)
-                rhs_T2 -= (np.einsum("aeim,mbej->abij", t2, Wmbej) - np.einsum("ei,am,mbej->abij", t1, t1, Jmsa[o, v, v, o])).swapaxes(0, 1).swapaxes(0, 0)
-                rhs_T2 += (np.einsum("aeim,mbej->abij", t2, Wmbej) - np.einsum("ei,am,mbej->abij", t1, t1, Jmsa[o, v, v, o])).swapaxes(0, 1).swapaxes(2, 3)
-                rhs_T2 += np.einsum("ei,abej->abij", t1, Jmsa[v, v, v, o]).swapaxes(0, 0)
-                rhs_T2 -= np.einsum("ei,abej->abij", t1, Jmsa[v, v, v, o]).swapaxes(0, 1)
-                rhs_T2 -= np.einsum("am,mbij->abij", t1, Jmsa[o, v, o, o]).swapaxes(0, 0)
-                rhs_T2 += np.einsum("am,mbij->abij", t1, Jmsa[o, v, o, o]).swapaxes(2, 3)
+                rhs_T2 += 0.5 * np.einsum("abmn,mnij->abij", tau, Wmnij, optimize=True)
+                rhs_T2 += 0.5 * np.einsum("efij,abef->abij", tau, Wabef, optimize=True)
+                rhs_T2 += P1.transpose(0, 1, 2, 3) - P1.transpose(1, 0, 2, 3)
+                rhs_T2 -= P2.transpose(0, 1, 2, 3) - P2.transpose(0, 1, 3, 2)
+                rhs_T2 += P3.transpose(0, 1, 2, 3) - P3.transpose(0, 1, 3, 2)
+                rhs_T2 -= P3.transpose(1, 0, 2, 3) - P3.transpose(1, 0, 3, 2)
+                rhs_T2 += P4.transpose(0, 1, 2, 3) - P4.transpose(0, 1, 3, 2)
+                rhs_T2 -= P5.transpose(0, 1, 2, 3) - P5.transpose(1, 0, 2, 3)
 
                 # Update T1 and T2 amplitudes
                 t1, t2 = rhs_T1 * Emss, rhs_T2 * Emsd
@@ -252,11 +263,14 @@ if __name__ == "__main__":
                 # evaluate the energy
                 E_CCSD_P, E_CCSD = E_CCSD, np.einsum("ia,ai", Fms[o, v], t1) + 0.25 * np.einsum("ijab,abij", Jmsa[o, o, v, v], t2) + 0.5 * np.einsum("ijab,ai,bj", Jmsa[o, o, v, v], t1, t1)
 
-            # print the CCD energy
+            # print the CCSD energy
             print("CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 
     # CONFIGUIRATION INTERACTION =======================================================================================================================================================================
     if args.cisd or args.fci:
+
+        # throw an error if FCI and CISD are used together
+        if args.cisd and args.fci: raise Exception("COMBINING OF CI CALCULATIONS NOT SUPPORTED")
 
         # define functions to generate single and double excitations of a ground configuration
         def single(ground, nbf):
