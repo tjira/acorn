@@ -210,8 +210,8 @@ if __name__ == "__main__":
                 tau  = t2 + 1.0 * np.einsum("ai,bj->abij", t1, t1) - 1.0 * np.einsum("ai,bj->abij", t1, t1).swapaxes(2, 3)
 
                 # calculate the 2D two-particle intermediates
-                Fae = (1 - np.eye(2 * nvirt)) * Fms[v, v].copy() - 0.5 * np.einsum("me,am->ae", Fms[o, v], t1) + np.einsum("fm,mafe->ae", t1, Jmsa[o, v, v, v]) - 0.5 * np.einsum("afmn,mnef->ae", ttau, Jmsa[o, o, v, v])
-                Fmi = (1 - np.eye(2 * nocc )) * Fms[o, o].copy() + 0.5 * np.einsum("ei,me->mi", t1, Fms[o, v]) + np.einsum("en,mnie->mi", t1, Jmsa[o, o, o, v]) + 0.5 * np.einsum("efin,mnef->mi", ttau, Jmsa[o, o, v, v])
+                Fae = (1 - np.eye(2 * nvirt)) * Fms[v, v] - 0.5 * np.einsum("me,am->ae", Fms[o, v], t1) + np.einsum("fm,mafe->ae", t1, Jmsa[o, v, v, v]) - 0.5 * np.einsum("afmn,mnef->ae", ttau, Jmsa[o, o, v, v])
+                Fmi = (1 - np.eye(2 * nocc )) * Fms[o, o] + 0.5 * np.einsum("ei,me->mi", t1, Fms[o, v]) + np.einsum("en,mnie->mi", t1, Jmsa[o, o, o, v]) + 0.5 * np.einsum("efin,mnef->mi", ttau, Jmsa[o, o, v, v])
                 Fme = Fms[o, v] + np.einsum("fn,mnef->me", t1, Jmsa[o, o, v, v])
 
                 # calculate the 4D two-particle intermediates
