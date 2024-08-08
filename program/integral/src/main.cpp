@@ -4,7 +4,7 @@
 #include <filesystem>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp = Timer::Now();
+    argparse::ArgumentParser program("Acorn Integral Engine", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
     // add the command line arguments
     program.add_argument("-b", "--basis").help("-- Basis set used for integrals.").default_value("STO-3G");
@@ -33,9 +33,6 @@ int main(int argc, char** argv) {
 
     // read the system file and initialize the basis set
     std::vector<libint2::Atom> atoms = libint2::read_dotxyz(fstream); libint2::BasisSet shells(basis, atoms);
-
-    // print the timing of the system initialization
-    std::cout << "SYSTEM INITIALIZATION: " << Timer::Format(Timer::Elapsed(tp)) << std::endl << std::endl;
 
     // calculate the integrals
     libint2::initialize();

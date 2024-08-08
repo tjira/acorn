@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < iters; i++) {
 
         // start the timer
-        tp = Timer::Now();
+        Timer::Timepoint scfit = Timer::Now();
 
         // calculate the electron-electron repulsion
         Tensor<2> VEE = (J - 0.5 * J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1})).contract(TENSORMAP(Dmo), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
         Eel = 0.5 * Dmo.cwiseProduct(H + F).sum();
 
         // print the iteration info
-        std::printf("%6d %20.14f %.2e %.2e %s %s\n", i + 1, Eel, std::abs(Eel - Eelp), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(tp)).c_str(), diis && i >= diis ? "DIIS" : "");
+        std::printf("%6d %20.14f %.2e %.2e %s %s\n", i + 1, Eel, std::abs(Eel - Eelp), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(scfit)).c_str(), diis && i >= diis ? "DIIS" : "");
 
         // finish if covergence reached
         if (std::abs(Eel - Eelp) < thresh && (Dmo - Dmop).norm() < thresh) {std::cout << std::endl; break;}

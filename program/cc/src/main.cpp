@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < iters; i++) {
 
         // start the timer
-        tp = Timer::Now();
+        Timer::Timepoint ait = Timer::Now();
 
         // update the amplitudes
         if (std::find(exc.begin(), exc.end(), 1) != exc.end() && std::find(exc.begin(), exc.end(), 2) != exc.end() && exc.size() == 2 && !linear) {
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
         }
 
         // print the iteration info
-        std::printf("%6d %20.14f %.2e %s\n", i + 1, Ecc, std::abs(Ecc - Eccp), Timer::Format(Timer::Elapsed(tp)).c_str());
+        std::printf("%6d %20.14f %.2e %s\n", i + 1, Ecc, std::abs(Ecc - Eccp), Timer::Format(Timer::Elapsed(ait)).c_str());
 
         // finish if covergence reached
         if (std::abs(Ecc - Eccp) < thresh) {std::cout << std::endl; break;}

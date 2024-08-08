@@ -3,7 +3,7 @@
 #include <argparse.hpp>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Expression Evaluator", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+    argparse::ArgumentParser program("Acorn Expression Evaluator", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // extract the variables
     int dim = program.get<int>("-d"); int points = program.get<int>("-p"); std::vector<double> limits = program.get<std::vector<double>>("-g"); std::vector<std::string> exprs = program.get<std::vector<std::string>>("-e");
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < dim && dim > 3; i++) vars.at(i) = "x" + std::to_string(i + 1);
 
     // print the expression timer label
-    std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
+    Timer::Timepoint eet = Timer::Now(); std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
 
     // define the expression matrix
     Matrix U((int)std::pow(points, dim), exprs.size() + dim);
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     }
 
     // print the elapsed time
-    std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    std::cout << Timer::Format(Timer::Elapsed(eet)) << std::endl;
 
     // write the expression to disk
     MEASURE("WRITING THE MATRIX:        ", Eigen::Write(program.get<std::string>("-o"), U));

@@ -18,7 +18,7 @@ std::vector<std::vector<int>> Combinations(int n, int k) {
 }
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Configuration Interaction Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+    argparse::ArgumentParser program("Acorn Configuration Interaction Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // load the integrals in AO basis and system from disk
     MEASURE("SYSTEM AND INTEGRALS IN MS BASIS READING: ",
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     ) std::cout << "\nNUMBER OF DETERMINANTS GENERATED: " << dets.size() << std::endl;
 
     // print the label of Hamiltonian filling timer
-    std::cout << "\nFILLING THE CI HAMILTONIAN:  " << std::flush; tp = Timer::Now();
+    std::cout << "\nFILLING THE CI HAMILTONIAN:  " << std::flush; Timer::Timepoint hft = Timer::Now();
 
     // define the CI Hamiltonian
     Matrix Hci = Matrix::Zero(dets.size(), dets.size());
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
     }
 
     // print the time taken to fill the CI Hamiltonian
-    std::cout << Timer::Format(Timer::Elapsed(tp)) << std::endl;
+    std::cout << Timer::Format(Timer::Elapsed(hft)) << std::endl;
 
     // find the eigenvalues and eigenvectors of the CI Hamiltonian
     MEASURE("SOLVING THE CI EIGENPROBLEM: ", Eigen::SelfAdjointEigenSolver<Matrix> solver(Hci)) Matrix Cci = solver.eigenvectors(), Eci = solver.eigenvalues();

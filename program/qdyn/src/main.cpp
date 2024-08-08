@@ -4,7 +4,7 @@
 #include <argparse.hpp>
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Quantum Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now();
+    argparse::ArgumentParser program("Acorn Quantum Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} Timer::Timepoint tp = Timer::Now();
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // extract the command line parameters
     int dim = program.get<int>("-d"), iters = program.get<int>("-i"), optstates = program.get<int>("-o"); double factor = program.get<double>("-f"), mass = program.get<double>("-m"), step = program.get<double>("-s"), momentum = program.get<double>("-p");
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
         for (int j = 0; j < iters; j++) {
 
             // reset the timer, save the previous energy and propagate
-            tp = Timer::Now(); double Ep = E; wfnd = wfnd.propagate(R, K);
+            Timer::Timepoint tsit = Timer::Now(); double Ep = E; wfnd = wfnd.propagate(R, K);
 
             // subrtract the lower eigenstates in ITP
             for (int k = 0; k < i && imaginary; k++) wfnd = wfnd - states.at(k) * states.at(k).overlap(wfnd);
@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
             }
 
             // print the iteration info
-            std::printf("%6d %20.14f %.2e %s\n", j + 1, E, std::abs(E - Ep), Timer::Format(Timer::Elapsed(tp)).c_str());
+            std::printf("%6d %20.14f %.2e %s\n", j + 1, E, std::abs(E - Ep), Timer::Format(Timer::Elapsed(tsit)).c_str());
         }
 
         // assign results and print a new line
