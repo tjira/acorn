@@ -16,17 +16,18 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // define all the matrices and tensors used throughout the program
-    Matrix C, E, V, T, S, Vmo, Tmo, Smo, Ems, Vms, Tms, Sms; Tensor<4> J, Jmo, Jms;
+    Matrix C, E, V, T, S, F, Vmo, Tmo, Smo, Fmo, Ems, Vms, Tms, Sms, Fms; Tensor<4> J, Jmo, Jms;
 
     // load the coefficient matrix and integrals in AO basis from disk
     if (program.get<bool>("-o") || program.get<bool>("-s")) {
-        MEASURE("INTEGRALS IN AO BASIS COEFFICIENT MATRIX IN MO BASIS READING: ",
+        MEASURE("INTEGRALS IN AO BASIS & COEFFICIENT MATRIX IN MO BASIS READING: ",
             E = Eigen::LoadMatrix("E_MO.mat");
             C = Eigen::LoadMatrix("C_MO.mat");
             V = Eigen::LoadMatrix("V_AO.mat");
             T = Eigen::LoadMatrix("T_AO.mat");
             S = Eigen::LoadMatrix("S_AO.mat");
             J = Eigen::LoadTensor("J_AO.mat");
+            F = Eigen::LoadMatrix("F_AO.mat");
         )
     }
 
@@ -40,6 +41,7 @@ int main(int argc, char** argv) {
             Vmo = Transform::SingleSpatial (V, C);
             Tmo = Transform::SingleSpatial (T, C);
             Smo = Transform::SingleSpatial (S, C);
+            Fmo = Transform::SingleSpatial (F, C);
         )
     }
 
@@ -50,6 +52,7 @@ int main(int argc, char** argv) {
             Vms = Transform::SingleSpin (V, C);
             Tms = Transform::SingleSpin (T, C);
             Sms = Transform::SingleSpin (S, C);
+            Fms = Transform::SingleSpin (F, C);
             Ems = Vector::NullaryExpr(2 * E.rows(), [&](int i){return E(i / 2);});
         )
     }
@@ -61,6 +64,7 @@ int main(int argc, char** argv) {
             Eigen::Write("T_MO.mat", Tmo);
             Eigen::Write("S_MO.mat", Smo);
             Eigen::Write("J_MO.mat", Jmo);
+            Eigen::Write("F_MO.mat", Fmo);
         )
     }
 
@@ -71,7 +75,8 @@ int main(int argc, char** argv) {
             Eigen::Write("T_MS.mat", Tms);
             Eigen::Write("S_MS.mat", Sms);
             Eigen::Write("J_MS.mat", Jms);
-            Eigen::Write("E_MS.mat", Ems)
+            Eigen::Write("E_MS.mat", Ems);
+            Eigen::Write("F_MS.mat", Fms);
         )
     }
 

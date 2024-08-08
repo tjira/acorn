@@ -148,6 +148,22 @@ mp4: molecule
 mp5: molecule
 	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_mp -o 5
 
+# target to perform a LCCD calculation
+lccd: molecule
+	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_cc -e 2 --linear
+
+# target to perform a CCD calculation
+ccd: molecule
+	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_cc -e 2
+
+# target to perform a CCSD calculation
+ccsd: molecule
+	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_cc -e 1 2
+
+# target to perform a CCSD(T) calculation
+ccsd-t: molecule
+	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_cc -e 1 2 -p 3
+
 # target to perform a FCI calculation
 fci: molecule
 	"../bin/acorn_integral" -b sto-3g && ../bin/acorn_hf -d 5 -i 100 -t 1e-8 && ../bin/acorn_transform -s && ../bin/acorn_ci

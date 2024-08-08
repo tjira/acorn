@@ -1,5 +1,5 @@
 # add the executable
-add_executable(acorn_mp src/main.cpp)
+add_executable(acorn_mp src/main.cpp src/mp.cpp)
 
 # include program include directories
 target_include_directories(acorn_mp PRIVATE include)
