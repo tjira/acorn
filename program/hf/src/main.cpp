@@ -1,3 +1,4 @@
+#include "hf.h"
 #include "system.h"
 #include "timer.h"
 #include <argparse.hpp>
@@ -15,10 +16,10 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} std::vector<Timer::Timepoint> timers(1);
 
     // extract the command line parameters
-    int diis = program.get<int>("-d"), iters = program.get<int>("-i"); double thresh = program.get<double>("-t");
+    Acorn::HF::Options opt = {program.get<int>("-d"), program.get<int>("-i"), program.get<double>("-t")};
 
     // load the integrals in AO basis and system from disk
     MEASURE("SYSTEM AND INTEGRALS IN AO BASIS READING: ",
@@ -39,10 +40,10 @@ int main(int argc, char** argv) {
     std::printf("\n%6s %20s %8s %8s %12s\n", "ITER", "ENERGY", "|dE|", "|dD|", "TIME");
 
     // start the SCF procedure
-    for (int i = 0; i < iters; i++) {
+    for (int i = 0; i < opt.iters; i++) {
 
         // start the timer
-        Timer::Timepoint scfit = Timer::Now();
+        timers.at(0) = Timer::Now();
 
         // calculate the electron-electron repulsion
         Tensor<2> VEE = (J - 0.5 * J.shuffle(Eigen::array<int, 4>{0, 3, 2, 1})).contract(TENSORMAP(Dmo), Eigen::array<Eigen::IndexPair<int>, 2>{first, second});
@@ -54,22 +55,22 @@ int main(int argc, char** argv) {
         Matrix e = S * Dmo * F - F * Dmo * S; if (i) es.push_back(e), fs.push_back(F);
 
         // truncate the error and Fock vector containers
-        if (i > diis) {es.erase(es.begin()), fs.erase(fs.begin());}
+        if (i > opt.diis) {es.erase(es.begin()), fs.erase(fs.begin());}
 
         // perform DIIS extrapolation
-        if (diis && i >= diis) {
+        if (opt.diis && i >= opt.diis) {
 
             // define the DIIS subspace matrices
-            Matrix B = Matrix::Ones(diis + 1, diis + 1), b = Vector::Zero(diis + 1); B(diis, diis) = 0, b(diis) = 1;
+            Matrix B = Matrix::Ones(opt.diis + 1, opt.diis + 1), b = Vector::Zero(opt.diis + 1); B(opt.diis, opt.diis) = 0, b(opt.diis) = 1;
 
             // fill the DIIS matrix
-            for (int j = 0; j < diis; j++) for (int k = j; k < diis; k++) B(j, k) = es.at(j).cwiseProduct(es.at(k)).sum(), B(k, j) = B(j, k);
+            for (int j = 0; j < opt.diis; j++) for (int k = j; k < opt.diis; k++) B(j, k) = es.at(j).cwiseProduct(es.at(k)).sum(), B(k, j) = B(j, k);
 
             // solve the DIIS equations
             Vector c = B.colPivHouseholderQr().solve(b);
 
             // extrapolate the Fock matrix
-            F = c(0) * fs.at(0); for (int j = 1; j < diis; j++) F += c(j) * fs.at(j);
+            F = c(0) * fs.at(0); for (int j = 1; j < opt.diis; j++) F += c(j) * fs.at(j);
         }
 
         // solve the Roothaan equations
@@ -82,11 +83,11 @@ int main(int argc, char** argv) {
         Eel = 0.5 * Dmo.cwiseProduct(H + F).sum();
 
         // print the iteration info
-        std::printf("%6d %20.14f %.2e %.2e %s %s\n", i + 1, Eel, std::abs(Eel - Eelp), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(scfit)).c_str(), diis && i >= diis ? "DIIS" : "");
+        std::printf("%6d %20.14f %.2e %.2e %s %s\n", i + 1, Eel, std::abs(Eel - Eelp), (Dmo - Dmop).norm(), Timer::Format(Timer::Elapsed(timers.at(0))).c_str(), opt.diis && i >= opt.diis ? "DIIS" : "");
 
         // finish if covergence reached
-        if (std::abs(Eel - Eelp) < thresh && (Dmo - Dmop).norm() < thresh) {std::cout << std::endl; break;}
-        else if (i == iters - 1) throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE SCF REACHED");
+        if (std::abs(Eel - Eelp) < opt.thresh && (Dmo - Dmop).norm() < opt.thresh) {std::cout << std::endl; break;}
+        else if (i == opt.iters - 1) throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE SCF REACHED");
     }
 
     // calculate the nuclear repulsion

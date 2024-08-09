@@ -37,19 +37,19 @@ int main(int argc, char** argv) {
     // calculate the integrals
     libint2::initialize();
     MEASURE("INTEGRALS IN AO BASIS CALCULATION: ",
-        Matrix    V = Integral::Nuclear(atoms, shells);
-        Matrix    T = Integral::Kinetic(       shells);
-        Matrix    S = Integral::Overlap(       shells);
-        Tensor<4> J = Integral::Coulomb(       shells);
+        torch::Tensor V = Integral::Nuclear(atoms, shells);
+        torch::Tensor T = Integral::Kinetic(       shells);
+        torch::Tensor S = Integral::Overlap(       shells);
+        torch::Tensor J = Integral::Coulomb(       shells);
     )
     libint2::finalize();
     
     // save the integrals to disk
     MEASURE("INTEGRALS IN AO BASIS WRITING    : ",
-        Eigen::Write("V_AO.mat", V);
-        Eigen::Write("T_AO.mat", T);
-        Eigen::Write("S_AO.mat", S);
-        Eigen::Write("J_AO.mat", J);
+        torch::WriteTensor("V_AO.mat", V);
+        torch::WriteTensor("T_AO.mat", T);
+        torch::WriteTensor("S_AO.mat", S);
+        torch::WriteTensor("J_AO.mat", J);
     )
 
     // print the total time

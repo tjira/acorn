@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # print the results
     print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
-    # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
+    # MOLLER-PLESSET PERTURBATION THEORY ===============================================================================================================================================================
 
     """
     To perform most of the post-HF calculations, we need to transform the Coulomb integrals to the molecular spinorbital basis. The restricted MP2 calculation could be done using the Coulomb integral in MO basis, but for the sake of subsequent calculations, we enforce here the integrals in the MS basis. The first thing you will need for the transform is the coefficient matrix in the molecular spinorbital basis. To perform this transform using the mathematical formulation presented in the materials, the first step is to form the tiling matrix "P" which will be used to duplicate columns of a general matrix. Please define it here.

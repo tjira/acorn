@@ -8,4 +8,4 @@ target_include_directories(acorn_integral PRIVATE include)
 target_compile_definitions(acorn_integral PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
 # link the libraries
-target_link_libraries(acorn_integral acorn_base ${LIBINT})
+target_link_libraries(acorn_integral ${LIBC10} ${LIBINT} ${LIBTORCH} ${LIBTORCH_CPU})

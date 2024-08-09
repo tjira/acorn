@@ -1,6 +1,17 @@
-#include "expression.h"
+#pragma once
 
-Expression::Expression(const std::string& exprstr, const std::vector<std::string>& varstr) : vars(varstr.size()) {
+#include <Eigen/Core>
+#include <exprtk.hpp>
+
+class Expression {
+public:
+    Expression(const std::string& exprstr, const std::vector<std::string>& varstr); double eval(const Eigen::VectorXd& r);
+
+private:
+    exprtk::expression<double> expression; Eigen::VectorXd vars;
+};
+
+inline Expression::Expression(const std::string& exprstr, const std::vector<std::string>& varstr) : vars(varstr.size()) {
     // define the symbol table
     exprtk::symbol_table<double> symbols;
 
@@ -16,10 +27,6 @@ Expression::Expression(const std::string& exprstr, const std::vector<std::string
     exprtk::parser<double>().compile(exprstr, expression);
 }
 
-double Expression::eval(double r) {
-    vars(0) = r; return expression.value();
-}
-
-double Expression::eval(const Vector& r) {
+inline double Expression::eval(const Eigen::VectorXd& r) {
     vars = r; return expression.value();
 }

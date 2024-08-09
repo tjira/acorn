@@ -110,7 +110,7 @@ double Acorn::CC::CCSD::energy(const torch::Tensor& Jmsa, const torch::Tensor& F
     return Eccsd.item<double>();
 }
 
-double Acorn::CC::CCSD::pertrubationTriple(const torch::Tensor& Jmsa, const torch::Tensor& Emst, const torch::Tensor& T1, const torch::Tensor& T2, int nos) {
+double Acorn::CC::CCSD::perturbationTriple(const torch::Tensor& Jmsa, const torch::Tensor& Emst, const torch::Tensor& T1, const torch::Tensor& T2, int nos) {
     auto o = Slice(None, nos), v = Slice(nos, None);
 
     torch::Tensor P1 = torch::einsum("ai,jkbc->abcijk", {T1, Jmsa.index({o, o, v, v})}); torch::Tensor T3D = P1.clone();

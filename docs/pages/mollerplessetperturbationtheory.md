@@ -1,5 +1,5 @@
 ---
-title: Møller–Plesset Pertrubation Theory
+title: Møller–Plesset Perturbation Theory
 parent: Electronic Structure Methods
 layout: default
 nav_order: 2

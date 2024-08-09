@@ -10,6 +10,9 @@ using namespace torch::indexing;
 namespace Acorn {
     namespace MBPT {
         double evaluate(const std::string& contrstr, const torch::Tensor& Jmsa, const torch::Tensor& Ems, int nos, int o);
+        struct Options {
+            int order;
+        };
     }
 }
 

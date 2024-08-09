@@ -1,12 +1,11 @@
-#include "landauzener.h"
-#include <iostream>
+#include "lz.h"
 
 LandauZener::LandauZener() = default;
 
 inline std::vector<std::vector<int>> Combinations(int n, int k) {
     // create the bitmask that will get permuted and the resulting vector
     std::string bitmask(k, 1); bitmask.resize(n, 0); std::vector<std::vector<int>> combs;
- 
+
     // generate the combinations
     do {std::vector<int> comb; comb.reserve(k);
         for (int j = 0; j < n; j++) {

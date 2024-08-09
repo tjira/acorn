@@ -5,7 +5,7 @@
 std::vector<std::vector<int>> Combinations(int n, int k) {
     // create the bitmask that will get permuted and the resulting vector
     std::string bitmask(k, 1); bitmask.resize(n, 0); std::vector<std::vector<int>> combs;
- 
+
     // generate the combinations
     do {std::vector<int> comb; comb.reserve(k);
         for (int j = 0; j < n; j++) {
@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} std::vector<Timer::Timepoint> timers(1);
 
     // load the integrals in AO basis and system from disk
     MEASURE("SYSTEM AND INTEGRALS IN MS BASIS READING: ",
@@ -42,16 +42,13 @@ int main(int argc, char** argv) {
     MEASURE("GENERATING ALL POSSIBLE DETERMINANTS:     ",
         for (const std::vector<int>& alpha : Combinations(nbf, nocc)) {
             for (const std::vector<int>& beta : Combinations(nbf, nocc)) {
-                dets.push_back({});
-
-                for (int i = 0; i < nocc; i++) dets.back().push_back(2 * alpha.at(i));
-                for (int i = 0; i < nocc; i++) dets.back().push_back(2 * beta.at(i) + 1);
+                dets.push_back({}); for (int i = 0; i < nocc; i++) {dets.back().push_back(2 * alpha.at(i));} for (int i = 0; i < nocc; i++) {dets.back().push_back(2 * beta.at(i) + 1);}
             }
         }
     ) std::cout << "\nNUMBER OF DETERMINANTS GENERATED: " << dets.size() << std::endl;
 
     // print the label of Hamiltonian filling timer
-    std::cout << "\nFILLING THE CI HAMILTONIAN:  " << std::flush; Timer::Timepoint hft = Timer::Now();
+    std::cout << "\nFILLING THE CI HAMILTONIAN:  " << std::flush; timers.at(0) = Timer::Now();
 
     // define the CI Hamiltonian
     Matrix Hci = Matrix::Zero(dets.size(), dets.size());
@@ -104,7 +101,7 @@ int main(int argc, char** argv) {
     }
 
     // print the time taken to fill the CI Hamiltonian
-    std::cout << Timer::Format(Timer::Elapsed(hft)) << std::endl;
+    std::cout << Timer::Format(Timer::Elapsed(timers.at(0))) << std::endl;
 
     // find the eigenvalues and eigenvectors of the CI Hamiltonian
     MEASURE("SOLVING THE CI EIGENPROBLEM: ", Eigen::SelfAdjointEigenSolver<Matrix> solver(Hci)) Matrix Cci = solver.eigenvectors(), Eci = solver.eigenvalues();

@@ -17,7 +17,7 @@ Let's consider the Full Configuration Interaction (FCI) method, which considers 
 
 ### The Transformation of Integrals to Molecular Spinorbital Basis
 
-To begin, we need to convert the core Hamiltonian $\mathbf{H}^{core}$ and the Coulomb integrals $\mathbf{J}$ into the basis of molecular spinorbitals (MS). The proces of transforming the Coulomb integrals is already described in the Møller–Plesset perturbation theory page [here](mollerplessetpertrubationtheory.html#the-transform-of-integrals-to-molecular-spinorbital-basis). To transform the core Hamiltonian, we use the formula
+To begin, we need to convert the core Hamiltonian $\mathbf{H}^{core}$ and the Coulomb integrals $\mathbf{J}$ into the basis of molecular spinorbitals (MS). The proces of transforming the Coulomb integrals is already described in the Møller–Plesset perturbation theory page [here](mollerplessetperturbationtheory.html#the-transform-of-integrals-to-molecular-spinorbital-basis). To transform the core Hamiltonian, we use the formula
 
 \begin{equation}
 H_{pq}^{core,MS}=C_{\mu p}^{MS}(\mathbf{I}\_{2}\otimes_K\mathbf{H}^{core})\_{\mu\nu}C_{\nu q}^{MS}

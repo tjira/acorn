@@ -2,6 +2,16 @@
 #include "timer.h"
 #include <argparse.hpp>
 
+void writeMatrix(const std::string& path, const Eigen::MatrixXd& A) {
+    // open the output file and write the dimensions to the header
+    std::ofstream file(path); file << A.rows() << " " << A.cols() << "\n" << std::fixed << std::setprecision(14);
+
+    // write the matrix by rows
+    for (int i = 0; i < A.rows(); i++, file << "\n") for (int j = 0; j < A.cols(); j++) {
+        file << std::setw(20) << A(i, j) << (j < A.cols() - 1 ? " " : "");
+    }
+}
+
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("Acorn Expression Evaluator", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
 
@@ -16,7 +26,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} std::vector<Timer::Timepoint> timers(1);
 
     // extract the variables
     int dim = program.get<int>("-d"); int points = program.get<int>("-p"); std::vector<double> limits = program.get<std::vector<double>>("-g"); std::vector<std::string> exprs = program.get<std::vector<std::string>>("-e");
@@ -31,10 +41,10 @@ int main(int argc, char** argv) {
     for (int i = 0; i < dim && dim > 3; i++) vars.at(i) = "x" + std::to_string(i + 1);
 
     // print the expression timer label
-    Timer::Timepoint eet = Timer::Now(); std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
+    timers.at(0) = Timer::Now(); std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
 
     // define the expression matrix
-    Matrix U((int)std::pow(points, dim), exprs.size() + dim);
+    Eigen::MatrixXd U((int)std::pow(points, dim), exprs.size() + dim);
 
     // calculate the grid spacing
     double dr = (limits.at(1) - limits.at(0)) / (points - 1);
@@ -53,14 +63,14 @@ int main(int argc, char** argv) {
 
     // fill the function value matrix columns
     for (int i = 0; i < exprs.size(); i++) {
-        Expression expr(exprs.at(i), vars); for (int j = 0; j < U.rows(); j++) U(j, i + dim) = expr.eval(Vector(U.row(j).leftCols(dim)));
+        Expression expr(exprs.at(i), vars); for (int j = 0; j < U.rows(); j++) U(j, i + dim) = expr.eval(Eigen::VectorXd(U.row(j).leftCols(dim)));
     }
 
     // print the elapsed time
-    std::cout << Timer::Format(Timer::Elapsed(eet)) << std::endl;
+    std::cout << Timer::Format(Timer::Elapsed(timers.at(0))) << std::endl;
 
     // write the expression to disk
-    MEASURE("WRITING THE MATRIX:        ", Eigen::Write(program.get<std::string>("-o"), U));
+    MEASURE("WRITING THE MATRIX:        ", writeMatrix(program.get<std::string>("-o"), U));
 
     // print the total time
     std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;

@@ -24,18 +24,15 @@ include_directories(example/diagram external/include external/include/torch/csrc
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
+# include the eigen directory
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 # find installed libraries
 find_library(LIBTORCH_CPU NAMES torch_cpu PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBTORCH NAMES torch PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBFFTW NAMES fftw PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBINT NAMES int PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBC10 NAMES c10 PATHS external/lib NO_DEFAULT_PATH)
-
-# add the base library
-add_library(acorn_base STATIC src/expression.cpp src/linalg.cpp src/timer.cpp)
-
-# link the base library
-target_link_libraries(acorn_base Eigen3::Eigen)
 
 # add subprograms
 add_subdirectory(program/expression)

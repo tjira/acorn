@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccd", help="Perform the doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccsd", help="Perform the singles/doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
-    parser.add_argument("--ccsd-t", help="Perform the singles/doubles coupled clusters calculation with third order excitations included using pertrubation theory.", action=ap.BooleanOptionalAction)
+    parser.add_argument("--ccsd-t", help="Perform the singles/doubles coupled clusters calculation with third order excitations included using perturbation theory.", action=ap.BooleanOptionalAction)
     parser.add_argument("--lccd", help="Perform the linearized doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp2", help="Perform the second order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp3", help="Perform the third order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         Emsd = 1 / (epsms[o].reshape(-1) + epsms[o].reshape(-1, 1) - epsms[v].reshape(-1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1))
         Emss = 1 / (epsms[o].reshape(-1) - epsms[v].reshape(-1, 1))
 
-    # MOLLER-PLESSET PERTRUBATION THEORY ===============================================================================================================================================================
+    # MOLLER-PLESSET PERTURBATION THEORY ===============================================================================================================================================================
     if args.mp2 or args.mp3:
 
         # energy containers
