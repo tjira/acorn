@@ -6,3 +6,8 @@ target_include_directories(acorn_qdyn PRIVATE include)
 
 # link libraries
 target_link_libraries(acorn_qdyn ${LIBFFTW})
+
+# link OpenMP
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(acorn_qdyn OpenMP::OpenMP_CXX)
+endif()
