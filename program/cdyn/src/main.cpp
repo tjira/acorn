@@ -1,13 +1,14 @@
 #include "cdyn.h"
-#include "expression.h"
-#include "lz.h"
-#include "timer.h"
 #include <argparse.hpp>
 
-int nthread = 1;
+#define FORMAT(T) [&](long ms) {char s[99]; std::sprintf(s, "%02ld:%02ld:%02ld.%03ld", ms / 3600000, ms % 3600000 / 60000, ms % 60000 / 1000, ms % 1000); return std::string(s);}(T)
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Classical Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
+    argparse::ArgumentParser program("Acorn Classical Dynamics Program", "1.0", argparse::default_arguments::none);
+
+    // define the timers
+    std::vector<std::chrono::time_point<std::chrono::high_resolution_clock>> timers(2, std::chrono::high_resolution_clock().now()); auto tp = timers.at(0);
+    auto elapsed = [](auto ms) {return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock().now() - ms).count();};
 
     // add the command line arguments
     program.add_argument("-c", "--coordinate").help("-- Initial position of the system.").default_value(0.0).scan<'g', double>();
@@ -16,7 +17,7 @@ int main(int argc, char** argv) {
     program.add_argument("-i", "--iterations").help("-- Maximum number of iterations.").default_value(200).scan<'i', int>();
     program.add_argument("-l", "--log").help("-- Log interval for the simulation.").default_value(10).scan<'i', int>();
     program.add_argument("-m", "--mass").help("-- Mass of the model system.").default_value(1.0).scan<'g', double>();
-    program.add_argument("-n", "--nthreads").help("-- Number of threads to use.").default_value(nthread).scan<'i', int>();
+    program.add_argument("-n", "--nthreads").help("-- Number of threads to use.").default_value(Acorn::CDYN::nthread).scan<'i', int>();
     program.add_argument("-p", "--momentum").help("-- Momentum of the model system.").default_value(0.0).scan<'g', double>();
     program.add_argument("-r", "--random").help("-- Random seed for the simulation.").default_value(1).scan<'i', int>();
     program.add_argument("-s", "--step").help("-- Time step of the simulation.").default_value(1.0).scan<'g', double>();
@@ -31,7 +32,7 @@ int main(int argc, char** argv) {
     } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // set the number of threads end extract the number of states
-    nthread = program.get<int>("-n"); int nstate = std::sqrt(program.get<std::vector<std::string>>("-u").size());
+    Acorn::CDYN::nthread = program.get<int>("-n"); int nstate = std::sqrt(program.get<std::vector<std::string>>("-u").size());
 
     // extract the command line parameters
     Acorn::CDYN::Options opt = {
@@ -41,7 +42,7 @@ int main(int argc, char** argv) {
     };
 
     // define the potential expressions and allocate the memory
-    std::vector<std::vector<Expression>> Ues(nthread); for (auto& Ue : Ues) Ue.reserve(nstate * nstate);
+    std::vector<std::vector<Expression>> Ues(Acorn::CDYN::nthread); for (auto& Ue : Ues) Ue.reserve(nstate * nstate);
 
     // fill the potential expressions
     for (auto& Ue : Ues) for (const std::string& expr : opt.potential) Ue.emplace_back(expr, std::vector<std::string>{"x"});
@@ -58,9 +59,7 @@ int main(int argc, char** argv) {
     std::printf("%6s %6s %6s %14s %14s %14s %14s\n", "TRAJ", "ITER", "STATE", "EPOT", "EKIN", "ETOT", "FORCE");
 
     // loop over all trajectories
-    #ifdef _OPENMP
-    #pragma omp parallel for num_threads(nthread)
-    #endif
+    #pragma omp parallel for num_threads(Acorn::CDYN::nthread)
     for (int i = 0; i < opt.trajs; i++) {
 
         // get the thread id
@@ -218,14 +217,21 @@ int main(int argc, char** argv) {
         std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(nstate * nstate).reshaped(nstate, nstate)(i, i));
     } std::cout << std::endl;
 
+    // start the timer for writing the populations
+    timers.at(1) = std::chrono::high_resolution_clock().now();
+
+    // print the header of the population writing
+    std::cout << "POPULATION & HOPPING GEOMETRIES WRITING: " << std::flush;
+        
     // write the populations to disk
-    MEASURE("POPULATION WRITING: ", 
-        Eigen::Write(std::string("P_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_DIA.mat", Pd); Eigen::Write(std::string("P_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_ADIA.mat", Pa);
-    )
+    Eigen::Write(std::string("P_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_DIA.mat", Pd); Eigen::Write(std::string("P_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_ADIA.mat", Pa);
 
     // write the hopping geometries to disk
     Eigen::Write(std::string("HG_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_.mat", Eigen::Map<Matrix>(hg.data(), hg.size(), 1));
 
+    // print the time for writing the populations
+    std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
+
     // print the total time
-    std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;
+    std::cout << std::endl << "TOTAL TIME: " << FORMAT(elapsed(timers.at(0))) << std::endl;
 }

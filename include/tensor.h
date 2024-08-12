@@ -1,7 +1,11 @@
 #pragma once
 
 #include <torch/torch.h>
+
 #include <fstream>
+#include <iomanip>
+
+using namespace torch::indexing;
 
 namespace torch {
     torch::Tensor ReadTensor(const std::string& path); void WriteTensor(const std::string& path, const torch::Tensor& ten);
@@ -30,6 +34,13 @@ inline void torch::WriteTensor(const std::string& path, const torch::Tensor& ten
 
     // write the dimensions to the header and set the formatting
     for (size_t i = 0; i < ten.sizes().size(); i++) {file << ten.sizes().at(i) << (i < ten.sizes().size() - 1 ? " " : "");} file << "\n" << std::fixed << std::setprecision(14);
+
+    // write 1st order tensor
+    if (ten.sizes().size() == 1) {
+        for (int i = 0; i < ten.sizes().at(0); i++) {
+            file << std::setw(20) << ten.index({i}).item().toDouble() << "\n";
+        }
+    }
 
     // write 2nd order tensor
     if (ten.sizes().size() == 2) {

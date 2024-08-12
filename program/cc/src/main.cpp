@@ -1,9 +1,14 @@
 #include "cc.h"
-#include "timer.h"
 #include <argparse.hpp>
 
+#define FORMAT(T) [&](long ms) {char s[99]; std::sprintf(s, "%02ld:%02ld:%02ld.%03ld", ms / 3600000, ms % 3600000 / 60000, ms % 60000 / 1000, ms % 1000); return std::string(s);}(T)
+
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Moller-Plesset Coupled Clusters Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
+    argparse::ArgumentParser program("Acorn Coupled Clusters Program", "1.0", argparse::default_arguments::none);
+
+    // define the timers
+    std::vector<std::chrono::time_point<std::chrono::high_resolution_clock>> timers(2, std::chrono::high_resolution_clock().now()); auto tp = timers.at(0);
+    auto elapsed = [](auto ms) {return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock().now() - ms).count();};
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -16,20 +21,27 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} std::vector<Timer::Timepoint> timers(1);
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // extract the command line parameters
     Acorn::CC::Options opt = {program.get<std::vector<int>>("-e"), program.get<std::vector<int>>("-p"), program.get<double>("-t"), program.get<int>("-i"), program.get<bool>("--linear")};
 
+    // start the timer for integral loading
+    timers.at(1) = std::chrono::high_resolution_clock().now();
+
+    // print the header of integral loading
+    std::cout << "SYSTEM AND INTEGRALS IN MS BASIS READING: " << std::flush;
+
     // load the system and integrals in MS basis from disk
-    MEASURE("SYSTEM AND INTEGRALS IN MS BASIS READING: ",
-        torch::Tensor Jms = torch::ReadTensor("J_MS.mat").squeeze();
-        torch::Tensor Vms = torch::ReadTensor("V_MS.mat").squeeze();
-        torch::Tensor Tms = torch::ReadTensor("T_MS.mat").squeeze();
-        torch::Tensor Ems = torch::ReadTensor("E_MS.mat").squeeze();
-        torch::Tensor Fms = torch::ReadTensor("F_MS.mat").squeeze();
-        torch::Tensor N   = torch::ReadTensor("N.mat"   ).squeeze();
-    )
+    torch::Tensor Jms = torch::ReadTensor("J_MS.mat").squeeze();
+    torch::Tensor Vms = torch::ReadTensor("V_MS.mat").squeeze();
+    torch::Tensor Tms = torch::ReadTensor("T_MS.mat").squeeze();
+    torch::Tensor Ems = torch::ReadTensor("E_MS.mat").squeeze();
+    torch::Tensor Fms = torch::ReadTensor("F_MS.mat").squeeze();
+    torch::Tensor N   = torch::ReadTensor("N.mat"   ).squeeze();
+
+    // print the time for integral loading
+    std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
 
     // extract the number of occupied and virtual spinorbitals
     int nos = 2 * N.index({0}).item<int>(); int nvs = Ems.sizes().at(0) - nos;
@@ -60,7 +72,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < opt.iters; i++) {
 
         // start the timer
-        timers.at(0) = Timer::Now();
+        timers.at(1) = std::chrono::high_resolution_clock().now();
 
         // update the amplitudes
         if (std::find(opt.exc.begin(), opt.exc.end(), 1) != opt.exc.end() && std::find(opt.exc.begin(), opt.exc.end(), 2) != opt.exc.end() && opt.exc.size() == 2 && !opt.linear) {
@@ -74,7 +86,7 @@ int main(int argc, char** argv) {
         }
 
         // print the iteration info
-        std::printf("%6d %20.14f %.2e %s\n", i + 1, Ecc, std::abs(Ecc - Eccp), Timer::Format(Timer::Elapsed(timers.at(0))).c_str());
+        std::printf("%6d %20.14f %.2e %s\n", i + 1, Ecc, std::abs(Ecc - Eccp), FORMAT(elapsed(timers.at(1))).c_str());
 
         // finish if covergence reached
         if (std::abs(Ecc - Eccp) < opt.thresh) {std::cout << std::endl; break;}
@@ -84,7 +96,7 @@ int main(int argc, char** argv) {
     // calculate the perturbation corrections
     if (std::find(opt.exc.begin(), opt.exc.end(), 1) != opt.exc.end() && std::find(opt.exc.begin(), opt.exc.end(), 2) != opt.exc.end() && opt.exc.size() == 2 && !opt.linear) {
         if (std::find(opt.pts.begin(), opt.pts.end(), 3) != opt.pts.end() && opt.pts.size() == 1) {
-            MEASURE("THIRD ORDER EXCITATIONS CORRECTION: ", E += Acorn::CC::CCSD::perturbationTriple(Jmsa, Emst, T1, T2, nos)) std::cout << std::endl;
+            timers.at(1) = std::chrono::high_resolution_clock().now(); std::cout << "THIRD ORDER EXCITATIONS CORRECTION: " << std::flush; E += Acorn::CC::CCSD::perturbationTriple(Jmsa, Emst, T1, T2, nos); std::cout << FORMAT(elapsed(timers.at(1))) << std::endl << std::endl;
         } else if (opt.pts.size() > 1) {
             throw std::runtime_error("NO VALID PERTURBATIONS SELECTED FOR COUPLED CLUSTER CALCULATION");
         }
@@ -93,5 +105,5 @@ int main(int argc, char** argv) {
     }
 
     // print the final energy
-    std::printf("FINAL SINGLE POINT ENERGY: %.13f\n\nTOTAL TIME: %s\n", E + Ecc + N.index({1}).item<double>(), Timer::Format(Timer::Elapsed(start)).c_str());
+    std::printf("FINAL SINGLE POINT ENERGY: %.13f\n\nTOTAL TIME: %s\n", E + Ecc + N.index({1}).item<double>(), FORMAT(elapsed(timers.at(0))).c_str());
 }

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "fourier.h"
+#include "wavefunction.h"
+
 namespace Acorn {
     namespace QDYN {
         struct Options {

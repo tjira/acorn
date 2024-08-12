@@ -1,6 +1,8 @@
 #include "expression.h"
-#include "timer.h"
 #include <argparse.hpp>
+#include <chrono>
+
+#define FORMAT(T) [&](long ms) {char s[99]; std::sprintf(s, "%02ld:%02ld:%02ld.%03ld", ms / 3600000, ms % 3600000 / 60000, ms % 60000 / 1000, ms % 1000); return std::string(s);}(T)
 
 void writeMatrix(const std::string& path, const Eigen::MatrixXd& A) {
     // open the output file and write the dimensions to the header
@@ -13,7 +15,11 @@ void writeMatrix(const std::string& path, const Eigen::MatrixXd& A) {
 }
 
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Expression Evaluator", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
+    argparse::ArgumentParser program("Acorn Expression Evaluator", "1.0", argparse::default_arguments::none);
+
+    // define the timers
+    std::vector<std::chrono::time_point<std::chrono::high_resolution_clock>> timers(2, std::chrono::high_resolution_clock().now()); auto tp = timers.at(0);
+    auto elapsed = [](auto ms) {return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock().now() - ms).count();};
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -26,7 +32,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} std::vector<Timer::Timepoint> timers(1);
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // extract the variables
     int dim = program.get<int>("-d"); int points = program.get<int>("-p"); std::vector<double> limits = program.get<std::vector<double>>("-g"); std::vector<std::string> exprs = program.get<std::vector<std::string>>("-e");
@@ -41,7 +47,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < dim && dim > 3; i++) vars.at(i) = "x" + std::to_string(i + 1);
 
     // print the expression timer label
-    timers.at(0) = Timer::Now(); std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
+    timers.at(1) = std::chrono::high_resolution_clock().now(); std::cout << "EVALUATING THE EXPRESSION: " << std::flush;
 
     // define the expression matrix
     Eigen::MatrixXd U((int)std::pow(points, dim), exprs.size() + dim);
@@ -67,11 +73,20 @@ int main(int argc, char** argv) {
     }
 
     // print the elapsed time
-    std::cout << Timer::Format(Timer::Elapsed(timers.at(0))) << std::endl;
+    std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
+
+    // start the timer for writing the matrix
+    timers.at(1) = std::chrono::high_resolution_clock().now();
+
+    // print the header of the matrix writing
+    std::cout << "WRITING THE MATRIX: " << std::flush;
 
     // write the expression to disk
-    MEASURE("WRITING THE MATRIX:        ", writeMatrix(program.get<std::string>("-o"), U));
+    writeMatrix(program.get<std::string>("-o"), U);
+
+    // print the elapsed time for writing the matrix
+    std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
 
     // print the total time
-    std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;
+    std::cout << std::endl << "TOTAL TIME: " << FORMAT(elapsed(timers.at(0))) << std::endl;
 }

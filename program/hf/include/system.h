@@ -1,14 +1,11 @@
 #pragma once
 
-#include "linalg.h"
+#include "tensor.h"
 
 class System {
 public:
-    System(const std::string& path);
-
-    // property calculators
-    double nuclearRepulsion() const; int nocc() const;
+    System(const std::string& path); double nuclearRepulsion() const; int nocc() const;
 
 private:
-    Matrix AN, R;
+    std::vector<int> AN; torch::Tensor R;
 };

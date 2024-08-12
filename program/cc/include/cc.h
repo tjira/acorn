@@ -2,8 +2,6 @@
 
 #include "tensor.h"
 
-using namespace torch::indexing;
-
 namespace Acorn {
     namespace CC {
         namespace LCCD {

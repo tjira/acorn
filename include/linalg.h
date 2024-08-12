@@ -30,6 +30,7 @@ namespace Eigen {
     // file readers
     EigenTensor<double, 4> LoadTensor(const std::string& path);
     EigenMatrix<double   > LoadMatrix(const std::string& path);
+    EigenMatrix<double   > LoadVector(const std::string& path);
 
     // file writers
     void Write(const std::string& path, const EigenTensor<double, 4>& A);
@@ -49,6 +50,17 @@ inline Tensor<4> Eigen::Kron(const EigenMatrix<double>& A, const EigenTensor<dou
 
     // return the Kronecker product
     return C;
+}
+
+inline Matrix Eigen::LoadVector(const std::string& path) {
+    // open the input file and check for errors
+    std::ifstream file(path); if (!file.good()) throw std::runtime_error("UNABLE TO OPEN FILE `" + path + "` FOR READING");
+
+    // read the dimensions and create the tensor
+    int rows; file >> rows; EigenVector<double> A(rows);
+
+    // read the vector, assign the values and return the vector
+    for (int i = 0; i < rows; i++) {file >> A(i);} return A;
 }
 
 inline Matrix Eigen::LoadMatrix(const std::string& path) {
@@ -102,7 +114,7 @@ inline void Eigen::Write(const std::string& path, const EigenTensor<double, 4>& 
 
 inline void Eigen::Write(const std::string& path, const EigenMatrix<double>& A) {
     // open the output file and write the dimensions to the header
-    std::ofstream file(path); file << A.rows() << " " << A.cols() << "\n" << std::fixed << std::setprecision(14);
+    std::ofstream file(path); file << A.rows() << (A.cols() != 1 ? " " : "") << (A.cols() != 1 ? std::to_string(A.cols()) : "") << "\n" << std::fixed << std::setprecision(14);
 
     // write the matrix by rows
     for (int i = 0; i < A.rows(); i++, file << "\n") for (int j = 0; j < A.cols(); j++) file << std::setw(20) << A(i, j) << (j < A.cols() - 1 ? " " : "");

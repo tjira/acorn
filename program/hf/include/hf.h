@@ -1,5 +1,7 @@
 #pragma once
 
+#include "system.h"
+
 namespace Acorn {
     namespace HF {
         struct Options {

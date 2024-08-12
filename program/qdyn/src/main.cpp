@@ -1,11 +1,14 @@
-#include "fourier.h"
-#include "timer.h"
 #include "qdyn.h"
-#include "wavefunction.h"
 #include <argparse.hpp>
 
+#define FORMAT(T) [&](long ms) {char s[99]; std::sprintf(s, "%02ld:%02ld:%02ld.%03ld", ms / 3600000, ms % 3600000 / 60000, ms % 60000 / 1000, ms % 1000); return std::string(s);}(T)
+
 int main(int argc, char** argv) {
-    argparse::ArgumentParser program("Acorn Quantum Dynamics Program", "1.0", argparse::default_arguments::none); Timer::Timepoint start = Timer::Now(), tp;
+    argparse::ArgumentParser program("Acorn Quantum Dynamics Program", "1.0", argparse::default_arguments::none);
+
+    // define the timers
+    std::vector<std::chrono::time_point<std::chrono::high_resolution_clock>> timers(2, std::chrono::high_resolution_clock().now()); auto tp = timers.at(0);
+    auto elapsed = [](auto ms) {return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock().now() - ms).count();};
 
     // add the command line arguments
     program.add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
@@ -23,7 +26,7 @@ int main(int argc, char** argv) {
     // parse the command line arguments
     try {program.parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program.get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
-    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);} std::vector<Timer::Timepoint> timers(1);
+    } if (program.get<bool>("-h")) {std::cout << program.help().str(); exit(EXIT_SUCCESS);}
 
     // extract the command line parameters
     Acorn::QDYN::Options opt = {
@@ -32,10 +35,17 @@ int main(int argc, char** argv) {
         program.get<bool  >("--savewfn"),
     };
 
+    // start the timer for the potential and wavefunction loading
+    timers.at(1) = std::chrono::high_resolution_clock().now();
+
+    // print the header of potential and wavefunction loading
+    std::cout << "READING POTENTIAL AND INITIAL WAVEFUNCTION: " << std::flush;
+
     // load the potential and initial wavefunction
-    MEASURE("READING POTENTIAL AND INITIAL WAVEFUNCTION: ", Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); 
-        std::vector<Wavefunction> states(opt.optstates, Wavefunction(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - opt.dim)), Ud.leftCols(opt.dim), opt.mass, opt.momentum).normalized());
-    )
+    Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); std::vector<Wavefunction> states(opt.optstates, Wavefunction(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - opt.dim)), Ud.leftCols(opt.dim), opt.mass, opt.momentum).normalized());
+
+    // print the time for potential and wavefunction loading
+    std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
 
     // extract the number of states
     int nstate = states.at(0).get().cols(), nstatessq = nstate * nstate;
@@ -70,7 +80,20 @@ int main(int argc, char** argv) {
     }
 
     // save the adiabatic potential
-    if (opt.adiabatic) {MEASURE("\nSAVING THE ADIABATIC POTENTIAL: ", Eigen::Write("U_ADIA.mat", Ua))}
+    if (opt.adiabatic) {
+    
+        // start the timer for saving the adiabatic potential
+        timers.at(1) = std::chrono::high_resolution_clock().now();
+
+        // print the header of saving the adiabatic potential
+        std::cout << "\nSAVING THE ADIABATIC POTENTIAL: " << std::flush;
+
+        // save the adiabatic potential
+        Eigen::Write("U_ADIA.mat", Ua);
+
+        // print the time for saving the adiabatic potential
+        std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
+    }
 
     // define the real time kinetic and potential operators in diabatic basis
     auto[R, K] = states.at(0).propagator(Ud, std::complex<double>(opt.imaginary, !opt.imaginary), opt.step);
@@ -128,7 +151,7 @@ int main(int argc, char** argv) {
         for (int j = 0; j < opt.iters; j++) {
 
             // reset the timer, save the previous energy and propagate
-            timers.at(0) = Timer::Now(); double Ep = E; wfnd = wfnd.propagate(R, K);
+            timers.at(1) = std::chrono::high_resolution_clock().now(); double Ep = E; wfnd = wfnd.propagate(R, K);
 
             // subrtract the lower eigenstates in ITP
             for (int k = 0; k < i && opt.imaginary; k++) wfnd = wfnd - states.at(k) * states.at(k).overlap(wfnd);
@@ -170,7 +193,7 @@ int main(int argc, char** argv) {
             }
 
             // print the iteration info
-            std::printf("%6d %20.14f %.2e %s\n", j + 1, E, std::abs(E - Ep), Timer::Format(Timer::Elapsed(timers.at(0))).c_str());
+            std::printf("%6d %20.14f %.2e %s\n", j + 1, E, std::abs(E - Ep), FORMAT(elapsed(timers.at(1))).c_str());
         }
 
         // assign results and print a new line
@@ -199,20 +222,27 @@ int main(int argc, char** argv) {
             std::printf("ADIABATIC STATE %d POP: %.14f\n", i, Pa.bottomRows(1).rightCols(nstatessq).reshaped(nstate, nstate).transpose()(i, i));
         } if (nstate > 1 && opt.adiabatic) std::cout << std::endl;
 
-        // save the resulting data data
-        MEASURE("WAVEFUNCTIONS, DENSITY MATRICES, ACF AND SPECTRUM WRITING: ",
-            if (                 opt.savewfn) Eigen::Write("PSI_DIA_"      + std::to_string(i) + ".mat", wfndt   );
-            if (nstate > 1                  ) Eigen::Write("P_DIA_"        + std::to_string(i) + ".mat", Pd      );
-            if (opt.adiabatic && opt.savewfn) Eigen::Write("PSI_ADIA_"     + std::to_string(i) + ".mat", wfnat   );
-            if (opt.adiabatic               ) Eigen::Write("P_ADIA_"       + std::to_string(i) + ".mat", Pa      );
-            if (!opt.imaginary              ) Eigen::Write("ACF_DIA_"      + std::to_string(i) + ".mat", acf     );
-            if (!opt.imaginary              ) Eigen::Write("SPECTRUM_DIA_" + std::to_string(i) + ".mat", spectrum);
-        )
+        // start the timer for writing the results
+        timers.at(1) = std::chrono::high_resolution_clock().now();
+
+        // print the header of the writing of final results
+        std::cout << "WAVEFUNCTIONS, DENSITY MATRICES, ACF AND SPECTRUM WRITING: " << std::flush;
+
+        // save the resulting data
+        if (                 opt.savewfn) Eigen::Write("PSI_DIA_"      + std::to_string(i) + ".mat", wfndt   );
+        if (nstate > 1                  ) Eigen::Write("P_DIA_"        + std::to_string(i) + ".mat", Pd      );
+        if (opt.adiabatic && opt.savewfn) Eigen::Write("PSI_ADIA_"     + std::to_string(i) + ".mat", wfnat   );
+        if (opt.adiabatic               ) Eigen::Write("P_ADIA_"       + std::to_string(i) + ".mat", Pa      );
+        if (!opt.imaginary              ) Eigen::Write("ACF_DIA_"      + std::to_string(i) + ".mat", acf     );
+        if (!opt.imaginary              ) Eigen::Write("SPECTRUM_DIA_" + std::to_string(i) + ".mat", spectrum);
+
+        // print the time for writing the results
+        std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
     }
 
     // print the state energies
     std::cout << std::endl; for (int i = 0; i < opt.optstates; i++) std::printf("FINAL WFN %02d ENERGY: %.14f\n", i, eps(i));
 
     // print the total time
-    std::cout << std::endl << "TOTAL TIME: " << Timer::Format(Timer::Elapsed(start)) << std::endl;
+    std::cout << std::endl << "TOTAL TIME: " << FORMAT(elapsed(timers.at(0))) << std::endl;
 }
