@@ -18,7 +18,7 @@ System::System(const std::string& path) {
     auto SM2AN = [&ptable](const std::string& sm) {return std::find(ptable.begin(), ptable.end(), sm) - ptable.begin();};
 
     // extract the number of atoms, skip the first two lines and initialize the atomic number and position matrices
-    std::getline(file, line); std::stringstream(line) >> natoms; std::getline(file, line); AN.resize(natoms); R = torch::zeros({natoms, 3}, torch::TensorOptions().dtype(torch::kDouble));
+    std::getline(file, line); std::stringstream(line) >> natoms; std::getline(file, line); AN.resize(natoms); R = torch::zeros({natoms, 3}, torch::kDouble);
 
     // extract the atomic numbers and positions
     for (int i = 0; i < natoms; i++) {

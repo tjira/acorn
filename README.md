@@ -56,10 +56,10 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ## Compilation
 
-The software requires the [fftw](https://www.fftw.org), [libint](https://github.com/evaleev/libint) and [pytorch](https://github.com/pytorch/pytorch) libraries. Before compiling these libraries and proceeding with the following steps, make sure you have [eigen](https://gitlab.com/libeigen/eigen) and [boost](https://github.com/boostorg/boost) libraries installed. On debian-based distributions, you can do it with the following command.
+The software requires the [fftw](https://www.fftw.org), [libint](https://github.com/evaleev/libint) and [pytorch](https://github.com/pytorch/pytorch) libraries. Before compiling these libraries and proceeding with the following steps, make sure you have [eigen](https://gitlab.com/libeigen/eigen), [boost](https://github.com/boostorg/boost) and [openblas](https://github.com/OpenMathLib/OpenBLAS) libraries installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
-sudo apt install libboost-dev libeigen3-dev
+sudo apt install libboost-dev libeigen3-dev libopenblas-dev
 ```
 
 To compile the libraries execute `./script/libfftw.sh && ./script/libint.sh && ./script/libtorch.sh` from the project root directory. After this, the project configuration should finish without errors.

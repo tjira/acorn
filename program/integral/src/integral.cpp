@@ -22,7 +22,7 @@ torch::Tensor Integral::Single(libint2::Engine& engine, const libint2::BasisSet&
     }
 
     // return the integrals
-    return torch::from_blob(ints.data(), {nbf, nbf}, torch::TensorOptions().dtype(torch::kDouble)).clone();
+    return torch::from_blob(ints.data(), {nbf, nbf}, torch::kDouble).clone();
 }
 
 torch::Tensor Integral::Double(libint2::Engine& engine, const libint2::BasisSet& shells) {
@@ -61,7 +61,7 @@ torch::Tensor Integral::Double(libint2::Engine& engine, const libint2::BasisSet&
     }
 
     // return the integrals
-    return torch::from_blob(ints.data(), {nbf, nbf, nbf, nbf}, torch::TensorOptions().dtype(torch::kDouble)).clone();
+    return torch::from_blob(ints.data(), {nbf, nbf, nbf, nbf}, torch::kDouble).clone();
 }
 
 torch::Tensor Integral::Nuclear(const std::vector<libint2::Atom>& atoms, const libint2::BasisSet& shells) {

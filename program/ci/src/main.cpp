@@ -1,4 +1,4 @@
-#include "linalg.h"
+#include "tensor.h"
 #include <argparse.hpp>
 
 #define FORMAT(T) [&](long ms) {char s[99]; std::sprintf(s, "%02ld:%02ld:%02ld.%03ld", ms / 3600000, ms % 3600000 / 60000, ms % 60000 / 1000, ms % 1000); return std::string(s);}(T)
@@ -40,16 +40,16 @@ int main(int argc, char** argv) {
     std::cout << "SYSTEM AND INTEGRALS IN MS BASIS READING: " << std::flush;
 
     // load the integrals in AO basis and system from disk
-    Matrix    Vms = Eigen::LoadMatrix("V_MS.mat");
-    Matrix    Tms = Eigen::LoadMatrix("T_MS.mat");
-    Tensor<4> Jms = Eigen::LoadTensor("J_MS.mat");
-    Vector    N   = Eigen::LoadVector("N.mat"   );
+    torch::Tensor Vms = torch::ReadTensor("V_MS.mat");
+    torch::Tensor Tms = torch::ReadTensor("T_MS.mat");
+    torch::Tensor Jms = torch::ReadTensor("J_MS.mat");
+    torch::Tensor N   = torch::ReadTensor("N.mat"   );
 
     // print the time for integral loading
     std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
 
     // define the number of basis functions and occupied orbitals, Hamiltonian in MS basis and determinant container
-    int nbf = Vms.rows() / 2, nocc = N(0); Matrix Hms = Tms + Vms; std::vector<std::vector<int>> dets;
+    int nbf = Vms.sizes().at(0) / 2, nocc = N.index({0}).item<double>(); torch::Tensor Hms = Tms + Vms; std::vector<std::vector<int>> dets;
 
     // start the timer for generating all possible determinants
     timers.at(1) = std::chrono::high_resolution_clock().now();
@@ -73,11 +73,11 @@ int main(int argc, char** argv) {
     std::cout << "\nFILLING THE CI HAMILTONIAN:  " << std::flush; timers.at(1) = std::chrono::high_resolution_clock().now();
 
     // define the CI Hamiltonian
-    Matrix Hci = Matrix::Zero(dets.size(), dets.size());
+    std::vector<double> Hcid(dets.size() * dets.size(), 0);
 
     // fill the CI Hamiltonian
-    for (int i = 0; i < Hci.rows(); i++) {
-        for (int j = i; j < Hci.cols(); j++) {
+    for (size_t i = 0; i < dets.size(); i++) {
+        for (size_t j = i; j < dets.size(); j++) {
             
             // extract the determinants, define the element, differences and swaps and initialize the common and unique spinorbitals
             std::vector<int> deta = dets.at(i), detb = dets.at(j); int diff = 0, swaps = 0; double elem = 0; std::vector<int> common, unique;
@@ -102,25 +102,28 @@ int main(int argc, char** argv) {
 
             // apply the Slater-Condon rules to the matrix elemetnt
             if (diff == 0) {
-                for (int so : deta) elem += Hms(so, so);
+                for (int so : deta) elem += Hms.index({so, so}).item<double>();
                 for (size_t i = 0; i < deta.size(); i++) {
                     for (size_t j = 0; j < deta.size(); j++) {
-                        elem += 0.5 * (Jms(deta.at(i), deta.at(i), deta.at(j), deta.at(j)) - Jms(deta.at(i), deta.at(j), deta.at(j), deta.at(i)));
+                        elem += 0.5 * (Jms.index({deta.at(i), deta.at(i), deta.at(j), deta.at(j)}).item<double>() - Jms.index({deta.at(i), deta.at(j), deta.at(j), deta.at(i)})).item<double>();
                     }
                 }
             } else if (diff == 1) {
-                elem += Hms(unique.at(0), unique.at(1));
+                elem += Hms.index({unique.at(0), unique.at(1)}).item<double>();
                 for (int so : common) {
-                    elem += Jms(unique.at(0), unique.at(1), so, so) - Jms(unique.at(0), so, so, unique.at(1));
+                    elem += Jms.index({unique.at(0), unique.at(1), so, so}).item<double>() - Jms.index({unique.at(0), so, so, unique.at(1)}).item<double>();
                 }
             } else if (diff == 2) {
-                elem = Jms(unique.at(0), unique.at(2), unique.at(1), unique.at(3)) - Jms(unique.at(0), unique.at(3), unique.at(1), unique.at(2));
+                elem = Jms.index({unique.at(0), unique.at(2), unique.at(1), unique.at(3)}).item<double>() - Jms.index({unique.at(0), unique.at(3), unique.at(1), unique.at(2)}).item<double>();
             }
 
             // return element multiplied by the correct sign
-            Hci(i, j) = std::pow(-1, swaps) * elem; Hci(j, i) = Hci(i, j);
+            Hcid.at(i * dets.size() + j) = std::pow(-1, swaps) * elem; Hcid.at(j * dets.size() + i) = Hcid.at(i * dets.size() + j);
         }
     }
+
+    // convert the CI Hamiltonian to the tensor form
+    torch::Tensor Hci = torch::from_blob(Hcid.data(), {(int)dets.size(), (int)dets.size()}, torch::kDouble);
 
     // print the time taken to fill the CI Hamiltonian
     std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
@@ -132,7 +135,7 @@ int main(int argc, char** argv) {
     std::cout << "SOLVING THE CI EIGENPROBLEM: " << std::flush;
 
     // find the eigenvalues and eigenvectors of the CI Hamiltonian
-    Eigen::SelfAdjointEigenSolver<Matrix> solver(Hci); Matrix Cci = solver.eigenvectors(), Eci = solver.eigenvalues();
+    auto[Eci, Cci] = torch::linalg::eigh(Hci, "L");
 
     // print the time taken to solve the CI eigenproblem
     std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
@@ -144,13 +147,13 @@ int main(int argc, char** argv) {
     std::cout << "WRITING THE RESULT MATRICES: " << std::flush;
 
     // save the final matrices
-    Eigen::Write("H_CI.mat", Hci);
-    Eigen::Write("C_CI.mat", Cci);
-    Eigen::Write("E_CI.mat", Eci);
+    torch::WriteTensor("H_CI.mat", Hci);
+    torch::WriteTensor("C_CI.mat", Cci);
+    torch::WriteTensor("E_CI.mat", Eci);
 
     // print the time for writing the results
     std::cout << FORMAT(elapsed(timers.at(1))) << std::endl;
 
     // print the final energy and total time
-    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", Eci(0) + N(1), FORMAT(elapsed(timers.at(0))).c_str());
+    std::printf("\nFINAL SINGLE POINT ENERGY: %.14f\n\nTOTAL TIME: %s\n", Eci.index({0}).item<double>() + N.index({1}).item<double>(), FORMAT(elapsed(timers.at(0))).c_str());
 }

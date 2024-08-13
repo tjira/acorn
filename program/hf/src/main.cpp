@@ -47,9 +47,9 @@ int main(int argc, char** argv) {
     torch::Tensor H = T + V, F = H; double Eel = 0; std::vector<torch::Tensor> es, fs;
 
     // initial guess for the density and MO coefficients
-    torch::Tensor Cmo = torch::zeros({S.sizes().at(0), S.sizes().at(1)}, torch::TensorOptions().dtype(torch::kDouble));
-    torch::Tensor Dmo = torch::zeros({S.sizes().at(0), S.sizes().at(1)}, torch::TensorOptions().dtype(torch::kDouble));
-    torch::Tensor Emo = torch::zeros({S.sizes().at(0), 1              }, torch::TensorOptions().dtype(torch::kDouble));
+    torch::Tensor Cmo = torch::zeros({S.sizes().at(0), S.sizes().at(1)}, torch::kDouble);
+    torch::Tensor Dmo = torch::zeros({S.sizes().at(0), S.sizes().at(1)}, torch::kDouble);
+    torch::Tensor Emo = torch::zeros({S.sizes().at(0), 1              }, torch::kDouble);
 
     // calculate the complementary X matrix as square root of the inverse of the overlap matrix
     auto[SVAL, SVEC] = torch::linalg::eigh(S, "L"); torch::Tensor X = SVEC.mm(torch::diag(1 / torch::sqrt(SVAL))).mm(SVEC.swapaxes(0, 1));
@@ -76,8 +76,8 @@ int main(int argc, char** argv) {
         if (opt.diis && i >= opt.diis) {
 
             // define the DIIS subspace matrices
-            torch::Tensor B = torch::ones( {opt.diis + 1, opt.diis + 1}, torch::TensorOptions().dtype(torch::kDouble));
-            torch::Tensor b = torch::zeros({opt.diis + 1              }, torch::TensorOptions().dtype(torch::kDouble));
+            torch::Tensor B = torch::ones( {opt.diis + 1, opt.diis + 1}, torch::kDouble);
+            torch::Tensor b = torch::zeros({opt.diis + 1              }, torch::kDouble);
 
             // fill the edge values DIIS subspace matrices
             B.index({opt.diis, opt.diis}) = 0, b.index({opt.diis}) = 1;

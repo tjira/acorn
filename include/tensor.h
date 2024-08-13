@@ -25,7 +25,7 @@ inline torch::Tensor torch::ReadTensor(const std::string& path) {
     std::vector<double> data(prod); for (size_t i = 0; i < prod; i++) file >> data.at(i);
 
     // return the tensor
-    return torch::from_blob(data.data(), dims, torch::TensorOptions().dtype(torch::kDouble)).clone();
+    return torch::from_blob(data.data(), dims, torch::kDouble).clone();
 }
 
 inline void torch::WriteTensor(const std::string& path, const torch::Tensor& ten) {

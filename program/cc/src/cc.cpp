@@ -53,13 +53,13 @@ std::tuple<torch::Tensor, torch::Tensor> Acorn::CC::CCSD::amplitude(const torch:
     torch::Tensor ttau = T2 + 0.5 * torch::einsum("ai,bj->abij", {T1, T1}) - 0.5 * torch::einsum("ai,bj->abij", {T1, T1}).swapaxes(2, 3);
     torch::Tensor tau  = T2 +       torch::einsum("ai,bj->abij", {T1, T1}) -       torch::einsum("ai,bj->abij", {T1, T1}).swapaxes(2, 3);
 
-    torch::Tensor Fae = (1 - torch::eye(nvs, torch::dtype(torch::kDouble))) * Fms.index({v, v}) - 0.5 * torch::einsum("me,am->ae",     {Fms.index({o, v}),        T1  })
-                                                                                                +       torch::einsum("mafe,fm->ae",   {Jmsa.index({o, v, v, v}), T1  })
-                                                                                                - 0.5 * torch::einsum("mnef,afmn->ae", {Jmsa.index({o, o, v, v}), ttau});
-    torch::Tensor Fmi = (1 - torch::eye(nos, torch::dtype(torch::kDouble))) * Fms.index({o, o}) + 0.5 * torch::einsum("me,ei->mi",     {Fms.index({o, v}),        T1  })
-                                                                                                +       torch::einsum("mnie,en->mi",   {Jmsa.index({o, o, o, v}), T1  })
-                                                                                                + 0.5 * torch::einsum("mnef,efin->mi", {Jmsa.index({o, o, v, v}), ttau});
-    torch::Tensor Fme =                                                       Fms.index({o, v}) +       torch::einsum("mnef,fn->me",   {Jmsa.index({o, o, v, v}), T1  });
+    torch::Tensor Fae = (1 - torch::eye(nvs, torch::kDouble)) * Fms.index({v, v}) - 0.5 * torch::einsum("me,am->ae",     {Fms.index({o, v}),        T1  })
+                                                                                  +       torch::einsum("mafe,fm->ae",   {Jmsa.index({o, v, v, v}), T1  })
+                                                                                  - 0.5 * torch::einsum("mnef,afmn->ae", {Jmsa.index({o, o, v, v}), ttau});
+    torch::Tensor Fmi = (1 - torch::eye(nos, torch::kDouble)) * Fms.index({o, o}) + 0.5 * torch::einsum("me,ei->mi",     {Fms.index({o, v}),        T1  })
+                                                                                  +       torch::einsum("mnie,en->mi",   {Jmsa.index({o, o, o, v}), T1  })
+                                                                                  + 0.5 * torch::einsum("mnef,efin->mi", {Jmsa.index({o, o, v, v}), ttau});
+    torch::Tensor Fme =                                         Fms.index({o, v}) +       torch::einsum("mnef,fn->me",   {Jmsa.index({o, o, v, v}), T1  });
 
     torch::Tensor Fmea =            torch::einsum("bm,me->be",   {T1, Fme});
     torch::Tensor Fmeb =            torch::einsum("ej,me->mj",   {T1, Fme});
