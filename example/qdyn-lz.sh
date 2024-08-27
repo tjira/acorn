@@ -10,8 +10,8 @@ TULLY_2="0                    0.015*exp(-0.06*x^2)
          0.015*exp(-0.06*x^2) (-0.1)*exp(-0.28*x^2)+0.05"
 TULLY_2_DIS=1; TULLY_2_AIS=1; TULLY_2_IX=-10; TULLY_2_IP=12
 
-DS_1="0.01*tanh(0.6*x)  0.001*exp(-x^2)
-      0.001*exp(-x^2) (-0.01)*tanh(0.6*x)"
+DS_1="0.01*tanh(0.6*x)  0.005*exp(-x^2)
+      0.005*exp(-x^2) (-0.01)*tanh(0.6*x)"
 DS_1_DIS=1; DS_1_AIS=1; DS_1_IX=-7; DS_1_IP=9
 
 DS_2="0.001*x              0.001*exp(-0.05*x^2)
@@ -48,7 +48,6 @@ QS_2_DIS=3; QS_2_AIS=3; QS_2_IX=-10; QS_2_IP=15
 A=0.05; C=("tab:blue" "tab:orange" "tab:green" "tab:red" "tab:purple" "tab:brown"); FC=${C[0]}; I=3500; L=500; M=2000; R=1; T=1000
 
 for POT in TULLY_1 TULLY_2 DS_1 DS_2 TS_1 TS_2 TS_3 QS_1 QS_2; do
-# for POT in TS_2; do
     P=${POT}_IP; X=${POT}_IX; DIS=${POT}_DIS; AIS=${POT}_AIS; STATES=$(echo "sqrt($(echo ${!POT} | wc -w))" | bc)
 
     case $STATES in
