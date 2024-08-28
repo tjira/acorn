@@ -24,6 +24,9 @@ jobs:
       - name: Install Python Packages
         run: pip install typing-extensions
 
+      - name: Download Headers
+        run: ./script/libheader.sh
+
       - name: Build Libfftw
         run: ./script/libfftw.sh
 
@@ -32,9 +35,6 @@ jobs:
 
       - name: Build Libtorch
         run: ./script/libtorch.sh
-
-      - name: Download Headers
-        run: ./script/libheader.sh
 
       - name: Configure Acorn
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
