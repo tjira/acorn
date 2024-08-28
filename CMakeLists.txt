@@ -18,7 +18,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -Wl,-rpath,'$ORIGIN' --cover
 set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native -Wl,-rpath,'$ORIGIN'")
 
 # include directories
-include_directories(example/diagram external/include external/include/torch/csrc/api/include include lib)
+include_directories(example/diagram external/include external/include/torch/csrc/api/include include)
 
 # find the necessary packages
 find_package(Eigen3 REQUIRED)

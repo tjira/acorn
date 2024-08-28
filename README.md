@@ -62,7 +62,7 @@ The software requires the [fftw](https://www.fftw.org), [libint](https://github.
 sudo apt install libboost-dev libeigen3-dev libopenblas-dev
 ```
 
-To compile the libraries execute `./script/libfftw.sh && ./script/libint.sh && ./script/libtorch.sh` from the project root directory. After this, the project configuration should finish without errors.
+To compile the libraries and download additional header-only libraries execute `./script/libfftw.sh && ./script/libint.sh && ./script/libtorch.sh && ./script/libheader.sh` from the project root directory. After this, the project configuration should finish without errors.
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
