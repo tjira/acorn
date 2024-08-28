@@ -137,3 +137,86 @@ double Acorn::CC::CCSD::perturbationTriple(const torch::Tensor& Jmsa, const torc
 
     return (1.0 / 36.0) * torch::einsum("abcijk,abcijk", {T3C, Emst * (T3C + T3D)}).item<double>();
 }
+
+void Acorn::CC::run(const Options& opt, std::vector<timepoint>& timers) {
+    // start the timer for integral loading
+    timers.at(1) = std::chrono::high_resolution_clock().now();
+
+    // print the header of integral loading
+    std::cout << "SYSTEM AND INTEGRALS IN MS BASIS READING: " << std::flush;
+
+    // load the system and integrals in MS basis from disk
+    torch::Tensor Jms = torch::ReadTensor("J_MS.mat");
+    torch::Tensor Vms = torch::ReadTensor("V_MS.mat");
+    torch::Tensor Tms = torch::ReadTensor("T_MS.mat");
+    torch::Tensor Ems = torch::ReadTensor("E_MS.mat");
+    torch::Tensor Fms = torch::ReadTensor("F_MS.mat");
+    torch::Tensor N   = torch::ReadTensor("N.mat"   );
+
+    // print the time for integral loading
+    std::cout << eltime(timers.at(1)) << std::endl;
+
+    // extract the number of occupied and virtual spinorbitals
+    int nos = 2 * N.index({0}).item<int>(); int nvs = Ems.sizes().at(0) - nos;
+
+    // initialize the energy variables and orbital slices
+    double E = 0, Ecc = 0, Eccp = 0; auto o = Slice(None, nos), v = Slice(nos, None);
+
+    // initialize the antisymmetrized Coulomb integrals in Physicists' notation and the Hamiltonian matrix in MS basis
+    torch::Tensor Jmsa = (Jms - Jms.permute({0, 3, 2, 1})).permute({0, 2, 1, 3}); torch::Tensor Hms = Vms + Tms;
+
+    // create orbital energy tensors
+    torch::Tensor Emst = 1 / (Ems.index({o}).reshape({-1}) + Ems.index({o}).reshape({-1, 1}) + Ems.index({o}).reshape({-1, 1, 1}) - Ems.index({v}).reshape({-1, 1, 1, 1}) - Ems.index({v}).reshape({-1, 1, 1, 1, 1}) - Ems.index({v}).reshape({-1, 1, 1, 1, 1, 1}));
+    torch::Tensor Emsd = 1 / (Ems.index({o}).reshape({-1}) + Ems.index({o}).reshape({-1, 1}) - Ems.index({v}).reshape({-1, 1, 1}) - Ems.index({v}).reshape({-1, 1, 1, 1}));
+    torch::Tensor Emss = 1 / (Ems.index({o}).reshape({-1}) - Ems.index({v}).reshape({-1, 1}));
+
+    // initialize single and double excitation amplitudes
+    torch::Tensor T1 = torch::zeros({nvs, nos}, torch::dtype(torch::kDouble)), T2 = Jmsa.index({v, v, o, o}) * Emsd;
+
+    // calculate the HF energy
+    for (int i = 0; i < nos; i++) {
+        E += Hms.index({i, i}).item<double>(); for (int j = 0; j < nos; j++) E += 0.5 * Jmsa.index({i, j, i, j}).item<double>();
+    }
+
+    // print the required number of contributions
+    std::printf("\nCC ENERGY CALCULATION\n%13s %17s %12s\n", "CONTR", "VALUE", "TIME");
+
+    // update amplitudes to self consistency
+    for (int i = 0; i < opt.iters; i++) {
+
+        // start the timer
+        timers.at(1) = std::chrono::high_resolution_clock().now();
+
+        // update the amplitudes
+        if (std::find(opt.exc.begin(), opt.exc.end(), 1) != opt.exc.end() && std::find(opt.exc.begin(), opt.exc.end(), 2) != opt.exc.end() && opt.exc.size() == 2 && !opt.linear) {
+            std::tie(T1, T2) = Acorn::CC::CCSD::amplitude(Jmsa, Fms, Emss, Emsd, T1, T2, nos), Eccp = Ecc, Ecc = Acorn::CC::CCSD::energy(Jmsa, Fms, T1, T2, nos);
+        } else if (std::find(opt.exc.begin(), opt.exc.end(), 2) != opt.exc.end() && opt.exc.size() == 1 && !opt.linear) {
+            T2 = Acorn::CC::CCD::amplitude(Jmsa, Emsd, T2, nos), Eccp = Ecc, Ecc = Acorn::CC::CCD::energy(Jmsa, T2, nos);
+        } else if (std::find(opt.exc.begin(), opt.exc.end(), 2) != opt.exc.end() && opt.exc.size() == 1 && opt.linear) {
+            T2 = Acorn::CC::LCCD::amplitude(Jmsa, Emsd, T2, nos), Eccp = Ecc, Ecc = Acorn::CC::LCCD::energy(Jmsa, T2, nos);
+        } else {
+            throw std::runtime_error("NO VALID EXCITATIONS SELECTED FOR COUPLED CLUSTER CALCULATION");
+        }
+
+        // print the iteration info
+        std::printf("%6d %20.14f %.2e %s\n", i + 1, Ecc, std::abs(Ecc - Eccp), eltime(timers.at(1)).c_str());
+
+        // finish if covergence reached
+        if (std::abs(Ecc - Eccp) < opt.thresh) {std::cout << std::endl; break;}
+        else if (i == opt.iters - 1) throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE CC AMPLITUDE SCF REACHED");
+    }
+
+    // calculate the perturbation corrections
+    if (std::find(opt.exc.begin(), opt.exc.end(), 1) != opt.exc.end() && std::find(opt.exc.begin(), opt.exc.end(), 2) != opt.exc.end() && opt.exc.size() == 2 && !opt.linear) {
+        if (std::find(opt.pts.begin(), opt.pts.end(), 3) != opt.pts.end() && opt.pts.size() == 1) {
+            timers.at(1) = std::chrono::high_resolution_clock().now(); std::cout << "THIRD ORDER EXCITATIONS CORRECTION: " << std::flush; E += Acorn::CC::CCSD::perturbationTriple(Jmsa, Emst, T1, T2, nos); std::cout << eltime(timers.at(1)) << std::endl << std::endl;
+        } else if (opt.pts.size() > 1) {
+            throw std::runtime_error("NO VALID PERTURBATIONS SELECTED FOR COUPLED CLUSTER CALCULATION");
+        }
+    } else if (opt.pts.size() > 0) {
+        throw std::runtime_error("NO VALID EXCITATIONS SELECTED FOR COUPLED CLUSTER CALCULATION");
+    }
+
+    // print the final energy
+    std::printf("FINAL SINGLE POINT ENERGY: %.13f\n\nTOTAL TIME: %s\n", E + Ecc + N.index({1}).item<double>(), eltime(timers.at(0)).c_str());
+}

@@ -1,7 +1,7 @@
 #include "fourier.h"
 #include <fftw3.h>
 
-void FourierTransform::C2RFFT(std::complex<double>* in, double* out, const std::vector<int>& sizes) {
+void Acorn::FourierTransform::C2RFFT(std::complex<double>* in, double* out, const std::vector<int>& sizes) {
     // create the plan for the C2RFFT
     fftw_plan plan = fftw_plan_dft_c2r(sizes.size(), sizes.data(), reinterpret_cast<fftw_complex*>(in), out, FFTW_ESTIMATE);
 
@@ -9,7 +9,7 @@ void FourierTransform::C2RFFT(std::complex<double>* in, double* out, const std::
     fftw_execute(plan); fftw_destroy_plan(plan);
 }
 
-void FourierTransform::IFFT(std::complex<double>* in, std::complex<double>* out, const std::vector<int>& sizes) {
+void Acorn::FourierTransform::IFFT(std::complex<double>* in, std::complex<double>* out, const std::vector<int>& sizes) {
     // create the plan for the IFFT
     fftw_plan plan = fftw_plan_dft(sizes.size(), sizes.data(), reinterpret_cast<fftw_complex*>(in), reinterpret_cast<fftw_complex*>(out), -1, FFTW_ESTIMATE);
 
@@ -17,7 +17,7 @@ void FourierTransform::IFFT(std::complex<double>* in, std::complex<double>* out,
     fftw_execute(plan); fftw_destroy_plan(plan);
 }
 
-void FourierTransform::FFT(std::complex<double>* in, std::complex<double>* out, const std::vector<int>& sizes) {
+void Acorn::FourierTransform::FFT(std::complex<double>* in, std::complex<double>* out, const std::vector<int>& sizes) {
     // create the plan for the FFT
     fftw_plan plan = fftw_plan_dft(sizes.size(), sizes.data(), reinterpret_cast<fftw_complex*>(in), reinterpret_cast<fftw_complex*>(out), 1, FFTW_ESTIMATE);
 
@@ -25,7 +25,7 @@ void FourierTransform::FFT(std::complex<double>* in, std::complex<double>* out, 
     fftw_execute(plan); fftw_destroy_plan(plan);
 }
 
-Vector FourierTransform::C2RFFT(const ComplexVector& data, const std::vector<int>& sizes) {
+Vector Acorn::FourierTransform::C2RFFT(const ComplexVector& data, const std::vector<int>& sizes) {
     // extract vector size
     int m = data.rows();
 
@@ -36,7 +36,7 @@ Vector FourierTransform::C2RFFT(const ComplexVector& data, const std::vector<int
     return Eigen::Map<Vector>(out.data(), m);
 }
 
-ComplexVector FourierTransform::IFFT(const ComplexVector& data, const std::vector<int>& sizes) {
+ComplexVector Acorn::FourierTransform::IFFT(const ComplexVector& data, const std::vector<int>& sizes) {
     // extract vector size
     int m = data.rows();
 
@@ -47,7 +47,7 @@ ComplexVector FourierTransform::IFFT(const ComplexVector& data, const std::vecto
     return Eigen::Map<ComplexVector>(out.data(), m);
 }
 
-ComplexVector FourierTransform::FFT(const ComplexVector& data, const std::vector<int>& sizes) {
+ComplexVector Acorn::FourierTransform::FFT(const ComplexVector& data, const std::vector<int>& sizes) {
     // extract vector size
     int m = data.rows();
 

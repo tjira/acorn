@@ -1,9 +1,9 @@
 #include "fourier.h"
 #include "wavefunction.h"
 
-Wavefunction::Wavefunction() = default; const ComplexMatrix& Wavefunction::get() const {return data;} const Matrix& Wavefunction::getr() const {return r;}
+Acorn::QDYN::Wavefunction::Wavefunction() = default; const ComplexMatrix& Acorn::QDYN::Wavefunction::get() const {return data;} const Matrix& Acorn::QDYN::Wavefunction::getr() const {return r;}
 
-Wavefunction::Wavefunction(const Matrix& data, const Matrix& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
+Acorn::QDYN::Wavefunction::Wavefunction(const Matrix& data, const Matrix& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
     // add the momentum to the wavefunction
     for (int i = 0; i < 2 * this->data.cols(); i += 2) {
         this->data.col(i / 2) = (data.col(i) + std::complex<double>(0, 1) * data.col(i + 1)).array() * (std::complex<double>(0, 1) * momentum * r.rowwise().sum().array()).exp();
@@ -21,15 +21,15 @@ Wavefunction::Wavefunction(const Matrix& data, const Matrix& r, double mass, dou
     for (int i = 0; i < r.cols() - 1; i++) for (int j = 0; j < r.rows(); j++) k(j, i) = k(j / (int)std::round(std::pow(n, r.cols() - i - 1)), r.cols() - 1);
 }
 
-Wavefunction Wavefunction::operator*(const std::complex<double>& scalar) const {
+Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::operator*(const std::complex<double>& scalar) const {
     Wavefunction wfn(*this); wfn.data *= scalar; return wfn;
 }
 
-Wavefunction Wavefunction::operator-(const Wavefunction& other) const {
+Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::operator-(const Wavefunction& other) const {
     Wavefunction wfn(*this); wfn.data -= other.data; return wfn;
 }
 
-Wavefunction Wavefunction::adiabatize(const std::vector<Matrix>& UT) const {
+Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::adiabatize(const std::vector<Matrix>& UT) const {
     // define adiabatic wavefunction
     Wavefunction wfn(*this);
 
@@ -40,12 +40,12 @@ Wavefunction Wavefunction::adiabatize(const std::vector<Matrix>& UT) const {
     return wfn;
 }
 
-Matrix Wavefunction::density() const {
+Matrix Acorn::QDYN::Wavefunction::density() const {
     // return the density matrix
     return (data.transpose() * data.conjugate()).array().abs() * dr;
 }
 
-double Wavefunction::energy(const Matrix& U) const {
+double Acorn::QDYN::Wavefunction::energy(const Matrix& U) const {
     // define the kinetic and potential energy
     double Ek = 0, Ep = 0;
 
@@ -63,12 +63,12 @@ double Wavefunction::energy(const Matrix& U) const {
     return 0.5 * Ek / mass + Ep;
 }
 
-Wavefunction Wavefunction::normalized() const {
+Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::normalized() const {
     // copy the wavefunction and normalize it, then return it
     Wavefunction wfn(*this); wfn.data /= std::sqrt(std::abs(overlap(wfn))); return wfn;
 }
 
-std::complex<double> Wavefunction::overlap(const Wavefunction& wfn) const {
+std::complex<double> Acorn::QDYN::Wavefunction::overlap(const Acorn::QDYN::Wavefunction& wfn) const {
     // define the overlap container
     std::complex<double> overlap = 0;
     
@@ -79,7 +79,7 @@ std::complex<double> Wavefunction::overlap(const Wavefunction& wfn) const {
     return overlap;
 }
 
-Wavefunction Wavefunction::propagate(const std::vector<ComplexMatrix>& R, const std::vector<ComplexMatrix>& K) const {
+Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::propagate(const std::vector<ComplexMatrix>& R, const std::vector<ComplexMatrix>& K) const {
     // output wavefunction
     Wavefunction wfn(*this);
 
@@ -102,7 +102,7 @@ Wavefunction Wavefunction::propagate(const std::vector<ComplexMatrix>& R, const 
     return wfn;
 }
 
-std::tuple<std::vector<ComplexMatrix>, std::vector<ComplexMatrix>> Wavefunction::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
+std::tuple<std::vector<ComplexMatrix>, std::vector<ComplexMatrix>> Acorn::QDYN::Wavefunction::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
     // define the propagator array
     std::vector<ComplexMatrix> R(U.rows()), K(U.rows());
 

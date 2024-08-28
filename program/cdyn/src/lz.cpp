@@ -1,8 +1,8 @@
 #include "lz.h"
 
-LandauZener::LandauZener() = default;
+Acorn::CDYN::LandauZener::LandauZener() = default;
 
-inline std::vector<std::vector<int>> Combinations(int n, int k) {
+std::vector<std::vector<int>> Combinations(int n, int k) {
     // create the bitmask that will get permuted and the resulting vector
     std::string bitmask(k, 1); bitmask.resize(n, 0); std::vector<std::vector<int>> combs;
 
@@ -17,11 +17,11 @@ inline std::vector<std::vector<int>> Combinations(int n, int k) {
     return combs;
 }
 
-LandauZener::LandauZener(int nstate, int points, bool adiabatic) : adiabatic(adiabatic) {
+Acorn::CDYN::LandauZener::LandauZener(int nstate, int points, bool adiabatic) : adiabatic(adiabatic) {
     combs = Combinations(nstate, 2); ed = Matrix::Zero(points, combs.size()), ded = Matrix::Zero(points, combs.size()), dded = Matrix::Zero(points, combs.size());;
 }
 
-std::vector<std::tuple<int, double, bool>> LandauZener::jump(const Matrix& U, int state, int i, double tstep) {
+std::vector<std::tuple<int, double, bool>> Acorn::CDYN::LandauZener::jump(const Matrix& U, int state, int i, double tstep) {
     // loop over all the state combinations
     for (size_t j = 0; j < combs.size(); j++) {
 

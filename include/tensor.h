@@ -5,7 +5,13 @@
 #include <fstream>
 #include <iomanip>
 
-using namespace torch::indexing;
+#define OCC "abcdefghijklmnopqrstuvwxyz"
+#define VRT "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+#define FORMAT(T) [](long ms) {char s[99]; std::sprintf(s, "%02ld:%02ld:%02ld.%03ld", ms / 3600000, ms % 3600000 / 60000, ms % 60000 / 1000, ms % 1000); return std::string(s);}(T)
+
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> timepoint; using namespace std::chrono; using namespace torch::indexing;
+inline std::string eltime(timepoint t) {return FORMAT(duration_cast<milliseconds>(std::chrono::high_resolution_clock().now() - t).count());}
 
 namespace torch {
     torch::Tensor ReadTensor(const std::string& path); void WriteTensor(const std::string& path, const torch::Tensor& ten);
