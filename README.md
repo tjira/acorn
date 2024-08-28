@@ -62,7 +62,7 @@ Before the compilation process, make sure you have [eigen](https://gitlab.com/li
 sudo apt install libboost-dev libeigen3-dev libopenblas-dev
 ```
 
-After these well-estabilished libraries are installed, you need to compile several other dependencies. Fortunately, the Acorn package contains a script to install them all-in-one. You can install all additional dependencies by executing `./script/liball.sh` from the root directory. Now, go grab some coffee, it can take several hours. After the library compilation is finished, the project configuration should finish without errors.
+After these well-estabilished libraries are installed on your system, you need to compile several other dependencies. Fortunately, the Acorn package contains a script to install them all-in-one. You can install all additional dependencies by executing `./script/liball.sh` from the root directory. Now, go grab some coffee, it can take several hours. After the library compilation is finished, the project configuration should finish without errors.
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
