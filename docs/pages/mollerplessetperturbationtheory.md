@@ -78,3 +78,7 @@ Remember that the sums over $i$, $j$, $k$, and $l$ are over occupied spinorbital
 > J_{pqrs}^{MO}=C_{\mu p}C_{\nu q}J_{\mu\nu\kappa\lambda}C_{\kappa r}C_{\lambda s}
 > \end{equation}
 > and $\varepsilon_i$ are the spatial orbital energies obtained from the solution of the Roothaan equations.
+
+{:.cite}
+> Luke W. Bertels, Joonho Lee, Martin Head-Gordon 2019. The Journal of Physical Chemistry Letters, 10(15), p.4170-4176.
+

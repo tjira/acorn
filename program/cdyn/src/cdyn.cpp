@@ -90,7 +90,7 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
             F = -dU(s(j + 1), s(j + 1));
 
             // print the iteration
-            if (std::string print; !((j + 1) % opt.log) || s(j+1) != s(j)) {
+            if (std::string print; !((j + 1) % opt.log) || s(j + 1) != s(j)) {
                 char buffer[100]; std::sprintf(buffer, "%6d %6d %6d %14.8f %14.8f %14.8f %14.8f %.4f", i + 1, j + 1, s(j), Epot, Ekin, Epot + Ekin, F, rn); print = buffer;
                 for (size_t k = 0; k < transitions.size(); k++) {
                     std::sprintf(buffer, "%s%d->%d=%.3f(%d)", k ? ", " : " ", s(j), std::get<0>(transitions.at(k)), std::get<1>(transitions.at(k)), std::get<2>(transitions.at(k))); print += buffer;
@@ -116,7 +116,7 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
         // save trajectories and all energy data
         if (opt.savetraj) {
 
-            // create the energy
+            // create the energy matrices
             Eigen::MatrixXd E(opt.iters + 1, 2), ETOT(opt.iters + 1, 2), ED(opt.iters + 1, lz.getEd().cols() + 1), DED(opt.iters + 1, lz.getDed().cols() + 1), DDED(opt.iters + 1, lz.getDded().cols() + 1);
 
             // create the position, velocity and acceleration matrices
@@ -189,9 +189,6 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
     // write the hopping geometries to disk
     torch::WriteMatrix(std::string("HG_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_.mat", Eigen::Map<Eigen::MatrixXd>(hg.data(), hg.size(), 1));
 
-    // print the time for writing the populations
-    std::cout << eltime(timers.at(1)) << std::endl;
-
-    // print the total time
-    std::cout << std::endl << "TOTAL TIME: " << eltime(timers.at(0)) << std::endl;
+    // print the time for writing the populations and the total time
+    std::cout << eltime(timers.at(1)) << std::endl << std::endl << "TOTAL TIME: " << eltime(timers.at(0)) << std::endl;
 }

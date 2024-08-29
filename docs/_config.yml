@@ -15,6 +15,9 @@ aux_links:
     - "//github.com/tjira/acorn"
 
 callouts:
+  cite:
+    title: References
+    color: yellow
   note:
     title: Note
     color: blue
