@@ -70,25 +70,25 @@ cdyn_1d_HO:
 qdyn_1d_tully_1:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e "if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))" "0.005*exp(-x^2)" "0.005*exp(-x^2)" "(-1)*if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"
 	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0"
-	"../bin/acorn_qdyn" -i 350 -m 2000 -p 15 -s 10 --adiabatic
+	"../bin/acorn_qdyn" -i 350 -m 2000 -p 15 -s 10 --adiabatic --align --savewfn -f 0.01
 
 # target to perform a non-adiabatic 1D real-time propagation of second Tully model
 qdyn_1d_tully_2:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e "0" "0.015*exp(-0.06*x^2)" "0.015*exp(-0.06*x^2)" "(-0.1)*exp(-0.28*x^2)+0.05"
 	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0"
-	"../bin/acorn_qdyn" -i 350 -m 2000 -p 15 -s 10 --adiabatic
+	"../bin/acorn_qdyn" -i 350 -m 2000 -p 15 -s 10 --adiabatic --align --savewfn -f 0.01
 
 # target to perform a non-adiabatic 1D real-time propagation of first double state model
 qdyn_1d_ds_1:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e "0.01*tanh(0.6*x)" "0.001*exp(-x^2)" "0.001*exp(-x^2)" "(-0.01)*tanh(0.6*x)"
 	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0"
-	"../bin/acorn_qdyn" -i 350 -m 2000 -p 15 -s 10 --adiabatic
+	"../bin/acorn_qdyn" -i 350 -m 2000 -p 15 -s 10 --adiabatic --align --savewfn -f 0.01
 
 # target to perform a non-adiabatic 1D real-time propagation of first triple state model
 qdyn_1d_ts_1:
 	"../bin/acorn_expression" -g -24 40 -o U_DIA.mat -p 1024 -e "0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))" "0.005*exp(-x^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-x^2)" "(-0.03)*(tanh(1.6*x)+tanh(1.6*(x-7)))" "0.005*exp(-(x-7)^2)" "0.005*exp(-(x+7)^2)" "0.005*exp(-(x-7)^2)" "(-0.03)*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"
 	"../bin/acorn_expression" -g -24 40 -o PSI_DIA_GUESS.mat -p 1024 -e "0" "0" "exp(-(x+10)^2)" "0" "0" "0"
-	"../bin/acorn_qdyn" -i 350 -m 2000 -p 15 -s 10 --adiabatic
+	"../bin/acorn_qdyn" -i 350 -m 2000 -p 15 -s 10 --adiabatic --align --savewfn -f 0.01
 
 # DIABATIC LANDAU-ZENER ALGORITHM ======================================================================================================================================================================
 

@@ -1,5 +1,4 @@
 #include "fourier.h"
-#include <fftw3.h>
 
 void Acorn::FourierTransform::C2RFFT(std::complex<double>* in, double* out, const std::vector<int>& sizes) {
     // create the plan for the C2RFFT
@@ -25,35 +24,35 @@ void Acorn::FourierTransform::FFT(std::complex<double>* in, std::complex<double>
     fftw_execute(plan); fftw_destroy_plan(plan);
 }
 
-Vector Acorn::FourierTransform::C2RFFT(const ComplexVector& data, const std::vector<int>& sizes) {
+Eigen::VectorXd Acorn::FourierTransform::C2RFFT(const Eigen::VectorXcd& data, const std::vector<int>& sizes) {
     // extract vector size
     int m = data.rows();
 
     // initialize the output vector and perform the C2RFFT
-    std::vector<double> out((data.size() - 1) * 2); FourierTransform::C2RFFT(const_cast<ComplexVector&>(data).data(), out.data(), sizes.empty() ? std::vector<int>{m} : sizes);
+    std::vector<double> out((data.size() - 1) * 2); FourierTransform::C2RFFT(const_cast<Eigen::VectorXcd&>(data).data(), out.data(), sizes.empty() ? std::vector<int>{m} : sizes);
 
     // transform the output to the correct format and return
-    return Eigen::Map<Vector>(out.data(), m);
+    return Eigen::Map<Eigen::VectorXd>(out.data(), m);
 }
 
-ComplexVector Acorn::FourierTransform::IFFT(const ComplexVector& data, const std::vector<int>& sizes) {
+Eigen::VectorXcd Acorn::FourierTransform::IFFT(const Eigen::VectorXcd& data, const std::vector<int>& sizes) {
     // extract vector size
     int m = data.rows();
 
     // initialize the output vector and perform the IFFT
-    std::vector<std::complex<double>> out(data.size()); IFFT(const_cast<ComplexVector&>(data).data(), out.data(), sizes.empty() ? std::vector<int>{m} : sizes);
+    std::vector<std::complex<double>> out(data.size()); IFFT(const_cast<Eigen::VectorXcd&>(data).data(), out.data(), sizes.empty() ? std::vector<int>{m} : sizes);
 
     // transform the output to the correct format and return
-    return Eigen::Map<ComplexVector>(out.data(), m);
+    return Eigen::Map<Eigen::VectorXcd>(out.data(), m);
 }
 
-ComplexVector Acorn::FourierTransform::FFT(const ComplexVector& data, const std::vector<int>& sizes) {
+Eigen::VectorXcd Acorn::FourierTransform::FFT(const Eigen::VectorXcd& data, const std::vector<int>& sizes) {
     // extract vector size
     int m = data.rows();
 
     // initialize the output vector and perform the FFT
-    std::vector<std::complex<double>> out(data.size()); FFT(const_cast<ComplexVector&>(data).data(), out.data(), sizes.empty() ? std::vector<int>{m} : sizes);
+    std::vector<std::complex<double>> out(data.size()); FFT(const_cast<Eigen::VectorXcd&>(data).data(), out.data(), sizes.empty() ? std::vector<int>{m} : sizes);
 
     // transform the output to the correct format and return
-    return Eigen::Map<ComplexVector>(out.data(), m) / out.size();
+    return Eigen::Map<Eigen::VectorXcd>(out.data(), m) / out.size();
 }

@@ -1,9 +1,9 @@
 #include "fourier.h"
 #include "wavefunction.h"
 
-Acorn::QDYN::Wavefunction::Wavefunction() = default; const ComplexMatrix& Acorn::QDYN::Wavefunction::get() const {return data;} const Matrix& Acorn::QDYN::Wavefunction::getr() const {return r;}
+Acorn::QDYN::Wavefunction::Wavefunction() = default; const Eigen::MatrixXcd& Acorn::QDYN::Wavefunction::get() const {return data;} const Eigen::MatrixXd& Acorn::QDYN::Wavefunction::getr() const {return r;}
 
-Acorn::QDYN::Wavefunction::Wavefunction(const Matrix& data, const Matrix& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
+Acorn::QDYN::Wavefunction::Wavefunction(const Eigen::MatrixXd& data, const Eigen::MatrixXd& r, double mass, double momentum) : data(data.rows(), data.cols() / 2), r(r), k(r.rows(), r.cols()), mass(mass) {
     // add the momentum to the wavefunction
     for (int i = 0; i < 2 * this->data.cols(); i += 2) {
         this->data.col(i / 2) = (data.col(i) + std::complex<double>(0, 1) * data.col(i + 1)).array() * (std::complex<double>(0, 1) * momentum * r.rowwise().sum().array()).exp();
@@ -29,7 +29,7 @@ Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::operator-(const Wavefunctio
     Wavefunction wfn(*this); wfn.data -= other.data; return wfn;
 }
 
-Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::adiabatize(const std::vector<Matrix>& UT) const {
+Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::adiabatize(const std::vector<Eigen::MatrixXd>& UT) const {
     // define adiabatic wavefunction
     Wavefunction wfn(*this);
 
@@ -40,12 +40,12 @@ Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::adiabatize(const std::vecto
     return wfn;
 }
 
-Matrix Acorn::QDYN::Wavefunction::density() const {
+Eigen::MatrixXd Acorn::QDYN::Wavefunction::density() const {
     // return the density matrix
     return (data.transpose() * data.conjugate()).array().abs() * dr;
 }
 
-double Acorn::QDYN::Wavefunction::energy(const Matrix& U) const {
+double Acorn::QDYN::Wavefunction::energy(const Eigen::MatrixXd& U) const {
     // define the kinetic and potential energy
     double Ek = 0, Ep = 0;
 
@@ -79,7 +79,7 @@ std::complex<double> Acorn::QDYN::Wavefunction::overlap(const Acorn::QDYN::Wavef
     return overlap;
 }
 
-Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::propagate(const std::vector<ComplexMatrix>& R, const std::vector<ComplexMatrix>& K) const {
+Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::propagate(const std::vector<Eigen::MatrixXcd>& R, const std::vector<Eigen::MatrixXcd>& K) const {
     // output wavefunction
     Wavefunction wfn(*this);
 
@@ -102,22 +102,21 @@ Acorn::QDYN::Wavefunction Acorn::QDYN::Wavefunction::propagate(const std::vector
     return wfn;
 }
 
-std::tuple<std::vector<ComplexMatrix>, std::vector<ComplexMatrix>> Acorn::QDYN::Wavefunction::propagator(const Matrix& U, const std::complex<double>& unit, double step) const {
+std::tuple<std::vector<Eigen::MatrixXcd>, std::vector<Eigen::MatrixXcd>> Acorn::QDYN::Wavefunction::propagator(const Eigen::MatrixXd& U, const std::complex<double>& unit, double step) const {
     // define the propagator array
-    std::vector<ComplexMatrix> R(U.rows()), K(U.rows());
+    std::vector<Eigen::MatrixXcd> R(U.rows()), K(U.rows());
 
     // calculate the propagators
     for (int i = 0, n = data.cols(); i < U.rows(); i++) {
 
         // initialize the eigenvalue solver and diagonalize the potential
-        Eigen::SelfAdjointEigenSolver<Matrix> solver(U.row(i).reshaped(n, n));
-        ComplexMatrix C = solver.eigenvectors(), E = solver.eigenvalues();
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(U.row(i).reshaped(n, n)); Eigen::MatrixXcd C = solver.eigenvectors(), E = solver.eigenvalues();
 
         // momentum space propagator as a diagonal matrix with kinetic energy operators
-        ComplexMatrix KI = (-0.5 * unit * k.row(i).array().pow(2).sum() * step * Vector::Ones(n).array() / mass).exp();
+        Eigen::MatrixXcd KI = (-0.5 * unit * k.row(i).array().pow(2).sum() * step * Eigen::VectorXd::Ones(n).array() / mass).exp();
 
         // real space propagator as a general matrix exponential
-        ComplexMatrix RI = C * (-0.5 * unit * E.array() * step).exp().matrix().asDiagonal() * C.adjoint();
+        Eigen::MatrixXcd RI = C * (-0.5 * unit * E.array() * step).exp().matrix().asDiagonal() * C.adjoint();
 
         // store the propagator matrices
         R.at(i) = RI, K.at(i) = KI.asDiagonal();

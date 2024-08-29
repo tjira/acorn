@@ -1,7 +1,5 @@
 #pragma once
 
-#include "fourier.h"
-#include "tensor.h"
 #include "wavefunction.h"
 #include <argparse.hpp>
 

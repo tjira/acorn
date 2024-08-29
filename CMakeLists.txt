@@ -35,15 +35,15 @@ find_library(LIBINT NAMES int PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBC10 NAMES c10 PATHS external/lib NO_DEFAULT_PATH)
 
 # add subprograms
-add_subdirectory(program/expression)
-add_subdirectory(program/transform)
-add_subdirectory(program/integral)
+# add_subdirectory(program/expression)
+# add_subdirectory(program/transform)
+# add_subdirectory(program/integral)
 add_subdirectory(program/cdyn)
 add_subdirectory(program/qdyn)
-add_subdirectory(program/cc)
-add_subdirectory(program/ci)
-add_subdirectory(program/hf)
-add_subdirectory(program/mp)
+# add_subdirectory(program/cc)
+# add_subdirectory(program/ci)
+# add_subdirectory(program/hf)
+# add_subdirectory(program/mp)
 
 # enable testing
 enable_testing()

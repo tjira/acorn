@@ -2,8 +2,8 @@
 
 #include "expression.h"
 #include "lz.h"
-#include "tensor.h"
 #include <argparse.hpp>
+#include <random>
 
 namespace Acorn {
     namespace CDYN {

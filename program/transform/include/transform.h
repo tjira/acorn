@@ -1,6 +1,5 @@
 #pragma once
 
-#include "linalg.h"
 #include "tensor.h"
 #include <argparse.hpp>
 
@@ -18,12 +17,12 @@ namespace Acorn {
         void run(const Options& opt, std::vector<timepoint>& timers);
 
         // two electron integrals
-        Tensor<4> CoulombSpin(const Tensor<4>& Jao, const Matrix& Cmo);
-        Tensor<4> CoulombSpatial(const Tensor<4>& Jao, Matrix& Cmo);
+        torch::Tensor CoulombSpin(const torch::Tensor& Jao, const torch::Tensor& Cmo);
+        torch::Tensor CoulombSpatial(const torch::Tensor& Jao, torch::Tensor& Cmo);
 
         // one electron integrals
-        Matrix SingleSpin(const Matrix& Aao, const Matrix& Cmo);
-        Matrix SingleSpatial(const Matrix& Aao, Matrix& Cmo);
+        torch::Tensor SingleSpin(const torch::Tensor& Aao, const torch::Tensor& Cmo);
+        torch::Tensor SingleSpatial(const torch::Tensor& Aao, torch::Tensor& Cmo);
     }
 }
 

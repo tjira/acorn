@@ -5,7 +5,7 @@ add_executable(acorn_qdyn src/main.cpp src/fourier.cpp src/qdyn.cpp src/wavefunc
 target_include_directories(acorn_qdyn PRIVATE include)
 
 # link libraries
-target_link_libraries(acorn_qdyn ${LIBFFTW})
+target_link_libraries(acorn_qdyn ${LIBC10} ${LIBFFTW} ${LIBTORCH} ${LIBTORCH_CPU})
 
 # link OpenMP
 if(OpenMP_CXX_FOUND)

@@ -8,7 +8,7 @@ void Acorn::QDYN::run(const Options& opt, std::vector<timepoint>& timers) {
     std::cout << "READING POTENTIAL AND INITIAL WAVEFUNCTION: " << std::flush;
 
     // load the potential and initial wavefunction
-    Matrix Ud = Eigen::LoadMatrix("U_DIA.mat"); std::vector<Acorn::QDYN::Wavefunction> states(opt.optstates, Acorn::QDYN::Wavefunction(Eigen::LoadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - opt.dim)), Ud.leftCols(opt.dim), opt.mass, opt.momentum).normalized());
+    Eigen::MatrixXd Ud = torch::ReadMatrix("U_DIA.mat"); std::vector<Acorn::QDYN::Wavefunction> states(opt.optstates, Acorn::QDYN::Wavefunction(torch::ReadMatrix("PSI_DIA_GUESS.mat").rightCols(2 * (int)std::sqrt(Ud.cols() - opt.dim)), Ud.leftCols(opt.dim), opt.mass, opt.momentum).normalized());
 
     // print the time for potential and wavefunction loading
     std::cout << eltime(timers.at(1)) << std::endl;
@@ -20,18 +20,18 @@ void Acorn::QDYN::run(const Options& opt, std::vector<timepoint>& timers) {
     Ud.block(0, 0, Ud.rows(), Ud.cols() - opt.dim) = Ud.rightCols(Ud.cols() - opt.dim); Ud.conservativeResize(Ud.rows(), Ud.cols() - opt.dim);
 
     // define and initialize the adiabatic variables
-    Matrix Ua; std::vector<Matrix> UT; if (opt.adiabatic) {
-        Ua = Matrix(Ud.rows(), nstate + opt.dim); UT = std::vector<Matrix>(Ud.rows(), Matrix::Identity(nstate, nstate));
+    Eigen::MatrixXd Ua; std::vector<Eigen::MatrixXd> UT; if (opt.adiabatic) {
+        Ua = Eigen::MatrixXd(Ud.rows(), nstate + opt.dim); UT = std::vector<Eigen::MatrixXd>(Ud.rows(), Eigen::MatrixXd::Identity(nstate, nstate));
     }
 
     // diagonalize the potential at each point
     for (int i = 0; i < Ud.rows() && opt.adiabatic; i++) {
 
         // initialize the diabatic potential at the current point
-        Matrix UD = Ud.row(i).reshaped(nstate, nstate).transpose();
+        Eigen::MatrixXd UD = Ud.row(i).reshaped(nstate, nstate).transpose();
 
         // solve the eigenvalue problem and define overlap
-        Eigen::SelfAdjointEigenSolver<Matrix> solver(UD); Matrix C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(nstate, 1);
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(UD); Eigen::MatrixXd C = solver.eigenvectors(), eps = solver.eigenvalues(), overlap(nstate, 1);
 
         // fill the diabatic matrix
         Ua(i, 0) = states.at(0).getr()(i); Ua.row(i).rightCols(nstate) = eps.transpose();
@@ -55,7 +55,7 @@ void Acorn::QDYN::run(const Options& opt, std::vector<timepoint>& timers) {
         std::cout << "\nSAVING THE ADIABATIC POTENTIAL: " << std::flush;
 
         // save the adiabatic potential
-        Eigen::Write("U_ADIA.mat", Ua);
+        torch::WriteMatrix("U_ADIA.mat", Ua);
 
         // print the time for saving the adiabatic potential
         std::cout << eltime(timers.at(1)) << std::endl;
@@ -65,7 +65,7 @@ void Acorn::QDYN::run(const Options& opt, std::vector<timepoint>& timers) {
     auto[R, K] = states.at(0).propagator(Ud, std::complex<double>(opt.imaginary, !opt.imaginary), opt.step);
 
     // define the energy, wfn and acf vector
-    Vector eps(opt.optstates); Matrix acf(opt.imaginary ? 0 : opt.iters + 1, opt.imaginary ? 0 : 3);
+    Eigen::VectorXd eps(opt.optstates); Eigen::MatrixXd acf(opt.imaginary ? 0 : opt.iters + 1, opt.imaginary ? 0 : 3);
 
     // for every orthogonal state
     for (int i = 0; i < opt.optstates; i++) {
@@ -74,14 +74,14 @@ void Acorn::QDYN::run(const Options& opt, std::vector<timepoint>& timers) {
         Acorn::QDYN::Wavefunction wfnd = states.at(i); double E = wfnd.energy(Ud); if (!opt.imaginary) acf(0, 0) = 0, acf(0, 1) = 1, acf(0, 2) = 0;
 
         // define the diabatic and adiabatic wavefunction and density matrix containers
-        Acorn::QDYN::Wavefunction wfna; Matrix wfndt, wfnat, Pd, Pa, rho; if (nstate > 1) Pd = Matrix(opt.iters + 1, nstatessq + 1), Pa = Matrix(opt.iters + 1, nstatessq + 1), rho = Matrix(nstate, nstate);
+        Acorn::QDYN::Wavefunction wfna; Eigen::MatrixXd wfndt, wfnat, Pd, Pa, rho; if (nstate > 1) Pd = Eigen::MatrixXd(opt.iters + 1, nstatessq + 1), Pa = Eigen::MatrixXd(opt.iters + 1, nstatessq + 1), rho = Eigen::MatrixXd(nstate, nstate);
 
         // transform the wfn to the adiabatic basis
         if (opt.adiabatic) wfna = wfnd.adiabatize(UT);
 
         // save the diabatic wavefunction and fill the independent variable columns
         if (opt.savewfn) {
-            wfndt = Matrix(Ud.rows(), 2 * nstate * (opt.iters + 1) + opt.dim);
+            wfndt = Eigen::MatrixXd(Ud.rows(), 2 * nstate * (opt.iters + 1) + opt.dim);
             for (int i = 0; i < nstate; i++) {
                 wfndt.col(2 * i + opt.dim) = opt.factor * wfnd.get().col(i).real(), wfndt.col(2 * i + opt.dim + 1) = opt.factor * wfnd.get().col(i).imag();
                 if (opt.align) {
@@ -93,7 +93,7 @@ void Acorn::QDYN::run(const Options& opt, std::vector<timepoint>& timers) {
 
         // save the adiabatic wavefunction and fill the independent variable columns
         if (opt.adiabatic && opt.savewfn) {
-            wfnat = Matrix(Ua.rows(), 2 * nstate * (opt.iters + 1) + opt.dim);
+            wfnat = Eigen::MatrixXd(Ua.rows(), 2 * nstate * (opt.iters + 1) + opt.dim);
             for (int i = 0; i < nstate; i++) {
                 wfnat.col(2 * i + opt.dim) = opt.factor * wfna.get().col(i).real(), wfnat.col(2 * i + opt.dim + 1) = opt.factor * wfna.get().col(i).imag();
                 if (opt.align) {
@@ -166,7 +166,7 @@ void Acorn::QDYN::run(const Options& opt, std::vector<timepoint>& timers) {
         states.at(i) = wfnd; eps(i) = E; std::cout << std::endl;
 
         // define the spectrum matrix
-        Matrix spectrum(opt.imaginary ? 0 : opt.iters + 1, opt.imaginary ? 0 : 2);
+        Eigen::MatrixXd spectrum(opt.imaginary ? 0 : opt.iters + 1, opt.imaginary ? 0 : 2);
 
         // calculate the spectrum
         if (!opt.imaginary) {
@@ -195,12 +195,12 @@ void Acorn::QDYN::run(const Options& opt, std::vector<timepoint>& timers) {
         std::cout << "WAVEFUNCTIONS, DENSITY MATRICES, ACF AND SPECTRUM WRITING: " << std::flush;
 
         // save the resulting data
-        if (                 opt.savewfn) Eigen::Write("PSI_DIA_"      + std::to_string(i) + ".mat", wfndt   );
-        if (nstate > 1                  ) Eigen::Write("P_DIA_"        + std::to_string(i) + ".mat", Pd      );
-        if (opt.adiabatic && opt.savewfn) Eigen::Write("PSI_ADIA_"     + std::to_string(i) + ".mat", wfnat   );
-        if (opt.adiabatic               ) Eigen::Write("P_ADIA_"       + std::to_string(i) + ".mat", Pa      );
-        if (!opt.imaginary              ) Eigen::Write("ACF_DIA_"      + std::to_string(i) + ".mat", acf     );
-        if (!opt.imaginary              ) Eigen::Write("SPECTRUM_DIA_" + std::to_string(i) + ".mat", spectrum);
+        if (                 opt.savewfn) torch::WriteMatrix("PSI_DIA_"      + std::to_string(i) + ".mat", wfndt   );
+        if (nstate > 1                  ) torch::WriteMatrix("P_DIA_"        + std::to_string(i) + ".mat", Pd      );
+        if (opt.adiabatic && opt.savewfn) torch::WriteMatrix("PSI_ADIA_"     + std::to_string(i) + ".mat", wfnat   );
+        if (opt.adiabatic               ) torch::WriteMatrix("P_ADIA_"       + std::to_string(i) + ".mat", Pa      );
+        if (!opt.imaginary              ) torch::WriteMatrix("ACF_DIA_"      + std::to_string(i) + ".mat", acf     );
+        if (!opt.imaginary              ) torch::WriteMatrix("SPECTRUM_DIA_" + std::to_string(i) + ".mat", spectrum);
 
         // print the time for writing the results
         std::cout << eltime(timers.at(1)) << std::endl;

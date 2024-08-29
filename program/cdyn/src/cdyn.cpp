@@ -9,11 +9,11 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
 
     // function to obtain the potential matrices
     auto eval = [&](std::vector<Expression>& Ue, double r) {
-        Matrix U(opt.nstate, opt.nstate); for (int i = 0; i < opt.nstate; i++) {for (int j = 0; j < opt.nstate; j++) U(i, j) = Ue.at(i * opt.nstate + j).eval(r);} return U;
+        Eigen::MatrixXd U(opt.nstate, opt.nstate); for (int i = 0; i < opt.nstate; i++) {for (int j = 0; j < opt.nstate; j++) U(i, j) = Ue.at(i * opt.nstate + j).eval(r);} return U;
     };
 
     // define the container for all the states and hopping geometries
-    Matrix sdt(opt.iters + 1, opt.nstate * opt.trajs), sat(opt.iters + 1, opt.nstate * opt.trajs); std::vector<double> hg;
+    Eigen::MatrixXd sdt(opt.iters + 1, opt.nstate * opt.trajs), sat(opt.iters + 1, opt.nstate * opt.trajs); std::vector<double> hg;
 
     // print the header
     std::printf("%6s %6s %6s %14s %14s %14s %14s\n", "TRAJ", "ITER", "STATE", "EPOT", "EKIN", "ETOT", "FORCE");
@@ -34,19 +34,19 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
         std::normal_distribution<double> positiondist(opt.position, 0.5), momentumdist(opt.momentum, 1.0);
 
         // initialize the containers for the position, velocity, acceleration, state energy difference, state and a random number
-        Matrix U, dU, r(opt.iters + 1, 1), v(opt.iters + 1, 1), a(opt.iters + 1, 1); IntegerMatrix s(opt.iters + 1, 1); double rn;
+        Eigen::MatrixXd U, dU, r(opt.iters + 1, 1), v(opt.iters + 1, 1), a(opt.iters + 1, 1); Eigen::MatrixXi s(opt.iters + 1, 1); double rn;
 
         // fill the initial position, velocity, acceleration and state
         r(0) = positiondist(mt), v(0) = momentumdist(mt) / opt.mass, a(0) = 0, s(0) = opt.excstate;
 
         // diagonalize the potential at the initial position
-        U = eval(Ues.at(id), r(0)); if (opt.adiabatic) {Eigen::SelfAdjointEigenSolver<Matrix> solver(U); U = solver.eigenvalues().asDiagonal();}
+        U = eval(Ues.at(id), r(0)); if (opt.adiabatic) {Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(U); U = solver.eigenvalues().asDiagonal();}
 
         // initialize the Landau-Zener algorithm and the transition probabilities
         Acorn::CDYN::LandauZener lz = opt.nstate > 1 ? LandauZener(opt.nstate, opt.iters + 1, opt.adiabatic) : Acorn::CDYN::LandauZener(); std::vector<std::tuple<int, double, bool>> transitions;
 
         // define the container for the potential and attempt a LZ jump
-        std::vector<Matrix> Uc(opt.iters + 1); Uc.at(0) = U; if (opt.nstate > 1) transitions = lz.jump(U, s(0), 0, opt.step);
+        std::vector<Eigen::MatrixXd> Uc(opt.iters + 1); Uc.at(0) = U; if (opt.nstate > 1) transitions = lz.jump(U, s(0), 0, opt.step);
 
         // initialize the force and potential with kinetic energy
         double F = opt.mass * a(0), Epot = U(s(0), s(0)), Ekin = 0.5 * opt.mass * v(0) * v(0);
@@ -64,7 +64,7 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
             r(j + 1) = r(j) + opt.step * (v(j + 1) + 0.5 * a(j + 1) * opt.step), s(j + 1) = s(j);
 
             // evaluate the potential and transform it to adiabatic basis if needed
-            U = eval(Ues.at(id), r(j + 1)); if (opt.adiabatic) {Eigen::SelfAdjointEigenSolver<Matrix> solver(U); U = solver.eigenvalues().asDiagonal();}
+            U = eval(Ues.at(id), r(j + 1)); if (opt.adiabatic) {Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(U); U = solver.eigenvalues().asDiagonal();}
 
             // store the potential and calculate its derivative
             Uc.at(j + 1) = U, dU = (Uc.at(j + 1) - Uc.at(j)) / (r(j + 1) - r(j));
@@ -106,7 +106,7 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
         for (int j = 0; j < opt.iters + 1; j++) {
 
             // diagonalize the potential for each time step of the trajectory
-            Eigen::SelfAdjointEigenSolver<Matrix> solver(eval(Ues.at(id), r(j))); Matrix C = solver.eigenvectors();
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(eval(Ues.at(id), r(j))); Eigen::MatrixXd C = solver.eigenvectors();
 
             // assign the state to the time dependent container
             if (!opt.adiabatic) sat.block(j, i * opt.nstate, 1, opt.nstate) = (C.adjoint() * sdt.block(j, i * opt.nstate, 1, opt.nstate).transpose().asDiagonal().toDenseMatrix() * C).diagonal().transpose();
@@ -117,51 +117,51 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
         if (opt.savetraj) {
 
             // create the energy
-            Matrix E(opt.iters + 1, 2), ETOT(opt.iters + 1, 2), ED(opt.iters + 1, lz.getEd().cols() + 1), DED(opt.iters + 1, lz.getDed().cols() + 1), DDED(opt.iters + 1, lz.getDded().cols() + 1);
+            Eigen::MatrixXd E(opt.iters + 1, 2), ETOT(opt.iters + 1, 2), ED(opt.iters + 1, lz.getEd().cols() + 1), DED(opt.iters + 1, lz.getDed().cols() + 1), DDED(opt.iters + 1, lz.getDded().cols() + 1);
 
             // create the position, velocity and acceleration matrices
-            Matrix RT(opt.iters + 1, 2), VT(opt.iters + 1, 2), AT(opt.iters + 1, 2);
+            Eigen::MatrixXd RT(opt.iters + 1, 2), VT(opt.iters + 1, 2), AT(opt.iters + 1, 2);
 
             // fill the position, velocity and acceleration matrices
-            RT << Vector::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, r;
-            VT << Vector::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, v;
-            AT << Vector::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, a;
+            RT << Eigen::VectorXd::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, r;
+            VT << Eigen::VectorXd::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, v;
+            AT << Eigen::VectorXd::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, a;
 
             // write the position, velocity and acceleration matrices to disk
-            Eigen::Write(std::string("R_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", RT);
-            Eigen::Write(std::string("V_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", VT);
-            Eigen::Write(std::string("A_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", AT);
+            torch::WriteMatrix(std::string("R_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", RT);
+            torch::WriteMatrix(std::string("V_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", VT);
+            torch::WriteMatrix(std::string("A_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", AT);
 
             // fill the energy matrix
             for (int j = 0; j < opt.iters + 1; j++) E(j, 0) = j * opt.step, ETOT(j, 0) = j * opt.step, E(j, 1) = Uc.at(j)(s(j), s(j)), ETOT(j, 1) = Uc.at(j)(s(j), s(j)) + 0.5 * opt.mass * v(j) * v(j);
 
             // fill the energy difference matrices
-            DDED << Vector::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, lz.getDded();
-            DED  << Vector::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, lz.getDed();
-            ED   << Vector::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, lz.getEd();
+            DDED << Eigen::VectorXd::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, lz.getDded();
+            DED  << Eigen::VectorXd::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, lz.getDed();
+            ED   << Eigen::VectorXd::LinSpaced(opt.iters + 1, 0, opt.iters) * opt.step, lz.getEd();
 
             // write the potential energy matrices to disk
-            Eigen::Write(std::string("DDED_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", DDED);
-            Eigen::Write(std::string("DED_LZ-" ) + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", DED );
-            Eigen::Write(std::string("ED_LZ-"  ) + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", ED  );
-            Eigen::Write(std::string("E_LZ-"   ) + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", E  );
+            torch::WriteMatrix(std::string("DDED_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", DDED);
+            torch::WriteMatrix(std::string("DED_LZ-" ) + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", DED );
+            torch::WriteMatrix(std::string("ED_LZ-"  ) + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", ED  );
+            torch::WriteMatrix(std::string("E_LZ-"   ) + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", E  );
 
             // write the total energy matrix to disk
-            Eigen::Write(std::string("ETOT_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", ETOT);
+            torch::WriteMatrix(std::string("ETOT_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_" + std::to_string(i + 1) + ".mat", ETOT);
         }
     }
 
     // create the container for the diabatic and adiabatic state populations and fill the time
-    Matrix Pd(opt.iters + 1, opt.nstate * opt.nstate + 1), Pa; Pd.setZero(); for (int i = 0; i < opt.iters + 1; i++) Pd(i, 0) = i * opt.step; Pa = Pd;
+    Eigen::MatrixXd Pd(opt.iters + 1, opt.nstate * opt.nstate + 1), Pa; Pd.setZero(); for (int i = 0; i < opt.iters + 1; i++) Pd(i, 0) = i * opt.step; Pa = Pd;
 
     // fill the diabatic state populations
     for (int i = 0; i < opt.nstate; i++) {
-        Pd.col(1 + i * (opt.nstate + 1)) = sdt(Eigen::all, Vector::LinSpaced(opt.trajs, 0, opt.trajs - 1) * opt.nstate + Vector::Constant(opt.trajs, i)).rowwise().sum() / opt.trajs;
+        Pd.col(1 + i * (opt.nstate + 1)) = sdt(Eigen::all, Eigen::VectorXd::LinSpaced(opt.trajs, 0, opt.trajs - 1) * opt.nstate + Eigen::VectorXd::Constant(opt.trajs, i)).rowwise().sum() / opt.trajs;
     }
 
     // fill the adiabatic state populations
     for (int i = 0; i < opt.nstate; i++) {
-        Pa.col(1 + i * (opt.nstate + 1)) = sat(Eigen::all, Vector::LinSpaced(opt.trajs, 0, opt.trajs - 1) * opt.nstate + Vector::Constant(opt.trajs, i)).rowwise().sum() / opt.trajs;
+        Pa.col(1 + i * (opt.nstate + 1)) = sat(Eigen::all, Eigen::VectorXd::LinSpaced(opt.trajs, 0, opt.trajs - 1) * opt.nstate + Eigen::VectorXd::Constant(opt.trajs, i)).rowwise().sum() / opt.trajs;
     }
 
     // print the new line
@@ -184,10 +184,10 @@ void Acorn::CDYN::run(const Options& opt, std::vector<timepoint>& timers) {
     std::cout << "POPULATION & HOPPING GEOMETRIES WRITING: " << std::flush;
         
     // write the populations to disk
-    Eigen::Write(std::string("P_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_DIA.mat", Pd); Eigen::Write(std::string("P_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_ADIA.mat", Pa);
+    torch::WriteMatrix(std::string("P_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_DIA.mat", Pd); torch::WriteMatrix(std::string("P_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_ADIA.mat", Pa);
 
     // write the hopping geometries to disk
-    Eigen::Write(std::string("HG_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_.mat", Eigen::Map<Matrix>(hg.data(), hg.size(), 1));
+    torch::WriteMatrix(std::string("HG_LZ-") + (opt.adiabatic ? "ADIA" : "DIA") + "_.mat", Eigen::Map<Eigen::MatrixXd>(hg.data(), hg.size(), 1));
 
     // print the time for writing the populations
     std::cout << eltime(timers.at(1)) << std::endl;

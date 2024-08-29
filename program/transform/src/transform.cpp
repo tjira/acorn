@@ -1,51 +1,40 @@
 #include "transform.h"
 
-Tensor<4> Acorn::Transform::CoulombSpatial(const Tensor<4>& Jao, Matrix& Cmo) {
-    // perform the transform
-    Tensor<4> J01 = TENSORMAP(Cmo).contract(Jao, Eigen::array<Eigen::IndexPair<int>, 1>{Eigen::IndexPair<int>(0, 0)});
-    Tensor<4> J02 = TENSORMAP(Cmo).contract(J01, Eigen::array<Eigen::IndexPair<int>, 1>{Eigen::IndexPair<int>(0, 1)});
-    Tensor<4> J03 = TENSORMAP(Cmo).contract(J02, Eigen::array<Eigen::IndexPair<int>, 1>{Eigen::IndexPair<int>(0, 2)});
-    Tensor<4> Jmo = TENSORMAP(Cmo).contract(J03, Eigen::array<Eigen::IndexPair<int>, 1>{Eigen::IndexPair<int>(0, 3)});
+torch::Tensor Acorn::Transform::CoulombSpatial(const torch::Tensor& Jao, torch::Tensor& Cmo) {return torch::einsum("ip,jq,ijkl,kr,ls->pqrs", {Cmo, Cmo, Jao, Cmo, Cmo});}
 
-    // return the Coulomb integrals in molecular orbital basis
-    return Jmo;
-}
+torch::Tensor Acorn::Transform::CoulombSpin(const torch::Tensor& Jao, const torch::Tensor& Cmo) {
+    // create the tile matrix P
+    torch::Tensor P = torch::eye(Cmo.sizes().at(0), Cmo.sizes().at(1), torch::kDouble).repeat_interleave(2, 1);
 
-Tensor<4> Acorn::Transform::CoulombSpin(const Tensor<4>& Jao, const Matrix& Cmo) {
-    // create the tiling matrix P that repeats the MO columns 2 times and define the spin mask
-    Matrix P = Matrix::NullaryExpr(Cmo.rows(), 2 * Cmo.rows(), std::function<double(int, int)>([](int i, int j) {return j == 2 * i || j == 2 * i + 1;})), MN(2 * Cmo.cols(), 2 * Cmo.cols());
-
-    // initialize the spin mask
-    MN << Matrix::NullaryExpr(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 1 - j % 2;})),
-          Matrix::NullaryExpr(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 0 + j % 2;}));
+    // create the spin mask matrices
+    torch::Tensor N = torch::arange(2, torch::kDouble).repeat({Cmo.sizes().at(0), Cmo.sizes().at(1)}); torch::Tensor M = (N + 1) % 2;
 
     // transform the wfn coefficients to the spin basis
-    Matrix Cms = (Cmo * P).replicate<2, 1>().cwiseProduct(MN);
+    torch::Tensor Cms = torch::cat({Cmo.mm(P), Cmo.mm(P)}) * torch::cat({M, N});
 
     // return the transformed matrix
-    return CoulombSpatial(Eigen::Kron(Matrix::Identity(2, 2), Eigen::Kron(Matrix::Identity(2, 2), Jao).shuffle(Eigen::array<int, 4>{3, 2, 1, 0})), Cms);
+    return CoulombSpatial(torch::kron(torch::eye(2, 2, torch::kDouble), torch::kron(torch::eye(2, 2, torch::kDouble), Jao).swapaxes(0, 3).swapaxes(1, 2).contiguous()), Cms);
 }
 
-Matrix Acorn::Transform::SingleSpatial(const Matrix& Aao, Matrix& Cmo) {return Cmo.transpose() * Aao * Cmo;}
+torch::Tensor Acorn::Transform::SingleSpatial(const torch::Tensor& Aao, torch::Tensor& Cmo) {return Cmo.t().mm(Aao).mm(Cmo);}
 
-Matrix Acorn::Transform::SingleSpin(const Matrix& Aao, const Matrix& Cmo) {
-    // create the tiling matrix P that repeats the MO columns 2 times and define the spin mask
-    Matrix P = Matrix::NullaryExpr(Cmo.rows(), 2 * Cmo.rows(), std::function<double(int, int)>([](int i, int j) {return j == 2 * i || j == 2 * i + 1;})), MN(2 * Cmo.cols(), 2 * Cmo.cols());
+torch::Tensor Acorn::Transform::SingleSpin(const torch::Tensor& Aao, const torch::Tensor& Cmo) {
+    // create the tile matrix P
+    torch::Tensor P = torch::eye(Cmo.sizes().at(0), Cmo.sizes().at(1), torch::kDouble).repeat_interleave(2, 1);
 
-    // initialize the spin mask
-    MN << Matrix::NullaryExpr(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 1 - j % 2;})),
-          Matrix::NullaryExpr(Cmo.rows(), 2 * Cmo.cols(), std::function<double(int, int)>([](int, int j) {return 0 + j % 2;}));
+    // create the spin mask matrices
+    torch::Tensor N = torch::arange(2, torch::kDouble).repeat({Cmo.sizes().at(0), Cmo.sizes().at(1)}); torch::Tensor M = (N + 1) % 2;
 
     // transform the wfn coefficients to the spin basis
-    Matrix Cms = (Cmo * P).replicate<2, 1>().cwiseProduct(MN);
+    torch::Tensor Cms = torch::cat({Cmo.mm(P), Cmo.mm(P)}) * torch::cat({M, N});
 
     // return the transformed matrix
-    return SingleSpatial(Eigen::kroneckerProduct(Matrix::Identity(2, 2), Aao), Cms);
+    return SingleSpatial(torch::kron(torch::eye(2, 2, torch::kDouble), Aao), Cms);
 }
 
 void Acorn::Transform::run(const Options& opt, std::vector<timepoint>& timers) {
     // define all the matrices and tensors used throughout the program
-    Matrix C, E, V, T, S, F, Vmo, Tmo, Smo, Fmo, Ems, Vms, Tms, Sms, Fms; Tensor<4> J, Jmo, Jms;
+    torch::Tensor C, E, F, J, T, V, S, Fmo, Jmo, Tmo, Vmo, Smo, Ems, Fms, Jms, Tms, Vms, Sms;
 
     // load the coefficient matrix and integrals in AO basis from disk
     if (opt.orbital || opt.spinorbital) {
@@ -57,13 +46,13 @@ void Acorn::Transform::run(const Options& opt, std::vector<timepoint>& timers) {
         std::cout << "SYSTEM AND INTEGRALS IN AO BASIS READING: " << std::flush;
 
         // load the integrals in AO basis
-        E = Eigen::LoadVector("E_MO.mat");
-        C = Eigen::LoadMatrix("C_MO.mat");
-        V = Eigen::LoadMatrix("V_AO.mat");
-        T = Eigen::LoadMatrix("T_AO.mat");
-        S = Eigen::LoadMatrix("S_AO.mat");
-        J = Eigen::LoadTensor("J_AO.mat");
-        F = Eigen::LoadMatrix("F_AO.mat");
+        E = torch::ReadTensor("E_MO.mat");
+        C = torch::ReadTensor("C_MO.mat");
+        V = torch::ReadTensor("V_AO.mat");
+        T = torch::ReadTensor("T_AO.mat");
+        S = torch::ReadTensor("S_AO.mat");
+        J = torch::ReadTensor("J_AO.mat");
+        F = torch::ReadTensor("F_AO.mat");
 
         // print the time for integral loading
         std::cout << eltime(timers.at(1)) << std::endl;
@@ -107,7 +96,7 @@ void Acorn::Transform::run(const Options& opt, std::vector<timepoint>& timers) {
         Tms = Acorn::Transform::SingleSpin (T, C);
         Sms = Acorn::Transform::SingleSpin (S, C);
         Fms = Acorn::Transform::SingleSpin (F, C);
-        Ems = Vector::NullaryExpr(2 * E.rows(), [&](int i){return E(i / 2);});
+        Ems = E.repeat_interleave(2);
 
         // print the time for integral transformation
         std::cout << eltime(timers.at(1)) << std::endl;
@@ -123,13 +112,14 @@ void Acorn::Transform::run(const Options& opt, std::vector<timepoint>& timers) {
         std::cout << "INTEGRALS IN MO BASIS WRITING:   " << std::flush;
 
         // save the integrals to disk
-        Eigen::Write("V_MO.mat", Vmo);
-        Eigen::Write("T_MO.mat", Tmo);
-        Eigen::Write("S_MO.mat", Smo);
-        Eigen::Write("J_MO.mat", Jmo);
-        Eigen::Write("F_MO.mat", Fmo);
+        torch::WriteTensor("V_MO.mat", Vmo);
+        torch::WriteTensor("T_MO.mat", Tmo);
+        torch::WriteTensor("S_MO.mat", Smo);
+        torch::WriteTensor("J_MO.mat", Jmo);
+        torch::WriteTensor("F_MO.mat", Fmo);
 
         // print the time for integral writing
+        std::cout << eltime(timers.at(1)) << std::endl;
     }
 
     // integrals in molecular spatial orbital basis writing
@@ -142,12 +132,12 @@ void Acorn::Transform::run(const Options& opt, std::vector<timepoint>& timers) {
         std::cout << "INTEGRALS IN MS BASIS WRITING:   " << std::flush;
 
         // save the integrals to disk
-        Eigen::Write("V_MS.mat", Vms);
-        Eigen::Write("T_MS.mat", Tms);
-        Eigen::Write("S_MS.mat", Sms);
-        Eigen::Write("J_MS.mat", Jms);
-        Eigen::Write("E_MS.mat", Ems);
-        Eigen::Write("F_MS.mat", Fms);
+        torch::WriteTensor("V_MS.mat", Vms);
+        torch::WriteTensor("T_MS.mat", Tms);
+        torch::WriteTensor("S_MS.mat", Sms);
+        torch::WriteTensor("J_MS.mat", Jms);
+        torch::WriteTensor("E_MS.mat", Ems);
+        torch::WriteTensor("F_MS.mat", Fms);
 
         // print the time for integral writing
         std::cout << eltime(timers.at(1)) << std::endl;

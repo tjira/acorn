@@ -1,6 +1,7 @@
 #pragma once
 
-#include "linalg.h"
+#include "tensor.h"
+#include <fftw3.h>
 
 namespace Acorn {
     namespace FourierTransform {
@@ -10,8 +11,8 @@ namespace Acorn {
         void C2RFFT(std::complex<double>* in, double* out, const std::vector<int>& sizes);
 
         // forward and inverse Fourier transforms
-        ComplexVector IFFT(const ComplexVector& data, const std::vector<int>& sizes = {});
-        ComplexVector FFT(const ComplexVector& data, const std::vector<int>& sizes = {});
-        Vector C2RFFT(const ComplexVector& data, const std::vector<int>& sizes = {});
+        Eigen::VectorXcd IFFT(const Eigen::VectorXcd& data, const std::vector<int>& sizes = {});
+        Eigen::VectorXcd FFT(const Eigen::VectorXcd& data, const std::vector<int>& sizes = {});
+        Eigen::VectorXd C2RFFT(const Eigen::VectorXcd& data, const std::vector<int>& sizes = {});
     }
 }

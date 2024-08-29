@@ -1,6 +1,7 @@
 #pragma once
 
-#include <torch/torch.h>
+#include <torch/all.h>
+#include <Eigen/Dense>
 
 #include <fstream>
 #include <iomanip>
@@ -14,7 +15,8 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> timepoint; u
 inline std::string eltime(timepoint t) {return FORMAT(duration_cast<milliseconds>(std::chrono::high_resolution_clock().now() - t).count());}
 
 namespace torch {
-    torch::Tensor ReadTensor(const std::string& path); void WriteTensor(const std::string& path, const torch::Tensor& ten);
+    Eigen::MatrixXd ReadMatrix(const std::string& path); void WriteMatrix(const std::string& path, const Eigen::MatrixXd& mat);
+    torch::Tensor   ReadTensor(const std::string& path); void WriteTensor(const std::string& path, const torch::Tensor&   ten);
 }
 
 inline torch::Tensor torch::ReadTensor(const std::string& path) {
@@ -69,4 +71,12 @@ inline void torch::WriteTensor(const std::string& path, const torch::Tensor& ten
             }
         }
     }
+}
+
+inline Eigen::MatrixXd torch::ReadMatrix(const std::string& path) {
+    torch::Tensor ten = torch::ReadTensor(path); return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(ten.data_ptr<double>(), ten.size(0), ten.size(1));
+}
+
+inline void torch::WriteMatrix(const std::string& path, const Eigen::MatrixXd& mat) {
+    Eigen::VectorXd vec = mat.reshaped<Eigen::RowMajor>(); return torch::WriteTensor(path, torch::from_blob((void*)vec.data(), {mat.rows(), mat.cols()}, torch::kDouble).clone());
 }
