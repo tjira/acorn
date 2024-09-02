@@ -1,0 +1,19 @@
+{
+    "wavefunction" : {
+        "guess" : ["0", "0", "exp(-(x+10)^2)", "0"],
+        "dimension" : 1,
+        "grid_limits" : [-24, 40],
+        "grid_points" : 1024,
+        "mass" : 2000,
+        "momentum" : 15
+    },
+    "quantum_dynamics" : {
+        "potential" : [
+            ["0",                    "0.015*exp(-0.06*x^2)"    ],
+            ["0.015*exp(-0.06*x^2)", "-0.1*exp(-0.28*x^2)+0.05"]
+        ],
+        "real" : 1,
+        "iterations" : 350,
+        "time_step" : 10
+    }
+}

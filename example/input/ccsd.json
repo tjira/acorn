@@ -1,0 +1,12 @@
+{
+    "system" : {
+        "path" : "example/molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "hartree_fock" : {
+        "coupled_cluster" : {
+            "excitation" : [1, 2],
+            "perturbation" : []
+        }
+    }
+}
