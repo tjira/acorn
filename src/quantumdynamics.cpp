@@ -34,7 +34,7 @@ void QuantumDynamics::export_trajectory(int iteration, const std::vector<Iterati
     }
 
     // export the adiabatic wavefunctions
-    if (input.data_export.diabatic_wavefunction) {
+    if (input.data_export.adiabatic_wavefunction) {
 
         // create the container for the wavefunction trajectory
         data_matrix = Eigen::MatrixXd(iteration_data.front().adiabatic_wavefunction.get_data().rows(), 2 * iteration_data.size() * iteration_data.front().adiabatic_wavefunction.get_data().cols());
@@ -200,9 +200,12 @@ void QuantumDynamics::print_iteration(int iteration, const IterationData& iterat
     for (size_t i = 0; i < input.potential.size(); i++) {std::printf("%s%8.3f", i ? ", " : "", iteration_data.density_diabatic(i, i));} std::printf("]\n");
 }
 
-void QuantumDynamics::run(const Wavefunction& initial_diabatic_wavefunction) const {
-    // generate the independent variable grid and the fourier grid
-    Eigen::MatrixXd grid = initial_diabatic_wavefunction.get_grid(), fourier_grid = initial_diabatic_wavefunction.get_fourier_grid();
+void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunction_input) const {
+    // initialize the timer for grid generation and print the grid generation timer
+    Timepoint grid_generation_timer = Timer::Now(); std::printf("\nINITIAL GRIDS AND POTENTIALS GENERATION: "); std::flush(std::cout);
+
+    // initialize the initial wavefunction and the grids
+    auto [initial_diabatic_wavefunction, grid] = Wavefunction::Initialize(initial_diabatic_wavefunction_input); Eigen::MatrixXd fourier_grid = initial_diabatic_wavefunction.get_fourier_grid();
 
     // evaluate the potential on the precalculated grid
     Eigen::MatrixXd diabatic_potential = get_diabatic_potential(grid, initial_diabatic_wavefunction.get_variables());
@@ -210,8 +213,12 @@ void QuantumDynamics::run(const Wavefunction& initial_diabatic_wavefunction) con
     // calculate the adiabatic transformation matrices and potential
     auto [transformation_matrices, adiabatic_potential] = get_transformation_matrices(diabatic_potential);
 
-    // calculate the propagators for the imaginary propagation
-    auto [real_propagators, fourier_propagators] = initial_diabatic_wavefunction.propagators(diabatic_potential, fourier_grid, std::complex<double>(1, 0), input.time_step);
+    // export the potentials
+    if (input.data_export.adiabatic_potential) Export::EigenMatrixDouble("POTENTIAL_ADIABATIC.mat", adiabatic_potential, grid);
+    if (input.data_export.diabatic_potential ) Export::EigenMatrixDouble("POTENTIAL_DIABATIC.mat",  diabatic_potential,  grid);
+
+    // print the grid generation timing
+    std::printf("%s\n", Timer::Format(Timer::Elapsed(grid_generation_timer)).c_str());
 
     // create a vector of each state that will get propagated in imaginary time
     std::vector<Wavefunction> imaginary_diabatic_states(input.imaginary, initial_diabatic_wavefunction);
@@ -220,10 +227,16 @@ void QuantumDynamics::run(const Wavefunction& initial_diabatic_wavefunction) con
     for (int i = 0; i < 2; i++) {
 
         // define the state count, the imaginary flag and vector of energies
-        int state_count = i ? input.real : input.imaginary; bool imaginary = !i; std::vector<double> energies(state_count);
+        int state_count = i ? input.real : input.imaginary; bool imaginary = !i; std::vector<double> energies(state_count); if (!state_count) continue;
+
+        // initialize the timer for propagator generation and print the header
+        Timepoint propagator_generation_timer = Timer::Now(); std::printf("%sREAL AND FOURIER PROPAGATORS GENERATION: ", !imaginary && input.imaginary ? "\n" : ""); std::flush(std::cout);
 
         // calculate the propagators
         auto [real_propagators, fourier_propagators] = initial_diabatic_wavefunction.propagators(diabatic_potential, fourier_grid, std::complex<double>(imaginary, !imaginary), input.time_step);
+
+        // print the propagator generation timing
+        std::printf("%s\n", Timer::Format(Timer::Elapsed(propagator_generation_timer)).c_str());
 
         // loop over all propagated states
         for (int j = 0; j < state_count; j++) {
@@ -266,7 +279,7 @@ void QuantumDynamics::run(const Wavefunction& initial_diabatic_wavefunction) con
                 iteration_data.acf = (input.imaginary > j ? imaginary_diabatic_states.at(j) : initial_diabatic_wavefunction).overlap(diabatic_wavefunction);
 
                 // calculate the density matrices
-                iteration_data.density_diabatic  = diabatic_wavefunction.get_density(); if (input.data_export.adiabatic_density) iteration_data.density_adiabatic = adiabatic_wavefunction.get_density();
+                iteration_data.density_diabatic = diabatic_wavefunction.get_density(); if (input.data_export.adiabatic_density) iteration_data.density_adiabatic = adiabatic_wavefunction.get_density();
 
                 // move the wavefunctions to the container if requested
                 if (input.data_export.diabatic_wavefunction ) iteration_data.diabatic_wavefunction  = std::move(diabatic_wavefunction );
@@ -276,24 +289,19 @@ void QuantumDynamics::run(const Wavefunction& initial_diabatic_wavefunction) con
                 iteration_data_vector.at(k) = iteration_data; print_iteration(k, iteration_data, Timer::Elapsed(iteration_timer));
             }
 
-            // if the imaginary time propagation is performed, append the wafefunction to the optimized vector and also append the energy
-            if (imaginary) {imaginary_diabatic_states.at(j) = iteration_data_vector.back().diabatic_wavefunction;} energies.at(j) = iteration_data_vector.back().energy;
+            // if the imaginary time propagation is performed, append the wafefunction to the optimized vector
+            if (imaginary) imaginary_diabatic_states.at(j) = input.data_export.diabatic_wavefunction ? iteration_data_vector.back().diabatic_wavefunction : diabatic_wavefunction;
 
             // print the wavefunction diabatic state populations
             for (size_t k = 0; k < input.potential.size(); k++) {
-                std::printf("%sFINAL DIABATIC  STATE %02lu POPULATION: %.14f\n", k ? "" : "\n", k + 1, iteration_data_vector.back().density_diabatic(k, k));
+                std::printf("%sFINAL DIABATIC  STATE %02lu POPULATION (%s): %.10f\n", k ? "" : "\n", k + 1, imaginary ? "ITP" : "RTP", iteration_data_vector.back().density_diabatic(k, k));
             }
 
-            // print the wavefunction adiabatic state populations
-            for (size_t k = 0; k < input.potential.size(); k++) {
-                std::printf("%sFINAL ADIABATIC STATE %02lu POPULATION: %.14f\n", k ? "" : "\n", k + 1, iteration_data_vector.back().density_adiabatic(k, k));
-            }
-                
             // start the timer nad print the export information
-            Timepoint export_timer = Timer::Now(); std::printf("\nEXPORTING DATA FOR WAVEFUNCTION %02d: ", j + 1); std::flush(std::cout);
+            Timepoint export_timer = Timer::Now(); std::printf("EXPORTING DATA FOR WAVEFUNCTION %03d (%s): ", j + 1, imaginary ? "ITP" : "RTP"); std::flush(std::cout);
 
-            // export the wavefunction trajectory with data
-            export_trajectory(j, iteration_data_vector, grid, imaginary);
+            // export the wavefunction trajectory with data and save the energy
+            export_trajectory(j, iteration_data_vector, grid, imaginary); energies.at(j) = iteration_data_vector.back().energy;
 
             // print the export time
             std::printf("%s\n", Timer::Format(Timer::Elapsed(export_timer)).c_str());
@@ -301,11 +309,7 @@ void QuantumDynamics::run(const Wavefunction& initial_diabatic_wavefunction) con
         
         // print the final energies
         for (size_t j = 0; j < energies.size(); j++) {
-            std::printf("%sFINAL ENERGY OF WAVEFUNCTION %02lu: %20.14f\n", j ? "" : "\n", j + 1, energies.at(j));
+            std::printf("%sFINAL ENERGY OF WAVEFUNCTION %02lu (%s): %20.14f\n", j ? "" : "\n", j + 1, imaginary ? "ITP" : "RTP", energies.at(j));
         }
     }
-
-    // export the potentials
-    if (input.data_export.adiabatic_potential) Export::EigenMatrixDouble("POTENTIAL_ADIABATIC.mat", adiabatic_potential, grid);
-    if (input.data_export.diabatic_potential ) Export::EigenMatrixDouble("POTENTIAL_DIABATIC.mat",  diabatic_potential,  grid);
 }

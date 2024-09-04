@@ -15,7 +15,7 @@ public:
     Eigen::MatrixXd get_diabatic_potential(const Eigen::MatrixXd& grid, const std::vector<std::string>& variables) const;
     std::tuple<std::vector<Eigen::MatrixXd>, Eigen::MatrixXd> get_transformation_matrices(const Eigen::MatrixXd& diabatic_potential) const;
     void print_iteration(int iteration, const IterationData& iteration_data, long elapsed) const;
-    void run(const Wavefunction& initial_diabatic_wavefunction) const;
+    void run(const Input::Wavefunction& initial_diabatic_wavefunction_input) const;
 
 private:
     Input::QuantumDynamics input;

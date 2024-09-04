@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
 
     // perform the quantum dynamics calculation
     if (do_quantum_dynamics) {
-        QuantumDynamics(input.quantum_dynamics).run(Wavefunction(input.wavefunction));
+        QuantumDynamics(input.quantum_dynamics).run(input.wavefunction);
     }
 
     // print the program timer

@@ -6,7 +6,7 @@
 
 class Wavefunction {
 public:
-    Wavefunction() = default; Wavefunction(const Input::Wavefunction& input);
+    Wavefunction() = default; static std::tuple<Wavefunction, Eigen::MatrixXd> Initialize(const Input::Wavefunction& input);
 
     Wavefunction operator-(const Wavefunction& other_wavefunction) const;
     Wavefunction operator*(const std::complex<double>& scalar) const;

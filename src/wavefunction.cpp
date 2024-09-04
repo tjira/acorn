@@ -1,21 +1,27 @@
 #include "wavefunction.h"
 
-Wavefunction::Wavefunction(const Input::Wavefunction& input) : input(input), data((int)std::pow(input.grid_points, input.dimension), input.guess.size() / 2) {
-    // calculate the grid
-    Eigen::MatrixXd grid = get_grid();
+std::tuple<Wavefunction, Eigen::MatrixXd> Wavefunction::Initialize(const Input::Wavefunction& input) {
+    // initialize the wavefunction
+    Wavefunction wavefunction; wavefunction.input = input, wavefunction.data = Eigen::MatrixXd((int)std::pow(input.grid_points, input.dimension), input.guess.size() / 2);
+
+    // calculate the grid and get the variables
+    Eigen::MatrixXd grid = wavefunction.get_grid(); std::vector<std::string> variables = wavefunction.get_variables();
 
     // evaluate the guess at the grid points
-    for (int i = 0; i < data.cols(); i++) {
-        data.col(i) = Expression(input.guess.at(2 * i), get_variables()).evaluate(grid) + std::complex<double>(0, 1) * Expression(input.guess.at(2 * i + 1), get_variables()).evaluate(grid);
+    for (int i = 0; i < wavefunction.data.cols(); i++) {
+        wavefunction.data.col(i) = Expression(input.guess.at(2 * i), variables).evaluate(grid) + std::complex<double>(0, 1) * Expression(input.guess.at(2 * i + 1), variables).evaluate(grid);
     }
 
     // add the momentum to the wavefunction
-    for (int i = 0; i < data.cols(); i++) {
-        data.col(i) = data.col(i).array() * (std::complex<double>(0, 1) * input.momentum * grid.rowwise().sum().array()).exp();
+    for (int i = 0; i < wavefunction.data.cols(); i++) {
+        wavefunction.data.col(i) = wavefunction.data.col(i).array() * (std::complex<double>(0, 1) * input.momentum * grid.rowwise().sum().array()).exp();
     }
 
     // normalize the wavefunction
-    data /= std::sqrt(std::abs(overlap(*this)));
+    wavefunction.data /= std::sqrt(std::abs(wavefunction.overlap(wavefunction)));
+
+    // return the wavefunction and the grid
+    return {wavefunction, grid};
 }
 
 Wavefunction Wavefunction::operator*(const std::complex<double>& scalar) const {
