@@ -52,8 +52,34 @@ double Wavefunction::energy(const Eigen::MatrixXd& diabatic_potential, const Eig
     return (0.5 * Ek / input.mass + Ep) * get_grid_spacing();
 }
 
+Eigen::VectorXd Wavefunction::momentum(const Eigen::MatrixXd& fourier_grid) const {
+    // define the momentum container
+    Eigen::VectorXd momentum = Eigen::VectorXd::Zero(input.dimension);
+
+    // calculate the momentum
+    for (int i = 0; i < data.cols(); i++) {
+        momentum.array() -= (data.col(i).replicate(1, input.dimension).conjugate().array() * FourierTransform::IFFT(fourier_grid.rowwise().sum().array() * FourierTransform::FFT(data.col(i), get_shape()).array(), get_shape()).replicate(1, input.dimension).array()).sum().real();
+    }
+
+    // return the momentum
+    return momentum * get_grid_spacing();
+}
+
+Eigen::VectorXd Wavefunction::position(const Eigen::MatrixXd& grid) const {
+    // define the position container
+    Eigen::VectorXd position = Eigen::VectorXd::Zero(input.dimension);
+
+    // calculate the position
+    for (int i = 0; i < data.cols(); i++) {
+        position.array() += (data.col(i).replicate(1, input.dimension).conjugate().array() * grid.array() * data.col(i).replicate(1, input.dimension).array()).colwise().sum().real();
+    }
+
+    // return the position
+    return position * get_grid_spacing();
+}
+
 Eigen::MatrixXcd Wavefunction::get_data() const {
-    return data.real();
+    return data;
 }
 
 Eigen::MatrixXd Wavefunction::get_density() const {

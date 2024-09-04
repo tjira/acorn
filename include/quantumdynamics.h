@@ -5,10 +5,16 @@
 
 class QuantumDynamics {
 public:
+    struct IterationData {
+        double energy, energy_error; std::complex<double> acf; Eigen::VectorXd position, momentum; Eigen::MatrixXd density_diabatic, density_adiabatic; Wavefunction diabatic_wavefunction, adiabatic_wavefunction;
+    };
+
     QuantumDynamics(const Input::QuantumDynamics& input) : input(input) {}
 
-    std::vector<Eigen::MatrixXd> get_transformation_matrices(const Eigen::MatrixXd& diabatic_potential) const;
+    void export_trajectory(int iteration, const std::vector<IterationData>& iteration_data, const Eigen::MatrixXd& grid, bool imaginary) const;
     Eigen::MatrixXd get_diabatic_potential(const Eigen::MatrixXd& grid, const std::vector<std::string>& variables) const;
+    std::tuple<std::vector<Eigen::MatrixXd>, Eigen::MatrixXd> get_transformation_matrices(const Eigen::MatrixXd& diabatic_potential) const;
+    void print_iteration(int iteration, const IterationData& iteration_data, long elapsed) const;
     void run(const Wavefunction& initial_diabatic_wavefunction) const;
 
 private:

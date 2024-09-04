@@ -12,6 +12,8 @@ public:
     Wavefunction operator*(const std::complex<double>& scalar) const;
     Wavefunction adiabatized(const std::vector<Eigen::MatrixXd>& transformation_matrices) const;
     double energy(const Eigen::MatrixXd& diabatic_potential, const Eigen::MatrixXd& fourier_grid) const;
+    Eigen::VectorXd momentum(const Eigen::MatrixXd& fourier_grid) const;
+    Eigen::VectorXd position(const Eigen::MatrixXd& grid) const;
     Eigen::MatrixXcd get_data() const;
     Eigen::MatrixXd get_density() const;
     Eigen::MatrixXd get_grid() const;

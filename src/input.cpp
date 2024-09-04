@@ -46,7 +46,19 @@ nlohmann::json default_input = R"(
         "real" : 0,
         "iterations" : 1000,
         "time_step" : 1.0,
-        "export_data" : true
+        "align_wavefunction" : true,
+        "data_export" : {
+            "diabatic_wavefunction" : true,
+            "adiabatic_wavefunction" : true,
+            "diabatic_density" : true,
+            "adiabatic_density" : true,
+            "diabatic_potential" : true,
+            "adiabatic_potential" : true,
+            "energy" : true,
+            "position" : true,
+            "momentum" : true,
+            "acf" : true
+        }
     }
 }
 )"_json;
