@@ -235,7 +235,7 @@ void QuantumDynamics::run(const Wavefunction& initial_diabatic_wavefunction) con
             Wavefunction diabatic_wavefunction = input.imaginary > j ? imaginary_diabatic_states.at(j) : initial_diabatic_wavefunction, adiabatic_wavefunction;
 
             // print the header without the variable dimension variables
-            std::printf("\nREAL PROPAGATION OF STATE %d\n%6s %20s %20s %20s %8s %12s", j + 1, "ITER", "ENERGY", "RE(ACF)", "IM(ACF)", "|dE|", "TIME");
+            std::printf("\n%s PROPAGATION OF STATE %d\n%6s %20s %20s %20s %8s %12s", imaginary ? "IMAGINARY" : "REAL", j + 1, "ITER", "ENERGY", "RE(ACF)", "IM(ACF)", "|dE|", "TIME");
 
             // print the variable length header
             std::printf(" %*s %*s %*s\n", (int)grid.cols() * 10, "POSITION", (int)grid.cols() * 10, "MOMENTUM", (int)(grid.cols() * input.potential.size()), "POPULATION");

@@ -10,7 +10,6 @@
     "quantum_dynamics" : {
         "potential" : [["0.5*(x^2)"]],
         "imaginary" : 3,
-        "real" : 3,
         "iterations" : 1000,
         "time_step" : 0.1
     }

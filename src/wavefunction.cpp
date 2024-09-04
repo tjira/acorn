@@ -1,14 +1,17 @@
 #include "wavefunction.h"
 
 Wavefunction::Wavefunction(const Input::Wavefunction& input) : input(input), data((int)std::pow(input.grid_points, input.dimension), input.guess.size() / 2) {
+    // calculate the grid
+    Eigen::MatrixXd grid = get_grid();
+
     // evaluate the guess at the grid points
     for (int i = 0; i < data.cols(); i++) {
-        data.col(i) = Expression(input.guess.at(2 * i), get_variables()).evaluate(get_grid()) + std::complex<double>(0, 1) * Expression(input.guess.at(2 * i + 1), get_variables()).evaluate(get_grid());
+        data.col(i) = Expression(input.guess.at(2 * i), get_variables()).evaluate(grid) + std::complex<double>(0, 1) * Expression(input.guess.at(2 * i + 1), get_variables()).evaluate(grid);
     }
 
     // add the momentum to the wavefunction
     for (int i = 0; i < data.cols(); i++) {
-        data.col(i) = data.col(i).array() * (std::complex<double>(0, 1) * input.momentum * get_grid().rowwise().sum().array()).exp();
+        data.col(i) = data.col(i).array() * (std::complex<double>(0, 1) * input.momentum * grid.rowwise().sum().array()).exp();
     }
 
     // normalize the wavefunction

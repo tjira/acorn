@@ -1,7 +1,7 @@
 {
     "wavefunction" : {
         "guess" : ["exp(-((r1-1)^2+(r2-1)^2+(r3-1)^2+(r4-1)^2))", "0"],
-        "dimension" : 3,
+        "dimension" : 4,
         "grid_limits" : [-8, 8],
         "grid_points" : 64,
         "mass" : 1.0,
