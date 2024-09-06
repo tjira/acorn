@@ -30,7 +30,7 @@ void QuantumDynamics::export_trajectory(int iteration, const std::vector<Iterati
         }
 
         // save the diabatic wavefunction
-        Export::EigenMatrixDouble(std::string("PSI_DIABATIC_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, grid);
+        Export::EigenMatrixDouble(std::string("PSI_DIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, grid);
     }
 
     // export the adiabatic wavefunctions
@@ -59,11 +59,11 @@ void QuantumDynamics::export_trajectory(int iteration, const std::vector<Iterati
         }
 
         // save the diabatic wavefunction
-        Export::EigenMatrixDouble(std::string("PSI_ADIABATIC_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, grid);
+        Export::EigenMatrixDouble(std::string("PSI_ADIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, grid);
     }
 
     // export the diabatic density matrix
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(iteration_data.size(), 0, input.time_step * iteration_data.size()); input.data_export.diabatic_density) {
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.diabatic_density) {
 
         // create the container for the density matrix
         data_matrix = Eigen::MatrixXd(iteration_data.size(), input.potential.size() * input.potential.size());
@@ -71,25 +71,55 @@ void QuantumDynamics::export_trajectory(int iteration, const std::vector<Iterati
         // fill the data matrix with diabatic density
         for (size_t i = 0; i < iteration_data.size(); i++) data_matrix.row(i) = iteration_data.at(i).density_diabatic.reshaped();
 
-        // save the diabatic wavefunction
-        Export::EigenMatrixDouble(std::string("DENSITY_DIABATIC_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, time_variable);
+        // save the diabatic density matrix
+        Export::EigenMatrixDouble(std::string("DENSITY_DIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the adiabatic density matrix
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(iteration_data.size(), 0, input.time_step * iteration_data.size()); input.data_export.adiabatic_density) {
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.adiabatic_density) {
 
         // create the container for the density matrix
         data_matrix = Eigen::MatrixXd(iteration_data.size(), input.potential.size() * input.potential.size());
 
-        // fill the data matrix with diabatic density
+        // fill the data matrix with adiabatic density
         for (size_t i = 0; i < iteration_data.size(); i++) data_matrix.row(i) = iteration_data.at(i).density_adiabatic.reshaped();
 
-        // save the diabatic wavefunction
-        Export::EigenMatrixDouble(std::string("DENSITY_ADIABATIC_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, time_variable);
+        // save the adiabatic density matrix
+        Export::EigenMatrixDouble(std::string("DENSITY_ADIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, time_variable);
+    }
+
+    // export the diabatic population matrix
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.diabatic_population) {
+
+        // create the container for the density matrix
+        data_matrix = Eigen::MatrixXd(iteration_data.size(), input.potential.size());
+
+        // fill the data matrix with diabatic populations
+        for (size_t i = 0; i < iteration_data.size(); i++) for (size_t j = 0; j < input.potential.size(); j++) {
+            data_matrix(i, j) = iteration_data.at(i).density_diabatic(j, j);
+        }
+
+        // save the diabatic population
+        Export::EigenMatrixDouble(std::string("POPULATION_DIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, time_variable);
+    }
+
+    // export the adiabatic density matrix
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.adiabatic_population) {
+
+        // create the container for the density matrix
+        data_matrix = Eigen::MatrixXd(iteration_data.size(), input.potential.size() * input.potential.size());
+
+        // fill the data matrix with adiabatic population matrix
+        for (size_t i = 0; i < iteration_data.size(); i++) for (size_t j = 0; j < input.potential.size(); j++) {
+            data_matrix(i, j) = iteration_data.at(i).density_adiabatic(j, j);
+        }
+
+        // save the adiabatic population matrix
+        Export::EigenMatrixDouble(std::string("POPULATION_ADIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(iteration + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the position
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(iteration_data.size(), 0, input.time_step * iteration_data.size()); input.data_export.position) {
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.position) {
 
         // create the container for the position
         data_matrix = Eigen::MatrixXd(iteration_data.size(), iteration_data.front().position.size());
@@ -102,7 +132,7 @@ void QuantumDynamics::export_trajectory(int iteration, const std::vector<Iterati
     }
 
     // export the momentum
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(iteration_data.size(), 0, input.time_step * iteration_data.size()); input.data_export.momentum) {
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.momentum) {
 
         // create the container for the momentum
         data_matrix = Eigen::MatrixXd(iteration_data.size(), iteration_data.front().momentum.size());
@@ -115,7 +145,7 @@ void QuantumDynamics::export_trajectory(int iteration, const std::vector<Iterati
     }
 
     // export the energy
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(iteration_data.size(), 0, input.time_step * iteration_data.size()); input.data_export.energy) {
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.energy) {
 
         // create the container for the energy
         data_matrix = Eigen::MatrixXd(iteration_data.size(), 1);
@@ -128,7 +158,7 @@ void QuantumDynamics::export_trajectory(int iteration, const std::vector<Iterati
     }
 
     // export the autocorrelation function
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(iteration_data.size(), 0, input.time_step * iteration_data.size()); input.data_export.acf) {
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.acf) {
 
         // create the container for the autocorrelation function
         data_matrix = Eigen::MatrixXd(iteration_data.size(), 2);
@@ -269,7 +299,9 @@ void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefuncti
                 if (imaginary) {diabatic_wavefunction = diabatic_wavefunction.get_normalized(); if (!k) imaginary_diabatic_states.at(j) = diabatic_wavefunction;}
 
                 // transform the wavefunction to adiabatic basis
-                if (input.data_export.adiabatic_wavefunction || input.data_export.adiabatic_density) adiabatic_wavefunction = diabatic_wavefunction.adiabatized(transformation_matrices);
+                if (input.data_export.adiabatic_wavefunction || input.data_export.adiabatic_density || input.data_export.adiabatic_population) {
+                    adiabatic_wavefunction = diabatic_wavefunction.adiabatized(transformation_matrices);
+                }
 
                 // calculate all the properties of the wavefunction
                 iteration_data.energy   = diabatic_wavefunction.energy(diabatic_potential, fourier_grid), iteration_data.energy_error = std::abs(iteration_data.energy - energy_old);
@@ -278,8 +310,11 @@ void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefuncti
                 // calculate the autocorrelation function
                 iteration_data.acf = (input.imaginary > j ? imaginary_diabatic_states.at(j) : initial_diabatic_wavefunction).overlap(diabatic_wavefunction);
 
-                // calculate the density matrices
-                iteration_data.density_diabatic = diabatic_wavefunction.get_density(); if (input.data_export.adiabatic_density) iteration_data.density_adiabatic = adiabatic_wavefunction.get_density();
+                // calculate the diabatic density matrix
+                iteration_data.density_diabatic = diabatic_wavefunction.get_density();
+
+                // calculate the adiabatic density matrix
+                if (input.data_export.adiabatic_density || input.data_export.adiabatic_population) iteration_data.density_adiabatic = adiabatic_wavefunction.get_density();
 
                 // move the wavefunctions to the container if requested
                 if (input.data_export.diabatic_wavefunction ) iteration_data.diabatic_wavefunction  = std::move(diabatic_wavefunction );

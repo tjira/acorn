@@ -46,18 +46,35 @@ nlohmann::json default_input = R"(
         "real" : 0,
         "iterations" : 1000,
         "time_step" : 1.0,
-        "align_wavefunction" : true,
         "data_export" : {
             "diabatic_wavefunction" : false,
             "adiabatic_wavefunction" : false,
             "diabatic_density" : false,
             "adiabatic_density" : false,
+            "diabatic_population" : false,
+            "adiabatic_population" : false,
             "diabatic_potential" : false,
             "adiabatic_potential" : false,
             "energy" : false,
             "position" : false,
             "momentum" : false,
             "acf" : false
+        }
+    },
+    "classical_dynamics" : {
+        "potential" : [["0.5*x^2"]],
+        "iterations" : 1000,
+        "seed" : 1,
+        "adiabatic" : false,
+        "trajectories" : 100,
+        "time_step" : 1.0,
+        "log_interval" : 1,
+        "data_export" : {
+            "diabatic_population" : false,
+            "adiabatic_population" : false,
+            "energy" : false,
+            "position" : false,
+            "momentum" : false
         }
     }
 }

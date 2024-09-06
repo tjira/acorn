@@ -19,9 +19,10 @@ public:
     Eigen::MatrixXd get_grid() const;
     double get_grid_spacing() const;
     Eigen::MatrixXd get_fourier_grid() const;
+    double get_mass() const;
+    Wavefunction get_normalized() const;
     std::vector<int> get_shape() const;
     std::vector<std::string> get_variables() const;
-    Wavefunction get_normalized() const;
     std::complex<double> overlap(const Wavefunction& other_wavefunction) const;
     Wavefunction propagated(const std::vector<Eigen::MatrixXcd>& real_propagators, const std::vector<Eigen::MatrixXcd>& fourier_propagators) const;
     std::tuple<std::vector<Eigen::MatrixXcd>, std::vector<Eigen::MatrixXcd>> propagators(const Eigen::MatrixXd& diabatic_potential, const Eigen::MatrixXd& fourier_grid, const std::complex<double>& unit, double step) const;

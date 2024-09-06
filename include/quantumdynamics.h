@@ -1,7 +1,8 @@
 #pragma once
 
-#include "export.h"
-#include  "timer.h"
+#include       "export.h"
+#include        "timer.h"
+#include "wavefunction.h"
 
 class QuantumDynamics {
 public:

@@ -15,6 +15,10 @@
         ],
         "real" : 1,
         "iterations" : 350,
-        "time_step" : 10
+        "time_step" : 10,
+        "data_export" : {
+            "diabatic_population" : true, "adiabatic_population" : true,
+            "diabatic_potential"  : true, "adiabatic_potential"  : true
+        }
     }
 }

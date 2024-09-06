@@ -3,6 +3,7 @@
 #include            "mollerplesset.h"
 #include           "coupledcluster.h"
 #include          "quantumdynamics.h"
+#include        "classicaldynamics.h"
 #include "configurationinteraction.h"
 #include               <argparse.hpp>
 
@@ -61,6 +62,7 @@ int main(int argc, char** argv) {
     bool do_moller_plesset = do_hartree_fock && input_json.at("hartree_fock").contains("moller_plesset");
     bool do_transform = do_hartree_fock && (do_configuration_interaction || do_coupled_cluster || do_moller_plesset);
     bool do_quantum_dynamics = input_json.contains("quantum_dynamics");
+    bool do_classical_dynamics = input_json.contains("classical_dynamics");
 
     // print the initial system information
     if (input_json.contains("system")) printf("%s BASIS, %lu ATOMS, %d BASIS FUNCTIONS\n\n", system.get_basis().c_str(), system.get_atoms().size(), system.basis_functions());
@@ -106,6 +108,11 @@ int main(int argc, char** argv) {
     // perform the quantum dynamics calculation
     if (do_quantum_dynamics) {
         QuantumDynamics(input.quantum_dynamics).run(input.wavefunction);
+    }
+
+    // perform the classical dynamics calculation
+    if (do_classical_dynamics) {
+        ClassicalDynamics(input.classical_dynamics).run(input.wavefunction);
     }
 
     // print the program timer

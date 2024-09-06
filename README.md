@@ -41,7 +41,7 @@
 </p>
 
 <p align="center">
-Quantum Acorn, a collection of electronic structure methods compiled into a dependency-free binaries. If you are here for the educational scripts, you can find them in the education folder.
+Quantum Acorn, a collection of electronic structure methods compiled into a dependency-free binary. If you are here for the educational scripts, you can find them in the education folder.
 </p>
 
 ## Features
@@ -78,7 +78,7 @@ After the compilation the bin folder will be created along with the executables.
 
 ## Examples
 
-All the examples are implemented as `example/makefile` targets. If you are in example directory, you can run the HF example on a water molecule simply run the `make hf` command. The calculation should finish without errors. Feel free to explore all the examples.
+All the examples are located in `example/input` folder. To run an example Hartree-Fock calculation, execute the `acorn -i example/input.hf.json` command from the project root. Feel free to explore all the examples.
 
 ## Credits
 

@@ -6,7 +6,7 @@
 
 class Expression {
 public:
-    Expression(const std::string& expression_string, const std::vector<std::string>& variable_strings); Expression(const Expression& other);
+    Expression() = default; Expression(const std::string& expression_string, const std::vector<std::string>& variable_strings); Expression(const Expression& other);
 
     Eigen::VectorXd evaluate(const Eigen::MatrixXd& r);
     torch::Tensor evaluate(const torch::Tensor& r);

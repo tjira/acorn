@@ -19,10 +19,6 @@ std::string {
 },
 };
 
-std::vector<std::string> Split(const std::string& string, char delimeter) {
-    std::vector<std::string> result; std::stringstream stringstream(string); std::string line; while (getline(stringstream, line, delimeter)) {result.push_back(line);} return result;
-}
-
 double MollerPlesset::evaluate_contraction(const System& system, const std::string& contraction_string, const torch::Tensor& F_MS, const torch::Tensor& J_MS_AP, int order) {
     // define the contribution and split it
     std::vector<std::string> contractions = Split(contraction_string, ';');

@@ -133,6 +133,10 @@ Eigen::MatrixXd Wavefunction::get_fourier_grid() const {
     return fourier_grid;
 }
 
+double Wavefunction::get_mass() const {
+    return input.mass;
+}
+
 Wavefunction Wavefunction::get_normalized() const {
     Wavefunction wfn(*this); wfn.data /= std::sqrt(std::abs(overlap(wfn))); return wfn;
 }

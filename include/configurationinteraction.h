@@ -1,7 +1,8 @@
 #pragma once
 
-#include "system.h"
-#include  "timer.h"
+#include  "system.h"
+#include   "timer.h"
+#include "utility.h"
 
 class ConfigurationInteraction {
 public:
