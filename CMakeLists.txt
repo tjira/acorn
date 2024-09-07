@@ -85,6 +85,8 @@ add_test(NAME ccsd              COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PRO
 add_test(NAME ccsd-t            COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/ccsd-t.json            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 add_test(NAME qdyn_1d_imaginary COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_1d_imaginary.json WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 add_test(NAME qdyn_2d_imaginary COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_2d_imaginary.json WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME qdyn_1d_real      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_1d_real.json      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME qdyn_2d_real      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_2d_real.json      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # add expected results of general tests
 set_property(TEST hf                PROPERTY PASS_REGULAR_EXPRESSION "FINAL HF ENERGY: -74.965901"                            )
@@ -98,6 +100,8 @@ set_property(TEST ccsd              PROPERTY PASS_REGULAR_EXPRESSION "FINAL CCSD
 set_property(TEST ccsd-t            PROPERTY PASS_REGULAR_EXPRESSION "FINAL CCSD\\(T\\) ENERGY: -75.020351"                   )
 set_property(TEST qdyn_1d_imaginary PROPERTY PASS_REGULAR_EXPRESSION "FINAL ENERGY OF WAVEFUNCTION 03 \\(ITP\\):     2.500001")
 set_property(TEST qdyn_2d_imaginary PROPERTY PASS_REGULAR_EXPRESSION "FINAL ENERGY OF WAVEFUNCTION 03 \\(ITP\\):     2.000001")
+set_property(TEST qdyn_1d_real      PROPERTY PASS_REGULAR_EXPRESSION "FINAL ENERGY OF WAVEFUNCTION 01 \\(RTP\\):     1.124931")
+set_property(TEST qdyn_2d_real      PROPERTY PASS_REGULAR_EXPRESSION "FINAL ENERGY OF WAVEFUNCTION 01 \\(RTP\\):     2.249863")
 
 # add specific tests
 add_test(NAME qdyn_1d_real_tully_1 COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/specific/qdyn_1d_real_tully_1.json WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

@@ -1,8 +1,12 @@
 #include "system.h"
 
-System::System(const Input::System& input) : basis(input.basis) {
+System::System(const Input::System& input) : charge(input.charge), multi(input.multiplicity), basis(input.basis) {
     // open the file stream, define the periodic table and initialize container variables
     std::ifstream system_file_stream(input.path); std::vector<std::string> ptable; std::string line, sm; int natoms;
+
+    // throw an error if impossible combination of charge and multiplicity
+    if (std::abs(charge) % 2 == 0 && multi % 2 == 0) throw std::runtime_error("MOLECULE CAN'T HAVE AN EVEN CHARGE AND MULTIPLICITY AT THE SAME TIME.");
+    if (std::abs(charge) % 2 == 1 && multi % 2 == 1) throw std::runtime_error("MOLECULE CAN'T HAVE AN ODD CHARGE AND MULTIPLICITY AT THE SAME TIME.");
 
     // check if the file stream is good
     if (!system_file_stream.good()) throw std::runtime_error("COULD NOT OPEN THE `" + input.path + "` FILE");
@@ -31,6 +35,10 @@ int System::basis_functions() const {
     return get_shells().nbf();
 }
 
+int System::electrons() const {
+    return std::accumulate(atomic_numbers.begin(), atomic_numbers.end(), 0) - charge;
+}
+
 std::vector<libint2::Atom> System::get_atoms() const {
     // create the vector of atoms
     std::vector<libint2::Atom> atoms;
@@ -55,8 +63,23 @@ std::string System::get_basis() const {
     std::string uppercase_basis = basis; std::transform(uppercase_basis.begin(), uppercase_basis.end(), uppercase_basis.begin(), ::toupper); return uppercase_basis;
 }
 
+int System::get_multi() const {
+    return multi;
+}
+
 libint2::BasisSet System::get_shells() const {
-    return libint2::BasisSet(basis, get_atoms());
+    // define the basis file
+    std::string basis_file = basis;
+
+    // replace all the * with s and + with p
+    std::replace(basis_file.begin(), basis_file.end(), '*', 's');
+    std::replace(basis_file.begin(), basis_file.end(), '+', 'p');
+
+    // replace the augmented keyword
+    basis_file = std::regex_replace(basis_file, std::regex("aug-"), "augmented-");
+
+    // return the basis set
+    return libint2::BasisSet(basis_file, get_atoms());
 }
 
 double System::nuclear_repulsion() const {
@@ -72,14 +95,6 @@ double System::nuclear_repulsion() const {
     return nuclear_repulsion_value;
 }
 
-int System::occupied_spatial_orbitals() const {
-    return std::accumulate(atomic_numbers.begin(), atomic_numbers.end(), 0) / 2;
-}
-
-int System::occupied_spinorbitals() const {
-    return 2 * occupied_spatial_orbitals();
-}
-
 int System::virtual_spinorbitals() const {
-    return 2 * basis_functions() - occupied_spinorbitals();
+    return 2 * basis_functions() - electrons();
 }

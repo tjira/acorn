@@ -12,7 +12,6 @@ public:
 
     QuantumDynamics(const Input::QuantumDynamics& input) : input(input) {}
 
-    void export_trajectory(int iteration, const std::vector<IterationData>& iteration_data, const Eigen::MatrixXd& grid, bool imaginary) const;
     Eigen::MatrixXd get_diabatic_potential(const Eigen::MatrixXd& grid, const std::vector<std::string>& variables) const;
     std::tuple<std::vector<Eigen::MatrixXd>, Eigen::MatrixXd> get_transformation_matrices(const Eigen::MatrixXd& diabatic_potential) const;
     void print_iteration(int iteration, const IterationData& iteration_data, long elapsed) const;
@@ -21,3 +20,7 @@ public:
 private:
     Input::QuantumDynamics input;
 };
+
+namespace Export {
+    void WavefunctionTrajectory(const Input::QuantumDynamics& input, const std::vector<QuantumDynamics::IterationData>& iteration_data, const Eigen::MatrixXd& grid, int state, bool imaginary);
+}

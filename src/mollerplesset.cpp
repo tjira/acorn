@@ -41,8 +41,8 @@ double MollerPlesset::evaluate_contraction(const System& system, const std::stri
 
         // loop over the axes and assign the slices
         for (int l = 0; l < 4; l++) {
-            if (std::string(OCCUPIED_ORBITALS).find(unoptimized_contraction.at(k).at(l)) != std::string::npos) axes.at(l) = Slice(None, system.occupied_spinorbitals());
-            if (std::string(VIRTUAL_ORBITALS ).find(unoptimized_contraction.at(k).at(l)) != std::string::npos) axes.at(l) = Slice(system.occupied_spinorbitals(), None);
+            if (std::string(OCCUPIED_ORBITALS).find(unoptimized_contraction.at(k).at(l)) != std::string::npos) axes.at(l) = Slice(None, system.electrons());
+            if (std::string(VIRTUAL_ORBITALS ).find(unoptimized_contraction.at(k).at(l)) != std::string::npos) axes.at(l) = Slice(system.electrons(), None);
         }
 
         // add the coulomb integral slice to the views
@@ -51,7 +51,7 @@ double MollerPlesset::evaluate_contraction(const System& system, const std::stri
 
     // loop over energy contractions and add the energy denominators
     for (size_t k = order; k < unoptimized_contraction.size(); k++) {
-        views.push_back(Transform::ExcitationEnergyFraction(F_MS, Slice(None, system.occupied_spinorbitals()), Slice(system.occupied_spinorbitals(), None), unoptimized_contraction.at(k).size() / 2));
+        views.push_back(Transform::ExcitationEnergyFraction(F_MS, Slice(None, system.electrons()), Slice(system.electrons(), None), unoptimized_contraction.at(k).size() / 2));
     }
 
     // define the contraction path

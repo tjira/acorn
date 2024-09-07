@@ -3,6 +3,5 @@
         "path" : "example/molecule/water.xyz",
         "basis" : "sto-3g"
     },
-    "hartree_fock" : {
-    }
+    "hartree_fock" : {}
 }

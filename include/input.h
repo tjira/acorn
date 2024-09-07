@@ -4,7 +4,7 @@
 
 struct Input {
     struct System {
-        std::string basis, path;
+        std::string basis, path; int charge, multiplicity;
     } system;
     struct Wavefunction {
         int dimension, grid_points; double mass, momentum;
@@ -15,6 +15,7 @@ struct Input {
         double precision;
     } integral;
     struct HartreeFock {
+        bool generalized;
         int diis_size, max_iter;
         double threshold;
         struct ConfigurationInteraction {
@@ -50,13 +51,13 @@ struct Input {
 
 extern nlohmann::json default_input;
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::System, basis, path);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::System, basis, path, charge, multiplicity);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Wavefunction, dimension, mass, momentum, grid_limits, grid_points, guess);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral, precision);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::ConfigurationInteraction, excitation);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::CoupledCluster, excitation, perturbation, max_iter, threshold);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::MollerPlesset, order);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock, diis_size, max_iter, threshold, configuration_interaction, coupled_cluster, moller_plesset);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock, diis_size, max_iter, threshold, configuration_interaction, coupled_cluster, moller_plesset, generalized);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::QuantumDynamics::DataExport, diabatic_wavefunction, adiabatic_wavefunction, diabatic_density, adiabatic_density, diabatic_population, adiabatic_population, diabatic_potential, adiabatic_potential, energy, position, momentum, acf);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::QuantumDynamics, potential, imaginary, real, iterations, time_step, data_export);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::DataExport, energy, position, momentum, diabatic_population, adiabatic_population);

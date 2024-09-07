@@ -28,113 +28,6 @@ Eigen::MatrixXd ClassicalDynamics::evaluate_potential_derivative(std::vector<Exp
     return (potential_plus - potential_minus) / 0.0002;
 }
 
-void ClassicalDynamics::export_trajectories(const std::vector<TrajectoryData>& trajectory_data_vector, int mass) const {
-    // define the output data matrix and the eigenvalue solver
-    Eigen::MatrixXd data_matrix; Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver;
-
-    // export the diabatic density matrix
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.diabatic_population) {
-
-        // create the matrix containing the diabatic populations
-        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, input.potential.size());
-
-        // fill the matrix with the diabatic populations
-        for (int i = 0; i < input.trajectories; i++) {
-            for (int j = 0; j < input.iterations + 1; j++) {
-
-                // define the pseudo density matrix
-                Eigen::VectorXd pseudo_density = Eigen::VectorXd::Zero(input.potential.size()); pseudo_density(trajectory_data_vector.at(i).state(j)) = 1;
-
-                // create the solver for the potential matrix
-                if (input.adiabatic) solver = Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd>(trajectory_data_vector.at(i).diabatic_potential.at(j));
-
-                // transform the pseudo density matrix
-                if (input.adiabatic) pseudo_density = (solver.eigenvectors() * pseudo_density.asDiagonal() * solver.eigenvectors().transpose()).diagonal().transpose();
-
-                // assign the adiabatic populations
-                data_matrix.row(j) += pseudo_density;
-            }
-        }
-
-        // export the diabatic populations
-        Export::EigenMatrixDouble(std::string("POPULATION_DIABATIC_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
-    }
-
-    // export the diabatic density matrix
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.adiabatic_population) {
-
-        // create the matrix containing the diabatic populations
-        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, input.potential.size());
-
-        // fill the matrix with the diabatic populations
-        for (int i = 0; i < input.trajectories; i++) {
-            for (int j = 0; j < input.iterations + 1; j++) {
-
-                // define the pseudo density matrix
-                Eigen::VectorXd pseudo_density = Eigen::VectorXd::Zero(input.potential.size()); pseudo_density(trajectory_data_vector.at(i).state(j)) = 1;
-
-                // create the solver for the potential matrix
-                if (!input.adiabatic) solver = Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd>(trajectory_data_vector.at(i).diabatic_potential.at(j));
-
-                // transform the pseudo density matrix
-                if (!input.adiabatic) pseudo_density = (solver.eigenvectors().transpose() * pseudo_density.asDiagonal() * solver.eigenvectors()).diagonal().transpose();
-
-                // assign the adiabatic populations
-                data_matrix.row(j) += pseudo_density;
-            }
-        }
-
-        // export the diabatic populations
-        Export::EigenMatrixDouble(std::string("POPULATION_ADIABATIC_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
-    }
-
-    // export the position
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.position) {
-
-        // create the matrix containing the position
-        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, trajectory_data_vector.size());
-
-        // fill the matrix with the position
-        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) data_matrix(j, i) = trajectory_data_vector.at(i).position.row(j)(0);
-
-        // export the position
-        Export::EigenMatrixDouble(std::string("POSITION_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix, time_variable);
-    }
-
-    // export the momentum
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.position) {
-
-        // create the matrix containing the momentum
-        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, trajectory_data_vector.size());
-
-        // fill the matrix with the momentum
-        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) data_matrix.row(j)(i) = trajectory_data_vector.at(i).velocity.row(j)(0) * mass;
-
-        // export the momentum
-        Export::EigenMatrixDouble(std::string("MOMENTUM_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix, time_variable);
-    }
-
-    // export the enrgy
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.position) {
-
-        // create the matrix containing the energy
-        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, trajectory_data_vector.size());
-
-        // fill the matrix with the energy
-        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) {
-
-            // extract the potential matrix
-            const Eigen::MatrixXd& potential = input.adiabatic ? trajectory_data_vector.at(i).adiabatic_potential.at(j) : trajectory_data_vector.at(i).diabatic_potential.at(j);
-
-            // extract the state and assign the energy
-            int state = trajectory_data_vector.at(i).state(j); data_matrix.row(j)(i) = potential(state, state) + 0.5 * mass * trajectory_data_vector.at(i).velocity.row(j).squaredNorm();
-        }
-
-        // export the energy
-        Export::EigenMatrixDouble(std::string("ENERGY_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix, time_variable);
-    }
-}
-
 std::vector<Expression> ClassicalDynamics::get_potential_expression(const Wavefunction& initial_diabatic_wavefunction) const {
     // define the potential energy expressions
     std::vector<Expression> potential_expressions; potential_expressions.reserve(input.potential.size() * input.potential.size());
@@ -263,7 +156,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     Timepoint export_timer = Timer::Now(); std::printf("\nEXPORTING CLASSICAL DYNAMICS DATA: "); std::flush(std::cout);
 
     // export the trajectory data
-    export_trajectories(trajectory_data_vector, mass);
+    Export::ClassicalTrajectories(input, trajectory_data_vector, mass);
 
     // print the export time
     std::printf("%s\n", Timer::Format(Timer::Elapsed(export_timer)).c_str());

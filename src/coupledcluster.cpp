@@ -2,7 +2,7 @@
 
 torch::Tensor CoupledCluster::ccd_amplitudes(const System& system, const torch::Tensor& J_MS_AP, const torch::Tensor& E_MS_D, const torch::Tensor& T2) {
     // define the slices
-    auto o = Slice(None, system.occupied_spinorbitals()), v = Slice(system.occupied_spinorbitals(), None);
+    auto o = Slice(None, system.electrons()), v = Slice(system.electrons(), None);
 
     // define the linear terms
     torch::Tensor lccd1 = 0.5 * torch::einsum("abcd,cdij->abij", {J_MS_AP.index({v, v, v, v}), T2});
@@ -27,20 +27,20 @@ torch::Tensor CoupledCluster::ccd_amplitudes(const System& system, const torch::
 
 std::tuple<torch::Tensor, torch::Tensor> CoupledCluster::ccsd_amplitudes(const System& system, const torch::Tensor& F_MS, const torch::Tensor& J_MS_AP, const torch::Tensor& E_MS_S, const torch::Tensor& E_MS_D, const torch::Tensor& T1, const torch::Tensor& T2) {
     // define the slices
-    auto o = Slice(None, system.occupied_spinorbitals()), v = Slice(system.occupied_spinorbitals(), None);
+    auto o = Slice(None, system.electrons()), v = Slice(system.electrons(), None);
 
     // define the tau and tilde tau tensors
     torch::Tensor ttau = T2 + 0.5 * torch::einsum("ai,bj->abij", {T1, T1}) - 0.5 * torch::einsum("ai,bj->abij", {T1, T1}).swapaxes(2, 3);
     torch::Tensor tau  = T2 +       torch::einsum("ai,bj->abij", {T1, T1}) -       torch::einsum("ai,bj->abij", {T1, T1}).swapaxes(2, 3);
 
     // define the F intermediates
-    torch::Tensor Fae = (1 - torch::eye(system.virtual_spinorbitals(),  torch::kDouble)) * F_MS.index({v, v}) - 0.5 * torch::einsum("me,am->ae",     {F_MS.index({o, v}),          T1  })
-                                                                                                              +       torch::einsum("mafe,fm->ae",   {J_MS_AP.index({o, v, v, v}), T1  })
-                                                                                                              - 0.5 * torch::einsum("mnef,afmn->ae", {J_MS_AP.index({o, o, v, v}), ttau});
-    torch::Tensor Fmi = (1 - torch::eye(system.occupied_spinorbitals(), torch::kDouble)) * F_MS.index({o, o}) + 0.5 * torch::einsum("me,ei->mi",     {F_MS.index({o, v}),          T1  })
-                                                                                                              +       torch::einsum("mnie,en->mi",   {J_MS_AP.index({o, o, o, v}), T1  })
-                                                                                                              + 0.5 * torch::einsum("mnef,efin->mi", {J_MS_AP.index({o, o, v, v}), ttau});
-    torch::Tensor Fme =                                                                    F_MS.index({o, v}) +       torch::einsum("mnef,fn->me",   {J_MS_AP.index({o, o, v, v}), T1  });
+    torch::Tensor Fae = (1 - torch::eye(system.virtual_spinorbitals(), torch::kDouble)) * F_MS.index({v, v}) - 0.5 * torch::einsum("me,am->ae",     {F_MS.index({o, v}),          T1  })
+                                                                                                             +       torch::einsum("mafe,fm->ae",   {J_MS_AP.index({o, v, v, v}), T1  })
+                                                                                                             - 0.5 * torch::einsum("mnef,afmn->ae", {J_MS_AP.index({o, o, v, v}), ttau});
+    torch::Tensor Fmi = (1 - torch::eye(system.electrons(),            torch::kDouble)) * F_MS.index({o, o}) + 0.5 * torch::einsum("me,ei->mi",     {F_MS.index({o, v}),          T1  })
+                                                                                                             +       torch::einsum("mnie,en->mi",   {J_MS_AP.index({o, o, o, v}), T1  })
+                                                                                                             + 0.5 * torch::einsum("mnef,efin->mi", {J_MS_AP.index({o, o, v, v}), ttau});
+    torch::Tensor Fme =                                                                   F_MS.index({o, v}) +       torch::einsum("mnef,fn->me",   {J_MS_AP.index({o, o, v, v}), T1  });
 
     // define the supporting tensors for the W intermediates
     torch::Tensor P1   =            torch::einsum("ej,mnie->mnij", {T1, J_MS_AP.index({o, o, o, v})});
@@ -91,7 +91,7 @@ std::tuple<torch::Tensor, torch::Tensor> CoupledCluster::ccsd_amplitudes(const S
 
 double CoupledCluster::ccsd_energy(const System& system, const torch::Tensor& F_MS, const torch::Tensor& J_MS_AP, const torch::Tensor& T1, const torch::Tensor& T2) {
     // define the CCSD energy and the slices
-    double energy_ccsd = 0; auto o = Slice(None, system.occupied_spinorbitals()), v = Slice(system.occupied_spinorbitals(), None);
+    double energy_ccsd = 0; auto o = Slice(None, system.electrons()), v = Slice(system.electrons(), None);
 
     // calculate the CCSD energy
     energy_ccsd +=        torch::einsum("ia,ai",      {F_MS.index({o, v}),          T1    }).item<double>();
@@ -104,7 +104,7 @@ double CoupledCluster::ccsd_energy(const System& system, const torch::Tensor& F_
 
 double CoupledCluster::ccd_energy(const System& system, const torch::Tensor& J_MS_AP, const torch::Tensor& T2) {
     // define the slices
-    auto o = Slice(None, system.occupied_spinorbitals()), v = Slice(system.occupied_spinorbitals(), None);
+    auto o = Slice(None, system.electrons()), v = Slice(system.electrons(), None);
 
     // return the CCD energy
     return 0.25 * torch::einsum("ijab,abij", {J_MS_AP.index({o, o, v, v}), T2}).item<double>();
@@ -112,7 +112,7 @@ double CoupledCluster::ccd_energy(const System& system, const torch::Tensor& J_M
 
 double CoupledCluster::perturbation_triple(const System& system, const torch::Tensor& J_MS_AP, const torch::Tensor& E_MS_T, const torch::Tensor& T1, const torch::Tensor& T2) {
     // define the slices
-    auto o = Slice(None, system.occupied_spinorbitals()), v = Slice(system.occupied_spinorbitals(), None);
+    auto o = Slice(None, system.electrons()), v = Slice(system.electrons(), None);
 
     // define the first helper tensor
     torch::Tensor P1 = torch::einsum("ai,jkbc->abcijk", {T1, J_MS_AP.index({o, o, v, v})}); torch::Tensor T3D = P1.clone();
@@ -146,10 +146,10 @@ double CoupledCluster::perturbation_triple(const System& system, const torch::Te
 
 std::tuple<torch::Tensor, double>  CoupledCluster::ccd_scf(const System& system, const torch::Tensor& F_MS, const torch::Tensor& J_MS_AP) const {
     // define the slices
-    auto o = Slice(None, system.occupied_spinorbitals()), v = Slice(system.occupied_spinorbitals(), None);
+    auto o = Slice(None, system.electrons()), v = Slice(system.electrons(), None);
 
     // define the excitation energy tensors
-    torch::Tensor E_MS_D = Transform::ExcitationEnergyFraction(F_MS, Slice(None, system.occupied_spinorbitals()), Slice(system.occupied_spinorbitals(), None), 2);
+    torch::Tensor E_MS_D = Transform::ExcitationEnergyFraction(F_MS, Slice(None, system.electrons()), Slice(system.electrons(), None), 2);
 
     // initialize the guess for amplitudes
     torch::Tensor T2 = J_MS_AP.index({v, v, o, o}) * E_MS_D;
@@ -182,14 +182,14 @@ std::tuple<torch::Tensor, double>  CoupledCluster::ccd_scf(const System& system,
 
 std::tuple<torch::Tensor, torch::Tensor, double>  CoupledCluster::ccsd_scf(const System& system, const torch::Tensor& F_MS, const torch::Tensor& J_MS_AP) const {
     // define the slices
-    auto o = Slice(None, system.occupied_spinorbitals()), v = Slice(system.occupied_spinorbitals(), None);
+    auto o = Slice(None, system.electrons()), v = Slice(system.electrons(), None);
 
     // define the excitation energy tensors
-    torch::Tensor E_MS_S = Transform::ExcitationEnergyFraction(F_MS, Slice(None, system.occupied_spinorbitals()), Slice(system.occupied_spinorbitals(), None), 1);
-    torch::Tensor E_MS_D = Transform::ExcitationEnergyFraction(F_MS, Slice(None, system.occupied_spinorbitals()), Slice(system.occupied_spinorbitals(), None), 2);
+    torch::Tensor E_MS_S = Transform::ExcitationEnergyFraction(F_MS, Slice(None, system.electrons()), Slice(system.electrons(), None), 1);
+    torch::Tensor E_MS_D = Transform::ExcitationEnergyFraction(F_MS, Slice(None, system.electrons()), Slice(system.electrons(), None), 2);
 
     // initialize the guess for amplitudes
-    torch::Tensor T1 = torch::zeros({system.virtual_spinorbitals(), system.occupied_spinorbitals()}, torch::kDouble), T2 = J_MS_AP.index({v, v, o, o}) * E_MS_D;
+    torch::Tensor T1 = torch::zeros({system.virtual_spinorbitals(), system.electrons()}, torch::kDouble), T2 = J_MS_AP.index({v, v, o, o}) * E_MS_D;
 
     // initialize the energy and print the header
     double energy_ccsd = 0; std::printf("\nCCSD ENERGY CALCULATION\n%6s %20s %8s %12s\n", "ITER", "ENERGY", "|dE|", "TIMER");
@@ -239,7 +239,7 @@ std::string CoupledCluster::get_name() const {
 
 double CoupledCluster::run(const System& system, const torch::Tensor& F_MS, const torch::Tensor& J_MS_AP) const {
     // define the slices, energy and amplitude tensors
-    auto o = Slice(None, system.occupied_spinorbitals()), v = Slice(system.occupied_spinorbitals(), None); double energy_cc = 0; torch::Tensor T1, T2;
+    auto o = Slice(None, system.electrons()), v = Slice(system.electrons(), None); double energy_cc = 0; torch::Tensor T1, T2;
 
     // extract the method booleans
     bool ccd = input.excitation.size() == 1 && input.excitation.at(0) == 2, ccsd = input.excitation.size() == 2 && input.excitation.at(0) == 1 && input.excitation.at(1) == 2;
@@ -255,7 +255,7 @@ double CoupledCluster::run(const System& system, const torch::Tensor& F_MS, cons
     if (ccd ) std::tie(    T2, energy_cc) = ccd_scf (system, F_MS, J_MS_AP);
 
     // make the T1 amplitudes zero if not calculated
-    if (T1.sizes().size() == 1 && T1.size(0) == 0) T1 = torch::zeros({system.virtual_spinorbitals(), system.occupied_spinorbitals()}, torch::kDouble);
+    if (T1.sizes().size() == 1 && T1.size(0) == 0) T1 = torch::zeros({system.virtual_spinorbitals(), system.electrons()}, torch::kDouble);
 
     // calculate the perturbation energy
     if (pt) energy_cc += perturbation_triple(system, J_MS_AP, Transform::ExcitationEnergyFraction(F_MS, o, v, 3), T1, T2);

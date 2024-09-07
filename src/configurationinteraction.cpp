@@ -15,20 +15,6 @@ std::tuple<std::vector<int>, std::vector<int>, int> ConfigurationInteraction::al
     return {deta, detb, swaps};
 }
 
-std::vector<std::vector<int>> ConfigurationInteraction::generate_all_configurations(const System& system) {
-    // define the determinant vector and single electron configurations
-    std::vector<std::vector<int>> configs = Combinations(system.basis_functions(), system.occupied_spatial_orbitals()); std::vector<std::vector<int>> dets(configs.size() * configs.size());
-
-    // generate all possible combinations of alpha and beta electrons
-    for (size_t i = 0; i < configs.size(); i++) for (size_t j = 0; j < configs.size(); j++) {
-        for (int k = 0; k < system.occupied_spatial_orbitals(); k++) dets.at(i * configs.size() + j).push_back(2 * configs.at(i).at(k) + 0);
-        for (int k = 0; k < system.occupied_spatial_orbitals(); k++) dets.at(i * configs.size() + j).push_back(2 * configs.at(j).at(k) + 1);
-    }
-
-    // return the determinant vector
-    return dets;
-}
-
 std::tuple<std::vector<int>, std::vector<int>> ConfigurationInteraction::get_common_and_unique_spinorbitals(std::vector<int> deta, const std::vector<int>& detb) {
     // define the determinants
     std::vector<int> common, unique;
@@ -84,13 +70,13 @@ std::tuple<torch::Tensor, torch::Tensor> ConfigurationInteraction::run(const Sys
     if (input.excitation.size() != 0) throw std::runtime_error("PROVIDED CI EXCITATION LEVEL NOT SUPPORTED");
 
     // start the timer for determinant generation
-    Timepoint generation_timer = Timer::Now(); std::printf("\nGENERATING ALL CONFIGURATIONS: ");
+    Timepoint generation_timer = Timer::Now(); std::printf("\nGENERATING ALL CONFIGURATIONS: "); std::flush(std::cout);
 
     // generate the configurations and define the CI hamiltonian data
-    std::vector<std::vector<int>> dets = generate_all_configurations(system); std::vector<double> hamiltonian_data(dets.size() * dets.size(), 0);
+    std::vector<std::vector<int>> dets = Combinations(2 * system.basis_functions(), system.electrons()); std::vector<double> hamiltonian_data(dets.size() * dets.size(), 0);
 
     // print the time taken to generate the configurations
-    std::printf("%s\nGENERATING THE CI HAMILTONIAN: ", Timer::Format(Timer::Elapsed(generation_timer)).c_str());
+    std::printf("%s\n\nNUMBER OF DETERMINANTS GENERATED: %lu\n\nGENERATING THE CI HAMILTONIAN: ", Timer::Format(Timer::Elapsed(generation_timer)).c_str(), dets.size()); std::flush(std::cout);
 
     // create element accesors for the Hamiltonian and J tensor
     torch::TensorAccessor<double, 2> H_MS_accessor = H_MS.accessor<double, 2>(); torch::TensorAccessor<double, 4> J_MS_AP_accessor = J_MS_AP.accessor<double, 4>();
@@ -114,7 +100,7 @@ std::tuple<torch::Tensor, torch::Tensor> ConfigurationInteraction::run(const Sys
     }
 
     // print the time taken to fill the Hamiltonian
-    std::printf("%s\nDIAGONALIZING THE HAMILTONIAN: ", Timer::Format(Timer::Elapsed(hamiltonian_timer)).c_str());
+    std::printf("%s\nDIAGONALIZING THE HAMILTONIAN: ", Timer::Format(Timer::Elapsed(hamiltonian_timer)).c_str()); std::flush(std::cout);
 
     // start the timer for diagonalization
     Timepoint diagonalization_timer = Timer::Now();

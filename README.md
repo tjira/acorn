@@ -50,9 +50,9 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ### Quantum Mechanical Methods
 
-* Numerically Exact Adiabatic & Nonadiabatic Quantum Dynamics
-* Hartree-Fock Method & Møller–Plesset Perturbation Theory
-* Configuration Interaction & Coupled Clusters Methods
+* Numerically Exact Adiabatic & Nonadiabatic Quantum Dynamics with Arbitrary Number of States & Dimensions
+* Restricted Hartree–Fock for Closed Shell & Generalized Hartree–Fock for Open Shell Systems
+* Møller–Plesset Perturbation Theory, Configuration Interaction & Coupled Cluster Methods
 
 ## Compilation
 
@@ -78,7 +78,7 @@ After the compilation the bin folder will be created along with the executables.
 
 ## Examples
 
-All the examples are located in `example/input` folder. To run an example Hartree-Fock calculation, execute the `acorn -i example/input.hf.json` command from the project root. Feel free to explore all the examples.
+All the examples are located in `example/input` folder. To run an example Hartree-Fock calculation, execute the `acorn -i example/input/hf.json` command from the project root. Feel free to explore all the examples.
 
 ## Credits
 
@@ -86,5 +86,6 @@ All the examples are located in `example/input` folder. To run an example Hartre
 * [eigen](https://gitlab.com/libeigen/eigen) - C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms.
 * [exprtk](https://github.com/ArashPartow/exprtk) - C++ Mathematical Expression Parsing and Evaluation Library.
 * [fftw](https://www.fftw.org) - C Subroutine Library for Computing the Discrete Fourier Transform.
+* [json](https://github.com/nlohmann/json) - JSON for Modern C++.
 * [libint](https://github.com/evaleev/libint) - High-Performance Library for Computing Gaussian Integrals in Quantum Mechanics.
 * [pytorch](https://github.com/pytorch/pytorch) - Tensors and Dynamic neural networks in Python with strong GPU acceleration.

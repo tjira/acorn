@@ -20,7 +20,7 @@ std::string Timer::Local() {
     std::time_t t = std::time(0); auto tm = *std::localtime(&t); std::stringstream strstream;
 
     // format the time as "day month data hour:minute:second year"
-    strstream << std::put_time(&tm, "%a %b %d %H:%M:%S %Y"); return strstream.str();
+    strstream << std::put_time(&tm, "%a %b %e %H:%M:%S %Y"); return strstream.str();
 }
 
 Timepoint Timer::Now() {

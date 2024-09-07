@@ -1,0 +1,16 @@
+{
+    "wavefunction" : {
+        "guess" : ["exp(-((x-1)^2+(y-1)^2+(z-1)^2))", "0"],
+        "dimension" : 3,
+        "grid_limits" : [-8, 8],
+        "grid_points" : 64,
+        "mass" : 1.0,
+        "momentum" : 0.0
+    },
+    "quantum_dynamics" : {
+        "potential" : [["0.5*(x^2+y^2+z^2)"]],
+        "real" : 1,
+        "iterations" : 1000,
+        "time_step" : 0.1
+    }
+}

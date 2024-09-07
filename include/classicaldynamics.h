@@ -24,3 +24,7 @@ public:
 private:
     Input::ClassicalDynamics input;
 };
+
+namespace Export {
+    void ClassicalTrajectories(const Input::ClassicalDynamics& input, const std::vector<ClassicalDynamics::TrajectoryData>& trajectory_data_vector, int mass);
+}

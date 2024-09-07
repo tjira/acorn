@@ -4,7 +4,9 @@ nlohmann::json default_input = R"(
 {
     "system" : {
         "path" : "molecule.xyz",
-        "basis" : "sto-3g"
+        "basis" : "sto-3g",
+        "charge" : 0,
+        "multiplicity" : 1
     },
     "wavefunction" : {
         "guess" : ["-(x-1)^2"],
@@ -24,6 +26,7 @@ nlohmann::json default_input = R"(
         "precision" : 1e-12
     },
     "hartree_fock" : {
+        "generalized" : false,
         "diis_size" : 5,
         "max_iter" : 100,
         "threshold" : 1e-8,

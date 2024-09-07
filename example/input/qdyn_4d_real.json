@@ -1,0 +1,16 @@
+{
+    "wavefunction" : {
+        "guess" : ["exp(-((r1-1)^2+(r2-1)^2+(r3-1)^2+(r4-1)^2))", "0"],
+        "dimension" : 4,
+        "grid_limits" : [-8, 8],
+        "grid_points" : 64,
+        "mass" : 1.0,
+        "momentum" : 0.0
+    },
+    "quantum_dynamics" : {
+        "potential" : [["0.5*(r1^2+r2^2+r3^2+r4^2)"]],
+        "real" : 1,
+        "iterations" : 1000,
+        "time_step" : 0.1
+    }
+}

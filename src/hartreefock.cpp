@@ -1,18 +1,43 @@
 #include "hartreefock.h"
 
-torch::Tensor HartreeFock::get_density(const System& system, const torch::Tensor& C_MO) {
-    return 2 * C_MO.index({"...", Slice(None, system.occupied_spatial_orbitals())}).mm(C_MO.index({"...", Slice(None, system.occupied_spatial_orbitals())}).swapaxes(0, 1));
+torch::Tensor HartreeFock::get_density(const System& system, const torch::Tensor& C_MO) const {
+    // define the prefactor and occupied orbitals (spatial or spin)
+    double factor = input.generalized ? 1.0 : 2.0; int occupied_orbitals = input.generalized ? system.electrons() : system.electrons() / 2;
+
+    // return the density matrix
+    return factor * C_MO.index({"...", Slice(None, occupied_orbitals)}).mm(C_MO.index({"...", Slice(None, occupied_orbitals)}).swapaxes(0, 1));
 }
 
-double HartreeFock::get_energy(const torch::Tensor& H_AO, const torch::Tensor& F_AO, const torch::Tensor& D_MO) {
+double HartreeFock::get_energy(const torch::Tensor& H_AO, const torch::Tensor& F_AO, const torch::Tensor& D_MO) const {
     return 0.5 * (D_MO * (H_AO + F_AO)).sum().item<double>();
 }
 
-torch::Tensor HartreeFock::get_fock(const torch::Tensor& H_AO, const torch::Tensor& J_AO, const torch::Tensor& D_MO) {
-    return H_AO + torch::einsum("ijkl,ij->kl", {J_AO - 0.5 * J_AO.swapaxes(0, 3), D_MO});
+torch::Tensor HartreeFock::get_fock(const torch::Tensor& H_AO, const torch::Tensor& J_AO, const torch::Tensor& D_MO) const {
+    return H_AO + torch::einsum("ijkl,ij->kl", {J_AO - (input.generalized ? 1.0 : 0.5) * J_AO.swapaxes(0, 3), D_MO});
 }
 
-torch::Tensor HartreeFock::run(const System& system, const torch::Tensor& H_AO, const torch::Tensor& S_AO, const torch::Tensor& J_AO, torch::Tensor D_MO) const {
+std::tuple<torch::Tensor, torch::Tensor, double> HartreeFock::run(const System& system, const torch::Tensor& H_AO, const torch::Tensor& S_AO, const torch::Tensor& J_AO, torch::Tensor D_MO) const {
+    // throw an error if the system is open shell and not specified as generalized
+    if (system.get_multi() != 1 && !input.generalized) throw std::runtime_error("OPEN SHELL SYSTEMS REQUIRE GENERALIZED HARTREE-FOCK");
+
+    // define the matrices in the spinorbital basis
+    torch::Tensor J_AS, H_AS, S_AS, D_MS;
+
+    // transform the coulomb tensor
+    if (input.generalized) J_AS = torch::kron(torch::eye(2, 2, torch::kDouble), torch::kron(torch::eye(2, 2, torch::kDouble), J_AO).swapaxes(0, 3).swapaxes(1, 2).contiguous());
+
+    // transform the one-electron integrals
+    if (input.generalized) H_AS = torch::kron(torch::eye(2, 2, torch::kDouble), H_AO);
+    if (input.generalized) S_AS = torch::kron(torch::eye(2, 2, torch::kDouble), S_AO);
+
+    // transform the density matrix
+    if (input.generalized) D_MS = torch::kron(torch::eye(2, 2, torch::kDouble), D_MO);
+
+    // run the Hartree-Fock calculation
+    return input.generalized ? scf(system, H_AS, S_AS, J_AS, D_MS) : scf(system, H_AO, S_AO, J_AO, D_MO);
+}
+
+std::tuple<torch::Tensor, torch::Tensor, double> HartreeFock::scf(const System& system, const torch::Tensor& H_AO, const torch::Tensor& S_AO, const torch::Tensor& J_AO, torch::Tensor D_MO) const {
     // define the Fock matrix, orbital coefficients, electron energy and containers for errors and Fock matrices
     torch::Tensor F_AO = H_AO, C_MO = torch::zeros_like(D_MO); double energy_hf = 0; std::vector<torch::Tensor> errors, focks;
 
@@ -20,7 +45,7 @@ torch::Tensor HartreeFock::run(const System& system, const torch::Tensor& H_AO, 
     auto [SVAL, SVEC] = torch::linalg::eigh(S_AO, "L"); torch::Tensor X = SVEC.mm(torch::diag(1 / torch::sqrt(SVAL))).mm(SVEC.swapaxes(0, 1));
 
     // print the header
-    std::printf("HF ENERGY CALCULATION\n%6s %20s %8s %8s %12s\n", "ITER", "ENERGY", "|dE|", "|dD|", "TIMER");
+    std::printf("%s HF ENERGY CALCULATION\n%6s %20s %8s %8s %12s\n", input.generalized ? "GENERALIZED" : "RESTRICTED", "ITER", "ENERGY", "|dE|", "|dD|", "TIMER");
 
     // start the SCF procedure
     for (int i = 0; i < input.max_iter; i++) {
@@ -76,6 +101,9 @@ torch::Tensor HartreeFock::run(const System& system, const torch::Tensor& H_AO, 
         if (i == input.max_iter - 1) throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE SCF REACHED");
     }
 
-    // return the converged orbital coefficients
-    return C_MO;
+    // transform the results to the spin basis
+    torch::Tensor C_MS = input.generalized ? C_MO : Transform::CoefficientSpin(C_MO); torch::Tensor F_MS = input.generalized ? Transform::SingleSpatial(F_AO, C_MS) : Transform::SingleSpin(F_AO, C_MS);
+
+    // return the converged results
+    return {F_MS, C_MS, energy_hf};
 }
