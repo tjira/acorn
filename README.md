@@ -78,7 +78,7 @@ After the compilation the bin folder will be created along with the executables.
 
 ## Examples
 
-All the examples are located in `example/input` folder. To run an example Hartree-Fock calculation, execute the `acorn -i example/input/hf.json` command from the project root. Feel free to explore all the examples.
+All the examples are located in `example/input` folder. To run an example Hartree-Fock calculation, execute the corresponding example file using the `acorn -i example/input/hf.json` command from the project root. Feel free to explore all the examples.
 
 ## Credits
 
