@@ -37,12 +37,12 @@ std::tuple<torch::Tensor, torch::Tensor, double> HartreeFock::run(const System& 
     return input.generalized ? scf(system, H_AS, S_AS, J_AS, D_MS) : scf(system, H_AO, S_AO, J_AO, D_MO);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, double> HartreeFock::scf(const System& system, const torch::Tensor& H_AO, const torch::Tensor& S_AO, const torch::Tensor& J_AO, torch::Tensor D_MO) const {
+std::tuple<torch::Tensor, torch::Tensor, double> HartreeFock::scf(const System& system, const torch::Tensor& H, const torch::Tensor& S, const torch::Tensor& J, torch::Tensor D) const {
     // define the Fock matrix, orbital coefficients, electron energy and containers for errors and Fock matrices
-    torch::Tensor F_AO = H_AO, C_MO = torch::zeros_like(D_MO); double energy_hf = 0; std::vector<torch::Tensor> errors, focks;
+    torch::Tensor F = H, C = torch::zeros_like(D); double energy_hf = 0; std::vector<torch::Tensor> errors, focks;
 
     // calculate the complementary X matrix as square root of the inverse of the overlap matrix
-    auto [SVAL, SVEC] = torch::linalg::eigh(S_AO, "L"); torch::Tensor X = SVEC.mm(torch::diag(1 / torch::sqrt(SVAL))).mm(SVEC.swapaxes(0, 1));
+    auto [SVAL, SVEC] = torch::linalg::eigh(S, "L"); torch::Tensor X = SVEC.mm(torch::diag(1 / torch::sqrt(SVAL))).mm(SVEC.swapaxes(0, 1));
 
     // print the header
     std::printf("%s HF ENERGY CALCULATION\n%6s %20s %8s %8s %12s\n", input.generalized ? "GENERALIZED" : "RESTRICTED", "ITER", "ENERGY", "|dE|", "|dD|", "TIMER");
@@ -54,10 +54,10 @@ std::tuple<torch::Tensor, torch::Tensor, double> HartreeFock::scf(const System& 
         Timepoint iteration_timer = Timer::Now();
 
         // calculate the Fock matrix and save the previous values
-        F_AO = get_fock(H_AO, J_AO, D_MO); torch::Tensor D_MO_P = D_MO; double energy_hf_prev = energy_hf;
+        F = get_fock(H, J, D); torch::Tensor D_P = D; double energy_hf_prev = energy_hf;
 
         // calculate the error vector and append it to the container along with the Fock matrix
-        torch::Tensor error = S_AO.mm(D_MO).mm(F_AO) - F_AO.mm(D_MO).mm(S_AO); if (i) errors.push_back(error), focks.push_back(F_AO);
+        torch::Tensor error = S.mm(D).mm(F) - F.mm(D).mm(S); if (i) errors.push_back(error), focks.push_back(F);
 
         // truncate the error and Fock vector containers if they exceed the DIIS size
         if (i > input.diis_size) errors.erase(errors.begin()), focks.erase(focks.begin());
@@ -79,30 +79,30 @@ std::tuple<torch::Tensor, torch::Tensor, double> HartreeFock::scf(const System& 
             torch::Tensor c = torch::linalg::solve(B, b, true);
 
             // extrapolate the Fock matrix
-            F_AO = c.index({0}) * focks.at(0); for (int j = 1; j < input.diis_size; j++) F_AO += c.index({j}) * focks.at(j);
+            F = c.index({0}) * focks.at(0); for (int j = 1; j < input.diis_size; j++) F += c.index({j}) * focks.at(j);
         }
 
         // solve the Roothaan equations
-        torch::Tensor E_MO; std::tie(E_MO, C_MO) = torch::linalg::eigh(X.mm(F_AO).mm(X), "L"); C_MO = X.mm(C_MO);
+        torch::Tensor E; std::tie(E, C) = torch::linalg::eigh(X.mm(F).mm(X), "L"); C = X.mm(C);
 
         // calculate the new density and energy
-        D_MO = get_density(system, C_MO), energy_hf = get_energy(H_AO, F_AO, D_MO);
+        D = get_density(system, C), energy_hf = get_energy(H, F, D);
 
         // calculate the errors
-        double error_energy = std::abs(energy_hf - energy_hf_prev), error_density = (D_MO - D_MO_P).norm().item<double>();
+        double error_energy = std::abs(energy_hf - energy_hf_prev), error_density = (D - D_P).norm().item<double>();
 
         // print the iteration info
         std::printf("%6d %20.14f %.2e %.2e %s %s\n", i + 1, energy_hf, error_energy, error_density, Timer::Format(Timer::Elapsed(iteration_timer)).c_str(), input.diis_size && i >= input.diis_size ? "DIIS" : "");
 
         // finish if covergence reached
-        if (std::abs(energy_hf - energy_hf_prev) < input.threshold && (D_MO - D_MO_P).norm().item<double>() < input.threshold) break;
+        if (std::abs(energy_hf - energy_hf_prev) < input.threshold && (D - D_P).norm().item<double>() < input.threshold) break;
 
         // throw an exception if the maximum number of iterations reached
         if (i == input.max_iter - 1) throw std::runtime_error("MAXIMUM NUMBER OF ITERATIONS IN THE SCF REACHED");
     }
 
     // transform the results to the spin basis
-    torch::Tensor C_MS = input.generalized ? C_MO : Transform::CoefficientSpin(C_MO); torch::Tensor F_MS = input.generalized ? Transform::SingleSpatial(F_AO, C_MS) : Transform::SingleSpin(F_AO, C_MS);
+    torch::Tensor C_MS = input.generalized ? C : Transform::CoefficientSpin(C); torch::Tensor F_MS = input.generalized ? Transform::SingleSpatial(F, C_MS) : Transform::SingleSpin(F, C_MS);
 
     // return the converged results
     return {F_MS, C_MS, energy_hf};

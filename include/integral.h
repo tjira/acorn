@@ -6,7 +6,7 @@
 
 class Integral {
 public:
-    Integral(const Input::Integral& input);
+    Integral(const Input::Integral& input) : precision(input.precision) {}
 
     static torch::Tensor double_electron(libint2::Engine& engine, const libint2::BasisSet& shells);
     static torch::Tensor single_electron(libint2::Engine& engine, const libint2::BasisSet& shells);

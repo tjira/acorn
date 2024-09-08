@@ -85,6 +85,7 @@ std::tuple<torch::Tensor, torch::Tensor> ConfigurationInteraction::run(const Sys
     Timepoint hamiltonian_timer = Timer::Now();
 
     // fill the CI Hamiltonian
+    #pragma omp parallel for num_threads(nthread)
     for (size_t i = 0; i < dets.size(); i++) {
         for (size_t j = i; j < dets.size(); j++) {
             

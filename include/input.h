@@ -49,7 +49,7 @@ struct Input {
     } classical_dynamics;
 };
 
-extern nlohmann::json default_input;
+extern nlohmann::json default_input; extern int nthread;
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::System, basis, path, charge, multiplicity);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Wavefunction, dimension, mass, momentum, grid_limits, grid_points, guess);

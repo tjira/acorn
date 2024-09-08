@@ -82,3 +82,5 @@ nlohmann::json default_input = R"(
     }
 }
 )"_json;
+
+int nthread = 1;

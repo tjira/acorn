@@ -39,7 +39,6 @@ if __name__ == "__main__":
     parser.add_argument("--ccd", help="Perform the doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccsd", help="Perform the singles/doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccsd-t", help="Perform the singles/doubles coupled clusters calculation with third order excitations included using perturbation theory.", action=ap.BooleanOptionalAction)
-    parser.add_argument("--lccd", help="Perform the linearized doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp2", help="Perform the second order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp3", help="Perform the third order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
 
@@ -154,26 +153,6 @@ if __name__ == "__main__":
 
         # initialize the first guess for the t-amplitudes
         t1, t2 = np.zeros((2 * nvirt, 2 * nocc)), Jmsa[v, v, o, o] * Emsd
-
-        # LCCD loop
-        if args.lccd:
-            while abs(E_LCCD - E_LCCD_P) > args.threshold:
-                # collect all the distinct terms
-                lccd1 = 0.5 * np.einsum("abcd,cdij->abij", Jmsa[v, v, v, v], t2, optimize=True)
-                lccd2 = 0.5 * np.einsum("klij,abkl->abij", Jmsa[o, o, o, o], t2, optimize=True)
-                lccd3 =       np.einsum("akic,bcjk->abij", Jmsa[v, o, o, v], t2, optimize=True)
-
-                # apply the permuation operator and add it to the corresponding term
-                lccd3 = lccd3 + lccd3.transpose(1, 0, 3, 2) - lccd3.transpose(1, 0, 2, 3) - lccd3.transpose(0, 1, 3, 2)
-
-                # update the t-amplitudes
-                t2 = Emsd * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3)
-
-                # evaluate the energy
-                E_LCCD_P, E_LCCD = E_LCCD, (1 / 4) * np.einsum("ijab,abij", Jmsa[o, o, v, v], t2, optimize=True)
-
-            # print the LCCD energy
-            print("   LCCD ENERGY: {:.8f}".format(E_HF + E_LCCD + VNN))
 
         # CCD loop
         if args.ccd:

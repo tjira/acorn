@@ -34,11 +34,15 @@ std::unique_ptr<argparse::ArgumentParser> parse_arguments(int argc, char** argv)
     // add the command line arguments
     program->add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
     program->add_argument("-i", "--input").help("Input file to specify the calculations.").default_value("input.json");
+    program->add_argument("-n", "--nthread").help("Number of threads to use during calculation.").default_value(1).scan<'i', int>();
 
     // parse the command line arguments
     try {program->parse_args(argc, argv);} catch (const std::runtime_error& error) {
         if (!program->get<bool>("-h")) {std::cerr << error.what() << std::endl; exit(EXIT_FAILURE);}
     } if (program->get<bool>("-h")) {std::cout << program->help().str(); exit(EXIT_SUCCESS);}
+
+    // assign the number of threads
+    nthread = program->get<int>("-n");
 
     // return the program
     return program;
@@ -49,7 +53,17 @@ int main(int argc, char** argv) {
     Timepoint program_timer = Timer::Now(); std::unique_ptr<argparse::ArgumentParser> program = parse_arguments(argc, argv);
 
     // print the program header
-    std::printf("ACORN QUANTUM PACKAGE\n\nPROGRAM COMPILED: %s\nPROGRAM EXECUTED: %s\n\n", __TIMESTAMP__, Timer::Local().c_str());
+    std::printf("ACORN QUANTUM PACKAGE\n\n");
+
+    // print the library versions
+    std::printf("GCC: %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+    std::printf(", JSON: %d.%d.%d", NLOHMANN_JSON_VERSION_MAJOR, NLOHMANN_JSON_VERSION_MINOR, NLOHMANN_JSON_VERSION_PATCH);
+    std::printf(", LIBINT: %s", LIBINT_VERSION);
+    std::printf(", EIGEN: %d.%d.%d", EIGEN_WORLD_VERSION, EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
+    std::printf(", TORCH: %s\n\n", TORCH_VERSION);
+
+    // print the compilation and execution timestamps
+    std::printf("PROGRAM COMPILED: %s\nPROGRAM EXECUTED: %s\n\n", __TIMESTAMP__, Timer::Local().c_str());
 
     // parse the input file, initialize the system
     auto [input_json, input] = parse_input(program->get("-i")); System system; if (input_json.contains("system")) system = System(input.system);

@@ -98,6 +98,7 @@ double MollerPlesset::run(const System& system, const torch::Tensor& F_MS, const
         std::printf("\nMP%02d ENERGY CALCULATION\n%13s %17s %12s\n", i, "CONTR", "VALUE", "TIME");
 
         // loop over the contractions
+        #pragma omp parallel for num_threads(nthread)
         for (size_t j = 0; j < contributions.size(); j++) {
 
             // start the timer
