@@ -116,12 +116,52 @@ void Export::EigenMatrixDouble(const std::string& path, const Eigen::MatrixXd& m
     // copy the matrix and the independent variable to the export matrix
     if (independent_variable.size() > 0) export_matrix << independent_variable, matrix; else export_matrix = matrix;
 
-    // open the output file and write the dimensions to the header
-    std::ofstream file(path); file << export_matrix.rows() << " " << export_matrix.cols() << "\n" << std::fixed << std::setprecision(16);
+    // open the output file and check for errors
+    std::ofstream file(path); if (!file.good()) throw std::runtime_error("UNABLE TO OPEN FILE `" + path + "` FOR WRITING");
+
+    // write the dimensions to the header and set the formatting
+    file << export_matrix.rows() << " " << export_matrix.cols() << "\n" << std::fixed << std::setprecision(16);
 
     // write the matrix by rows
     for (int i = 0; i < export_matrix.rows(); i++, file << "\n") for (int j = 0; j < export_matrix.cols(); j++) {
         file << std::setw(22) << export_matrix(i, j) << (j < export_matrix.cols() - 1 ? " " : "");
+    }
+}
+
+void Export::TorchTensorDouble(const std::string& path, const torch::Tensor& tensor) {
+    // open the input file and check for errors
+    std::ofstream file(path); if (!file.good()) throw std::runtime_error("UNABLE TO OPEN FILE `" + path + "` FOR WRITING");
+
+    // write the dimensions to the header and set the formatting
+    for (size_t i = 0; i < tensor.sizes().size(); i++) {file << tensor.sizes().at(i) << (i < tensor.sizes().size() - 1 ? " " : "");} file << "\n" << std::fixed << std::setprecision(16);
+
+    // write 1st order tensor
+    if (tensor.sizes().size() == 1) {
+        for (int i = 0; i < tensor.sizes().at(0); i++) {
+            file << std::setw(22) << tensor.index({i}).item().toDouble() << "\n";
+        }
+    }
+
+    // write 2nd order tensor
+    if (tensor.sizes().size() == 2) {
+        for (int i = 0; i < tensor.sizes().at(0); i++) {
+            for (int j = 0; j < tensor.sizes().at(1); j++) {
+                file << std::setw(22) << tensor.index({i, j}).item().toDouble() << (j < tensor.sizes().at(1) - 1 ? " " : "");
+            } file << "\n";
+        }
+    }
+
+    // write 4th order tensor
+    if (tensor.sizes().size() == 4) {
+        for (int i = 0; i < tensor.sizes().at(0); i++) {
+            for (int j = 0; j < tensor.sizes().at(1); j++) {
+                for (int k = 0; k < tensor.sizes().at(2); k++) {
+                    for (int l = 0; l < tensor.sizes().at(3); l++) {
+                        file << std::setw(22) << tensor.index({i, j, k, l}).item().toDouble() << (k < tensor.sizes().at(2) - 1 ? " " : "");
+                    }
+                } file << "\n";
+            }
+        }
     }
 }
 

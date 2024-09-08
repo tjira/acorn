@@ -16,14 +16,13 @@ nlohmann::json default_input = R"(
         "mass" : 1.0,
         "momentum" : 0.0
     },
-    "model" : {
-        "potential" : [["0.5*x^2"]],
-        "dimension" : 1,
-        "mass" : 1.0,
-        "momentum" : 0.0
-    },
     "integral" : {
-        "precision" : 1e-12
+        "precision" : 1e-12,
+        "data_export" : {
+            "hamiltonian" : false,
+            "coulomb" : false,
+            "overlap" : false
+        }
     },
     "hartree_fock" : {
         "generalized" : false,

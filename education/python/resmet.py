@@ -31,7 +31,7 @@ if __name__ == "__main__":
     parser.add_argument("-h", "--help", help="Print this help message.", action=ap.BooleanOptionalAction)
 
     # add integral options
-    parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["S_AO.mat", "T_AO.mat", "V_AO.mat", "J_AO.mat"])
+    parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["H_AO.mat", "S_AO.mat", "J_AO.mat"])
 
     # method switches
     parser.add_argument("--cisd", help="Perform the singles/doubles configuration interaction calculation.", action=ap.BooleanOptionalAction)
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     coords *= 1.8897261254578281; o, v = slice(0, 0), slice(0, 0)
 
     # load the integrals from the files
-    S, T, V = np.loadtxt(args.int[0], skiprows=1), np.loadtxt(args.int[1], skiprows=1), np.loadtxt(args.int[2], skiprows=1); J = np.loadtxt(args.int[3], skiprows=1).reshape(4 * [S.shape[1]])
+    H, S = np.loadtxt(args.int[0], skiprows=1), np.loadtxt(args.int[1], skiprows=1); J = np.loadtxt(args.int[2], skiprows=1).reshape(4 * [S.shape[1]])
 
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
 
@@ -69,8 +69,7 @@ if __name__ == "__main__":
     E_HF, E_HF_P, VNN, nocc, nvirt, nbf = 0, 1, 0, sum(atoms) // 2, S.shape[0] - sum(atoms) // 2, S.shape[0]
 
     # define some matrices and tensors
-    K, H, eps = J.transpose(0, 3, 2, 1), T + V, np.array(nbf * [0])
-    F, D, C = np.zeros_like(S), np.zeros_like(S), np.zeros_like(S)
+    K, F, D, C, eps = J.transpose(0, 3, 2, 1), np.zeros_like(S), np.zeros_like(S), np.zeros_like(S), np.array(nbf * [0])
 
     # calculate the X matrix which is the inverse of the square root of the overlap matrix
     SEP = np.linalg.eigh(S); X = SEP[1] @ np.diag(1 / np.sqrt(SEP[0])) @ SEP[1].T
@@ -97,7 +96,7 @@ if __name__ == "__main__":
     print("    RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
     # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
-    if args.mp2 or args.mp3 or args.lccd or args.ccd or args.ccsd or args.ccsd_t or args.cisd or args.fci:
+    if args.mp2 or args.mp3 or args.ccd or args.ccsd or args.ccsd_t or args.cisd or args.fci:
 
         # define the occ and virt spinorbital slices shorthand
         o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)
@@ -146,7 +145,7 @@ if __name__ == "__main__":
             print("    MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 
     # COUPLED ELECTRON PAIR & COUPLED CLUSTERS =========================================================================================================================================================
-    if args.lccd or args.ccd or args.ccsd or args.ccsd_t:
+    if args.ccd or args.ccsd or args.ccsd_t:
 
         # energy containers for all the CC correlation energies
         E_LCCD, E_LCCD_P, E_LCCSD, E_LCCSD_P, E_CCD, E_CCD_P, E_CCSD, E_CCSD_P, E_CCSD_T = 0, 1, 0, 1, 0, 1, 0, 1, 0
@@ -318,7 +317,7 @@ if __name__ == "__main__":
                 dets.append(np.concatenate((2 * np.array(range(nocc)), 2 * np.array(electron) + 1)))
 
         # generate all possible determinants for FCI
-        if args.fci: dets = [np.concatenate((2 * np.array(alpha), 2 * np.array(beta) + 1)) for alpha, beta in it.product(it.combinations(range(nbf), nocc), it.combinations(range(nbf), nocc))]
+        if args.fci: dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]
 
         # define the CI Hamiltonian
         Hci = np.zeros([len(dets), len(dets)])

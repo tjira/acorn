@@ -13,6 +13,9 @@ struct Input {
     } wavefunction;
     struct Integral {
         double precision;
+        struct DataExport {
+            bool hamiltonian, coulomb, overlap;
+        } data_export;
     } integral;
     struct HartreeFock {
         bool generalized;
@@ -53,7 +56,8 @@ extern nlohmann::json default_input; extern int nthread;
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::System, basis, path, charge, multiplicity);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Wavefunction, dimension, mass, momentum, grid_limits, grid_points, guess);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral, precision);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral::DataExport, hamiltonian, coulomb, overlap);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral, precision, data_export);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::ConfigurationInteraction, excitation);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::CoupledCluster, excitation, perturbation, max_iter, threshold);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::MollerPlesset, order);
