@@ -12,7 +12,10 @@
             ["if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))", "0.005*exp(-x^2)"                                   ],
             ["0.005*exp(-x^2)",                                   "-if(x>0,0.01*(1-exp(-1.6*x)),-0.01*(1-exp(1.6*x)))"]
         ],
-        "adiabatic" : false,
+        "surface_hopping" : {
+            "type" : "landau-zener"
+        },
+        "adiabatic" : true,
         "iterations" : 3500,
         "time_step" : 1,
         "trajectories" : 1000,

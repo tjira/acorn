@@ -1,8 +1,15 @@
 #include "landauzener.h"
 
-int LandauZener::jump(const std::vector<Eigen::MatrixXd>& potential_vector, int iteration, int state, double time_step, double random_number) const {
+LandauZener::LandauZener(const Input::ClassicalDynamics::SurfaceHopping& input, bool adiabatic, int seed) : input(input), adiabatic(adiabatic) {
+    this->dist = std::uniform_real_distribution<double>(0, 1), this->mt = std::mt19937(seed);
+}
+
+int LandauZener::jump(const std::vector<Eigen::MatrixXd>& potential_vector, int iteration, int state, double time_step) {
     // generate all the possible pairs of states and the transition container
     std::vector<std::vector<int>> pairs = Combinations(potential_vector.front().cols(), 2); std::vector<std::tuple<int, double, bool>> transitions;
+
+    // define the random number
+    double random_number = dist(mt);
 
     // loop over all the pairs of states
     for (size_t i = 0; i < pairs.size(); i++) {

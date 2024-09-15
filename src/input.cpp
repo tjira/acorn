@@ -71,6 +71,9 @@ nlohmann::json default_input = R"(
         "trajectories" : 100,
         "time_step" : 1.0,
         "log_interval" : 1,
+        "surface_hopping" : {
+            "type" : "fewest-switches"
+        },
         "data_export" : {
             "diabatic_population" : false,
             "adiabatic_population" : false,

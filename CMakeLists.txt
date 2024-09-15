@@ -45,6 +45,7 @@ add_executable(acorn
     src/export.cpp
     src/expression.cpp
     src/fouriertransform.cpp
+    src/fewestswitches.cpp
     src/hartreefock.cpp
     src/input.cpp
     src/integral.cpp

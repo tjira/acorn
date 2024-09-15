@@ -1,6 +1,6 @@
 {
     "wavefunction" : {
-        "guess" : ["0", "0", "exp(-(x+10)^2)", "0", "0", "0"],
+        "guess" : ["0", "0", "0", "0", "exp(-(x+10)^2)", "0"],
         "dimension" : 1,
         "grid_limits" : [-24, 40],
         "grid_points" : 1024,
@@ -9,11 +9,14 @@
     },
     "classical_dynamics" : {
         "potential" : [
-            ["0.03*(tanh(1.6*x)+tanh(1.6*(x+7)))", "0.005*exp(-x^2)",                     "0.005*exp(-(x+7)^2)"],
-            ["0.005*exp(-x^2)",                    "-0.03*(tanh(1.6*x)+tanh(1.6*(x-7)))", "0.005*exp(-(x-7)^2)"],
-            ["0.005*exp(-(x+7)^2)",                "0.005*exp(-(x-7)^2)",                 "-0.03*(tanh(1.6*(x+7))-tanh(1.6*(x-7)))"]
+            ["0.01*tanh(0.5*x)", "0.001*exp(-x^2)", "0.002*exp(-x^2)"  ],
+            ["0.001*exp(-x^2)",  "0",               "0.001*exp(-x^2)"  ],
+            ["0.002*exp(-x^2)",  "0.001*exp(-x^2)", "-0.01*tanh(0.5*x)"]
         ],
-        "adiabatic" : false,
+        "surface_hopping" : {
+            "type" : "landau-zener"
+        },
+        "adiabatic" : true,
         "iterations" : 3500,
         "time_step" : 1,
         "trajectories" : 1000,

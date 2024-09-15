@@ -1,10 +1,10 @@
 #pragma once
 
-#include       "export.h"
-#include        "timer.h"
-#include "wavefunction.h"
-#include  "landauzener.h"
-#include         <random>
+#include          "timer.h"
+#include         "export.h"
+#include    "landauzener.h"
+#include   "wavefunction.h"
+#include "fewestswitches.h"
 
 class ClassicalDynamics {
 public:
@@ -14,6 +14,7 @@ public:
 
     ClassicalDynamics(const Input::ClassicalDynamics& input) : input(input) {}
 
+    Eigen::MatrixXd calculate_derivative_coupling(const Eigen::MatrixXd& phi) const;
     Eigen::MatrixXd evaluate_potential(std::vector<Expression>& potential_expressions, const Eigen::VectorXd& position) const;
     Eigen::MatrixXd evaluate_potential_derivative(std::vector<Expression>& potential_expressions, const Eigen::VectorXd& position) const;
     void export_trajectories(const std::vector<TrajectoryData>& trajectory_data_vector, int mass) const;

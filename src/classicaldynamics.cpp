@@ -83,7 +83,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     (initial_potential_solver.eigenvectors() * initial_diabatic_wavefunction.get_density() * initial_potential_solver.eigenvectors().transpose()).diagonal().maxCoeff(&initial_adiabatic_state);
 
     // print the header with fixed length
-    std::printf("\nCLASSICAL DYNAMICS\n%8s %8s %20s %20s %20s %5s", "TRAJ", "ITER", "EPOT", "EKIN", "ETOT", "STATE");
+    std::printf("CLASSICAL DYNAMICS\n%8s %8s %20s %20s %20s %5s", "TRAJ", "ITER", "EPOT", "EKIN", "ETOT", "STATE");
 
     // print the variable length header
     std::printf(" %*s %*s\n", (int)grid.cols() * 10, "POSITION", (int)grid.cols() * 10, "MOMENTUM");
@@ -91,14 +91,17 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     // loop over every trajectory
     for (int i = 0; i < input.trajectories; i++) {
 
-        // distributions for position and momentum along with an uniform unitary distribution
-        std::uniform_real_distribution<double> dist(0, 1); std::normal_distribution<double> positiondist(initial_position(0), 0.5), momentumdist(initial_momentum(0), 1.0);
+        // distributions for position and momentum along with the mersenne twister
+        std::normal_distribution<double> positiondist(initial_position(0), 0.5), momentumdist(initial_momentum(0), 1.0); std::mt19937 mt(input.trajectories * (input.seed + i) + 1);
 
-        // random number generator and state vector with initial condition
-        std::mt19937 mt(input.trajectories * (input.seed + i) + 1); Eigen::VectorXi state(input.iterations + 1); state(0) = input.adiabatic ? initial_adiabatic_state : initial_diabatic_state;
+        // random number generator, state vector with initial condition and seed
+        Eigen::VectorXi state(input.iterations + 1); state(0) = input.adiabatic ? initial_adiabatic_state : initial_diabatic_state; int seed = input.trajectories * (input.seed + i) + 1;
 
-        // define and initialize the hopping algorithms
-        LandauZener landauzener(input.adiabatic);
+        // define and initialize the population vector
+        std::vector<Eigen::VectorXcd> population(input.iterations + 1, Eigen::VectorXd(input.potential.size())); population.at(0).setZero(); population.at(0)(state(0)) = 1;
+
+        // define and initialie the surface hopping algorithms
+        FewestSwitches fewestswitches(input.surface_hopping, input.adiabatic, seed); LandauZener landauzener(input.surface_hopping, input.adiabatic, seed);
 
         // define the initial conditions
         Eigen::MatrixXd position(input.iterations + 1, grid.cols()), velocity(input.iterations + 1, grid.cols()), acceleration(input.iterations + 1, grid.cols());
@@ -106,8 +109,8 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
         // fill the initial conditions
         position.row(0).fill(positiondist(mt)), velocity.row(0).fill(momentumdist(mt) / mass), acceleration.row(0).fill(0);
 
-        // define a vector to contain diabatic potentials at each point
-        std::vector<Eigen::MatrixXd> diabatic_potential_vector(input.iterations + 1), adiabatic_potential_vector(input.iterations + 1);
+        // define a vector to contain diabatic potentials and eigenvectors phi
+        std::vector<Eigen::MatrixXd> diabatic_potential_vector(input.iterations + 1), adiabatic_potential_vector(input.iterations + 1), phi_vector(input.iterations + 1);
 
         // propagate the current trajectory
         for (int j = 0; j < input.iterations + 1; j++) {
@@ -121,14 +124,25 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             // move the system and set the next state to the same as before
             if (j) {position.row(j) = position.row(j - 1) + input.time_step * (velocity.row(j) + 0.5 * acceleration.row(j) * input.time_step), state(j) = state(j - 1);}
 
-            // calculate the potential at the current point and assign it to the container
-            Eigen::MatrixXd potential = evaluate_potential(potential_expressions, position.row(j)); diabatic_potential_vector.at(j) = potential;
+            // calculate the potential at the current point and assign it to the container and create the new state variable
+            Eigen::MatrixXd potential = evaluate_potential(potential_expressions, position.row(j)); diabatic_potential_vector.at(j) = potential; int new_state = state(j); 
 
-            // adiabatize the potential if requested
-            if (input.adiabatic) {Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(potential); potential = solver.eigenvalues().asDiagonal(), adiabatic_potential_vector.at(j) = potential;}
+            // adiabatization block
+            if (input.adiabatic) {
+
+                // diagonalize the potential and assign the eigenvectors to the phi vector and the eigenvalues to the potential
+                Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(potential); potential = solver.eigenvalues().asDiagonal(), adiabatic_potential_vector.at(j) = potential; phi_vector.at(j) = solver.eigenvectors();
+
+                // flip the eigenvectors if the diagonalization algorithm found the opposite one
+                if (j) for (int k = 0; k < phi_vector.at(j).cols(); k++) if ((phi_vector.at(j - 1).col(k).transpose() * phi_vector.at(j).col(k))(0) < 0) phi_vector.at(j).col(k) *= -1;
+            }
 
             // get the new state if we are at the crossing point according to the Landau-Zener algorithm
-            int new_state = state(j); if (j > 1) new_state = landauzener.jump(input.adiabatic ? adiabatic_potential_vector : diabatic_potential_vector, j, state(j), input.time_step, dist(mt));
+            if (input.surface_hopping.type == "landau-zener" && j > 1) {
+                new_state = landauzener.jump(input.adiabatic ? adiabatic_potential_vector : diabatic_potential_vector, j, state(j), input.time_step);
+            } else if (input.surface_hopping.type == "fewest-switches" && j) {
+                std::tie(population.at(j), new_state) = fewestswitches.jump(population.at(j - 1), phi_vector, potential.diagonal(), j, state(j), input.time_step);
+            }
 
             // update the velocity and the state
             if (double new_velocity = velocity.row(j).squaredNorm() - 2 * (potential(new_state, new_state) - potential(state(j), state(j))) / mass; new_state != state(j) && new_velocity > 0) {

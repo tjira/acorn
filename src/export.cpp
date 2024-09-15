@@ -6,6 +6,9 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
     // define the output data matrix and the eigenvalue solver
     Eigen::MatrixXd data_matrix; Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver;
 
+    // get the surface hopping algorithm name
+    std::string algorithm = input.surface_hopping.type == "landau-zener" ? "LZ" : input.surface_hopping.type == "fewest-switches" ? "FS" : "";
+
     // export the diabatic density matrix
     if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.diabatic_population) {
 
@@ -31,7 +34,7 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // export the diabatic populations
-        Export::EigenMatrixDouble(std::string("POPULATION_DIABATIC_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+        Export::EigenMatrixDouble(std::string("POPULATION_DIABATIC_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
 
     // export the diabatic density matrix
@@ -59,7 +62,7 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // export the diabatic populations
-        Export::EigenMatrixDouble(std::string("POPULATION_ADIABATIC_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+        Export::EigenMatrixDouble(std::string("POPULATION_ADIABATIC_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
 
     // export the position
@@ -72,7 +75,7 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) data_matrix(j, i) = trajectory_data_vector.at(i).position.row(j)(0);
 
         // export the position
-        Export::EigenMatrixDouble(std::string("POSITION_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("POSITION_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
     }
 
     // export the momentum
@@ -85,7 +88,7 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) data_matrix.row(j)(i) = trajectory_data_vector.at(i).velocity.row(j)(0) * mass;
 
         // export the momentum
-        Export::EigenMatrixDouble(std::string("MOMENTUM_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("MOMENTUM_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
     }
 
     // export the enrgy
@@ -105,7 +108,7 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // export the energy
-        Export::EigenMatrixDouble(std::string("ENERGY_LZ-") + (input.adiabatic ? "ADIABATIC" : "DIABATIC") + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("ENERGY_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
     }
 }
 

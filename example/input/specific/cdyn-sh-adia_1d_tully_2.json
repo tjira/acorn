@@ -12,7 +12,10 @@
             ["0",                    "0.015*exp(-0.06*x^2)"    ],
             ["0.015*exp(-0.06*x^2)", "-0.1*exp(-0.28*x^2)+0.05"]
         ],
-        "adiabatic" : false,
+        "surface_hopping" : {
+            "type" : "fewest-switches"
+        },
+        "adiabatic" : true,
         "iterations" : 3500,
         "time_step" : 1,
         "trajectories" : 1000,
