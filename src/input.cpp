@@ -72,6 +72,7 @@ nlohmann::json default_input = R"(
         "time_step" : 1.0,
         "log_interval" : 1,
         "surface_hopping" : {
+            "quantum_step_factor" : 10,
             "type" : "fewest-switches"
         },
         "data_export" : {

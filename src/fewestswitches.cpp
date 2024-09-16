@@ -1,6 +1,10 @@
 #include "fewestswitches.h"
 
 FewestSwitches::FewestSwitches(const Input::ClassicalDynamics::SurfaceHopping& input, bool adiabatic, int seed) : input(input), adiabatic(adiabatic) {
+    // throw an error if diabatic mode requested
+    if (!adiabatic) throw std::invalid_argument("DIABATIC MODE FOR FSSH NOT IMPLEMENTED YET");
+
+    // initialize the random number generator
     this->dist = std::uniform_real_distribution<double>(0, 1), this->mt = std::mt19937(seed);
 }
 
@@ -52,13 +56,13 @@ std::tuple<Eigen::VectorXcd, int> FewestSwitches::jump(Eigen::VectorXcd populati
     Eigen::MatrixXd derivative_coupling = calculate_derivative_coupling(phi_vector.at(iteration), phi_vector.at(iteration - 1), time_step); int new_state = state;
 
     // pripagate the populations
-    for (int k = 0; k < 10; k++) {
+    for (int k = 0; k < input.quantum_step_factor; k++) {
 
         // propagate the population and generate a random number
-        population = propagate_population(population, potential, derivative_coupling, time_step / (double)10); double random_number = dist(mt);
+        population = propagate_population(population, potential, derivative_coupling, time_step / (double)input.quantum_step_factor); double random_number = dist(mt);
 
         // calculate the hopping probabilities
-        std::vector<std::tuple<int, double>> hopping_probabilities = calculate_hopping_probabilities(population, derivative_coupling, state, time_step / (double)10);
+        std::vector<std::tuple<int, double>> hopping_probabilities = calculate_hopping_probabilities(population, derivative_coupling, state, time_step / (double)input.quantum_step_factor);
 
         // sort the transitions by probabilities from smallest to largest
         std::sort(hopping_probabilities.begin(), hopping_probabilities.end(), [](const auto& a, const auto& b) {return std::get<1>(a) < std::get<1>(b);});
