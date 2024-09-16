@@ -275,7 +275,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
     if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.adiabatic_population) {
 
         // create the container for the density matrix
-        data_matrix = Eigen::MatrixXd(iteration_data.size(), input.potential.size() * input.potential.size());
+        data_matrix = Eigen::MatrixXd(iteration_data.size(), input.potential.size());
 
         // fill the data matrix with adiabatic population matrix
         for (size_t i = 0; i < iteration_data.size(); i++) for (size_t j = 0; j < input.potential.size(); j++) {

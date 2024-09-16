@@ -2,7 +2,7 @@
 
 FewestSwitches::FewestSwitches(const Input::ClassicalDynamics::SurfaceHopping& input, bool adiabatic, int seed) : input(input), adiabatic(adiabatic) {
     // throw an error if diabatic mode requested
-    if (!adiabatic) throw std::invalid_argument("DIABATIC MODE FOR FSSH NOT IMPLEMENTED YET");
+    if (!adiabatic && input.type == "fewest-switches") throw std::invalid_argument("DIABATIC MODE FOR FSSH NOT IMPLEMENTED YET");
 
     // initialize the random number generator
     this->dist = std::uniform_real_distribution<double>(0, 1), this->mt = std::mt19937(seed);
