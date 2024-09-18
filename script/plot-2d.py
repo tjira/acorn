@@ -22,7 +22,7 @@ if __name__ == "__main__":
     args = parser.parse_args(); data = [np.loadtxt(file.split(":")[0], skiprows=1) for file in args.files];
 
     # array of plotted columns for each file
-    columns = [np.array(list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else range(args.animate if args.animate else data[i].shape[1] - 1))) for i in range(len(data))]
+    columns = [np.array(list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else [0])) for i in range(len(data))]
 
     # define the transform function for the data based on the columns
     transform = lambda data, columns: np.linalg.norm(data[:, columns], axis=1) if len(columns) > 1 else data[:, columns[0]]
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     fig.tight_layout()
 
     # create the animation
-    anim = am.FuncAnimation(fig, update, frames=min([(data[i].shape[1] - 1) // len(columns[i]) for i in range(len(data))]), interval=30) if args.animate else None
+    anim = am.FuncAnimation(fig, update, frames=min([(data[i].shape[1] - 2) // args.animate for i in range(len(data))]), interval=30) if args.animate else None
 
     # save the plot
     if args.png: fig.savefig("plot.png", dpi=300)
