@@ -61,7 +61,7 @@ void QuantumDynamics::print_iteration(int iteration, const IterationData& iterat
 
 void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunction_input) const {
     // initialize the timer for grid generation and print the grid generation timer
-    Timepoint grid_generation_timer = Timer::Now(); std::printf("\nINITIAL GRIDS AND POTENTIALS GENERATION: "); std::flush(std::cout);
+    Timepoint grid_generation_timer = Timer::Now(); std::printf("INITIAL GRIDS AND POTENTIALS GENERATION: "); std::flush(std::cout);
 
     // initialize the initial wavefunction and the grids
     auto [initial_diabatic_wavefunction, grid] = Wavefunction::Initialize(initial_diabatic_wavefunction_input); Eigen::MatrixXd fourier_grid = initial_diabatic_wavefunction.get_fourier_grid();
