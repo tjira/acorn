@@ -22,26 +22,36 @@ if __name__ == "__main__":
     args = parser.parse_args(); data = [np.loadtxt(file.split(":")[0], skiprows=1) for file in args.files];
 
     # array of plotted columns for each file
-    columns = [list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else range(args.animate if args.animate else data[i].shape[1] - 1)) for i in range(len(data))]
+    columns = [np.array(list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else range(args.animate if args.animate else data[i].shape[1] - 1))) for i in range(len(data))]
+
+    # define the transform function for the data based on the columns
+    transform = lambda data, columns: np.linalg.norm(data[:, columns], axis=1) if len(columns) > 1 else data[:, columns[0]]
 
     # calculate the limits of the plot
     vmin, vmax = min(map(lambda data: data[:, 2:].min(), data)), max(map(lambda data: data[:, 2:].max(), data))
 
-    # create the figure and axis and define a function that returns the line index based on the file and column
-    fig, ax = pt.subplots(figsize=(8, 8));
+    # create the figure and axis and define the empty plot array
+    fig, ax = pt.subplots(1, len(data), figsize=(4 * len(data), 4)); ax = ax if isinstance(ax, np.ndarray) else np.array([ax]); plots = []
 
-    x = data[0][:, 0].reshape(int(np.sqrt(data[0].shape[0])), int(np.sqrt(data[0].shape[0])))
-    y = data[0][:, 1].reshape(int(np.sqrt(data[0].shape[0])), int(np.sqrt(data[0].shape[0])))
-    z = data[0][:, 2 + columns[0][0]].reshape(int(np.sqrt(data[0].shape[0])), int(np.sqrt(data[0].shape[0])))
+    # fill the plot array
+    for i in range(len(data)):
 
-    plots = [ax.pcolormesh(x, y, z, vmin=vmin, vmax=vmax, cmap="twilight")]
+        # define the independent coordinates
+        x = data[i][:, 0].reshape(int(np.sqrt(data[i].shape[0])), int(np.sqrt(data[i].shape[0])))
+        y = data[i][:, 1].reshape(int(np.sqrt(data[i].shape[0])), int(np.sqrt(data[i].shape[0])))
+
+        # define the dependent coordinates
+        z = transform(data[i], 2 + columns[i]).reshape(int(np.sqrt(data[i].shape[0])), int(np.sqrt(data[i].shape[0])))
+
+        # plot the data
+        plots.append(ax[i].pcolormesh(x, y, z, vmin=vmin, vmax=vmax, cmap="twilight"))
 
     # plotting function
-    update = lambda frame: plots[0].set_array(data[0][:, 2 + frame * args.animate + columns[0][0]])
+    update = lambda frame: [plots[i].set_array(transform(data[i], 2 + frame * args.animate + columns[i])) for i in range(len(data))]
 
     # set the axis labels
-    if args.xlabel: ax.set_xlabel(args.xlabel);
-    if args.ylabel: ax.set_ylabel(args.ylabel)
+    if args.xlabel: [ax.set_xlabel(args.xlabel) for ax in ax]
+    if args.ylabel: [ax.set_ylabel(args.ylabel) for ax in ax]
 
     # set the tight layout
     fig.tight_layout()
