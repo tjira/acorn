@@ -29,13 +29,13 @@ where $\mathbf{C}^{MS}$ is the coefficient matrix in the MS basis, defined in th
 The CCD energy expression is given by
 
 \begin{equation}
-E_{\text{CCD}}=\frac{1}{4}\braket{ij||ab}t_{ab}^{ij}
+E_{\text{CCD}}=\frac{1}{4}\braket{ij||ab}t_{ij}^{ab}
 \end{equation}
 
-where the double excitation amplitudes $t_{ab}^{ij}$ are determined by solving the CCD amplitude equation. The CCD amplitude equations are given by
+where the double excitation amplitudes $t_{ij}^{ab}$ are determined by solving the CCD amplitude equation. The CCD amplitude equations are given by
 
 \begin{align}
-t_{ab}^{ij}=&\braket{ab||ij}+\frac{1}{2}\braket{ab||cd}t_{cd}^{ij}+\frac{1}{2}\braket{kl||ij}t_{ab}^{kl}+\hat{P}\_{(a/b)}\hat{P}\_{(i/j)}\braket{ak||ic}t_{cb}^{ij}-\frac{1}{2}\hat{P}\_{(a/b)}\braket{kl||cd}t_{ac}^{ij}t_{bd}^{kl} - \\\\\
+t_{ij}^{ab}=&\braket{ab||ij}+\frac{1}{2}\braket{ab||cd}t_{cd}^{ij}+\frac{1}{2}\braket{kl||ij}t_{ab}^{kl}+\hat{P}\_{(a/b)}\hat{P}\_{(i/j)}\braket{ak||ic}t_{cb}^{ij}-\frac{1}{2}\hat{P}\_{(a/b)}\braket{kl||cd}t_{ac}^{ij}t_{bd}^{kl}- \\\\\
 &-\frac{1}{2}\hat{P}\_{(i/j)}\braket{kl||cd}t_{ab}^{ik}t_{cd}^{jl}+\frac{1}{4}\braket{kl||cd}t_{cd}^{ij}t_{ab}^{kl}+\hat{P}\_{(i/j)}\braket{kl||cd}t_{ac}^{ik}t_{bd}^{jl}
 \end{align}
 
@@ -46,39 +46,42 @@ where $\hat{P}\_{(a/b)}$ and $\hat{P}\_{(i/j)}$ are permutation operators that e
 The CCSD energy expression is given by
 
 \begin{equation}
-E_{\text{CCSD}}=\mathbf{F}\_{ia}^{MS}t_a^i+\frac{1}{4}\braket{ij||ab}t_{ab}^{ij}+\frac{1}{2}\braket{ij||ab}t_{a}^{i}t_{b}^{j}
+E_{\text{CCSD}}=\mathbf{F}\_{ia}^{MS}t_a^i+\frac{1}{4}\braket{ij||ab}t_{ij}^{ab}+\frac{1}{2}\braket{ij||ab}t_{i}^{a}t_{b}^{j}
 \end{equation}
 
-where the single and double excitation amplitudes $t_a^i$ and $t_{ab}^{ij}$ are determined by solving the CCSD amplitude equations. To simplify the notation a little bit, we define the the $\mathscr{F}$ and $\mathscr{W}$ intermediates as
+where the single and double excitation amplitudes $t_a^i$ and $t_{ij}^{ab}$ are determined by solving the CCSD amplitude equations. To simplify the notation a little bit, we define the the $\mathscr{F}$ and $\mathscr{W}$ intermediates as
 
 
 \begin{align}
-\mathscr{F}\_{ae}=&\left(1-\delta\_{ae}\right)F\_{ae}-\frac{1}{2}\sum\_mF_{me}t_a^m+\sum\_{mf}t\_f^m\braket{ma||fe}-\frac{1}{2}\sum\_{mnf}\tilde{\tau}\_{af}^{mn}\braket{mn||ef} \\\\\
-\mathscr{F}\_{mi}=&\left(1-\delta\_{mi}\right)F\_{mi}+\frac{1}{2}\sum\_eF_{me}t_e^i+\sum\_{en}t\_e^n\braket{mn||ie}+\frac{1}{2}\sum\_{nef}\tilde{\tau}\_{ef}^{in}\braket{mn||ef} \\\\\
-\mathscr{F}\_{me}=&F_{me}+\sum\_{nf}t\_f^n\braket{mn||ef} \\\\\
-\mathscr{W}\_{mnij}=& \\\\\
-\mathscr{W}\_{abef}=& \\\\\
-\mathscr{W}\_{mbej}=&
+\mathscr{F}\_{ae}=&\left(1-\delta\_{ae}\right)F\_{ae}-\frac{1}{2}\sum\_mF_{me}t_m^a+\sum\_{mf}t\_m^f\braket{ma||fe}-\frac{1}{2}\sum\_{mnf}\tilde{\tau}\_{mn}^{af}\braket{mn||ef} \\\\\
+\mathscr{F}\_{mi}=&\left(1-\delta\_{mi}\right)F\_{mi}+\frac{1}{2}\sum\_eF_{me}t_i^e+\sum\_{en}t\_n^e\braket{mn||ie}+\frac{1}{2}\sum\_{nef}\tilde{\tau}\_{in}^{ef}\braket{mn||ef} \\\\\
+\mathscr{F}\_{me}=&F_{me}+\sum\_{nf}t\_n^f\braket{mn||ef} \\\\\
+\mathscr{W}\_{mnij}=&\braket{mn||ij}+\hat{P}\_{(i/j)}\sum_et_j^e\braket{mn||ie}+\frac{1}{4}\sum_{ef}\tau_{ij}^{ef}\braket{mn||ef} \\\\\
+\mathscr{W}\_{abef}=&\braket{ab||ef}-\hat{P}\_{(a/b)}\sum_et_m^b\braket{am||ef}+\frac{1}{4}\sum_{mn}\tau_{mn}^{ab}\braket{mn||ef} \\\\\
+\mathscr{W}\_{mbej}=&\braket{mb||ej}+\sum_ft_j^f\braket{mb||ef}-\sum_nt_n^b\braket{mn||ej}-\sum_{nf}\left(\frac{1}{2}t_{jn}^{fb}+t_j^ft_n^b\right)\braket{mn||ef}
 \end{align}
 
 and two-particle excitation operators as
 
 \begin{align}
-\tilde{\tau}\_{ab}^{ij}=&t_{ab}^{ij}+\frac{1}{2}\left(t_a^it_b^j-t_b^it_a^j\right) \\\\\
-\tau\_{ab}^{ij}=&t_{ab}^{ij}+t_a^it_b^j-t_b^it_a^j
+\tilde{\tau}\_{ij}^{ab}=&t_{ij}^{ab}+\frac{1}{2}\left(t_i^at_j^b-t_i^bt_j^a\right) \\\\\
+\tau\_{ij}^{ab}=&t_{ij}^{ab}+t_i^at_j^b-t_i^bt_j^a
 \end{align}
 
 The CCSD single amplitude equations are then given by
 
-\begin{equation}
-t_a^i=
-\end{equation}
+\begin{align}
+t_i^a=&F_{ai}^{MS}+\sum_et_i^e\mathscr{F}\_{ae}-\sum_mt_m^a\mathscr{F}\_{mi}\sum_{me}t_{im}^{ae}\mathscr{F}\_{me}-\sum_{nf}t_n^f\braket{na||if}- \\\\\
+&-\frac{1}{2}\sum_{mef}t_{im}^{ef}\braket{ma||ef}-\frac{1}{2}\sum_{men}t_{mn}^{ae}\braket{nm||ei}
+\end{align}
 
 The CCSD double amplitude equations are given by
 
-\begin{equation}
-t_{ab}^{ij}=
-\end{equation}
+\begin{align}
+t_{ij}^{ab}=&\braket{ab||ij}+\hat{P}\_{(a/b)}\sum_et_{ij}^{ae}\left(\mathscr{F}\_{be}-\frac{1}{2}\sum_mt_m^b\mathscr{F}\_{ae}\right)-\hat{P}\_{(i/j)}\sum_mt_{im}^{ab}\left(\mathscr{F}\_{mi}+\frac{1}{2}\sum_et_j^e\mathscr{F}\_{me}\right)+ \\\\\
+&+\frac{1}{2}\sum_{mn}\tau_{mn}^{ab}\mathscr{W}\_{mnij}+\frac{1}{2}\sum_{ef}\tau_{ij}^{ef}\mathscr{W}\_{abef}+\hat{P}\_{(i/j)}\hat{P}\_{(a/b)}\sum_{me}\left(t_{im}^{ae}\mathscr{W}\_{mbej}-t_i^et_m^a\braket{mb||ej}\right)+ \\\\\
+&+\hat{P}\_{(i/j)}\sum_et_i^e\braket{ab||ej}-\hat{P}\_{(a/b)}\sum_mt_m^a\braket{mb||ij}
+\end{align}
 
 The CCSD amplitude equations are, again, nonlinear and require iterative solution methods to obtain the final amplitudes. The initial guess for the amplitudes is often set to zero, and the equations are solved iteratively until convergence is achieved.
 

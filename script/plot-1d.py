@@ -10,6 +10,8 @@ if __name__ == "__main__":
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
     parser.add_argument("-a", "--animate", type=int, help="Perform the animation with the specified column interval.")
     parser.add_argument("-l", "--legend", type=str, nargs="+", help="Add a legend to the plot.")
+    parser.add_argument("-o", "--output", type=str, default="plot", help="The output file to save the plot.")
+    parser.add_argument("-t", "--title", type=str, help="The title of the plot.")
     parser.add_argument("-x", "--xlabel", type=str, help="The an x-axis label.")
     parser.add_argument("-y", "--ylabel", type=str, help="The an y-axis label.")
     parser.add_argument("--png", action="store_true", help="Save the plot as a png image.")
@@ -23,7 +25,7 @@ if __name__ == "__main__":
     args = parser.parse_args(); data = [np.loadtxt(file.split(":")[0], skiprows=1) for file in args.files];
 
     # array of plotted columns for each file
-    columns = [list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else [0]) for i in range(len(data))]
+    columns = [list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else range(args.animate if args.animate else data[i].shape[1] - 1)) for i in range(len(data))]
 
     # calculate the limits of the plot
     xmin, xmax = min(map(lambda data: data[:, 0 ].min(), data)), max(map(lambda data: data[:, 0 ].max(), data))
@@ -41,8 +43,11 @@ if __name__ == "__main__":
     # add the legend
     if args.legend: pt.legend(args.legend)
 
+    # set the title
+    if args.title: ax.set_title(args.title)
+
     # set the axis labels
-    if args.xlabel: ax.set_xlabel(args.xlabel);
+    if args.xlabel: ax.set_xlabel(args.xlabel)
     if args.ylabel: ax.set_ylabel(args.ylabel)
 
     # set the limits of the plot
@@ -55,11 +60,11 @@ if __name__ == "__main__":
     anim = am.FuncAnimation(fig, update, frames=min([(data[i].shape[1] - 1) // args.animate for i in range(len(data))]), interval=30) if args.animate else None
 
     # save the plot
-    if args.png: fig.savefig("plot.png", dpi=300)
-    if args.pdf: fig.savefig("plot.pdf", dpi=300)
+    if args.png: fig.savefig(args.output + ".png", dpi=300)
+    if args.pdf: fig.savefig(args.output + ".pdf", dpi=300)
 
     # save the animation
-    if args.mp4: anim.save("plot.mp4", writer="ffmpeg", fps=30) # type: ignore
+    if args.mp4: anim.save(args.output + ".mp4", writer="ffmpeg", fps=30) # type: ignore
 
     # show the plot
     if not args.png and not args.pdf and not args.mp4: fig.canvas.manager.set_window_title("1D Data Plotter"); pt.show(); # type: ignore
