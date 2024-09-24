@@ -124,7 +124,7 @@ IS_TS_4=2
 MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
 
 # generate momenta
-MOMENTA=($(seq 10.0 40.0 50.0))
+MOMENTA=($(seq 10.0 1.0 50.0))
 
 # loop over the models
 for MODEL in ${MODELS[@]}; do
