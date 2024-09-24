@@ -177,7 +177,7 @@ for MODEL in ${MODELS[@]}; do
         jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "landau-zener"   }}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # run the dynamics
-        acorn -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n 12
+        acorn -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n 1
 
         # get the populations at the last time step
         POP_EXACT=$(tail -n 1 POPULATION_ADIABATIC_EXACT_REAL_1.mat | awk -v i=$IS '{print $(i+1)}');
