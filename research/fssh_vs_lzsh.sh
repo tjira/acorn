@@ -1,6 +1,12 @@
 #!/bin/bash
 
 # ======================================================================================================================================================================================================
+# VARIABLES
+# ======================================================================================================================================================================================================
+
+CORES=1; PSTEP=10.0; TRAJS=1000
+
+# ======================================================================================================================================================================================================
 # START TEMPLATES
 # ======================================================================================================================================================================================================
 
@@ -32,7 +38,7 @@ read -r -d '' TEMPLATE_SH_DYN <<- EOM
     "adiabatic" : true,
     "iterations" : 5000,
     "time_step" : 1,
-    "trajectories" : 1000,
+    "trajectories" : $TRAJS,
     "log_interval" : 1000,
     "data_export" : {
         "diabatic_population" : true, "adiabatic_population" : true,
@@ -124,7 +130,7 @@ IS_TS_4=2
 MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
 
 # generate momenta
-MOMENTA=($(seq 10.0 1.0 50.0))
+MOMENTA=($(seq 10.0 $PSTEP 50.0))
 
 # loop over the models
 for MODEL in ${MODELS[@]}; do
@@ -177,7 +183,7 @@ for MODEL in ${MODELS[@]}; do
         jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "landau-zener"   }}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # run the dynamics
-        acorn -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n 1
+        acorn -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES
 
         # get the populations at the last time step
         POP_EXACT=$(tail -n 1 POPULATION_ADIABATIC_EXACT_REAL_1.mat | awk -v i=$IS '{print $(i+1)}');
