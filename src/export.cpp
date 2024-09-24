@@ -296,7 +296,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         for (size_t i = 0; i < iteration_data.size(); i++) data_matrix.row(i) = iteration_data.at(i).position;
 
         // save the wavefunction position
-        Export::EigenMatrixDouble(std::string("POSITION_EXACT)") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("POSITION_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the momentum

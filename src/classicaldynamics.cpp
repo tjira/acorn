@@ -1,13 +1,16 @@
 #include "classicaldynamics.h"
 
-Eigen::MatrixXd ClassicalDynamics::evaluate_potential(std::vector<Expression>& potential_expressions, const Eigen::VectorXd& position) const {
+Eigen::MatrixXd ClassicalDynamics::evaluate_potential(std::vector<std::vector<Expression>>& potential_expressions, const Eigen::VectorXd& position) const {
     // deine the potential matrix
     Eigen::MatrixXd potential(input.potential.size(), input.potential.size());
+
+    // get the thread id
+    int id = omp_get_thread_num();
 
     // evaluate the potential matrix
     for (size_t i = 0; i < input.potential.size(); i++) {
         for (size_t j = 0; j < input.potential.size(); j++) {
-            potential(i, j) = potential_expressions.at(i * input.potential.size() + j).evaluate(position)(0);
+            potential(i, j) = potential_expressions.at(id).at(i * input.potential.size() + j).evaluate(position)(0);
         }
     }
 
@@ -15,7 +18,7 @@ Eigen::MatrixXd ClassicalDynamics::evaluate_potential(std::vector<Expression>& p
     return potential;
 }
 
-Eigen::MatrixXd ClassicalDynamics::evaluate_potential_derivative(std::vector<Expression>& potential_expressions, const Eigen::VectorXd& position) const {
+Eigen::MatrixXd ClassicalDynamics::evaluate_potential_derivative(std::vector<std::vector<Expression>>& potential_expressions, const Eigen::VectorXd& position) const {
     // calculate the potential at some small spatial offset
     Eigen::MatrixXd potential_minus = evaluate_potential(potential_expressions, position.array() - 0.0001), potential_plus = evaluate_potential(potential_expressions, position.array() + 0.0001);
 
@@ -28,14 +31,14 @@ Eigen::MatrixXd ClassicalDynamics::evaluate_potential_derivative(std::vector<Exp
     return (potential_plus - potential_minus) / 0.0002;
 }
 
-std::vector<Expression> ClassicalDynamics::get_potential_expression(const Wavefunction& initial_diabatic_wavefunction) const {
+std::vector<std::vector<Expression>> ClassicalDynamics::get_potential_expression(const Wavefunction& initial_diabatic_wavefunction) const {
     // define the potential energy expressions
-    std::vector<Expression> potential_expressions; potential_expressions.reserve(input.potential.size() * input.potential.size());
+    std::vector<std::vector<Expression>> potential_expressions(nthread); for (int i = 0; i < nthread; i++) potential_expressions.at(i).reserve(input.potential.size() * input.potential.size());
 
     // fill the potential energy expressions
     for (size_t i = 0; i < input.potential.size(); i++) {
         for (size_t j = 0; j < input.potential.size(); j++) {
-            potential_expressions.emplace_back(input.potential.at(i).at(j), initial_diabatic_wavefunction.get_variables());
+            for (int k = 0; k < nthread; k++) potential_expressions.at(k).emplace_back(input.potential.at(i).at(j), initial_diabatic_wavefunction.get_variables());
         }
     }
 
@@ -44,20 +47,23 @@ std::vector<Expression> ClassicalDynamics::get_potential_expression(const Wavefu
 }
 
 void ClassicalDynamics::print_iteration(int trajectory, int iteration, const std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXi>& trajectory_data, double mass) const {
-    // extract the data
-    const auto& [potential, position, velocity, states] = trajectory_data;
+    // extract the data and define the fixed size information
+    const auto& [potential, position, velocity, states] = trajectory_data; char buffer[500];
 
     // calculate the potential and kinetic energy
     double potential_energy = potential(states(iteration), states(iteration)), kinetic_energy = 0.5 * mass * velocity.squaredNorm();
 
     // print the fixed size information
-    std::printf("%8d %8d %20.14f %20.14f %20.14f %5d [", trajectory, iteration, potential_energy, kinetic_energy, potential_energy + kinetic_energy, states(iteration) + 1);
+    std::sprintf(buffer, "%8d %8d %20.14f %20.14f %20.14f %5d [", trajectory, iteration, potential_energy, kinetic_energy, potential_energy + kinetic_energy, states(iteration) + 1);
 
     // print the position
-    for (int k = 0; k < position.cols(); k++) {std::printf("%s%8.3f", k ? ", " : "", position(k));} std::printf("] [");
+    for (int k = 0; k < position.cols(); k++) {std::sprintf(buffer + strlen(buffer), "%s%8.3f", k ? ", " : "", position(k));} std::sprintf(buffer + strlen(buffer), "] [");
 
     // print the momentum
-    for (int k = 0; k < velocity.cols(); k++) {std::printf("%s%8.3f", k ? ", " : "", velocity(k) * mass);} std::printf("]\n");
+    for (int k = 0; k < velocity.cols(); k++) {std::sprintf(buffer + strlen(buffer), "%s%8.3f", k ? ", " : "", velocity(k) * mass);} std::sprintf(buffer + strlen(buffer), "]\n");
+
+    // print the buffer
+    std::printf("%s", buffer);
 }
 
 void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunction_input) const {
@@ -65,7 +71,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     auto [initial_diabatic_wavefunction, grid] = Wavefunction::Initialize(initial_diabatic_wavefunction_input); Eigen::MatrixXd fourier_grid = initial_diabatic_wavefunction.get_fourier_grid();
 
     // define the potential expressions and extract mass
-    std::vector<Expression> potential_expressions = get_potential_expression(initial_diabatic_wavefunction); double mass = initial_diabatic_wavefunction.get_mass();
+    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(initial_diabatic_wavefunction); double mass = initial_diabatic_wavefunction.get_mass();
 
     // extract the initial position and momentum
     Eigen::VectorXd initial_position = initial_diabatic_wavefunction.position(grid), initial_momentum = initial_diabatic_wavefunction.momentum(fourier_grid);
@@ -89,6 +95,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     std::printf(" %*s %*s\n", (int)grid.cols() * 10, "POSITION", (int)grid.cols() * 10, "MOMENTUM");
 
     // loop over every trajectory
+    #pragma omp parallel for num_threads(nthread) shared(potential_expressions)
     for (int i = 0; i < input.trajectories; i++) {
 
         // distributions for position and momentum along with the mersenne twister

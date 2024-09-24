@@ -19,25 +19,6 @@ Expression::Expression(const std::string& expression_string, const std::vector<s
     exprtk::parser<double>().compile(expression_string, expression);
 }
 
-Expression::Expression(const Expression& other) : variables(other.variables.size()) {
-    // set the expression string and variable strings
-    this->expression_string = other.expression_string; this->variable_strings = other.variable_strings;
-
-    // define the symbol table
-    exprtk::symbol_table<double> symbols;
-
-    // add variables and constants to the expression
-    for (size_t i = 0; i < variable_strings.size(); i++) {
-        symbols.add_variable(variable_strings.at(i), variables.at(i));
-    } symbols.add_constants();
-
-    // register the symbol table
-    expression.register_symbol_table(symbols);
-
-    // parse the expression
-    exprtk::parser<double>().compile(expression_string, expression);
-}
-
 Eigen::VectorXd Expression::evaluate(const Eigen::MatrixXd& r) {
     // define the output matrix
     Eigen::VectorXd output(r.rows());
