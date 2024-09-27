@@ -56,13 +56,13 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ## Compilation
 
-Before the compilation process, make sure you have [eigen](https://gitlab.com/libeigen/eigen), [boost](https://github.com/boostorg/boost) and [openblas](https://github.com/OpenMathLib/OpenBLAS) libraries installed. On debian-based distributions, you can do it with the following command.
+Before the compilation process, make sure you have [OpenBLAS](https://github.com/OpenMathLib/OpenBLAS) installed. On debian-based distributions, you can do it with the following command.
 
 ```bash
-sudo apt install libboost-dev libeigen3-dev libopenblas-dev
+sudo apt install libopenblas-dev
 ```
 
-After these well-estabilished libraries are installed on your system, you need to compile several other dependencies. Fortunately, the Acorn package contains a script to install them all-in-one. You can install all additional dependencies by executing `./script/liball.sh` from the root directory. Now, go grab some coffee, it can take several hours. After the library compilation is finished, the project configuration should finish without errors.
+After the OpenBLAS is installed on your system, you need to compile several other dependencies. Fortunately, the Acorn package contains a script to install them all-in-one. You can install all additional dependencies by executing `./script/liball.sh` from the root directory. Now, go grab some coffee, it can take several hours. After the library compilation is finished, the project configuration should finish without errors.
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release

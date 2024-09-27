@@ -18,13 +18,12 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -Wl,-rpath,'$ORIGIN' --cover
 set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native -Wl,-rpath,'$ORIGIN'")
 
 # include the system directories
-include_directories(SYSTEM external/include external/include/torch/csrc/api/include)
+include_directories(SYSTEM external/include external/include/eigen3 external/include/torch/csrc/api/include)
 
 # include the project directories
 include_directories(include example/diagram)
 
 # find the necessary packages
-find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # include the eigen directory
