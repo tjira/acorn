@@ -317,7 +317,7 @@ if __name__ == "__main__":
                 dets.append(np.concatenate((2 * np.array(range(nocc)), 2 * np.array(electron) + 1)))
 
         # generate all possible determinants for FCI
-        if args.fci: dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]
+        if args.fci: dets = [np.concatenate((2 * np.array(alpha), 2 * np.array(beta) + 1)) for alpha, beta in it.product(it.combinations(range(nbf), nocc), it.combinations(range(nbf), nocc))]
 
         # define the CI Hamiltonian
         Hci = np.zeros([len(dets), len(dets)])

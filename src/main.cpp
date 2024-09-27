@@ -6,6 +6,7 @@
 #include        "classicaldynamics.h"
 #include "configurationinteraction.h"
 #include               <argparse.hpp>
+#include              <sys/utsname.h>
 
 std::tuple<nlohmann::json, Input> parse_input(const std::filesystem::path& path) {
     // open the input file
@@ -54,6 +55,9 @@ int main(int argc, char** argv) {
 
     // print the program header
     std::printf("ACORN QUANTUM PACKAGE\n\n");
+
+    // print the OS information
+    struct utsname utsname; uname(&utsname); std::printf("PROGRAM EXECUTED ON: %s %s %s\n\n", utsname.sysname, utsname.release, utsname.version);
 
     // print the library versions
     std::printf("GCC: %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);

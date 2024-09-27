@@ -33,6 +33,7 @@ nlohmann::json default_input = R"(
             "order" : 2
         },
         "configuration_interaction" : {
+            "triplet" : true,
             "excitation" : []
         },
         "coupled_cluster" : {
