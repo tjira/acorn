@@ -27,6 +27,9 @@ jobs:
       - name: Download Boost
         run: ./script/libboost.sh
 
+      - name: Download Eigen
+        run: ./script/libeigen.sh
+
       - name: Download Headers
         run: ./script/libheader.sh
 
