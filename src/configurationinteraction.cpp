@@ -81,17 +81,29 @@ std::vector<std::vector<int>> ConfigurationInteraction::generate_all_generalized
 }
 
 std::vector<std::vector<int>> ConfigurationInteraction::generate_all_restricted_configurations(const System& system) const {
-    // define the determinant vector and single electron configurations
-    std::vector<std::vector<int>> configs = Combinations(system.basis_functions(), system.electrons() / 2); std::vector<std::vector<int>> dets(configs.size() * configs.size());
+    // define the number of electrons and orbitals
+    int electrons = input.cas.empty() ? system.electrons() : input.cas.at(0), orbitals = input.cas.empty() ? system.basis_functions() : input.cas.at(1);
+
+    // check for nonsense active space
+    if (electrons > system.electrons() || orbitals > system.basis_functions() || orbitals > electrons / 2 + system.virtual_spinorbitals() / 2) throw std::invalid_argument("YOUR ACTIVE SPACE IS NONSENSE");
+
+    // define the determinant vector and single spin electron configurations
+    std::vector<std::vector<int>> configs = Combinations(orbitals, electrons / 2); std::vector<std::vector<int>> combinations(configs.size() * configs.size());
+
+    // define the fixed spinorbitals and the orbital offset
+    std::vector<int> fixed(system.electrons() - electrons); std::iota(fixed.begin(), fixed.end(), 0);
 
     // generate all possible combinations of alpha and beta electrons
     for (size_t i = 0; i < configs.size(); i++) for (size_t j = 0; j < configs.size(); j++) {
-        for (int k = 0; k < system.electrons() / 2; k++) dets.at(i * configs.size() + j).push_back(2 * configs.at(i).at(k) + 0);
-        for (int k = 0; k < system.electrons() / 2; k++) dets.at(i * configs.size() + j).push_back(2 * configs.at(j).at(k) + 1);
+        for (int k = 0; k < electrons / 2; k++) combinations.at(i * configs.size() + j).push_back(2 * configs.at(i).at(k) + 0 + system.electrons() - electrons);
+        for (int k = 0; k < electrons / 2; k++) combinations.at(i * configs.size() + j).push_back(2 * configs.at(j).at(k) + 1 + system.electrons() - electrons);
     }
 
+    // sort and add the fixed spinorbitals
+    for (size_t i = 0; i < combinations.size(); i++) std::sort(combinations.at(i).begin(), combinations.at(i).end()), combinations.at(i).insert(combinations.at(i).begin(), fixed.begin(), fixed.end());
+
     // return the determinant vector
-    return dets;
+    return combinations;
 }
 
 std::string ConfigurationInteraction::get_name() const {
