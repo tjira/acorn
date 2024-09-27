@@ -5,8 +5,7 @@
     },
     "hartree_fock" : {
         "configuration_interaction" : {
-            "excitation" : []
-        },
-        "generalized" : true
+            "cas" : []
+        }
     }
 }

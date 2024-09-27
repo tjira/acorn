@@ -15,24 +15,6 @@ std::tuple<std::vector<int>, std::vector<int>, int> ConfigurationInteraction::al
     return {deta, detb, swaps};
 }
 
-std::vector<std::vector<int>> ConfigurationInteraction::generate_all_generalized_configurations(const System& system) {
-    return Combinations(2 * system.basis_functions(), system.electrons());
-}
-
-std::vector<std::vector<int>> ConfigurationInteraction::generate_all_restricted_configurations(const System& system) {
-    // define the determinant vector and single electron configurations
-    std::vector<std::vector<int>> configs = Combinations(system.basis_functions(), system.electrons() / 2); std::vector<std::vector<int>> dets(configs.size() * configs.size());
-
-    // generate all possible combinations of alpha and beta electrons
-    for (size_t i = 0; i < configs.size(); i++) for (size_t j = 0; j < configs.size(); j++) {
-        for (int k = 0; k < system.electrons() / 2; k++) dets.at(i * configs.size() + j).push_back(2 * configs.at(i).at(k) + 0);
-        for (int k = 0; k < system.electrons() / 2; k++) dets.at(i * configs.size() + j).push_back(2 * configs.at(j).at(k) + 1);
-    }
-
-    // return the determinant vector
-    return dets;
-}
-
 std::tuple<std::vector<int>, std::vector<int>> ConfigurationInteraction::get_common_and_unique_spinorbitals(std::vector<int> deta, const std::vector<int>& detb) {
     // define the determinants
     std::vector<int> common, unique;
@@ -72,21 +54,61 @@ double ConfigurationInteraction::slater_condon_rules(std::vector<int> deta, cons
     return elem;
 }
 
+std::vector<std::vector<int>> ConfigurationInteraction::generate_all_generalized_configurations(const System& system) const {
+    // define the number of electrons and orbitals
+    int electrons = input.cas.empty() ? system.electrons() : input.cas.at(0), orbitals = input.cas.empty() ? system.basis_functions() : input.cas.at(1);
+
+    // check for nonsense active space
+    if (electrons > system.electrons() || orbitals > system.basis_functions() || orbitals > electrons / 2 + system.virtual_spinorbitals() / 2) throw std::invalid_argument("YOUR ACTIVE SPACE IS NONSENSE");
+
+    // define the fixed spinorbitals
+    std::vector<int> fixed(system.electrons() - electrons); std::iota(fixed.begin(), fixed.end(), 0);
+
+    // generate the configurations in the active space
+    std::vector<std::vector<int>> combinations = Combinations(2 * orbitals, electrons);
+
+    // edit the configurations
+    for (size_t i = 0; i < combinations.size(); i++) {
+
+        // since the Combinations function generates from 0, we need to add the number of fixed electrons to each element
+        std::transform(combinations.at(i).begin(), combinations.at(i).end(), combinations.at(i).begin(), [&](int x) {return x + system.electrons() - electrons;});
+
+        // insert the fixed spinorbitals at the beginning of the vector
+        combinations.at(i).insert(combinations.at(i).begin(), fixed.begin(), fixed.end());
+    }
+
+    return combinations;
+}
+
+std::vector<std::vector<int>> ConfigurationInteraction::generate_all_restricted_configurations(const System& system) const {
+    // define the determinant vector and single electron configurations
+    std::vector<std::vector<int>> configs = Combinations(system.basis_functions(), system.electrons() / 2); std::vector<std::vector<int>> dets(configs.size() * configs.size());
+
+    // generate all possible combinations of alpha and beta electrons
+    for (size_t i = 0; i < configs.size(); i++) for (size_t j = 0; j < configs.size(); j++) {
+        for (int k = 0; k < system.electrons() / 2; k++) dets.at(i * configs.size() + j).push_back(2 * configs.at(i).at(k) + 0);
+        for (int k = 0; k < system.electrons() / 2; k++) dets.at(i * configs.size() + j).push_back(2 * configs.at(j).at(k) + 1);
+    }
+
+    // return the determinant vector
+    return dets;
+}
+
 std::string ConfigurationInteraction::get_name() const {
     // initialize the basi name
     std::string name = "CI";
 
-    // add the excitation level to the name
-    if (input.excitation.size() == 0) name = "F" + name;
+    // add the F if FCI performed
+    if (input.cas.size() == 0) name = "F" + name;
+
+    // add the number of electrons and orbitals
+    if (input.cas.size() == 2) name = "CAS" + name + "(" + std::to_string(input.cas.at(0)) + ", " + std::to_string(input.cas.at(1)) + ")";
 
     // return the name
     return name;
 }
 
 std::tuple<torch::Tensor, torch::Tensor> ConfigurationInteraction::run(const System& system, const torch::Tensor& H_MS, const torch::Tensor& J_MS_AP) const {
-    // throw an error if the excitation level is not supported
-    if (input.excitation.size() != 0) throw std::runtime_error("PROVIDED CI EXCITATION LEVEL NOT SUPPORTED");
-
     // start the timer for determinant generation
     Timepoint generation_timer = Timer::Now(); std::printf("\nGENERATING ALL CONFIGURATIONS: "); std::flush(std::cout);
 

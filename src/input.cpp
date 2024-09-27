@@ -34,7 +34,7 @@ nlohmann::json default_input = R"(
         },
         "configuration_interaction" : {
             "triplet" : true,
-            "excitation" : []
+            "cas" : []
         },
         "coupled_cluster" : {
             "excitation" : [1, 2],

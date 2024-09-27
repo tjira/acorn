@@ -23,7 +23,7 @@ struct Input {
         double threshold;
         struct ConfigurationInteraction {
             bool triplet;
-            std::vector<int> excitation;
+            std::vector<int> cas;
         } configuration_interaction;
         struct CoupledCluster {
             int max_iter;
@@ -63,7 +63,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::System, basis, path, charge, multiplic
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Wavefunction, dimension, mass, momentum, grid_limits, grid_points, guess);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral::DataExport, hamiltonian, coulomb, overlap);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral, precision, data_export);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::ConfigurationInteraction, excitation, triplet);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::ConfigurationInteraction, cas, triplet);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::CoupledCluster, excitation, perturbation, max_iter, threshold);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::MollerPlesset, order);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock, diis_size, max_iter, threshold, configuration_interaction, coupled_cluster, moller_plesset, generalized);
