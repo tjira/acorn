@@ -4,7 +4,9 @@
 # VARIABLES
 # ======================================================================================================================================================================================================
 
-CORES=1; PSTEP=10.0; TRAJS=1000
+CORES=1; PSTEP=10.0; TRAJS=1000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100;
+
+MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
 
 # ======================================================================================================================================================================================================
 # START TEMPLATES
@@ -39,11 +41,12 @@ read -r -d '' TEMPLATE_SH_DYN <<- EOM
     "iterations" : 5000,
     "time_step" : 1,
     "trajectories" : $TRAJS,
-    "log_interval" : 1000,
+    "log_interval_step" : $LOG_INTERVAL_STEP,
+    "log_interval_traj" : $LOG_INTERVAL_TRAJ,
     "data_export" : {
         "diabatic_population" : true, "adiabatic_population" : true,
-        "position"            : true, "momentum"             : true,
-        "energy"              : true
+        "position_mean"       : true, "momentum_mean"        : true,
+        "energy_mean"         : true
     }
 }
 EOM
@@ -126,9 +129,6 @@ IS_TS_4=2
 # END POTENTIALS
 # ======================================================================================================================================================================================================
 
-# define the model names
-MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
-
 # generate momenta
 MOMENTA=($(seq 10.0 $PSTEP 50.0))
 
@@ -182,8 +182,8 @@ for MODEL in ${MODELS[@]}; do
         jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "fewest-switches"}}' "fssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "fssh_${MODEL,,}_P=${MOMENTUM}.json"
         jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "landau-zener"   }}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
-        # run the dynamics
-        acorn -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES
+        # run the dynamics and delete the inputs
+        acorn -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES && rm *.json
 
         # get the populations at the last time step
         POP_EXACT=$(tail -n 1 POPULATION_ADIABATIC_EXACT_REAL_1.mat | awk -v i=$IS '{print $(i+1)}');
@@ -209,45 +209,40 @@ for MODEL in ${MODELS[@]}; do
 
         # plot the potentials
         plot-1d.py "POTENTIAL_ADIABATIC.mat:${ADIA_INDICES::-1}" --legend "${LEGEND_POT_ADIA[@]}" --title "ADIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output "POTENTIAL_ADIABATIC_${MODEL}" --png
-        plot-1d.py "POTENTIAL_DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC_POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)"  --output "POTENTIAL_DIABATIC_${MODEL}"  --png
-
-        # average the position and momentum for classically propagated trajectories
-        awk '{printf((NR == 1) ? "%d " : "%.2f ", $1); sum=0; for(i=2;i<=NF;i++) sum+=$i; print (NR == 1) ? 1 : sum/NF}' POSITION_LZ-ADIABATIC.mat > POSITION_LZ.mat
-        awk '{printf((NR == 1) ? "%d " : "%.2f ", $1); sum=0; for(i=2;i<=NF;i++) sum+=$i; print (NR == 1) ? 1 : sum/NF}' MOMENTUM_LZ-ADIABATIC.mat > MOMENTUM_LZ.mat
-        awk '{printf((NR == 1) ? "%d " : "%.2f ", $1); sum=0; for(i=2;i<=NF;i++) sum+=$i; print (NR == 1) ? 1 : sum/NF}' ENERGY_LZ-ADIABATIC.mat   >   ENERGY_LZ.mat
-        awk '{printf((NR == 1) ? "%d " : "%.2f ", $1); sum=0; for(i=2;i<=NF;i++) sum+=$i; print (NR == 1) ? 1 : sum/NF}' POSITION_FS-ADIABATIC.mat > POSITION_FS.mat
-        awk '{printf((NR == 1) ? "%d " : "%.2f ", $1); sum=0; for(i=2;i<=NF;i++) sum+=$i; print (NR == 1) ? 1 : sum/NF}' MOMENTUM_FS-ADIABATIC.mat > MOMENTUM_FS.mat
-        awk '{printf((NR == 1) ? "%d " : "%.2f ", $1); sum=0; for(i=2;i<=NF;i++) sum+=$i; print (NR == 1) ? 1 : sum/NF}' ENERGY_FS-ADIABATIC.mat   >   ENERGY_FS.mat
+        plot-1d.py "POTENTIAL_DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC_POTENTIAL: ${MODEL}"  --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)"  --output "POTENTIAL_DIABATIC_${MODEL}"  --png
 
         # plot the position and momentum
-        plot-1d.py POSITION_EXACT_REAL_1.mat POSITION_FS.mat POSITION_LZ.mat --legend "EXACT" "FSSH" "LZSH" --title "POSITION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}" --png
-        plot-1d.py MOMENTUM_EXACT_REAL_1.mat MOMENTUM_FS.mat MOMENTUM_LZ.mat --legend "EXACT" "FSSH" "LZSH" --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}" --png
-        plot-1d.py ENERGY_EXACT_REAL_1.mat   ENERGY_FS.mat   ENERGY_LZ.mat   --legend "EXACT" "FSSH" "LZSH" --title "ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "ENERGY_${MODEL}_P=${MOMENTUM}"   --png
+        plot-1d.py POSITION_EXACT_REAL_1.mat POSITION-MEAN_FS-ADIABATIC.mat POSITION-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "POSITION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}" --png
+        plot-1d.py MOMENTUM_EXACT_REAL_1.mat MOMENTUM-MEAN_FS-ADIABATIC.mat MOMENTUM-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}" --png
+        plot-1d.py ENERGY_EXACT_REAL_1.mat   ENERGY-MEAN_FS-ADIABATIC.mat   ENERGY-MEAN_FS-ADIABATIC.mat   --legend "EXACT" "FSSH" "LZSH" --title "ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "ENERGY_${MODEL}_P=${MOMENTUM}"   --png
 
         # make the trajectory analysis image
-        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "POPULATION_ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png" "MOMENTUM_${MODEL}_P=${MOMENTUM}.png" "ENERGY_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORIES_${MODEL}_P=${MOMENTUM}".png
+        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "POPULATION_ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png" "MOMENTUM_${MODEL}_P=${MOMENTUM}.png" "ENERGY_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORIES_${MODEL}_P=${MOMENTUM}.png"
+
+        # remove every matrix except for the final populations
+        mkdir -p .temp && mv "${MODEL}_FINAL_POPULATIONS.mat" .temp && rm *.mat && mv .temp/* . && rm -r .temp
     done
 
     # plot the population dependence on momentum
     plot-1d.py "${MODEL}_FINAL_POPULATIONS.mat" --legend "EXACT" "FSSH" "LZSH" --title "FINAL POPULATION: ${MODEL}" --xlabel "Initial Momentum (a.u.)" --ylabel "Final Population of the Initial State (S$IS)" --output "${MODEL}_FINAL_POPULATIONS" --png
 
-    # create the potential plot
-    montage "POTENTIAL_DIABATIC_${MODEL}.png" "POTENTIAL_ADIABATIC_${MODEL}.png" -mode concatenate -tile x1 "POTENTIALS_${MODEL}.png"
-
     # make the comparison image
     montage "POTENTIAL_ADIABATIC_${MODEL}.png" "${MODEL}_FINAL_POPULATIONS.png" -mode concatenate -tile x1 "COMPARISONS_${MODEL}.png"
+
+    # create the potential plot
+    montage "POTENTIAL_DIABATIC_${MODEL}.png" "POTENTIAL_ADIABATIC_${MODEL}.png" -mode concatenate -tile x1 "POTENTIALS_${MODEL}.png"
+    
+    # remove every image except for comparisons, potentials and trajectories
+    mkdir -p .temp && mv COMPARISONS_*.png POTENTIALS_*.png TRAJECTORIES_*.png .temp && rm *.mat *.png && mv .temp/* . && rm -r .temp
 done
 
-# montage all the images together
+# montage all the images together and remove the individual ones
 for MOMENTUM in ${MOMENTA[@]}; do
-    FILES=(${MODELS[@]/#/TRAJECTORIES_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "TRAJECTORIES_P=${MOMENTUM}.png"
+    FILES=(${MODELS[@]/#/TRAJECTORIES_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "TRAJECTORIES_P=${MOMENTUM}.png" && rm "${FILES[@]/%/_P=${MOMENTUM}.png}"
 done
 
-# montage all the potential images together
-FILES=(${MODELS[@]/#/POTENTIALS_}); montage "${FILES[@]/%/.png}" -mode concatenate -tile 1x POTENTIALS.png
+# montage all the potential images together and remove the individual ones
+FILES=(${MODELS[@]/#/POTENTIALS_}); montage "${FILES[@]/%/.png}" -mode concatenate -tile 1x POTENTIALS.png && rm "${FILES[@]/%/.png}"
 
-# montage all the comparison images together
-FILES=(${MODELS[@]/#/COMPARISONS_}); montage "${FILES[@]/%/.png}" -mode concatenate -tile 1x COMPARISONS.png
-
-# remove the intermediate files
-mkdir -p .temp && mv COMPARISONS.png POTENTIALS.png TRAJECTORIES_P* .temp && rm *.json *.mat *.png && mv .temp/* . && rm -r .temp
+# montage all the comparison images together and remove the individual ones
+FILES=(${MODELS[@]/#/COMPARISONS_}); montage "${FILES[@]/%/.png}" -mode concatenate -tile 1x COMPARISONS.png && rm "${FILES[@]/%/.png}"

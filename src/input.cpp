@@ -70,7 +70,8 @@ nlohmann::json default_input = R"(
         "adiabatic" : false,
         "trajectories" : 100,
         "time_step" : 1.0,
-        "log_interval" : 1,
+        "log_interval_step" : 1,
+        "log_interval_traj" : 1,
         "surface_hopping" : {
             "quantum_step_factor" : 10,
             "type" : "fewest-switches"
@@ -80,7 +81,10 @@ nlohmann::json default_input = R"(
             "adiabatic_population" : false,
             "energy" : false,
             "position" : false,
-            "momentum" : false
+            "momentum" : false,
+            "energy_mean" : false,
+            "position_mean" : false,
+            "momentum_mean" : false
         }
     }
 }

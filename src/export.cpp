@@ -78,21 +78,47 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         Export::EigenMatrixDouble(std::string("POSITION_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
     }
 
+    // export the position mean
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.position_mean) {
+
+        // create the matrix containing the position mean
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, 1);
+
+        // fill the matrix with the position
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) data_matrix(j, 0) += trajectory_data_vector.at(i).position.row(j)(0);
+
+        // export the position
+        Export::EigenMatrixDouble(std::string("POSITION-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+    }
+
     // export the momentum
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.position) {
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.momentum) {
 
         // create the matrix containing the momentum
         data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, trajectory_data_vector.size());
 
         // fill the matrix with the momentum
-        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) data_matrix.row(j)(i) = trajectory_data_vector.at(i).velocity.row(j)(0) * mass;
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) data_matrix(j, i) = trajectory_data_vector.at(i).velocity.row(j)(0) * mass;
 
         // export the momentum
         Export::EigenMatrixDouble(std::string("MOMENTUM_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
     }
 
-    // export the enrgy
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.position) {
+    // export the momentum mean
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.momentum_mean) {
+
+        // create the matrix containing the momentum
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, 1);
+
+        // fill the matrix with the momentum
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) data_matrix(j, 0) += trajectory_data_vector.at(i).velocity.row(j)(0) * mass;
+
+        // export the momentum
+        Export::EigenMatrixDouble(std::string("MOMENTUM-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+    }
+
+    // export the energy
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.energy) {
 
         // create the matrix containing the energy
         data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, trajectory_data_vector.size());
@@ -109,6 +135,26 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
 
         // export the energy
         Export::EigenMatrixDouble(std::string("ENERGY_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
+    }
+
+    // export the energy
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.energy_mean) {
+
+        // create the matrix containing the energy
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, 1);
+
+        // fill the matrix with the energy
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) {
+
+            // extract the potential matrix
+            const Eigen::MatrixXd& potential = input.adiabatic ? trajectory_data_vector.at(i).adiabatic_potential.at(j) : trajectory_data_vector.at(i).diabatic_potential.at(j);
+
+            // extract the state and assign the energy
+            int state = trajectory_data_vector.at(i).state(j); data_matrix(j, 0) += potential(state, state) + 0.5 * mass * trajectory_data_vector.at(i).velocity.row(j).squaredNorm();
+        }
+
+        // export the energy mean
+        Export::EigenMatrixDouble(std::string("ENERGY-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
 }
 
