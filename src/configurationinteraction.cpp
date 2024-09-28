@@ -54,56 +54,41 @@ double ConfigurationInteraction::slater_condon_rules(std::vector<int> deta, cons
     return elem;
 }
 
-std::vector<std::vector<int>> ConfigurationInteraction::generate_all_generalized_configurations(const System& system) const {
+std::vector<std::vector<int>> ConfigurationInteraction::generate_configurations(const System& system) const {
     // define the number of electrons and orbitals
     int electrons = input.cas.empty() ? system.electrons() : input.cas.at(0), orbitals = input.cas.empty() ? system.basis_functions() : input.cas.at(1);
 
     // check for nonsense active space
-    if (electrons > system.electrons() || orbitals > system.basis_functions() || orbitals > electrons / 2 + system.virtual_spinorbitals() / 2) throw std::invalid_argument("YOUR ACTIVE SPACE IS NONSENSE");
+    if (electrons > system.electrons() || orbitals > system.basis_functions() || orbitals > electrons / 2 + system.virtual_spinorbitals() / 2) {
+        throw std::invalid_argument("YOUR ACTIVE SPACE IS NONSENSE");
+    }
 
     // define the fixed spinorbitals
     std::vector<int> fixed(system.electrons() - electrons); std::iota(fixed.begin(), fixed.end(), 0);
 
-    // generate the configurations in the active space
-    std::vector<std::vector<int>> combinations = Combinations(2 * orbitals, electrons);
+    // generate the configurations in the active space (spatial orbitals if the triplets are excluded)
+    std::vector<std::vector<int>> combinations = Combinations((input.triplet ? 2 : 1) * orbitals, electrons / (input.triplet ? 1 : 2));
+
+    // define the determinant vector and fill it if the triplets are included, because the combinations are already the active space determinants
+    std::vector<std::vector<int>> determinants = input.triplet ? combinations : std::vector<std::vector<int>>(combinations.size() * combinations.size());
+
+    // generate all possible combinations of alpha and beta electrons whent triplets are excluded
+    for (size_t i = 0; i < combinations.size() && !input.triplet; i++) for (size_t j = 0; j < combinations.size(); j++) {
+        for (int k = 0; k < electrons / 2; k++) determinants.at(i * combinations.size() + j).push_back(2 * combinations.at(i).at(k) + 0);
+        for (int k = 0; k < electrons / 2; k++) determinants.at(i * combinations.size() + j).push_back(2 * combinations.at(j).at(k) + 1);
+    }
 
     // edit the configurations
-    for (size_t i = 0; i < combinations.size(); i++) {
+    for (size_t i = 0; i < determinants.size(); i++) {
 
         // since the Combinations function generates from 0, we need to add the number of fixed electrons to each element
-        std::transform(combinations.at(i).begin(), combinations.at(i).end(), combinations.at(i).begin(), [&](int x) {return x + system.electrons() - electrons;});
+        std::transform(determinants.at(i).begin(), determinants.at(i).end(), determinants.at(i).begin(), [&](int x) {return x + system.electrons() - electrons;});
 
         // insert the fixed spinorbitals at the beginning of the vector
-        combinations.at(i).insert(combinations.at(i).begin(), fixed.begin(), fixed.end());
+        determinants.at(i).insert(determinants.at(i).begin(), fixed.begin(), fixed.end());
     }
 
-    return combinations;
-}
-
-std::vector<std::vector<int>> ConfigurationInteraction::generate_all_restricted_configurations(const System& system) const {
-    // define the number of electrons and orbitals
-    int electrons = input.cas.empty() ? system.electrons() : input.cas.at(0), orbitals = input.cas.empty() ? system.basis_functions() : input.cas.at(1);
-
-    // check for nonsense active space
-    if (electrons > system.electrons() || orbitals > system.basis_functions() || orbitals > electrons / 2 + system.virtual_spinorbitals() / 2) throw std::invalid_argument("YOUR ACTIVE SPACE IS NONSENSE");
-
-    // define the determinant vector and single spin electron configurations
-    std::vector<std::vector<int>> configs = Combinations(orbitals, electrons / 2); std::vector<std::vector<int>> combinations(configs.size() * configs.size());
-
-    // define the fixed spinorbitals and the orbital offset
-    std::vector<int> fixed(system.electrons() - electrons); std::iota(fixed.begin(), fixed.end(), 0);
-
-    // generate all possible combinations of alpha and beta electrons
-    for (size_t i = 0; i < configs.size(); i++) for (size_t j = 0; j < configs.size(); j++) {
-        for (int k = 0; k < electrons / 2; k++) combinations.at(i * configs.size() + j).push_back(2 * configs.at(i).at(k) + 0 + system.electrons() - electrons);
-        for (int k = 0; k < electrons / 2; k++) combinations.at(i * configs.size() + j).push_back(2 * configs.at(j).at(k) + 1 + system.electrons() - electrons);
-    }
-
-    // sort and add the fixed spinorbitals
-    for (size_t i = 0; i < combinations.size(); i++) std::sort(combinations.at(i).begin(), combinations.at(i).end()), combinations.at(i).insert(combinations.at(i).begin(), fixed.begin(), fixed.end());
-
-    // return the determinant vector
-    return combinations;
+    return determinants;
 }
 
 std::string ConfigurationInteraction::get_name() const {
@@ -125,7 +110,7 @@ std::tuple<torch::Tensor, torch::Tensor> ConfigurationInteraction::run(const Sys
     Timepoint generation_timer = Timer::Now(); std::printf("\nGENERATING ALL CONFIGURATIONS: "); std::flush(std::cout);
 
     // generate the configurations
-    std::vector<std::vector<int>> dets = input.triplet ? generate_all_generalized_configurations(system) : generate_all_restricted_configurations(system);
+    std::vector<std::vector<int>> dets = generate_configurations(system);
 
     // initialize the data for the hamiltonian
     std::vector<double> hamiltonian_data(dets.size() * dets.size(), 0);
