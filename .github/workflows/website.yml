@@ -17,8 +17,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Pandoc and LaTeX
-        run: sudo apt install -y pandoc texlive-latex-recommended texlive-latex-extra
+      - name: Install Biber, Pandoc and LaTeX
+        run: sudo apt install -y biber pandoc texlive-latex-recommended texlive-latex-extra
 
       - name: Compile Document
         run: ./script/docstopdf.sh

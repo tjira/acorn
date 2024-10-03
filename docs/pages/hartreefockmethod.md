@@ -53,13 +53,13 @@ T\_{\mu\nu}&=\braket{\phi\_{\mu}|\hat{T}|\phi\_{\nu}} \\\\\
 V\_{\mu\nu}&=\braket{\phi\_{\mu}|\hat{V}|\phi\_{\nu}}
 \end{align}
 
-are usually calculated using analytical expressions. Additionally, using analytical expressions, we can calculate
+are usually calculated using analytical expressions. Additionally, using analytical expressions, we can calculate the overlap integrals
 
 \begin{equation}\label{eq:overlap}
 S\_{\mu\nu}=\braket{\phi\_{\mu}|\phi\_{\nu}}
 \end{equation}
 
-and the two-electron Coulomb repulsion integral
+and the two-electron Coulomb repulsion integrals
 
 \begin{equation}\label{eq:coulomb}
 J\_{\mu\nu\kappa\lambda}=\braket{\phi\_{\mu}\phi\_{\mu}|\hat{J}|\phi\_{\kappa}\phi\_{\lambda}},
@@ -148,4 +148,3 @@ A\_{pq}^{MS}=C\_{\mu p}^{MS}(\mathbf{I}\_{2}\otimes\_K\mathbf{A})\_{\mu\nu}C\_{\
 where $\mathbf{A}$ is an arbitrary one-electron integral.
 
 {:.cite}
-> Peter M. Gill 1994. In Advances in quantum chemistry, 25, p.141-205.

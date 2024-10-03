@@ -54,7 +54,7 @@ taking advantage of the exponential form of the wavefunction. We could then proc
 
 ## Implementation of CCD and CCSD
 
-The derivation of the equations that are actually used to perform the calculations is quite lengthy and involves a lot of algebra. We will not go into the details here, but we will provide the final expressions for the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods. The Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods are the most commonly used Coupled Cluster methods, and they are often used as benchmarks for other methods. All we need for the evaluation of the expressions below are the Coulomb integrals in the MS basis and physicists' notation, Fock matrix in the MS basis and the orbital energies obtained from the Hartree-Fock calculation. All these transformations are already explained [here](hartreefockmethod.html#the-integral-transforms) in the HF section. The expressions for the CCD can be expressed as
+The derivation of the equations that are actually used to perform the calculations is quite lengthy and involves a lot of algebra. We will not go into the details here, but we will provide the final expressions for the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods. The Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods are the most commonly used Coupled Cluster methods, and they are often used as benchmarks for other methods. All we need for the evaluation of the expressions below are the Coulomb integrals in the MS basis and physicists' notation, Fock matrix in the MS basis and the orbital energies obtained from the Hartree--Fock calculation. All these transformations are already explained [here](hartreefockmethod.html#the-integral-transforms) in the Hartree--Fock section. The expressions for the Coupled Cluster Doubles can be written as
 
 \begin{equation}
 E\_{\text{CCD}}=\frac{1}{4}\braket{ij||ab}t\_{ij}^{ab}
@@ -63,8 +63,8 @@ E\_{\text{CCD}}=\frac{1}{4}\braket{ij||ab}t\_{ij}^{ab}
 where the double excitation amplitudes $t\_{ij}^{ab}$ are determined by solving the Coupled Cluster Doubles amplitude equation. The Coupled Cluster Doubles amplitude equations are given by
 
 \begin{align}
-t\_{ij}^{ab}=&\braket{ab||ij}+\frac{1}{2}\braket{ab||cd}t\_{cd}^{ij}+\frac{1}{2}\braket{kl||ij}t\_{ab}^{kl}+\hat{P}\_{(a/b)}\hat{P}\_{(i/j)}\braket{ak||ic}t\_{cb}^{ij}- \\\\\
-&-\frac{1}{2}\hat{P}\_{(a/b)}\braket{kl||cd}t\_{ac}^{ij}t\_{bd}^{kl}-\frac{1}{2}\hat{P}\_{(i/j)}\braket{kl||cd}t\_{ab}^{ik}t\_{cd}^{jl}+ \\\\\
+t\_{ij}^{ab}=&\braket{ab||ij}+\frac{1}{2}\braket{ab||cd}t\_{cd}^{ij}+\frac{1}{2}\braket{kl||ij}t\_{ab}^{kl}+\hat{P}\_{(a/b)}\hat{P}\_{(i/j)}\braket{ak||ic}t\_{cb}^{ij}-\nonumber \\\\\
+&-\frac{1}{2}\hat{P}\_{(a/b)}\braket{kl||cd}t\_{ac}^{ij}t\_{bd}^{kl}-\frac{1}{2}\hat{P}\_{(i/j)}\braket{kl||cd}t\_{ab}^{ik}t\_{cd}^{jl}+\nonumber \\\\\
 &+\frac{1}{4}\braket{kl||cd}t\_{cd}^{ij}t\_{ab}^{kl}+\hat{P}\_{(i/j)}\braket{kl||cd}t\_{ac}^{ik}t\_{bd}^{jl}
 \end{align}
 
@@ -96,20 +96,21 @@ and two-particle excitation operators as
 The Coupled Cluster Singles and Doubles single excitations amplitude equations are then given by
 
 \begin{align}
-t\_i^a=&F\_{ai}^{MS}+\sum\_et\_i^e\mathscr{F}\_{ae}-\sum\_mt\_m^a\mathscr{F}\_{mi}\sum\_{me}t\_{im}^{ae}\mathscr{F}\_{me}-\sum\_{nf}t\_n^f\braket{na||if}- \\\\\
+t\_i^a=&F\_{ai}^{MS}+\sum\_et\_i^e\mathscr{F}\_{ae}-\sum\_mt\_m^a\mathscr{F}\_{mi}\sum\_{me}t\_{im}^{ae}\mathscr{F}\_{me}-\sum\_{nf}t\_n^f\braket{na||if}-\nonumber \\\\\
 &-\frac{1}{2}\sum\_{mef}t\_{im}^{ef}\braket{ma||ef}-\frac{1}{2}\sum\_{men}t\_{mn}^{ae}\braket{nm||ei}
 \end{align}
 
 and the Coupled Cluster Singles and Doubles double excitations amplitude equations are given by
 
 \begin{align}
-t\_{ij}^{ab}=&\braket{ab||ij}+\hat{P}\_{(a/b)}\sum\_et\_{ij}^{ae}\left(\mathscr{F}\_{be}-\frac{1}{2}\sum\_mt\_m^b\mathscr{F}\_{ae}\right)- \\\\\
-&-\hat{P}\_{(i/j)}\sum\_mt\_{im}^{ab}\left(\mathscr{F}\_{mi}+\frac{1}{2}\sum\_et\_j^e\mathscr{F}\_{me}\right)+\frac{1}{2}\sum\_{mn}\tau\_{mn}^{ab}\mathscr{W}\_{mnij}+ \\\\\
-&+\frac{1}{2}\sum\_{ef}\tau\_{ij}^{ef}\mathscr{W}\_{abef}+\hat{P}\_{(i/j)}\hat{P}\_{(a/b)}\sum_{me}\left(t_{im}^{ae}\mathscr{W}\_{mbej}-t\_i^et\_m^a\braket{mb||ej}\right)+ \\\\\
+t\_{ij}^{ab}=&\braket{ab||ij}+\hat{P}\_{(a/b)}\sum\_et\_{ij}^{ae}\left(\mathscr{F}\_{be}-\frac{1}{2}\sum\_mt\_m^b\mathscr{F}\_{ae}\right)-\nonumber \\\\\
+&-\hat{P}\_{(i/j)}\sum\_mt\_{im}^{ab}\left(\mathscr{F}\_{mi}+\frac{1}{2}\sum\_et\_j^e\mathscr{F}\_{me}\right)+\frac{1}{2}\sum\_{mn}\tau\_{mn}^{ab}\mathscr{W}\_{mnij}+\nonumber \\\\\
+&+\frac{1}{2}\sum\_{ef}\tau\_{ij}^{ef}\mathscr{W}\_{abef}+\hat{P}\_{(i/j)}\hat{P}\_{(a/b)}\sum_{me}\left(t_{im}^{ae}\mathscr{W}\_{mbej}-t\_i^et\_m^a\braket{mb||ej}\right)+\nonumber \\\\\
 &+\hat{P}\_{(i/j)}\sum\_et\_i^e\braket{ab||ej}-\hat{P}\_{(a/b)}\sum\_mt\_m^a\braket{mb||ij}
 \end{align}
 
-The Coupled Cluster Singles and Doubles amplitude equations are, again, nonlinear and require iterative solution methods to obtain the final amplitudes. The initial guess for the amplitudes is often set to zero, and the equations are solved iteratively until convergence is achieved.
+The Coupled Cluster Singles and Doubles amplitude equations are, again, nonlinear and require iterative solution methods to obtain the final amplitudes. The initial guess for the amplitudes is often set to zero, and the equations are solved iteratively until convergence is achieved.<!--\cite{10.1063/1.460620}-->
 
 {:.cite}
-> John F. Stanton, Jurgen Gauss, John D. Watts, and Rodney J. Bartlett 1991. Journal of Chemical Physics, 94, p.4334-4345.
+> Stanton, John F., Jürgen Gauss, John D. Watts, and Rodney J. Bartlett. 1991. “A Direct Product Decomposition Approach for Symmetry Exploitation in Many-Body Methods. I. Energy Calculations.” *The Journal of Chemical Physics* 94: 4334–45. <https://doi.org/10.1063/1.460620>.
+>

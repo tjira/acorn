@@ -3,15 +3,31 @@ molecule.xyz
 
 # exts
 *.lock
+*.acn
+*.acr
+*.alg
+*.aux
+*.bbl
+*.bcf
+*.blg
 *.css
 *.dat
 *.eps
 *.gif
+*.glg
+*.glo
+*.gls
+*.ist
+*.log
 *.mat
 *.nix
 *.old
 *.out
+*.pdf
 *.png
+*.tex
+*.toc
+*.xml
 *.zip
 
 # folders
@@ -21,4 +37,3 @@ external/
 build/
 temp/
 bin/
-tex/
