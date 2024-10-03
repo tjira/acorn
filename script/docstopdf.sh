@@ -14,6 +14,7 @@ ACRONYMS=(
     "Coupled Cluster Singles and Doubles/CCSD"
     "Coupled Cluster Doubles/CCD"
     "Coupled Cluster/CC"
+    "Self-Consistent Field/SCF"
     "Molecular Spinorbital/MS"
 )
 
