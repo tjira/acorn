@@ -17,6 +17,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Install Pandoc and Texlive
+        run: sudo apt install -y pandoc texlive
+
       - name: Compile Document
         run: ./script/docstopdf.sh
 
