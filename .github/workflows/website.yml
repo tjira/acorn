@@ -17,11 +17,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install Pandoc and Texlive
-        run: sudo apt install -y pandoc texlive
-
-      - name: Install Missing TeX Packages
-        run: tlmgr init-usertree && tlmgr --usermode install braket
+      - name: Install Pandoc and LaTeX
+        run: sudo apt install -y pandoc texlive-latex-recommended
 
       - name: Compile Document
         run: ./script/docstopdf.sh
