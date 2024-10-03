@@ -8,60 +8,58 @@ nav_order: 1
 
 # Configuration Interaction
 
-Configuration interaction (CI) is a post-Hartree-Fock, utilizing a linear variational approach to address the nonrelativistic Schrödinger equation under the Born–Oppenheimer approximation for multi-electron quantum systems. CI mathematically represents the wave function as a linear combination of Slater determinants. The term "configuration" refers to different ways electrons can occupy orbitals, while "interaction" denotes the mixing of these electronic configurations or states. CI computations, however, are resource-intensive, requiring significant CPU time and memory, limiting their application to smaller molecular systems. While Full CI (FCI) considers all possible electronic configurations, making it computationally prohibitive for larger systems, truncated versions like CISD, CISDT, and CISDTQ are more feasible and commonly employed in quantum chemistry studies.
+Configuration Interaction is a post-Hartree--Fock, utilizing a linear variational approach to address the nonrelativistic Schrödinger equation under the Born–Oppenheimer approximation for multi-electron quantum systems. Configuration Interaction mathematically represents the wave function as a linear combination of Slater determinants. The term "configuration" refers to different ways electrons can occupy orbitals, while "interaction" denotes the mixing of these electronic configurations or states. Configuration Interaction computations, however, are resource-intensive, requiring significant CPU time and memory, limiting their application to smaller molecular systems. While Full Configuration Interaction considers all possible electronic configurations, making it computationally prohibitive for larger systems, truncated versions like Configuration Interaction Singles and Doubles or Configuration Interaction Singles, Doubles and Triples are more feasible and commonly employed in quantum chemistry studies.
 
+## Theoretical Background of General Configuration Interaction
 
-## Full Configuration Interaction
-
-Let's consider the Full Configuration Interaction (FCI) method, which considers all possible electronic configurations within a given basis set. The FCI wave function is expressed as a linear combination of Slater determinants, where each determinant represents a unique electron configuration. The FCI method provides the most accurate description of the electronic structure, but its computational cost grows exponentially with the number of electrons and basis functions, making it infeasible for large systems.
-
-### The Transformation of Integrals to Molecular Spinorbital Basis
-
-To begin, we need to convert the core Hamiltonian $\mathbf{H}^{core}$ and the Coulomb integrals $\mathbf{J}$ into the basis of molecular spinorbitals (MS). The proces of transforming the Coulomb integrals is already described in the Møller–Plesset perturbation theory page [here](mollerplessetperturbationtheory.html#the-transform-of-integrals-to-molecular-spinorbital-basis). To transform the core Hamiltonian, we use the formula
+The idea is quite simple, using the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals and the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The CI wavefunction is written as
 
 \begin{equation}
-H_{pq}^{core,MS}=C_{\mu p}^{MS}(\mathbf{I}\_{2}\otimes_K\mathbf{H}^{core})\_{\mu\nu}C_{\nu q}^{MS}
+\ket{\Psi}=c\_0\ket{\Psi\_0}+\left(\frac{1}{1!}\right)^2c\_i^a\ket{\Psi\_i^a}+\left(\frac{1}{2!}\right)^2c\_{ij}^{ab}\ket{\Psi\_{ij}^{ab}}+\left(\frac{1}{3!}\right)^2c\_{ijk}^{abc}\ket{\Psi\_{ijk}^{abc}}+\dots
 \end{equation}
 
-where $\mathbf{C}^{MS}$ is the coefficient matrix in the MS basis, defined in the MPPT page.
+and we would like to know the coefficients $c$ that minimize the energy. To do that, we simply construct the hamiltonian matrix in the basis of excited determinants and diagonalize it. The Configuration Interaction Hamiltonian matrix $\mathbf{H}^{CI}$ is constructed as
 
-### The Determinants Generation
-
-To proceed with the calculation, the next task involves generating all possible Slater determinants. The number of these determinants $N_D$ can be calculated using the binomial coefficients
-
-\begin{equation}
-N_D=\binom{n}{\frac{k}{2}}^2
+\begin{equation}\label{eq:ci-hamiltonian}
+\mathbf{H}^{CI}=
+\begin{bmatrix}
+\braket{\Psi\_0|\hat{H}|\Psi\_0} & \braket{\Psi\_0|\hat{H}|\Psi\_i^a} & \braket{\Psi\_0|\hat{H}|\Psi\_{ij}^{ab}} & \dots \\\\\
+\braket{\Psi\_i^a|\hat{H}|\Psi\_0} & \braket{\Psi\_i^a|\hat{H}|\Psi\_i^a} & \braket{\Psi\_i^a|\hat{H}|\Psi\_{ij}^{ab}} & \dots \\\\\
+\braket{\Psi\_{ia}^{jb}|\hat{H}|\Psi\_0} & \braket{\Psi\_{ia}^{jb}|\hat{H}|\Psi\_1} & \braket{\Psi\_{ia}^{jb}|\hat{H}|\Psi\_{ia}^{jb}} & \dots \\\\\
+\vdots & \vdots & \vdots & \ddots
+\end{bmatrix}
 \end{equation}
 
-assuming $k$ is the total number of electrons, and $n$ is the total number of spinorbitals divided evenly between alpha and beta spins. Each determinant is formed by assigning the $\alpha$ and $\beta$ electrons to their respective orbitals. For practical representation, it's useful to describe determinants as arrays of numbers, where each number corresponds to the indices of the occupied orbitals. Defining the indices for potential $\alpha$ and $\beta$ orbitals, we can let $A=\\{1,3,5,\dots,n-1\\}$ represent all possible $\alpha$ orbitals and $B=\\{2,4,6,\dots,n\\}$ all possible $\beta$ orbitals. The full set of determinants, $D$, can be expressed as:
+and solving the eigenvalue problem
 
-\begin{equation}
-D=\\{\alpha\cup\beta\,|\,\alpha\subseteq A,\beta\subseteq B,|\alpha|=|\beta|=\frac{k}{2}\\}
+\begin{equation}\label{eq:ci-eigenvalue-problem}
+\mathbf{H}^{CI}\mathbf{C}^{CI}=\mathbf{C}^{CI}\mathbf{\varepsilon}^{CI}
 \end{equation}
 
-Here, each determinant is a combination where $\alpha$ and $\beta$ are subsets of $A$ and $B$ respectively, with each subset containing exactly $\frac{k}{2}$ orbitals, reflecting the equal distribution of electrons among $\alpha$ and $\beta$ spins.
+where $\mathbf{C}^{CI}$ is a matrix of coefficients and $\mathbf{\varepsilon}^{CI}$ is a diagonal matrix of eigenvalues. The lowest eigenvalue corresponds to the ground state energy, while the eigenvector corresponding to the lowest eigenvalue gives the coefficients that minimize the energy. The matrix elements of the CI Hamiltonian are calculated using the Slater-Condon rules in the form
 
-### Slater-Condon Rules and the Eigenvalue Problem
-
-Having generated all possible determinants, we can now proceed to compute the matrix elements of the Full Configuration Interaction (FCI) Hamiltonian, $\mathbf{H}^{CI}$. Each row and column of this matrix corresponds to a particular Slater determinant. The matrix elements between these determinants are calculated according to the Slater-Condon rules. These rules help us determine the interaction contributions by comparing two determinants and noting the number of differing spinorbitals. The computation of matrix elements $\mathbf{H}_{ij}^{CI}$ is based on how the determinants differ, and can be described by the following conditions.
-
-\begin{equation}
+\begin{equation}\label{eq:slater-condon-rules}
 \mathbf{H}_{ij}^{CI}=
 \begin{cases} 
 \displaystyle \sum_kH\_{kk}^{core,MS}+\frac{1}{2}\sum_k\sum_l\braket{kl||kl}&D_i=D_j \\\\\
-\displaystyle H\_{pr}^{core,MS}+\sum_k\braket{pk||lk}&D_i=\\{\dotsi p\dotsi\\}\land D_j=\\{\dotsi r\dotsi\\} \\\\\
-\displaystyle \vphantom{\sum_k}\braket{pq||rs}&D_i=\\{\dotsi p\dotsi q\dotsi\\}\land D_j=\\{\dotsi r\dotsi s\dotsi\\} \\\\\
-\displaystyle \vphantom{\sum_k}0&\text{otherwise}
+\displaystyle H\_{pr}^{core,MS}+\sum_k\braket{pk||lk}&D_i=\left\lbrace\dotsi p\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi\right\rbrace \\\\\
+\displaystyle \vphantom{\sum_k}\braket{pq||rs}&D_i=\left\lbrace\dotsi p\dotsi q\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi s\dotsi\right\rbrace \\\\\
+\displaystyle \vphantom{\sum_k}0&\text{otherwise},
 \end{cases}
 \end{equation}
 
-The summations extend over all orbitals common between the two compared determinants. This detailed approach ensures all electron-electron interactions are accurately accounted for in the Hamiltonian matrix, crucial for correct FCI calculations.
+where $D\_i$ and $D\_j$ are Slater determinants, $\mathbf{H}^{core,MS}$ is the core Hamiltonian in the basis of molecular spinorbitals, and $\braket{pk\|\|lk}$ are the antisymmetrized Coulomb repulsion integrals in the basis of molecular spinorbitals and physicists' notation. The sums extend over all spinorbitals common between the two determinants. All the integrals in the MS basis are already explained [here](hartreefockmethod.html#the-integral-transforms). Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
 
-{:.warning}
-> To accurately calculate the differences between two Slater determinants, it's essential to sometimes permute the indices of one determinant for proper alignment before comparison. For instance, consider two determinants, $D_1=\\{1,2,3,4\\}$ and $D_2=\\{1,3,2,4\\}$. To properly compare $D_2$ with $D_1$, you need to permute the indices in $D_2$ to match $D_1$, resulting in $D_2$ being reorganized as $\\{1,2,3,4\\}$. In this case, the number of differences after proper alignment is 0.
->
-> Moreover, it’s crucial to remember that each permutation of the orbitals alters the sign of the determinant. Therefore, when computing the matrix elements, this change must be accounted for by multiplying the result by $(−1)^p$, where $p$ is the number of permutations made to align the determinants. This factor is vital for ensuring the correct sign of the matrix elements, which can significantly impact the results of quantum mechanical calculations.
->
-> This requirement for alignment and sign adjustment adds complexity to the implementation, as each comparison between determinants not only involves checking for differences but also finding the minimal number of permutations needed for alignment.
+The problem with Configuration Interaction is that it is not size-extensive, meaning that the energy does not scale linearly with the number of electrons. This is because the Configuration Interaction wavefunction is not size-consistent, and the energy of a system is not the sum of the energies of its parts. This is a significant drawback of Configuration Interaction, as it limits its application to small systems.
 
-Once the matrix elements are computed, the FCI Hamiltonian matrix $\mathbf{H}^{CI}$ is diagonalized to obtain the eigenvalues and eigenvectors. The eigenvalues represent the total energy of the system in ground and excited states, while the eigenvectors provide the coefficients for the linear combination of Slater determinants that best approximate the true wave function.
+## Full Configuration Interaction Implementation
+
+Let's consider the Full Configuration Interaction method, which considers all possible electronic configurations within a given basis set. The Full Configuration Interaction method provides the most accurate description of the electronic structure, but its computational cost grows exponentially with the number of electrons and basis functions, making it infeasible for large systems.
+
+The only thing that is needed, besides the general Configuration Interaction equations, are the determinants. For simplicity, we will include singlet and triplet states. The number of these determinants $N\_D$ can be for Full Configuration Interaction calculated using the binomial coefficients
+
+\begin{equation}
+N\_D=\binom{n}{k}
+\end{equation}
+
+assuming $k$ is the total number of electrons, and $n$ is the total number of spinorbitals. Each determinant is formed by permuting the electrons between spinorbitals. For practical representation, it's useful to describe determinants as arrays of numbers, where each number corresponds to the index of an occupied orbitals. For example, the ground state determinant for a system with 6 electrons and 10 spinorbitals can be represented as $\left\lbrace 0,1,2,3,4,5\right\rbrace$, whereas the determinant $\left\lbrace 0,1,2,3,4,6\right\rbrace$ represents an excited state with one electron excited from orbital 5 to orbital 6. Using the determinants, the Configuration Interaction Hamiltonian matrix \ref{eq:ci-hamiltonian} can be constructed, and the eigenvalue problem \ref{eq:ci-eigenvalue-problem} can be solved to obtain the ground and excited state energies.

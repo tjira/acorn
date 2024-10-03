@@ -1,0 +1,392 @@
+\documentclass[open=any,parskip=half,11pt]{scrbook}
+
+\usepackage{amsmath}
+\usepackage{braket}
+\usepackage[left=2.5cm,top=3cm,right=2.5cm,bottom=3cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+\usepackage{mathrsfs}
+
+\usepackage[acronym,automake,nogroupskip,toc]{glossaries}
+\makeglossaries
+
+\title{Algorithms of Quantum Chemistry}
+\author{Tom\'a\v s J\'ira}
+
+\newacronym{rhf}{RHF}{Restricted Hartree--Fock}
+\newacronym{post-hf}{post-HF}{post-Hartree--Fock}
+\newacronym{hf}{HF}{Hartree--Fock}
+\newacronym{mppt}{MPPT}{Møller--Plesset Perturbation Theory}
+\newacronym{cisdt}{CISDT}{Configuration Interaction Singles, Doubles and Triples}
+\newacronym{cisd}{CISD}{Configuration Interaction Singles and Doubles}
+\newacronym{fci}{FCI}{Full Configuration Interaction}
+\newacronym{ci}{CI}{Configuration Interaction}
+\newacronym{ccsd}{CCSD}{Coupled Cluster Singles and Doubles}
+\newacronym{ccd}{CCD}{Coupled Cluster Doubles}
+\newacronym{cc}{CC}{Coupled Cluster}
+\newacronym{ms}{MS}{Molecular Spinorbital}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\chapter{Hartree--Fock Method}\label{hartreefock-method}
+
+The \acrfull{hf} method stands as a cornerstone in quantum chemistry, offering a systematic approach to solve the electronic structure problem in molecules. This computational technique strives to determine the optimal wave function for a given molecular system, providing insights into the distribution of electrons and their energies.
+
+\section{Theoretical Background}\label{theoretical-background}
+
+Ultimately, we are interested in solving the Schrödinger equation in the form
+
+\begin{equation}
+\hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi},
+\end{equation}
+
+where \(\hat{H}\) is the molecular Hamiltonian operator, \(\Psi\) is the molecular wave function, and \(E\) is the total energy of the system. The \acrshort{hf} method aims to approximate the wave function \(\Psi\) by a single Slater determinant, which we will write in the form
+
+\begin{equation}
+\ket{\Psi}=\ket{\chi_1\chi_2\cdots\chi_N},
+\end{equation}
+
+where \(\chi_i\) represents a \acrfull{ms} and N is the total number of electrons. The \acrshort{hf} method seeks to optimize these molecular orbitals to minimize the total energy of the system, providing a reliable estimate of the electronic structure. However, in the \acrfull{rhf} method, we impose a constraint on the electron spin, and instead of spin orbitals, we work with spatial orbitals, which allows us to write the slater determinant in terms of spatial orbitals in the form
+
+\begin{equation}
+\ket{\Psi}=\ket{\Phi_1\Phi_2\cdots\Phi_{N/2}},
+\end{equation}
+
+where \(\Phi_i\) represents a molecular spatial orbital. We can see, that for the \acrshort{rhf} method, we need to have an even number of electrons in the system. In practical calculations, it is convenient to expand the molecular orbitals (spin or spatial) in terms of basis functions \(\phi\) (usually sums of Gaussian functions) and work with the expansion coefficients. If we assume that the wavefunction is a single Slater determinant, our molecular orbitals are expanded in terms of basis functions and optimize the energy of such determinant, we arrive at the Roothaan equations in the form
+
+\begin{equation}\label{eq:roothaan}
+\mathbf{FC}=\mathbf{SC\varepsilon},
+\end{equation}
+
+where \(\mathbf{F}\) is the Fock matrix (defined later), \(\mathbf{C}\) is a matrix of orbital coefficients, \(\mathbf{S}\) is the overlap matrix (also defined later), and \(\mathbf{\varepsilon}\) represents orbital energies.
+
+\section{Implementation of the Restricted Hartree--Fock Method}\label{implementation-of-the-restricted-hartreefock-method}
+
+Let's begin by defining the core Hamiltonian, also known as the one-electron Hamiltonian. The core Hamiltonian represents a part of the full Hamiltonian that excludes electron-electron repulsion. In index notation, it is expressed as
+
+\begin{equation}\label{eq:hamiltonian}
+H_{\mu\nu}^{core}=T_{\mu\nu}+V_{\mu\nu}
+\end{equation}
+
+where \(\mu\) and \(\nu\) are indices of basis functions, \(T_{\mu\nu}\) is a kinetic energy matrix element and \(V_{\mu\nu}\) is a potential energy matrix element. These matrix elements are given as
+
+\begin{align}
+T_{\mu\nu}&=\braket{\phi_{\mu}|\hat{T}|\phi_{\nu}} \\
+V_{\mu\nu}&=\braket{\phi_{\mu}|\hat{V}|\phi_{\nu}}
+\end{align}
+
+are usually calculated using analytical expressions. Additionally, using analytical expressions, we can calculate
+
+\begin{equation}\label{eq:overlap}
+S_{\mu\nu}=\braket{\phi_{\mu}|\phi_{\nu}}
+\end{equation}
+
+and the two-electron Coulomb repulsion integral
+
+\begin{equation}\label{eq:coulomb}
+J_{\mu\nu\kappa\lambda}=\braket{\phi_{\mu}\phi_{\mu}|\hat{J}|\phi_{\kappa}\phi_{\lambda}},
+\end{equation}
+
+which play crucial roles in the \acrshort{hf} calculation. The \acrshort{hf} method revolves around solving the Roothaan equations \ref{eq:roothaan} iteratively. The Fock matrix is defined as
+
+\begin{equation}\label{eq:fock}
+F_{\mu\nu}=H_{\mu\nu}^{core}+D_{\kappa\lambda}(J_{\mu\nu\kappa\lambda}-\frac{1}{2}J_{\mu\lambda\kappa\nu})
+\end{equation}
+
+depends on the unknown density matrix \(\mathbf{D}\). This iterative process is carried out through a Self-Consistent Field method. In each iteration, a guess for the density matrix is made, and the Roothaan equations are solved. The density matrix is then updated as
+
+\begin{equation}
+D_{\mu\nu}=2C_{\mu i}C_{\nu i}
+\end{equation}
+
+and the total energy of the system
+
+\begin{equation}
+E=\frac{1}{2}D_{\mu\nu}(H_{\mu\nu}^{core}+F_{\mu\nu})+E_{nuc}
+\end{equation}
+
+is then calculated using the core Hamiltonian and the Fock matrix. The important thing to note is that the Fock matrix depends on the density matrix, which is updated in each iteration. The initial guess for the density matrix is often set to zero. After the density matrix and the total energy are converged, the Self-Consistent Field procedure is terminated, and the optimized molecular orbitals are obtained. To get the final energy of the system, we need to add the nuclear repulsion energy of the form
+
+\begin{equation}
+E_{nuc}=\sum_{A}\sum_{B<A}\frac{Z_{A}Z_{B}}{R_{AB}},
+\end{equation}
+
+where \(Z_A\) is the nuclear charge of atom A, and \(R_{AB}\) is the distance between atoms A and B.
+
+\subsection{Gradient of the Restricted Hartree--Fock Method}\label{gradient-of-the-restricted-hartreefock-method}
+
+If we perform the calculation as described above and get the density matrix \(\mathbf{D}\) we can evaluate the nuclear energy gradient as
+
+\begin{equation}
+\frac{\partial E}{\partial X_{A,i}}=D_{\mu\nu}\frac{\partial H_{\mu\nu}^{core}}{\partial X_{A,i}}+2D_{\mu\nu}D_{\kappa\lambda}\frac{\partial J_{\mu\nu\kappa\lambda}}{\partial X_{A,i}}-2W_{\mu\nu}\frac{\partial S_{\mu\nu}}{\partial X_{A,i}}
+\end{equation}
+
+where \(i\) is the index of the coordinate and where \(\mathbf{W}\) is energy weighed density matrix defined as
+
+\begin{equation}
+W_{\mu\nu}=2C_{\mu i}C_{\nu i}\varepsilon_i
+\end{equation}
+
+\section{Integral Transforms to the Basis of Molecular Spinorbitals}\label{integral-transforms-to-the-basis-of-molecular-spinorbitals}
+
+To perform most of the \acrfull{post-hf} calculations, we usually need to transform the integrals to the \acrshort{ms} basis. We will describe it here and refer to it in the \acrshort{post-hf} methods sections. We will also present the \acrshort{post-hf} methods using the integrals in the \acrshort{ms} basis (and its antisymmetrized form in case of the Coulomb integrals), since it is more general.
+
+All the integrals defined in the equations \ref{eq:hamiltonian}, \ref{eq:overlap}, and \ref{eq:coulomb} and even the Fock matrix in the equation \ref{eq:fock} are defined in the basis of atomic orbitals. To transform these integrals to the \acrshort{ms} basis, we need to use the coefficient matrix \(\mathbf{C}\) obtained from the solution of the Roothaan equations \ref{eq:roothaan}. The coefficient matrix \(\mathbf{C}\), which is obtained from the \acrshort{rhf} calculation, is calculated in the spatial molecular orbital basis. The first step is to expand the coefficient matrix \(\mathbf{C}\) to the \acrshort{ms} basis. This can be done mathematically using the tiling matrix \(\mathbf{P}_{n\times 2n}\), defined as
+
+\begin{equation}
+\mathbf{P}=\begin{pmatrix}e_1&e_1&e_2&e_2&\dots&e_n&e_n\end{pmatrix}
+\end{equation}
+
+where \(e_i\) represents the \(i\)-th column of the identity matrix \(\mathbf{I}_n\) and the matrices \(\mathbf{M}_{n\times 2n}\) and \(\mathbf{N}_{n\times 2n}\) with elements given by
+
+\begin{equation}
+M_{ij}=1-j\bmod 2,N_{ij}=j \bmod 2.
+\end{equation}
+
+The coefficient matrix \(\mathbf{C}\) in the MS basis can be then expressed as
+
+\begin{equation}
+\mathbf{C}^{MS}=\begin{pmatrix}\mathbf{CP}\\\ \mathbf{CP}\end{pmatrix}\odot\begin{pmatrix}\mathbf{M}\\\ \mathbf{N}\end{pmatrix},
+\end{equation}
+
+where \(\odot\) denotes the Hadamard product. This transformed matrix \(\mathbf{C}^{MS}\) is then used to transform the Coulomb integrals \(\mathbf{J}\) to the MS basis as
+
+\begin{equation}
+J_{pqrs}^{MS}=C_{\mu p}^{MS}C_{\nu q}^{MS}(\mathbf{I}_{2}\otimes_K(\mathbf{I}_{2}\otimes_K\mathbf{J})^{(4,3,2,1)})_{\mu\nu\kappa\lambda}C_{\kappa r}^{MS}C_{\lambda s}^{MS},
+\end{equation}
+
+where the superscript \((4,3,2,1)\) denotes the axes transposition and \(\otimes_K\) is the Kronecker product. This notation accounts for the spin modifications and ensures that the transformations adhere to quantum mechanical principles. We also define the antisymmetrized Coulomb integrals in physicists' notation as
+
+\begin{equation}
+\braket{pq||rs}=(J_{pqrs}^{MS}-J_{psrq}^{MS})^{(1,3,2,4)}.
+\end{equation}
+
+For the transformation of the one-electron integrals such as the core Hamiltonian, the overlap matrix and also the Fock matrix, we use the formula
+
+\begin{equation}
+A_{pq}^{MS}=C_{\mu p}^{MS}(\mathbf{I}_{2}\otimes_K\mathbf{A})_{\mu\nu}C_{\nu q}^{MS},
+\end{equation}
+
+where \(\mathbf{A}\) is an arbitrary one-electron integral.
+\chapter{Møller--Plesset Perturbation Theory}\label{muxf8llerplesset-perturbation-theory}
+
+\acrfull{mppt} is a quantum mechanical method used to improve the accuracy of electronic structure calculations within the framework of \acrshort{hf} theory. It involves treating electron-electron correlation effects as a perturbation to the reference \acrshort{hf} wave function. The method is named after its developers, physicists C. Møller and M. S. Plesset. By systematically including higher-order corrections, Møller--Plesset Perturbation Pheory provides more accurate predictions of molecular properties compared to the initial \acrshort{hf} approximation.
+
+\section{Theory of the Pertrubative Approach}\label{theory-of-the-pertrubative-approach}
+
+As for the \acrshort{hf} method, we start with the Schrödinger equation in the form
+
+\begin{equation}
+\hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi},
+\end{equation}
+
+where \(\hat{\mathbf{H}}\) is the molecular Hamiltonian operator, \(\ket{\Psi}\) is the molecular wave function, and \(E\) is the total energy of the system. In the Møller--Plesset perturbation theory we write the Hamiltonian operator as
+
+\begin{equation}
+\hat{\mathbf{H}}=\hat{\mathbf{H}}^{(0)}+\lambda\hat{\mathbf{H}}^{'},
+\end{equation}
+
+where \(\hat{\mathbf{H}}^{(0)}\) is the Hamiltonian used in the \acrshort{hf} method (the electrons are moving in the mean field), \(\lambda\) is a parameter between 0 and 1, and \(\hat{\mathbf{H}}^{'}\) is the perturbation operator representing the missing electron-electron interactions. We can then expand the wavefunction \(\ket{\Psi}\) and total energy \(E\) in a power series of \(\lambda\) as
+
+\begin{align}
+\ket{\Psi}&=\ket{\Psi^{(0)}}+\lambda\ket{\Psi^{(1)}}+\lambda^2\ket{\Psi^{(2)}}+\dots \\
+E&=E^{(0)}+\lambda E^{(1)}+\lambda^2 E^{(2)}+\dots
+\end{align}
+
+and ask, how how does the total energy change with the included terms. After some algebra, we can show that the first-order correction to the total energy is zero, the second-order correction is given by
+
+\begin{equation}
+E_{corr}^{MP2}=\sum_{s>0}\frac{H_{0s}^{'}H_{s0}^{'}}{E_0-E_s},
+\end{equation}
+
+where \(s\) runs over all doubly excited determinants, \(H_{0s}^{'}\) is the matrix element of the perturbation operator between the HF determinant and the doubly excited determinant, and \(E_0\) and \(E_s\) are the energies of the reference and doubly excited determinants, respectively. We could express all higher-order corrections in a similar way, using only the matrix elements of the perturbation operator and the energies of the determinants. For practical calculations, we apply Slater-Condon rules to evaluate the matrix elements and use the orbital energies obtained from the \acrshort{hf} calculation. The expressions for calculation are summarised below.
+
+\section{Implementation of 2nd and 3rd Order Corrections}\label{implementation-of-2nd-and-3rd-order-corrections}
+
+Having the antisymmetrized Coulomb integrals in the MS basis and physicists' notation defined in section \ref{integral-transforms-to-the-basis-of-molecular-spinorbitals}, we can now proceed with the calculation of the correlation energy. We wil use the convention, that the indices \(i\), \(j\), \(k\), and \(l\) run over occupied spinorbitals, while the indices \(a\), \(b\), \(c\), and \(d\) run over virtual spinorbitals. The 2nd-order and 3rd-order correlation energies are given by the following expressions.
+
+The 2nd-order correlation energy:
+
+\begin{equation}
+E_{corr}^{MP2}=\frac{1}{4}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b}
+\end{equation}
+
+The 3rd-order correlation energy:
+
+\begin{align}
+E_{corr}^{MP3}=&\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{cd||ab}\braket{ij||cd}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_i+\varepsilon_j-\varepsilon_c-\varepsilon_d)}+ \\
+&+\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||kl}\braket{kl||ab}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_k+\varepsilon_l-\varepsilon_a-\varepsilon_b)}+ \\
+&+\sum_{ijab}\frac{\braket{ab||ij}\braket{cj||kb}\braket{ik||ac}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_i+\varepsilon_k-\varepsilon_a-\varepsilon_c)}
+\end{align}
+
+To calculate the 4th order correction, we would need to write 39 terms, which is not practical. Higher-order corrections are usually not programmed this way, instead, the diagrammatic approach is used.
+
+\begin{quote}
+\end{quote}
+\chapter{Configuration Interaction}\label{configuration-interaction}
+
+\acrfull{ci} is a \acrshort{post-hf}, utilizing a linear variational approach to address the nonrelativistic Schrödinger equation under the Born--Oppenheimer approximation for multi-electron quantum systems. \acrshort{ci} mathematically represents the wave function as a linear combination of Slater determinants. The term ``configuration'' refers to different ways electrons can occupy orbitals, while ``interaction'' denotes the mixing of these electronic configurations or states. \acrshort{ci} computations, however, are resource-intensive, requiring significant CPU time and memory, limiting their application to smaller molecular systems. While \acrfull{fci} considers all possible electronic configurations, making it computationally prohibitive for larger systems, truncated versions like \acrfull{cisd} or \acrfull{cisdt} are more feasible and commonly employed in quantum chemistry studies.
+
+\section{Theoretical Background of General Configuration Interaction}\label{theoretical-background-of-general-configuration-interaction}
+
+The idea is quite simple, using the convention, that the indices \(i\), \(j\), \(k\), and \(l\) run over occupied spinorbitals and the indices \(a\), \(b\), \(c\), and \(d\) run over virtual spinorbitals. The CI wavefunction is written as
+
+\begin{equation}
+\ket{\Psi}=c_0\ket{\Psi_0}+\left(\frac{1}{1!}\right)^2c_i^a\ket{\Psi_i^a}+\left(\frac{1}{2!}\right)^2c_{ij}^{ab}\ket{\Psi_{ij}^{ab}}+\left(\frac{1}{3!}\right)^2c_{ijk}^{abc}\ket{\Psi_{ijk}^{abc}}+\dots
+\end{equation}
+
+and we would like to know the coefficients \(c\) that minimize the energy. To do that, we simply construct the hamiltonian matrix in the basis of excited determinants and diagonalize it. The \acrshort{ci} Hamiltonian matrix \(\mathbf{H}^{CI}\) is constructed as
+
+\begin{equation}\label{eq:ci-hamiltonian}
+\mathbf{H}^{CI}=
+\begin{bmatrix}
+\braket{\Psi_0|\hat{H}|\Psi_0} & \braket{\Psi_0|\hat{H}|\Psi_i^a} & \braket{\Psi_0|\hat{H}|\Psi_{ij}^{ab}} & \dots \\
+\braket{\Psi_i^a|\hat{H}|\Psi_0} & \braket{\Psi_i^a|\hat{H}|\Psi_i^a} & \braket{\Psi_i^a|\hat{H}|\Psi_{ij}^{ab}} & \dots \\
+\braket{\Psi_{ia}^{jb}|\hat{H}|\Psi_0} & \braket{\Psi_{ia}^{jb}|\hat{H}|\Psi_1} & \braket{\Psi_{ia}^{jb}|\hat{H}|\Psi_{ia}^{jb}} & \dots \\
+\vdots & \vdots & \vdots & \ddots
+\end{bmatrix}
+\end{equation}
+
+and solving the eigenvalue problem
+
+\begin{equation}\label{eq:ci-eigenvalue-problem}
+\mathbf{H}^{CI}\mathbf{C}^{CI}=\mathbf{C}^{CI}\mathbf{\varepsilon}^{CI}
+\end{equation}
+
+where \(\mathbf{C}^{CI}\) is a matrix of coefficients and \(\mathbf{\varepsilon}^{CI}\) is a diagonal matrix of eigenvalues. The lowest eigenvalue corresponds to the ground state energy, while the eigenvector corresponding to the lowest eigenvalue gives the coefficients that minimize the energy. The matrix elements of the CI Hamiltonian are calculated using the Slater-Condon rules in the form
+
+\begin{equation}\label{eq:slater-condon-rules}
+\mathbf{H}_{ij}^{CI}=
+\begin{cases} 
+\displaystyle \sum_kH_{kk}^{core,MS}+\frac{1}{2}\sum_k\sum_l\braket{kl||kl}&D_i=D_j \\
+\displaystyle H_{pr}^{core,MS}+\sum_k\braket{pk||lk}&D_i=\left\lbrace\dotsi p\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi\right\rbrace \\
+\displaystyle \vphantom{\sum_k}\braket{pq||rs}&D_i=\left\lbrace\dotsi p\dotsi q\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi s\dotsi\right\rbrace \\
+\displaystyle \vphantom{\sum_k}0&\text{otherwise},
+\end{cases}
+\end{equation}
+
+where \(D_i\) and \(D_j\) are Slater determinants, \(\mathbf{H}^{core,MS}\) is the core Hamiltonian in the basis of molecular spinorbitals, and \(\braket{pk||lk}\) are the antisymmetrized Coulomb repulsion integrals in the basis of molecular spinorbitals and physicists' notation. The sums extend over all spinorbitals common between the two determinants. All the integrals in the MS basis are already explained in section \ref{integral-transforms-to-the-basis-of-molecular-spinorbitals}. Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
+
+The problem with \acrshort{ci} is that it is not size-extensive, meaning that the energy does not scale linearly with the number of electrons. This is because the \acrshort{ci} wavefunction is not size-consistent, and the energy of a system is not the sum of the energies of its parts. This is a significant drawback of \acrshort{ci}, as it limits its application to small systems.
+
+\section{Full Configuration Interaction Implementation}\label{full-configuration-interaction-implementation}
+
+Let's consider the \acrshort{fci} method, which considers all possible electronic configurations within a given basis set. The \acrshort{fci} method provides the most accurate description of the electronic structure, but its computational cost grows exponentially with the number of electrons and basis functions, making it infeasible for large systems.
+
+The only thing that is needed, besides the general \acrshort{ci} equations, are the determinants. For simplicity, we will include singlet and triplet states. The number of these determinants \(N_D\) can be for \acrshort{fci} calculated using the binomial coefficients
+
+\begin{equation}
+N_D=\binom{n}{k}
+\end{equation}
+
+assuming \(k\) is the total number of electrons, and \(n\) is the total number of spinorbitals. Each determinant is formed by permuting the electrons between spinorbitals. For practical representation, it's useful to describe determinants as arrays of numbers, where each number corresponds to the index of an occupied orbitals. For example, the ground state determinant for a system with 6 electrons and 10 spinorbitals can be represented as \(\left\lbrace 0,1,2,3,4,5\right\rbrace\), whereas the determinant \(\left\lbrace 0,1,2,3,4,6\right\rbrace\) represents an excited state with one electron excited from orbital 5 to orbital 6. Using the determinants, the \acrshort{ci} Hamiltonian matrix \ref{eq:ci-hamiltonian} can be constructed, and the eigenvalue problem \ref{eq:ci-eigenvalue-problem} can be solved to obtain the ground and excited state energies.
+\chapter{Coupled Cluster Theory}\label{coupled-cluster-theory}
+
+\acrfull{cc} theory is a \acrshort{post-hf} method used in quantum chemistry to achieve highly accurate solutions to the electronic Schrödinger equation, particularly for ground states and certain excited states. It improves upon \acrshort{hf} by incorporating electron correlation effects through a systematic inclusion of excitations (singles, doubles, triples, etc.) from a reference wavefunction, usually the \acrshort{hf} wavefunction. The method uses an exponential ansatz to account for these excitations, leading to a size-consistent and size-extensive approach, making it one of the most accurate methods available for small to medium-sized molecular systems.
+
+Within \acrshort{cc} theory, specific truncations are often applied to manage computational cost. The \acrfull{ccd} method considers only double excitations, capturing electron correlation more effectively than simpler methods like \acrshort{hf} but at a lower computational expense than higher-level methods. \acrfull{ccsd} extends this approach by including both single and double excitations, offering greater accuracy, particularly for systems where single excitations play a significant role. \acrshort{ccsd} is widely used due to its balance between accuracy and computational feasibility, making it a reliable choice for many chemical systems. In the below equations, we will again use the convention that the indices \(i\), \(j\), \(k\), and \(l\) run over occupied spinorbitals, while the indices \(a\), \(b\), \(c\), and \(d\) run over virtual spinorbitals.
+
+\section{Coupled Cluster Formalism}\label{coupled-cluster-formalism}
+
+In the \acrshort{cc} formalism, we write the total wavefunction in an exponential form as
+
+\begin{equation}
+\ket{\Psi}=e^{\hat{\mathbf{T}}}\ket{\Psi_0}
+\end{equation}
+
+where \(\ket{\Psi_0}\) is the reference wavefunction, usually the \acrshort{hf} wavefunction, and \(\hat{T}\) is the cluster operator that generates excitations from the reference wavefunction. The cluster operator is defined as
+
+\begin{equation}
+\hat{\mathbf{T}}=\hat{\mathbf{T}}_1+\hat{\mathbf{T}}_2+\hat{\mathbf{T}}_3+\dots
+\end{equation}
+
+where \(\hat{\mathbf{T}}_1\) generates single excitations, \(\hat{\mathbf{T}}_2\) generates double excitations, and so on. For example
+
+\begin{equation}
+\hat{\mathbf{T}}_1\ket{\Psi_0}=\left(\frac{1}{1!}\right)^2t_i^a\ket{\Psi_i^a},
+\end{equation}
+
+where \(t_i^a\) are the single excitation amplitudes. These amplitudes are just expansion coefficients that determine the contribution of each excitation to the total wavefunction. In the context of configuration interaction, we denoted these coefficients as \(c_i^a\). Now that we have the total wavefunction, we want to solve the Schrödinger equation
+
+\begin{equation}
+\hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi}
+\end{equation}
+
+where \(\hat{H}\) is the molecular Hamiltonian operator, \(E\) is the total energy of the system, and \(\ket{\Psi}\) is the total wavefunction. In the \acrshort{cc} theory, we usually rewrite the Schrödinger equation in the exponential form as
+
+\begin{equation}
+e^{-\hat{\mathbf{T}}}\hat{\mathbf{H}}e^{\hat{\mathbf{T}}}\ket{\Psi_0}=E\ket{\Psi_0}
+\end{equation}
+
+because we can then express the \acrshort{cc} energy as
+
+\begin{equation}
+E=\braket{\Psi_0|e^{-\hat{\mathbf{T}}}\hat{\mathbf{H}}e^{\hat{\mathbf{T}}}|\Psi_0},
+\end{equation}
+
+taking advantage of the exponential form of the wavefunction. We could then proceed to express the total energy for various \acrshort{cc} methods like \acrshort{ccd} and \acrshort{ccsd}, but the equations would be quite lengthy. Instead, we will leave the theory here and proceed to the actual calculations. One thing to keep in mind is that the CC equations are nonlinear and require iterative solution methods to obtain the final amplitudes. The initial guess for the amplitudes is often set to zero, and the equations are solved iteratively until convergence is achieved.
+
+\section{Implementation of CCD and CCSD}\label{implementation-of-ccd-and-ccsd}
+
+The derivation of the equations that are actually used to perform the calculations is quite lengthy and involves a lot of algebra. We will not go into the details here, but we will provide the final expressions for the \acrshort{ccd} and \acrshort{ccsd} methods. The \acrshort{ccd} and \acrshort{ccsd} methods are the most commonly used \acrshort{cc} methods, and they are often used as benchmarks for other methods. All we need for the evaluation of the expressions below are the Coulomb integrals in the MS basis and physicists' notation, Fock matrix in the MS basis and the orbital energies obtained from the Hartree-Fock calculation. All these transformations are already explained in section \ref{integral-transforms-to-the-basis-of-molecular-spinorbitals} in the HF section. The expressions for the CCD can be expressed as
+
+\begin{equation}
+E_{\text{CCD}}=\frac{1}{4}\braket{ij||ab}t_{ij}^{ab}
+\end{equation}
+
+where the double excitation amplitudes \(t_{ij}^{ab}\) are determined by solving the \acrshort{ccd} amplitude equation. The \acrshort{ccd} amplitude equations are given by
+
+\begin{align}
+t_{ij}^{ab}=&\braket{ab||ij}+\frac{1}{2}\braket{ab||cd}t_{cd}^{ij}+\frac{1}{2}\braket{kl||ij}t_{ab}^{kl}+\hat{P}_{(a/b)}\hat{P}_{(i/j)}\braket{ak||ic}t_{cb}^{ij}- \\
+&-\frac{1}{2}\hat{P}_{(a/b)}\braket{kl||cd}t_{ac}^{ij}t_{bd}^{kl}-\frac{1}{2}\hat{P}_{(i/j)}\braket{kl||cd}t_{ab}^{ik}t_{cd}^{jl}+ \\
+&+\frac{1}{4}\braket{kl||cd}t_{cd}^{ij}t_{ab}^{kl}+\hat{P}_{(i/j)}\braket{kl||cd}t_{ac}^{ik}t_{bd}^{jl}
+\end{align}
+
+where \(\hat{P}_{(a/b)}\) and \(\hat{P}_{(i/j)}\) are permutation operators that ensure the correct antisymmetry of the amplitudes. The \acrshort{ccsd} energy expression is given by
+
+\begin{equation}
+E_{\text{CCSD}}=F_{ia}^{MS}t_a^i+\frac{1}{4}\braket{ij||ab}t_{ij}^{ab}+\frac{1}{2}\braket{ij||ab}t_{i}^{a}t_{b}^{j}
+\end{equation}
+
+where the single and double excitation amplitudes \(t_a^i\) and \(t_{ij}^{ab}\) are determined by solving the \acrshort{ccsd} amplitude equations. To simplify the notation a little bit, we define the the \(\mathscr{F}\) and \(\mathscr{W}\) intermediates as
+
+\begin{align}
+\mathscr{F}_{ae}=&\left(1-\delta_{ae}\right)F_{ae}-\frac{1}{2}\sum_mF_{me}t_m^a+\sum_{mf}t_m^f\braket{ma||fe}-\frac{1}{2}\sum_{mnf}\tilde{\tau}_{mn}^{af}\braket{mn||ef} \\
+\mathscr{F}_{mi}=&\left(1-\delta_{mi}\right)F_{mi}+\frac{1}{2}\sum_eF_{me}t_i^e+\sum_{en}t_n^e\braket{mn||ie}+\frac{1}{2}\sum_{nef}\tilde{\tau}_{in}^{ef}\braket{mn||ef} \\
+\mathscr{F}_{me}=&F_{me}+\sum_{nf}t_n^f\braket{mn||ef} \\
+\mathscr{W}_{mnij}=&\braket{mn||ij}+\hat{P}_{(i/j)}\sum_et_j^e\braket{mn||ie}+\frac{1}{4}\sum_{ef}\tau_{ij}^{ef}\braket{mn||ef} \\
+\mathscr{W}_{abef}=&\braket{ab||ef}-\hat{P}_{(a/b)}\sum_et_m^b\braket{am||ef}+\frac{1}{4}\sum_{mn}\tau_{mn}^{ab}\braket{mn||ef} \\
+\mathscr{W}_{mbej}=&\braket{mb||ej}+\sum_ft_j^f\braket{mb||ef}-\sum_nt_n^b\braket{mn||ej}- \\
+&-\sum_{nf}\left(\frac{1}{2}t_{jn}^{fb}+t_j^ft_n^b\right)\braket{mn||ef}
+\end{align}
+
+and two-particle excitation operators as
+
+\begin{align}
+\tilde{\tau}_{ij}^{ab}=&t_{ij}^{ab}+\frac{1}{2}\left(t_i^at_j^b-t_i^bt_j^a\right) \\
+\tau_{ij}^{ab}=&t_{ij}^{ab}+t_i^at_j^b-t_i^bt_j^a
+\end{align}
+
+The \acrshort{ccsd} single excitations amplitude equations are then given by
+
+\begin{align}
+t_i^a=&F_{ai}^{MS}+\sum_et_i^e\mathscr{F}_{ae}-\sum_mt_m^a\mathscr{F}_{mi}\sum_{me}t_{im}^{ae}\mathscr{F}_{me}-\sum_{nf}t_n^f\braket{na||if}- \\
+&-\frac{1}{2}\sum_{mef}t_{im}^{ef}\braket{ma||ef}-\frac{1}{2}\sum_{men}t_{mn}^{ae}\braket{nm||ei}
+\end{align}
+
+and the \acrshort{ccsd} double excitations amplitude equations are given by
+
+\begin{align}
+t_{ij}^{ab}=&\braket{ab||ij}+\hat{P}_{(a/b)}\sum_et_{ij}^{ae}\left(\mathscr{F}_{be}-\frac{1}{2}\sum_mt_m^b\mathscr{F}_{ae}\right)- \\
+&-\hat{P}_{(i/j)}\sum_mt_{im}^{ab}\left(\mathscr{F}_{mi}+\frac{1}{2}\sum_et_j^e\mathscr{F}_{me}\right)+\frac{1}{2}\sum_{mn}\tau_{mn}^{ab}\mathscr{W}_{mnij}+ \\
+&+\frac{1}{2}\sum_{ef}\tau_{ij}^{ef}\mathscr{W}_{abef}+\hat{P}_{(i/j)}\hat{P}_{(a/b)}\sum_{me}\left(t_{im}^{ae}\mathscr{W}_{mbej}-t_i^et_m^a\braket{mb||ej}\right)+ \\
+&+\hat{P}_{(i/j)}\sum_et_i^e\braket{ab||ej}-\hat{P}_{(a/b)}\sum_mt_m^a\braket{mb||ij}
+\end{align}
+
+The \acrshort{ccsd} amplitude equations are, again, nonlinear and require iterative solution methods to obtain the final amplitudes. The initial guess for the amplitudes is often set to zero, and the equations are solved iteratively until convergence is achieved.
+
+\printglossary[type=\acronymtype,title=List of Acronyms,toctitle=List of Acronyms]
+
+\end{document}
