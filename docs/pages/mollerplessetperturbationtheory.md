@@ -41,15 +41,15 @@ where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix
 
 ## Implementation of 2nd and 3rd Order Corrections
 
-Having the antisymmetrized Coulomb integrals in the MS basis and physicists' notation defined [here](hartreefockmethod.html#the-integral-transforms), we can now proceed with the calculation of the correlation energy. We wil use the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals, while the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The 2nd-order and 3rd-order correlation energies are given by the following expressions.
+Having the antisymmetrized Coulomb integrals in the MS basis and physicists' notation defined [here](hartreefockmethod.html#the-integral-transforms), we can now proceed with the calculation of the correlation energy. We wil use the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals, while the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The 2nd-order and 3rd-order correlation energies are given by the following expressions.<!--\cite{10.1021/acs.jpclett.9b01641}-->
 
-The 2nd-order correlation energy:<!--\cite{10.1021/acs.jpclett.9b01641}-->
+The 2nd-order correlation energy:
 
 \begin{equation}
 E_{corr}^{MP2}=\frac{1}{4}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b}
 \end{equation}
 
-The 3rd-order correlation energy:<!--\cite{10.1021/acs.jpclett.9b01641}-->
+The 3rd-order correlation energy:
 
 \begin{align}
 E_{corr}^{MP3}=&\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{cd||ab}\braket{ij||cd}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_i+\varepsilon_j-\varepsilon_c-\varepsilon_d)}+\nonumber \\\\\

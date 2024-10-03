@@ -20,19 +20,24 @@ ACRONYMS=(
 
 # create the main LaTeX document
 cat > docs/tex/main.tex << EOL
-\documentclass[open=any,parskip=half,11pt]{scrbook}
+\documentclass[,headsepline=true,parskip=half,open=any,11pt]{scrbook}
 
-\usepackage{amsmath}
-\usepackage{braket}
-\usepackage[left=2cm,top=2.5cm,right=2cm,bottom=2.5cm]{geometry}
-\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
-\usepackage{mathrsfs}
+\usepackage{amsmath} % all the math environments and symbols
+\usepackage{braket} % braket notation
+\usepackage[left=2cm,top=2.5cm,right=2cm,bottom=2.5cm]{geometry} % page layout
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref} % hyperlinks
+\usepackage{mathrsfs} % mathscr environment
 
-\usepackage[backend=biber,style=chem-acs]{biblatex}
+\usepackage[backend=biber,style=chem-acs]{biblatex} % bibliography
 \addbibresource{library.bib}
 
-\usepackage[acronym,automake,nogroupskip,toc]{glossaries}
+\usepackage[acronym,automake,nogroupskip,toc]{glossaries} % acronyms
 \makeglossaries
+
+\usepackage[automark]{scrlayer-scrpage} % page numbering in header
+\clearpairofpagestyles
+\ohead{\headmark}
+\ihead{\pagemark}
 
 \title{Algorithms of Quantum Chemistry}
 \author{Tom\'a\v s J\'ira}
@@ -123,14 +128,14 @@ for PAGE in ${PAGES[@]}; do
     awk '/{:.cite}/ {exit} {print}' docs/pages/$PAGE.md > temp.md && mv temp.md docs/pages/$PAGE.md && echo "{:.cite}" >> docs/pages/$PAGE.md
 
     # get the citations
-    CITATIONS=($(grep -o "cite{.*}" docs/pages/$PAGE.md | sed 's/cite{// ; s/}//'))
+    CITATIONS=($(grep -o "cite{.*}--" docs/pages/$PAGE.md | sed 's/cite{// ; s/}--//'))
 
     # remove duplicates from the citations
     CITATIONS=($(echo "${CITATIONS[@]}" | tr " " "\n" | sort -u | tr "\n" " "))
 
     # find and append the citation
     for CITATION in ${CITATIONS[@]}; do
-        grep $CITATION docs/tex/library.md | awk '{print "> " $0 "\n>"}' >> docs/pages/$PAGE.md
+        grep $(echo "$CITATION" | sed 's/!/(/ ; s/!/)/') docs/tex/library.md | awk '{print "> " $0 "\n>"}' >> docs/pages/$PAGE.md
     done
 done
 

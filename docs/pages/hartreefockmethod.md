@@ -65,7 +65,7 @@ and the two-electron Coulomb repulsion integrals
 J\_{\mu\nu\kappa\lambda}=\braket{\phi\_{\mu}\phi\_{\mu}|\hat{J}|\phi\_{\kappa}\phi\_{\lambda}},
 \end{equation}
 
-which play crucial roles in the Hartree--Fock calculation. The Hartree--Fock method revolves around solving the Roothaan equations \ref{eq:roothaan} iteratively. The Fock matrix is defined as
+which play crucial roles in the Hartree--Fock calculation.<!--\cite{10.1016/S0065-3276!08!60019-2}--> The Hartree--Fock method revolves around solving the Roothaan equations \ref{eq:roothaan} iteratively. The Fock matrix is defined as
 
 \begin{equation}\label{eq:fock}
 F\_{\mu\nu}=H\_{\mu\nu}^{core}+D\_{\kappa\lambda}(J\_{\mu\nu\kappa\lambda}-\frac{1}{2}J\_{\mu\lambda\kappa\nu})
@@ -148,3 +148,5 @@ A\_{pq}^{MS}=C\_{\mu p}^{MS}(\mathbf{I}\_{2}\otimes\_K\mathbf{A})\_{\mu\nu}C\_{\
 where $\mathbf{A}$ is an arbitrary one-electron integral.
 
 {:.cite}
+> Gill, Peter M. W. 1994. “Molecular Integrals over Gaussian Basis Functions.” In, edited by John R. Sabin and Michael C. Zerner, 25:141–205. Advances in Quantum Chemistry. Academic Press. <https://doi.org/10.1016/S0065-3276(08)60019-2>.
+>
