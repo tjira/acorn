@@ -26,9 +26,6 @@ jobs:
       - name: Compile Document
         run: ./script/docstopdf.sh
 
-      - name: Move the PDF to the Pages Directory
-        run: mv docs/tex/main.pdf docs/pages/main.pdf
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
