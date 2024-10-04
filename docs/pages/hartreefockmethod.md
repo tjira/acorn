@@ -112,7 +112,11 @@ To perform most of the post-Hartree--Fock calculations, we usually need to trans
 All the integrals defined in the equations \ref{eq:hamiltonian}, \ref{eq:overlap}, and \ref{eq:coulomb} and even the Fock matrix in the equation \ref{eq:fock} are defined in the basis of atomic orbitals. To transform these integrals to the Molecular Spinorbital basis, we need to use the coefficient matrix $\mathbf{C}$ obtained from the solution of the Roothaan equations \ref{eq:roothaan}. The coefficient matrix $\mathbf{C}$, which is obtained from the Restricted Hartree--Fock calculation, is calculated in the spatial molecular orbital basis. The first step is to expand the coefficient matrix $\mathbf{C}$ to the Molecular Spinorbital basis. This can be done mathematically using the tiling matrix $\mathbf{P}\_{n\times 2n}$, defined as
 
 \begin{equation}
-\mathbf{P}=\begin{pmatrix}e\_1&e\_1&e\_2&e\_2&\dots&e\_n&e\_n\end{pmatrix}
+\mathbf{P}=
+\begin{pmatrix}
+e\_1&e\_1&e\_2&e\_2&\dots&e\_n&e\_n
+\end{pmatrix}
+,
 \end{equation}
 
 where $e\_i$ represents the $i$-th column of the identity matrix $\mathbf{I}\_n$ and the matrices $\mathbf{M}\_{n\times 2n}$ and $\mathbf{N}\_{n\times 2n}$ with elements given by
@@ -124,7 +128,17 @@ M\_{ij}=1-j\bmod 2,N\_{ij}=j \bmod 2.
 The coefficient matrix $\mathbf{C}$ in the MS basis can be then expressed as
 
 \begin{equation}
-\mathbf{C}^{MS}=\begin{pmatrix}\mathbf{CP}\\\ \mathbf{CP}\end{pmatrix}\odot\begin{pmatrix}\mathbf{M}\\\ \mathbf{N}\end{pmatrix},
+\mathbf{C}^{MS}=
+\begin{pmatrix}
+\mathbf{CP} \\\\\
+\mathbf{CP}
+\end{pmatrix}
+\odot
+\begin{pmatrix}
+\mathbf{M} \\\\\
+\mathbf{N}
+\end{pmatrix}
+,
 \end{equation}
 
 where $\odot$ denotes the Hadamard product. This transformed matrix $\mathbf{C}^{MS}$ is then used to transform the Coulomb integrals $\mathbf{J}$ to the MS basis as
@@ -148,5 +162,5 @@ A\_{pq}^{MS}=C\_{\mu p}^{MS}(\mathbf{I}\_{2}\otimes\_K\mathbf{A})\_{\mu\nu}C\_{\
 where $\mathbf{A}$ is an arbitrary one-electron integral.
 
 {:.cite}
-> Gill, Peter M. W. 1994. “Molecular Integrals over Gaussian Basis Functions.” In, edited by John R. Sabin and Michael C. Zerner, 25:141–205. Advances in Quantum Chemistry. Academic Press. <https://doi.org/10.1016/S0065-3276(08)60019-2>.
+> Gill, Peter M. W. 1994. *Molecular Integrals over Gaussian Basis Functions*. Academic Press. <https://doi.org/10.1016/S0065-3276(08)60019-2>.
 >

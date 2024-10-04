@@ -20,13 +20,14 @@ ACRONYMS=(
 
 # create the main LaTeX document
 cat > docs/tex/main.tex << EOL
-\documentclass[,headsepline=true,parskip=half,open=any,11pt]{scrbook}
+\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}
 
 \usepackage{amsmath} % all the math environments and symbols
 \usepackage{braket} % braket notation
 \usepackage[left=2cm,top=2.5cm,right=2cm,bottom=2.5cm]{geometry} % page layout
 \usepackage[colorlinks=true,linkcolor=blue]{hyperref} % hyperlinks
 \usepackage{mathrsfs} % mathscr environment
+\usepackage{xcolor} % colors
 
 \usepackage[backend=biber,style=chem-acs]{biblatex} % bibliography
 \addbibresource{library.bib}
@@ -34,10 +35,39 @@ cat > docs/tex/main.tex << EOL
 \usepackage[acronym,automake,nogroupskip,toc]{glossaries} % acronyms
 \makeglossaries
 
+\usepackage{listings}
+\lstdefinestyle{code}{
+    backgroundcolor=\color[rgb]{0.95,0.95,0.92},   
+    commentstyle=\color[rgb]{0,0.6,0},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color[rgb]{0.5,0.5,0.5},
+    stringstyle=\color[rgb]{0.58,0,0.82},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=code}
+
 \usepackage[automark]{scrlayer-scrpage} % page numbering in header
 \clearpairofpagestyles
 \ohead{\headmark}
 \ihead{\pagemark}
+
+\usepackage{tcolorbox} % colored boxes
+\newtcolorbox[auto counter,number within=section]{example}[2][]{
+	colback=blue!5!white,
+	colframe=blue!75!black,
+	fonttitle=\bfseries,
+	title=Example~\thetcbcounter: #2,#1
+}
 
 \title{Algorithms of Quantum Chemistry}
 \author{Tom\'a\v s J\'ira}
@@ -128,7 +158,12 @@ for PAGE in ${PAGES[@]}; do
     awk '/{:.cite}/ {exit} {print}' docs/pages/$PAGE.md > temp.md && mv temp.md docs/pages/$PAGE.md && echo "{:.cite}" >> docs/pages/$PAGE.md
 
     # get the citations
-    CITATIONS=($(grep -o "cite{.*}--" docs/pages/$PAGE.md | sed 's/cite{// ; s/}--//'))
+    CITATION_GROUPS=($(grep -o "cite{.*}--" docs/pages/$PAGE.md | sed 's/cite{// ; s/}--//')); CITATIONS=()
+
+    # split the citation groups
+    for CITATION_GROUP in ${CITATION_GROUPS[@]}; do
+        IFS=','; CITATIONS+=($CITATION_GROUP); unset IFS;
+    done
 
     # remove duplicates from the citations
     CITATIONS=($(echo "${CITATIONS[@]}" | tr " " "\n" | sort -u | tr "\n" " "))
@@ -139,5 +174,5 @@ for PAGE in ${PAGES[@]}; do
     done
 done
 
-# remove MD library
-rm docs/tex/library.md
+# remove MD temp
+rm docs/tex/*.md
