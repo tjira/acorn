@@ -23,5 +23,5 @@ You can also download this documentation along with complementary documents in v
 
 ### Electronic Structure Python Exercises
 
-[Exercise](/acorn/python/resmet.py){: .btn .btn-purple }
-[Solution](/acorn/python/exercise/resmet_exercise.py){: .btn .btn-purple }
+[Exercise](/acorn/python/exercise/resmet_exercise.py){: .btn .btn-purple }
+[Solution](/acorn/python/resmet.py){: .btn .btn-purple }

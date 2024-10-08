@@ -139,40 +139,106 @@ print("CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 ### Solution
 
 ```python
-"""
-To perform most of the post-HF calculations, we need to transform the Coulomb integrals to the molecular spinorbital basis, so if you don't plan to calculate any post-HF methods, you can end the eercise here. The restricted MP2 calculation could be done using the Coulomb integral in MO basis, but for the sake of subsequent calculations, we enforce here the integrals in the MS basis. The first thing you will need for the transform is the coefficient matrix in the molecular spinorbital basis. To perform this transform using the mathematical formulation presented in the materials, the first step is to form the tiling matrix "P" which will be used to duplicate columns of a general matrix. Please define it here.
-"""
-P = np.zeros((nbf, 2 * nbf))
+# energy containers for all the CC methods
+E_CCD, E_CCD_P, E_CCSD, E_CCSD_P = 0, 1, 0, 1
 
-"""
-Now, please define the spin masks "M" and "N". These masks will be used to zero out spinorbitals, that should be empty.
-"""
-M, N = np.zeros((nbf, 2 * nbf)), np.zeros((nbf, 2 * nbf))
+# initialize the first guess for the t-amplitudes as zeros
+t1, t2 = np.zeros((2 * nvirt, 2 * nocc)), np.zeros((2 * nvirt, 2 * nvirt, 2 * nocc, 2 * nocc))
 
-"""
-With the tiling matrix and spin masks defined, please transform the coefficient matrix into the molecular spinorbital basis. The resulting matrix should be stored in the "Cms" variable.
-"""
-Cms = np.zeros(2 * np.array(C.shape))
+# CCD loop
+if args.ccd:
+    while abs(E_CCD - E_CCD_P) > args.threshold:
 
-"""
-For some of the post-HF calculations, we will also need the Hamiltonian and Fock matrix in the molecular spinorbital basis. Please transform it and store it in the "Hms" and "Fms" variable. If you don't plan to calculate the CCSD method, you can skip the transformation of the Fock matrix, as it is not needed for the MP2 and CI calculations.
-"""
-Hms, Fms = np.zeros(2 * np.array(H.shape)), np.zeros(2 * np.array(H.shape))
+        # collect all the distinct LCCD terms
+        lccd1 = 0.5 * np.einsum("abcd,cdij->abij", Jmsa[v, v, v, v], t2, optimize=True)
+        lccd2 = 0.5 * np.einsum("klij,abkl->abij", Jmsa[o, o, o, o], t2, optimize=True)
+        lccd3 =       np.einsum("akic,bcjk->abij", Jmsa[v, o, o, v], t2, optimize=True)
 
-"""
-With the coefficient matrix in the molecular spinorbital basis available, we can proceed to transform the Coulomb integrals. It is important to note that the transformed integrals will contain twice as many elements along each axis compared to their counterparts in the atomic orbital (AO) basis. This increase is due to the representation of both spin states in the molecular spinorbital basis.
-"""
-Jms = np.zeros(2 * np.array(J.shape))
+        # apply the permuation operator and add it to the corresponding LCCD terms
+        lccd3 = lccd3 + lccd3.transpose(1, 0, 3, 2) - lccd3.transpose(1, 0, 2, 3) - lccd3.transpose(0, 1, 3, 2)
 
-"""
-The post-HF calculations also require the antisymmetrized two-electron integrals in the molecular spinorbital basis. These integrals are essential for the MP2 and CC calculations. Please define the "Jmsa" tensor as the antisymmetrized two-electron integrals in the molecular spinorbital basis.
-"""
-Jmsa = np.zeros(2 * np.array(J.shape))
+        # collect all the distinct first CCD terms
+        ccd1 = -0.50 * np.einsum("klcd,acij,bdkl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
+        ccd2 = -0.50 * np.einsum("klcd,abik,cdjl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
+        ccd3 =  0.25 * np.einsum("klcd,cdij,abkl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
+        ccd4 =         np.einsum("klcd,acik,bdjl->abij", Jmsa[o, o, v, v], t2, t2, optimize=True)
 
-"""
-As mentioned in the materials, it is also practical to define the tensors of reciprocal orbital energy differences in the molecular spinorbital basis. These tensors are essential for the MP2 and CC calculations. Please define the "Emss", "Emsd" and "Emst" tensors as tensors of single, double and triple excitation energies, respectively. The configuration interaction will not need these tensors, so you can skip this step if you don't plan to program the CI method. The MP methods will require only the "Emsd" tensor, while the CC method will need both tensors.
-"""
-Emss, Emsd = np.array([]), np.array([])
+        # apply the permuation operator and add it to the corresponding CCD terms
+        ccd1, ccd2, ccd4 = ccd1 - ccd1.transpose(1, 0, 2, 3), ccd2 - ccd2.transpose(0, 1, 3, 2), ccd4 - ccd4.transpose(0, 1, 3, 2)
+
+        # update the t-amplitudes
+        t2 = Emsd * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3 + ccd1 + ccd2 + ccd3 + ccd4)
+
+        # evaluate the energy
+        E_CCD_P, E_CCD = E_CCD, 0.25 * np.einsum("ijab,abij", Jmsa[o, o, v, v], t2, optimize=True)
+
+    # print the CCD energy
+    print("    CCD ENERGY: {:.8f}".format(E_HF + E_CCD + VNN))
+
+# CCSD loop
+if args.ccsd:
+    while abs(E_CCSD - E_CCSD_P) > args.threshold:
+
+        # calculate the effective two-particle excitation operators
+        ttau = t2 + 0.5 * np.einsum("ai,bj->abij", t1, t1, optimize=True) - 0.5 * np.einsum("ai,bj->abij", t1, t1, optimize=True).swapaxes(2, 3)
+        tau  = t2 +       np.einsum("ai,bj->abij", t1, t1, optimize=True) -       np.einsum("ai,bj->abij", t1, t1, optimize=True).swapaxes(2, 3)
+
+        # calculate the 2D two-particle intermediates
+        Fae = (1 - np.eye(2 * nvirt)) * Fms[v, v] - 0.5 * np.einsum("me,am->ae",     Fms[o, v],        t1,   optimize=True)                                                   +       np.einsum("mafe,fm->ae",   Jmsa[o, v, v, v], t1,   optimize=True)                                                   - 0.5 * np.einsum("mnef,afmn->ae", Jmsa[o, o, v, v], ttau, optimize=True)
+        Fmi = (1 - np.eye(2 * nocc )) * Fms[o, o] + 0.5 * np.einsum("me,ei->mi",     Fms[o, v],        t1,   optimize=True)                                                   +       np.einsum("mnie,en->mi",   Jmsa[o, o, o, v], t1,   optimize=True)                                                   + 0.5 * np.einsum("mnef,efin->mi", Jmsa[o, o, v, v], ttau, optimize=True)
+        Fme =                           Fms[o, v] +       np.einsum("mnef,fn->me",   Jmsa[o, o, v, v], t1,   optimize=True)
+
+        # define some complementary variables used in the following expressions
+        Fmea =            np.einsum("bm,me->be",   t1, Fme, optimize=True)
+        Fmeb =            np.einsum("ej,me->mj",   t1, Fme, optimize=True)
+        t12  = 0.5 * t2 + np.einsum("fj,bn->fbjn", t1, t1,  optimize=True)
+
+        # define the permutation arguments for all terms the W intermediates
+        P1 = np.einsum("ej,mnie->mnij", t1, Jmsa[o, o, o, v], optimize=True)
+        P2 = np.einsum("bm,amef->abef", t1, Jmsa[v, o, v, v], optimize=True)
+
+        # calculate the 4D two-particle intermediates
+        Wmnij = Jmsa[o, o, o, o] + 0.25 * np.einsum("efij,mnef->mnij", tau, Jmsa[o, o, v, v], optimize=True) + P1 - P1.swapaxes(2, 3)
+        Wabef = Jmsa[v, v, v, v] + 0.25 * np.einsum("abmn,mnef->abef", tau, Jmsa[o, o, v, v], optimize=True) - P2 + P2.swapaxes(0, 1)
+        Wmbej = Jmsa[o, v, v, o] +        np.einsum("fj,mbef->mbej",   t1,  Jmsa[o, v, v, v], optimize=True)                                  -        np.einsum("bn,mnej->mbej",   t1,  Jmsa[o, o, v, o], optimize=True)                                  -        np.einsum("fbjn,mnef->mbej", t12, Jmsa[o, o, v, v], optimize=True)
+
+        # define the right hand side of the T1 and T2 amplitude equations
+        rhs_T1, rhs_T2 = Fms[v, o].copy(), Jmsa[v, v, o, o].copy()
+
+        # calculate the right hand side of the CCSD equation for T1
+        rhs_T1 +=       np.einsum("ei,ae->ai",     t1, Fae,              optimize=True)
+        rhs_T1 -=       np.einsum("am,mi->ai",     t1, Fmi,              optimize=True)
+        rhs_T1 +=       np.einsum("aeim,me->ai",   t2, Fme,              optimize=True)
+        rhs_T1 -=       np.einsum("fn,naif->ai",   t1, Jmsa[o, v, o, v], optimize=True)
+        rhs_T1 -= 0.5 * np.einsum("efim,maef->ai", t2, Jmsa[o, v, v, v], optimize=True)
+        rhs_T1 -= 0.5 * np.einsum("aemn,nmei->ai", t2, Jmsa[o, o, v, o], optimize=True)
+
+        # define the permutation arguments for all terms in the equation for T2
+        P1  = np.einsum("aeij,be->abij",    t2,     Fae - 0.5 * Fmea, optimize=True)
+        P2  = np.einsum("abim,mj->abij",    t2,     Fmi + 0.5 * Fmeb, optimize=True)
+        P3  = np.einsum("aeim,mbej->abij",  t2,     Wmbej,            optimize=True)
+        P3 -= np.einsum("ei,am,mbej->abij", t1, t1, Jmsa[o, v, v, o], optimize=True)
+        P4  = np.einsum("ei,abej->abij",    t1,     Jmsa[v, v, v, o], optimize=True)
+        P5  = np.einsum("am,mbij->abij",    t1,     Jmsa[o, v, o, o], optimize=True)
+
+        # calculate the right hand side of the CCSD equation for T2
+        rhs_T2 += 0.5 * np.einsum("abmn,mnij->abij", tau, Wmnij, optimize=True)
+        rhs_T2 += 0.5 * np.einsum("efij,abef->abij", tau, Wabef, optimize=True)
+        rhs_T2 += P1.transpose(0, 1, 2, 3) - P1.transpose(1, 0, 2, 3)
+        rhs_T2 -= P2.transpose(0, 1, 2, 3) - P2.transpose(0, 1, 3, 2)
+        rhs_T2 += P3.transpose(0, 1, 2, 3) - P3.transpose(0, 1, 3, 2)
+        rhs_T2 -= P3.transpose(1, 0, 2, 3) - P3.transpose(1, 0, 3, 2)
+        rhs_T2 += P4.transpose(0, 1, 2, 3) - P4.transpose(0, 1, 3, 2)
+        rhs_T2 -= P5.transpose(0, 1, 2, 3) - P5.transpose(1, 0, 2, 3)
+
+        # Update T1 and T2 amplitudes
+        t1, t2 = rhs_T1 * Emss, rhs_T2 * Emsd
+
+        # evaluate the energy
+        E_CCSD_P, E_CCSD = E_CCSD, np.einsum("ia,ai", Fms[o, v], t1) + 0.25 * np.einsum("ijab,abij", Jmsa[o, o, v, v], t2) + 0.5 * np.einsum("ijab,ai,bj", Jmsa[o, o, v, v], t1, t1)
+
+    # print the CCSD energy
+    print("   CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 ```
 
 {:.cite}

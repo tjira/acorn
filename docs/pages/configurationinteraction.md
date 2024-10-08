@@ -120,40 +120,46 @@ E_FCI = 0
 ### Solution
 
 ```python
-"""
-To perform most of the post-HF calculations, we need to transform the Coulomb integrals to the molecular spinorbital basis, so if you don't plan to calculate any post-HF methods, you can end the eercise here. The restricted MP2 calculation could be done using the Coulomb integral in MO basis, but for the sake of subsequent calculations, we enforce here the integrals in the MS basis. The first thing you will need for the transform is the coefficient matrix in the molecular spinorbital basis. To perform this transform using the mathematical formulation presented in the materials, the first step is to form the tiling matrix "P" which will be used to duplicate columns of a general matrix. Please define it here.
-"""
-P = np.zeros((nbf, 2 * nbf))
+# generate the determiants
+dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]
 
-"""
-Now, please define the spin masks "M" and "N". These masks will be used to zero out spinorbitals, that should be empty.
-"""
-M, N = np.zeros((nbf, 2 * nbf)), np.zeros((nbf, 2 * nbf))
+# define the CI Hamiltonian
+Hci = np.zeros([len(dets), len(dets)])
 
-"""
-With the tiling matrix and spin masks defined, please transform the coefficient matrix into the molecular spinorbital basis. The resulting matrix should be stored in the "Cms" variable.
-"""
-Cms = np.zeros(2 * np.array(C.shape))
+# define the Slater-Condon rules, "so" is an array of unique and common spinorbitals [unique, common]
+slater0 = lambda so: sum([Hms[m, m] for m in so]) + sum([0.5 * Jmsa[m, n, m, n] for m, n in it.product(so, so)])
+slater1 = lambda so: Hms[so[0], so[1]] + sum([Jmsa[so[0], m, so[1], m] for m in so[2:]])
+slater2 = lambda so: Jmsa[so[0], so[1], so[2], so[3]]
 
-"""
-For some of the post-HF calculations, we will also need the Hamiltonian and Fock matrix in the molecular spinorbital basis. Please transform it and store it in the "Hms" and "Fms" variable. If you don't plan to calculate the CCSD method, you can skip the transformation of the Fock matrix, as it is not needed for the MP2 and CI calculations.
-"""
-Hms, Fms = np.zeros(2 * np.array(H.shape)), np.zeros(2 * np.array(H.shape))
+# filling of the CI Hamiltonian
+for i in range(0, Hci.shape[0]):
+    for j in range(i, Hci.shape[1]):
 
-"""
-With the coefficient matrix in the molecular spinorbital basis available, we can proceed to transform the Coulomb integrals. It is important to note that the transformed integrals will contain twice as many elements along each axis compared to their counterparts in the atomic orbital (AO) basis. This increase is due to the representation of both spin states in the molecular spinorbital basis.
-"""
-Jms = np.zeros(2 * np.array(J.shape))
+        # aligned determinant and the sign
+        aligned, sign = dets[j].copy(), 1
 
-"""
-The post-HF calculations also require the antisymmetrized two-electron integrals in the molecular spinorbital basis. These integrals are essential for the MP2 and CC calculations. Please define the "Jmsa" tensor as the antisymmetrized two-electron integrals in the molecular spinorbital basis.
-"""
-Jmsa = np.zeros(2 * np.array(J.shape))
+        # align the determinant "j" to "i" and calculate the sign
+        for k in (k for k in range(len(aligned)) if aligned[k] != dets[i][k]):
+            while len(l := np.where(dets[i] == aligned[k])[0]) and l[0] != k:
+                aligned[[k, l[0]]] = aligned[[l[0], k]]; sign *= -1
 
-"""
-As mentioned in the materials, it is also practical to define the tensors of reciprocal orbital energy differences in the molecular spinorbital basis. These tensors are essential for the MP2 and CC calculations. Please define the "Emss", "Emsd" and "Emst" tensors as tensors of single, double and triple excitation energies, respectively. The configuration interaction will not need these tensors, so you can skip this step if you don't plan to program the CI method. The MP methods will require only the "Emsd" tensor, while the CC method will need both tensors.
-"""
-Emss, Emsd = np.array([]), np.array([])
+        # find the unique and common spinorbitals
+        so = np.block([
+            np.array([aligned[k] for k in range(len(aligned)) if aligned[k] not in dets[i]]),
+            np.array([dets[i][k] for k in range(len(dets[j])) if dets[i][k] not in aligned]),
+            np.array([aligned[k] for k in range(len(aligned)) if aligned[k] in dets[i]])
+        ]).astype(int)
+
+        # apply the Slater-Condon rules and multiply by the sign
+        if ((aligned - dets[i]) != 0).sum() == 0: Hci[i, j] = slater0(so) * sign
+        if ((aligned - dets[i]) != 0).sum() == 1: Hci[i, j] = slater1(so) * sign
+        if ((aligned - dets[i]) != 0).sum() == 2: Hci[i, j] = slater2(so) * sign
+
+        # fill the lower triangle
+        Hci[j, i] = Hci[i, j]
+
+# solve the eigensystem and assign energy
+eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 ```
 
 {:.cite}

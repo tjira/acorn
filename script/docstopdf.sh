@@ -92,6 +92,8 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
         CONTENT_SOL_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
         CONTENT_EXC=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p ; s/^    //' docs/python/exercise/resmet_exercise.py       | head -n -2 | tail -n +3 | sed 's/^    //'    )
         CONTENT_SOL=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p ; s/^    //' docs/python/resmet.py                         | head -n -2 | tail -n +3 | sed 's/^    //'    )
+    else
+        CONTENT_EXC_INT=""; CONTENT_SOL_INT=""
     fi
     if [ "$PAGE" == "mollerplessetperturbationtheory" ]; then
         CONTENT_EXC=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )

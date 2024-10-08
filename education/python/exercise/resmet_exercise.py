@@ -9,9 +9,13 @@ In the first section, the script loads the molecule and integral data. This sect
 
 In the second section, the script performs the Hartree-Fock calculation. Students are expected to complete the while loop with the appropriate calculations. The calculation of the nuclear-nuclear repulsion energy is also requested.
 
-The third section is dedicated to the MP2 calculation. Here, students need to transform the Coulomb integrals to the molecular orbital basis and compute the MP2 correlation energy.
+The third section involves the transformation of the integrals to the molecular spinorbital basis. Here, students need to define the tiling matrix, spin masks, and transform the coefficient matrix to the molecular spinorbital basis. The Hamiltonian and Fock matrix in the molecular spinorbital basis should also be calculated.
 
-The fourth and final section involves the FCI (Full Configuration Interaction) calculation. Students should transform the required integrals into the molecular spinorbital basis, generate all possible electron determinants, and apply the Slater-Condon rules to construct the CI Hamiltonian.
+The fourth section is dedicated to the MP2 calculation. Here, students need to transform the Coulomb integrals to the molecular orbital basis and compute the MP2 correlation energy.
+
+The fifth section is dedicated to the CCSD calculation. Students should define the t1 and t2 amplitudes and complete the while loop with the appropriate calculations.
+
+The sixth and final section involves the FCI (Full Configuration Interaction) calculation. Students should transform the required integrals into the molecular spinorbital basis, generate all possible electron determinants, and apply the Slater-Condon rules to construct the CI Hamiltonian.
 """
 
 ATOM = {
@@ -164,6 +168,7 @@ if __name__ == "__main__":
     """
     for i in range(Hci.shape[0]):
         for j in range(Hci.shape[1]):
+
             """
             The challenging part of this process is aligning the determinants. In this step, I transfer the contents of the j-th determinant into the "aligned" determinant. It's important not to alter the j-th determinant directly within its original place, as doing so could disrupt the computation of other matrix elements. Instead, we carry out the next steps on the determinant now contained in the "aligned" variable. Additionally, the element sign is defined at this stage. You probably want to leave this unchanged.
             """
