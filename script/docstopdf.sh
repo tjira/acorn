@@ -35,24 +35,18 @@ cat > docs/tex/main.tex << EOL
 \usepackage[acronym,automake,nogroupskip,toc]{glossaries} % acronyms
 \makeglossaries
 
-\usepackage{listings}
+\usepackage{listings} % code listings
 \lstdefinestyle{code}{
-    backgroundcolor=\color[rgb]{0.95,0.95,0.92},   
-    commentstyle=\color[rgb]{0,0.6,0},
-    keywordstyle=\color{magenta},
-    numberstyle=\tiny\color[rgb]{0.5,0.5,0.5},
-    stringstyle=\color[rgb]{0.58,0,0.82},
-    basicstyle=\ttfamily\footnotesize,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    numbersep=5pt,                  
-    showspaces=false,                
-    showstringspaces=false,
-    showtabs=false,                  
-    tabsize=2
+    backgroundcolor=\color[rgb]{0.95,0.95,0.92},
+    commentstyle=\color[rgb]{0.00,0.60,0.00},
+    keywordstyle=\color[rgb]{1.00,0.00,1.00},
+    numberstyle=\tiny\color[rgb]{0.50,0.50,0.50},
+    stringstyle=\color[rgb]{0.58,0.00,0.82},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    numbers=left,
+    numbersep=5pt,
+    showstringspaces=false
 }
 \lstset{style=code}
 
@@ -89,11 +83,44 @@ EOL
 # loop over all pages
 echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
 
+    # remove the exercise and solution code blocks
+    sed -i '/^```python/,/^```/{/^```/!d}' docs/pages/$PAGE.md
+
+    # get the exercise and solution code blocks
+    if [ "$PAGE" == "hartreefockmethod" ]; then
+        CONTENT_EXC_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+        CONTENT_EXC=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p ; s/^    //' docs/python/exercise/resmet_exercise.py       | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p ; s/^    //' docs/python/resmet.py                         | head -n -2 | tail -n +3 | sed 's/^    //'    )
+    fi
+    if [ "$PAGE" == "mollerplessetperturbationtheory" ]; then
+        CONTENT_EXC=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+    fi
+    if [ "$PAGE" == "configurationinteraction" ]; then
+        CONTENT_EXC=$(sed -n '/# CONFIGURATION INTERACTION/,$p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL=$(sed -n '/# CONFIGURATION INTERACTION/,$p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+    fi
+    if [ "$PAGE" == "coupledcluster" ]; then
+        CONTENT_EXC=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+    fi
+
+    # add the exercise and solution code blocks
+    [[ -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC" '/^```python$/ {count++; if (count == 1) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL" '/^```python$/ {count++; if (count == 2) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+
+    # add the exercise and solution code blocks
+    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC"     '/^```python$/ {count++; if (count == 1) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC_INT" '/^```python$/ {count++; if (count == 2) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL"     '/^```python$/ {count++; if (count == 3) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL_INT" '/^```python$/ {count++; if (count == 4) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+
     # replace some MD quirks with LaTeX quirks
-    cat docs/pages/$PAGE.md | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /> /d' > temp.md
+    cat "docs/pages/$PAGE.md" | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d' > temp.md
 
     # convert MD to LaTeX
-    pandoc temp.md --mathjax --wrap=none -o temp.tex && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
+    pandoc --from markdown-auto_identifiers --listings --mathjax --to latex --wrap=none --output temp.tex temp.md && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
 done && echo "" >> docs/tex/main.tex
 
 # end the document
@@ -106,7 +133,10 @@ cat >> docs/tex/main.tex << EOL
 EOL
 
 # replace section references
-sed -i 's/\\href{hartreefockmethod.html\\#the-integral-transforms}{here}/in section \\ref{integral-transforms-to-the-basis-of-molecular-spinorbitals}/g' docs/tex/main.tex
+sed -i 's/\\href{hartreefockmethod.html\\#the-integral-transforms}{here}/in section \\ref{sec:integral_transform}/g' docs/tex/main.tex
+
+# add raggedbottom before the listings
+sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/' docs/tex/main.tex
 
 # loop over all acronyms
 for ACRONYM in "${ACRONYMS[@]}"; do
@@ -115,7 +145,10 @@ for ACRONYM in "${ACRONYMS[@]}"; do
     IFS='/'; AS=($ACRONYM); unset IFS;
 
     # replace the full acronyms with the short acronyms and save the result to a temporary file
-    awk -v full="${AS[0]}" -v short="${AS[1],,}" '(/\\section/ || /\\subsection/ || /\\subsubsection/ || /acronym/) {print; next} {gsub(full, "\\acrshort{"short"}"); print}' docs/tex/main.tex > temp.tex
+    awk -v full="${AS[0]}" -v short="${AS[1],,}" 'BEGIN {code = 0} {
+        if (/\\section/ || /\\subsection/ || /\\subsubsection/ || /acronym/) {print; next}
+        if (/^"""/) {code = !code}; if (!code) {gsub(full, "\\acrshort{"short"}")}; print;
+    }' docs/tex/main.tex > temp.tex
 
     # replace the first occurrence of the short acronyms with the full acronyms and save the result to the main file
     sed -i '0,/\\acrshort{'"${AS[1],,}"'}/s//\\acrfull{'"${AS[1],,}"'}/' temp.tex && mv temp.tex docs/tex/main.tex

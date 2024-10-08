@@ -34,11 +34,9 @@ if __name__ == "__main__":
     parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["H_AO.mat", "S_AO.mat", "J_AO.mat"])
 
     # method switches
-    parser.add_argument("--cisd", help="Perform the singles/doubles configuration interaction calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccd", help="Perform the doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccsd", help="Perform the singles/doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
-    parser.add_argument("--ccsd-t", help="Perform the singles/doubles coupled clusters calculation with third order excitations included using perturbation theory.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp2", help="Perform the second order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--mp3", help="Perform the third order Moller-Plesset calculation.", action=ap.BooleanOptionalAction)
 
@@ -49,7 +47,7 @@ if __name__ == "__main__":
     if args.help: parser.print_help(); exit()
 
     # forward declaration of integrals and energies in MS basis (just to avoid NameError in linting)
-    Hms, Fms, Jms, Jmsa, Emss, Emsd, Emst = np.zeros(2 * [0]), np.zeros(2 * [0]), np.zeros(4 * [0]), np.zeros(4 * [0]), np.array([[]]), np.array([[[[]]]]), np.array([[[[[[]]]]]])
+    Hms, Fms, Jms, Jmsa, Emss, Emsd = np.zeros(2 * [0]), np.zeros(2 * [0]), np.zeros(4 * [0]), np.zeros(4 * [0]), np.array([[]]), np.array([[[[]]]])
 
     # OBTAIN THE MOLECULE AND ATOMIC INTEGRALS =========================================================================================================================================================
 
@@ -76,6 +74,7 @@ if __name__ == "__main__":
 
     # the scf loop
     while abs(E_HF - E_HF_P) > args.threshold:
+
         # build the Fock matrix
         F = H + np.einsum("ijkl,ij->kl", J - 0.5 * K, D, optimize=True)
 
@@ -96,7 +95,7 @@ if __name__ == "__main__":
     print("    RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
     # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
-    if args.mp2 or args.mp3 or args.ccd or args.ccsd or args.ccsd_t or args.cisd or args.fci:
+    if args.mp2 or args.mp3 or args.ccd or args.ccsd or args.fci:
 
         # define the occ and virt spinorbital slices shorthand
         o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)
@@ -122,9 +121,7 @@ if __name__ == "__main__":
         Jmsa = (Jms - Jms.swapaxes(1, 3)).transpose(0, 2, 1, 3)
 
         # create the tensors of reciprocal differences of orbital energies in MS basis used in post-HF methods
-        Emst = 1 / (epsms[o].reshape(-1) + epsms[o].reshape(-1, 1) + epsms[o].reshape(-1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1, 1, 1))
-        Emsd = 1 / (epsms[o].reshape(-1) + epsms[o].reshape(-1, 1) - epsms[v].reshape(-1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1))
-        Emss = 1 / (epsms[o].reshape(-1) - epsms[v].reshape(-1, 1))
+        Emss, Emsd = 1 / (epsms[o].reshape(-1) - epsms[v].reshape(-1, 1)), 1 / (epsms[o].reshape(-1) + epsms[o].reshape(-1, 1) - epsms[v].reshape(-1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1))
 
     # MOLLER-PLESSET PERTURBATION THEORY ===============================================================================================================================================================
     if args.mp2 or args.mp3:
@@ -144,18 +141,19 @@ if __name__ == "__main__":
             E_MP3 += 1.000 * np.einsum("abij,cjkb,ikac,abij,acik", Jmsa[v, v, o, o], Jmsa[v, o, o, v], Jmsa[o, o, v, v], Emsd, Emsd, optimize=True)
             print("    MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 
-    # COUPLED ELECTRON PAIR & COUPLED CLUSTERS =========================================================================================================================================================
-    if args.ccd or args.ccsd or args.ccsd_t:
+    # COUPLED CLUSTER METHOD ===========================================================================================================================================================================
+    if args.ccd or args.ccsd:
 
-        # energy containers for all the CC correlation energies
-        E_LCCD, E_LCCD_P, E_LCCSD, E_LCCSD_P, E_CCD, E_CCD_P, E_CCSD, E_CCSD_P, E_CCSD_T = 0, 1, 0, 1, 0, 1, 0, 1, 0
+        # energy containers for all the CC methods
+        E_CCD, E_CCD_P, E_CCSD, E_CCSD_P = 0, 1, 0, 1
 
-        # initialize the first guess for the t-amplitudes
-        t1, t2 = np.zeros((2 * nvirt, 2 * nocc)), Jmsa[v, v, o, o] * Emsd
+        # initialize the first guess for the t-amplitudes as zeros
+        t1, t2 = np.zeros((2 * nvirt, 2 * nocc)), np.zeros((2 * nvirt, 2 * nvirt, 2 * nocc, 2 * nocc))
 
         # CCD loop
         if args.ccd:
             while abs(E_CCD - E_CCD_P) > args.threshold:
+
                 # collect all the distinct LCCD terms
                 lccd1 = 0.5 * np.einsum("abcd,cdij->abij", Jmsa[v, v, v, v], t2, optimize=True)
                 lccd2 = 0.5 * np.einsum("klij,abkl->abij", Jmsa[o, o, o, o], t2, optimize=True)
@@ -183,8 +181,9 @@ if __name__ == "__main__":
             print("    CCD ENERGY: {:.8f}".format(E_HF + E_CCD + VNN))
 
         # CCSD loop
-        if args.ccsd or args.ccsd_t:
+        if args.ccsd:
             while abs(E_CCSD - E_CCSD_P) > args.threshold:
+
                 # calculate the effective two-particle excitation operators
                 ttau = t2 + 0.5 * np.einsum("ai,bj->abij", t1, t1, optimize=True) - 0.5 * np.einsum("ai,bj->abij", t1, t1, optimize=True).swapaxes(2, 3)
                 tau  = t2 +       np.einsum("ai,bj->abij", t1, t1, optimize=True) -       np.einsum("ai,bj->abij", t1, t1, optimize=True).swapaxes(2, 3)
@@ -252,72 +251,11 @@ if __name__ == "__main__":
             # print the CCSD energy
             print("   CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 
-        # CCSD(T) correction
-        if args.ccsd_t:
-            # define the disconnected T3 amplitudes
-            P1 = np.einsum("ai,jkbc->abcijk", t1, Jmsa[o, o, v, v]); t3d = P1.copy()
+    # CONFIGURATION INTERACTION =======================================================================================================================================================================
+    if args.fci:
 
-            # add the disconnected T3 amplitudes
-            t3d -= np.einsum("abcijk->bacijk", P1)
-            t3d -= np.einsum("abcijk->cbaijk", P1)
-            t3d -= np.einsum("abcijk->abcjik", P1)
-            t3d += np.einsum("abcijk->bacjik", P1)
-            t3d += np.einsum("abcijk->cbajik", P1)
-            t3d -= np.einsum("abcijk->abckji", P1)
-            t3d += np.einsum("abcijk->backji", P1)
-            t3d += np.einsum("abcijk->cbakji", P1)
-
-            # define the connected T3 amplitudes
-            P2 = np.einsum("aejk,eibc->abcijk", t2, Jmsa[v, o, v, v]) - np.einsum("bcim,majk->abcijk", t2, Jmsa[o, v, o, o]); t3c = P2.copy()
-
-            # add the connected T3 amplitudes
-            t3c -= np.einsum("abcijk->bacijk", P2)
-            t3c -= np.einsum("abcijk->cbaijk", P2)
-            t3c -= np.einsum("abcijk->abcjik", P2)
-            t3c += np.einsum("abcijk->bacjik", P2)
-            t3c += np.einsum("abcijk->cbajik", P2)
-            t3c -= np.einsum("abcijk->abckji", P2)
-            t3c += np.einsum("abcijk->backji", P2)
-            t3c += np.einsum("abcijk->cbakji", P2)
-
-            # calculate the T3 correction
-            E_CCSD_T = (1.0 / 36.0) * np.einsum("abcijk,abcijk", t3c, Emst * (t3c + t3d))
-
-            # print the CCSD(T) energy
-            print("CCSD(T) ENERGY: {:.8f}".format(E_HF + E_CCSD + E_CCSD_T + VNN))
-
-    # CONFIGUIRATION INTERACTION =======================================================================================================================================================================
-    if args.cisd or args.fci:
-
-        # throw an error if FCI and CISD are used together
-        if args.cisd and args.fci: raise Exception("COMBINING OF CI CALCULATIONS NOT SUPPORTED")
-
-        # define functions to generate single and double excitations of a ground configuration
-        def single(ground, nbf):
-            for i, j in it.product(range(len(ground)), range(len(ground), nbf)):
-                yield np.array(ground[:i] + [j] + ground[i + 1:])
-        def double(ground, nbf):
-            for i, j in it.product(range(len(ground)), range(len(ground), nbf)):
-                for k, l in it.product(range(i + 1, len(ground)), range(j + 1, nbf)):
-                    yield np.array(ground[:i] + [j] + ground[i + 1:k] + [l] + ground[k + 1:])
-
-        # define the determinant list
-        dets = list()
-
-        # generate all possible determinants for CISD
-        if args.cisd:
-            dets = [np.concatenate((2 * np.array(range(nocc)), 2 * np.array(range(nocc)) + 1))]
-            for electron in single(list(range(nocc)), nbf):
-                dets.append(np.concatenate((2 * np.array(electron), 2 * np.array(range(nocc)) + 1)))
-                dets.append(np.concatenate((2 * np.array(range(nocc)), 2 * np.array(electron) + 1)))
-            for alpha, beta in it.product(single(list(range(nocc)), nbf), single(list(range(nocc)), nbf)):
-                dets.append(np.concatenate((2 * np.array(alpha), 2 * np.array(beta) + 1)))
-            for electron in double(list(range(nocc)), nbf):
-                dets.append(np.concatenate((2 * np.array(electron), 2 * np.array(range(nocc)) + 1)))
-                dets.append(np.concatenate((2 * np.array(range(nocc)), 2 * np.array(electron) + 1)))
-
-        # generate all possible determinants for FCI
-        if args.fci: dets = [np.concatenate((2 * np.array(alpha), 2 * np.array(beta) + 1)) for alpha, beta in it.product(it.combinations(range(nbf), nocc), it.combinations(range(nbf), nocc))]
+        # generate the determiants
+        dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]
 
         # define the CI Hamiltonian
         Hci = np.zeros([len(dets), len(dets)])
@@ -330,6 +268,7 @@ if __name__ == "__main__":
         # filling of the CI Hamiltonian
         for i in range(0, Hci.shape[0]):
             for j in range(i, Hci.shape[1]):
+
                 # aligned determinant and the sign
                 aligned, sign = dets[j].copy(), 1
 
@@ -357,4 +296,4 @@ if __name__ == "__main__":
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 
         # print the results
-        print("{} ENERGY: {:.8f}".format("   CISD" if args.cisd else "    FCI", E_HF + E_FCI + VNN))
+        print("    FCI ENERGY: {:.8f}".format(E_HF + E_FCI + VNN))

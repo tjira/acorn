@@ -23,6 +23,9 @@ jobs:
       - name: Install Pandoc
         run: wget https://github.com/jgm/pandoc/releases/download/3.4/pandoc-3.4-1-amd64.deb -O pandoc.deb && sudo dpkg -i pandoc.deb
 
+      - name: Copy the Educational Content
+        run: cp -r education/python docs
+
       - name: Compile Document
         run: ./script/docstopdf.sh
 
