@@ -72,6 +72,7 @@ To calculate the 4th order correction, we would need to write 39 terms, which is
 
 ### Exercise
 
+<!--{id=code:mp_exercise caption="Møller–Plesset exercise code."}-->
 ```python
 """
 Since we have everything we need for the MP calculations, we can now calculate the MP2 correlation energy. The result should be stored in the "E_MP2" variable.
@@ -90,6 +91,7 @@ print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 
 ### Solution
 
+<!--{id=code:mp_solution caption="Møller–Plesset exercise code solution."}-->
 ```python
 # energy containers
 E_MP2, E_MP3 = 0, 0

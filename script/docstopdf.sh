@@ -46,7 +46,8 @@ cat > docs/tex/main.tex << EOL
     breaklines=true,
     numbers=left,
     numbersep=5pt,
-    showstringspaces=false
+    showstringspaces=false,
+    captionpos=b
 }
 \lstset{style=code}
 
@@ -86,14 +87,15 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
     # remove the exercise and solution code blocks
     sed -i '/^```python/,/^```/{/^```/!d}' docs/pages/$PAGE.md
 
+    # clear the specific variables
+    CONTENT_EXC_INT=""; CONTENT_SOL_INT=""
+
     # get the exercise and solution code blocks
     if [ "$PAGE" == "hartreefockmethod" ]; then
         CONTENT_EXC_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
         CONTENT_SOL_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
         CONTENT_EXC=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p ; s/^    //' docs/python/exercise/resmet_exercise.py       | head -n -2 | tail -n +3 | sed 's/^    //'    )
         CONTENT_SOL=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p ; s/^    //' docs/python/resmet.py                         | head -n -2 | tail -n +3 | sed 's/^    //'    )
-    else
-        CONTENT_EXC_INT=""; CONTENT_SOL_INT=""
     fi
     if [ "$PAGE" == "mollerplessetperturbationtheory" ]; then
         CONTENT_EXC=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
@@ -109,17 +111,19 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
     fi
 
     # add the exercise and solution code blocks
-    [[ -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC" '/^```python$/ {count++; if (count == 1) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
-    [[ -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL" '/^```python$/ {count++; if (count == 2) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC" '/^```python/ {count++; if (count == 1) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL" '/^```python/ {count++; if (count == 2) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
 
     # add the exercise and solution code blocks
-    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC"     '/^```python$/ {count++; if (count == 1) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
-    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC_INT" '/^```python$/ {count++; if (count == 2) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
-    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL"     '/^```python$/ {count++; if (count == 3) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
-    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL_INT" '/^```python$/ {count++; if (count == 4) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC"     '/^```python/ {count++; if (count == 1) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC_INT" '/^```python/ {count++; if (count == 2) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL"     '/^```python/ {count++; if (count == 3) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
+    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_SOL_INT" '/^```python/ {count++; if (count == 4) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
 
     # replace some MD quirks with LaTeX quirks
-    cat "docs/pages/$PAGE.md" | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d' > temp.md
+    cat temp.md | awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```python/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" \
+                | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d' \
+                > temp.md
 
     # convert MD to LaTeX
     pandoc --from markdown-auto_identifiers --listings --mathjax --to latex --wrap=none --output temp.tex temp.md && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
