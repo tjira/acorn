@@ -113,8 +113,13 @@ The Coupled Cluster Singles and Doubles amplitude equations are, again, nonlinea
 
 ## Code Examples
 
+If you have completed the Hartree--Fock implementation [here](hartreefockmethod.html#code-examples), you can now proceed with the implementation of the Coupled Cluster Singles and Doubles methods. The code below first proposes a self-contained exercise to calculate the Coupled Cluster Singles and Doubles correlation energies. The solution is then provided in the following code snippet. You should append the code after your Hartree--Fock implementation, since the Coupled Cluster Singles and Doubles method is built on top of the Hartree--Fock method.
+
 ### Exercise
 
+In the exercise, you are expected to calculate the Coupled Cluster Singles and Doubles correlation energy. The exercise is provided in the Listing <!--\ref{code:cc_exercise}--> below.
+
+<!--{id=code:cc_exercise caption="Coupled Cluster method exercise code."}-->
 ```python
 """
 We also have everything we need for the CC calculations. In this exercise, we will calculate the CCSD energy. Since the calculation will be iterative, I define here the CCSD energy as zero, the "E_CCSD_P" variable will be used to monitor convergence.
@@ -138,6 +143,9 @@ print("CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 
 ### Solution
 
+The solutions provided in the Listing <!--\ref{code:cc_solution}--> below are complete implementations of the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles correlation energies. The code should be appended after the Hartree--Fock implementation. The code calculates the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles correlation energies and prints the results. The variable `args` is an argument parser that allows you to choose which method you want to calculate. Since the variable is not defined in this snippet (but is defined in the complete code), you can ignore it for now and remove the conditionals.
+
+<!--{id=code:cc_solution caption="Coupled Cluster method exercise code solution."}-->
 ```python
 # energy containers for all the CC methods
 E_CCD, E_CCD_P, E_CCSD, E_CCSD_P = 0, 1, 0, 1

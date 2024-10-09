@@ -6,6 +6,8 @@ ACRONYMS=(
     "Restricted Hartree--Fock/RHF"
     "post-Hartree--Fock/post-HF"
     "Hartree--Fock/HF"
+    "Møller--Plesset Perturbation Theory of 2nd Order/MP2"
+    "Møller--Plesset Perturbation Theory of 3rd Order/MP3"
     "Møller--Plesset Perturbation Theory/MPPT"
     "Configuration Interaction Singles, Doubles and Triples/CISDT"
     "Configuration Interaction Singles and Doubles/CISD"
@@ -28,6 +30,8 @@ cat > docs/tex/main.tex << EOL
 \usepackage[colorlinks=true,linkcolor=blue]{hyperref} % hyperlinks
 \usepackage{mathrsfs} % mathscr environment
 \usepackage{xcolor} % colors
+
+\usepackage{attachfile} % embedding files in PDF
 
 \usepackage[backend=biber,style=chem-acs]{biblatex} % bibliography
 \addbibresource{library.bib}
@@ -122,7 +126,7 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
 
     # replace some MD quirks with LaTeX quirks
     cat temp.md | awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```python/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" \
-                | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d' \
+                | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d ; s/^```py$/```python/' \
                 > temp.md
 
     # convert MD to LaTeX
@@ -131,18 +135,25 @@ done && echo "" >> docs/tex/main.tex
 
 # end the document
 cat >> docs/tex/main.tex << EOL
-\printglossary[type=\acronymtype,title=List of Acronyms,toctitle=List of Acronyms]
+\printglossary[type=\acronymtype]
 
 \printbibliography
 
 \end{document}
 EOL
 
+# add raggedbottom before the listings and remove stupid escapes
+sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/ ; s/\\\///g ; s/\\passthrough/\\texttt/g' docs/tex/main.tex
+
 # replace section references
 sed -i 's/\\href{hartreefockmethod.html\\#the-integral-transforms}{here}/in section \\ref{sec:integral_transform}/g' docs/tex/main.tex
+sed -i 's/\\href{hartreefockmethod.html\\#code-examples}{here}/in section \\ref{sec:hf_code_examples}/g'             docs/tex/main.tex
 
-# add raggedbottom before the listings
-sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/' docs/tex/main.tex
+# replace file attachments
+sed -i 's/\\href{\/acorn\/python\/molecule.xyz}{molecule.xyz}/\\textattachfile[color=0 0 1]{..\/python\/molecule.xyz}{molecule.xyz}/g' docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/H_AO.mat}{H\\_AO.mat}/\\textattachfile[color=0 0 1]{..\/python\/H_AO.mat}{H\\_AO.mat}/g'             docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/S_AO.mat}{S\\_AO.mat}/\\textattachfile[color=0 0 1]{..\/python\/S_AO.mat}{S\\_AO.mat}/g'             docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/J_AO.mat}{J\\_AO.mat}/\\textattachfile[color=0 0 1]{..\/python\/J_AO.mat}{J\\_AO.mat}/g'             docs/tex/main.tex
 
 # loop over all acronyms
 for ACRONYM in "${ACRONYMS[@]}"; do

@@ -169,10 +169,29 @@ where $\mathbf{A}$ is an arbitrary one-electron integral. Since a lot of the pos
 
 where $a$, $b$, $c$ are virtual orbitals and $i$, $j$, $k$ are occupied orbitals. These tensors make the code more readable, easier to understand and also more efficient.
 
-## Code Examples
+## Code Examples<!--\label{sec:hf_code_examples}-->
+
+This section provides code snippets for the Hartree--Fock method and the integral transforms to the Molecular Spinorbital basis. The code snippets are written in Python and use the NumPy package for numerical calculations. The exercises are designed to help you understand the implementation of the Hartree--Fock method and the transformation of integrals to the Molecular Spinorbital basis. The solutions are provided to guide you through the implementation process and ensure that you can verify your results.
 
 ### Exercise
 
+The exercise codes are designed to be self-contained and can be run in any Python environment. They contain placeholders that you need to fill in to complete the implementation. The exercises assume that you have defined the `atoms`, `coords`, `S`, `H`, and `J` variables, which represent the list of atomic numbers, atomic coordinates, overlap matrix, core Hamiltonian, and Coulomb integral tensor, respectively. These variables can be generaly obtained from a .xyz molecule file and the output of a quantum chemistry software. If you want to just get to the coding part, you can save the [molecule.xyz](/acorn/python/molecule.xyz), [S_AO.mat](/acorn/python/S_AO.mat), [H_AO.mat](/acorn/python/H_AO.mat), and [J_AO.mat](/acorn/python/J_AO.mat) files to the same directory as the exercise codes and and load the variables using the Listing below. The `ATOM` variable is a dictionary that maps the atomic symbols to atomic numbers.
+
+```py
+# get the atomic numbers and coordinates of all atoms
+atoms = np.array([ATOM[line.split()[0]] for line in open("molecule.xyz").readlines()[2:]], dtype=int)
+coords = np.array([line.split()[1:] for line in open("molecule.xyz").readlines()[2:]], dtype=float)
+
+# convert to bohrs
+coords *= 1.8897261254578281
+
+# load the integrals from the files
+H, S = np.loadtxt("H_AO.mat", skiprows=1), np.loadtxt("S_AO.mat", skiprows=1); J = np.loadtxt("J_AO.mat", skiprows=1).reshape(4 * [S.shape[1]])
+```
+
+With all the variables defined, you can proceed to the Hartree--Fock exercise in the Listing <!--\ref{code:hf_exercise}--> below.
+
+<!--{id=code:hf_exercise caption="Hartree--Fock method exercise code."}-->
 ```python
 """
 Here are defined some of the necessary variables. The variable "E_HF" stores the Hartree-Fock energy, while "E_HF_P" keeps track of the previous iteration's energy to monitor convergence. The "thresh" defines the convergence criteria for the calculation. The variables "nocc" and "nbf" represent the number of occupied orbitals and the number of basis functions, respectively. Initially, "E_HF" is set to zero and "E_HF_P" to one to trigger the start of the Self-Consistent Field (SCF) loop. Although you can rename these variables, it is important to note that certain sections of the code are tailored to these specific names.
@@ -199,6 +218,9 @@ VNN = 0
 print("RHF ENERGY: {:.8f}".format(E_HF + VNN))
 ```
 
+Now is a good time to check your results with the provided solution. If you are satisfied with the results, you can proceed to the next exercise in the Listing <!--\ref{code:int_exercise}--> below, which involves transforming the integrals to the molecular spinorbital basis.
+
+<!--{id=code:int_exercise caption="Integral transform exercise code."}-->
 ```python
 """
 To perform most of the post-HF calculations, we need to transform the Coulomb integrals to the molecular spinorbital basis, so if you don't plan to calculate any post-HF methods, you can end the eercise here. The restricted MP2 calculation could be done using the Coulomb integral in MO basis, but for the sake of subsequent calculations, we enforce here the integrals in the MS basis. The first thing you will need for the transform is the coefficient matrix in the molecular spinorbital basis. To perform this transform using the mathematical formulation presented in the materials, the first step is to form the tiling matrix "P" which will be used to duplicate columns of a general matrix. Please define it here.
@@ -236,8 +258,13 @@ As mentioned in the materials, it is also practical to define the tensors of rec
 Emss, Emsd = np.array([]), np.array([])
 ```
 
+If you successfully completed the exercise, you can compare your results with the provided solution. If you are satisfied with the results, you are now set for the post-HF methods exercises.
+
 ### Solution
 
+The solutions provided below are complete implementations of the Hartree--Fock method <!--(Listing \ref{code:hf_solution})--> and the integral transforms <!--(Listing \ref{code:int_solution})--> to the Molecular Spinorbital basis. The solutions are written in Python and use the NumPy package for numerical calculations. The solutions are designed to guide you through the implementation process and ensure that you can verify your results.
+
+<!--{id=code:hf_solution caption="Hartree--Fock method exercise code solution."}-->
 ```python
 # define energies, number of occupied and virtual orbitals and the number of basis functions
 E_HF, E_HF_P, VNN, nocc, nvirt, nbf = 0, 1, 0, sum(atoms) // 2, S.shape[0] - sum(atoms) // 2, S.shape[0]
@@ -271,6 +298,7 @@ for i, j in it.product(range(len(atoms)), range(len(atoms))):
 print("    RHF ENERGY: {:.8f}".format(E_HF + VNN))
 ```
 
+<!--{id=code:int_solution caption="Integral transform exercise code solution."}-->
 ```python
 # define the occ and virt spinorbital slices shorthand
 o, v = slice(0, 2 * nocc), slice(2 * nocc, 2 * nbf)

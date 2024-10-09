@@ -12,7 +12,7 @@ Configuration Interaction is a post-Hartree--Fock, utilizing a linear variationa
 
 ## Theoretical Background of General Configuration Interaction
 
-The idea is quite simple, using the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals and the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The CI wavefunction is written as
+The idea is quite simple, using the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals and the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The Configuration Interaction wavefunction is written as
 
 \begin{equation}
 \ket{\Psi}=c\_0\ket{\Psi\_0}+\left(\frac{1}{1!}\right)^2c\_i^a\ket{\Psi\_i^a}+\left(\frac{1}{2!}\right)^2c\_{ij}^{ab}\ket{\Psi\_{ij}^{ab}}+\left(\frac{1}{3!}\right)^2c\_{ijk}^{abc}\ket{\Psi\_{ijk}^{abc}}+\dots
@@ -36,7 +36,7 @@ and solving the eigenvalue problem
 \mathbf{H}^{CI}\mathbf{C}^{CI}=\mathbf{C}^{CI}\mathbf{\varepsilon}^{CI}
 \end{equation}
 
-where $\mathbf{C}^{CI}$ is a matrix of coefficients and $\mathbf{\varepsilon}^{CI}$ is a diagonal matrix of eigenvalues. The lowest eigenvalue corresponds to the ground state energy, while the eigenvector corresponding to the lowest eigenvalue gives the coefficients that minimize the energy. The matrix elements of the CI Hamiltonian are calculated using the Slater-Condon rules in the form
+where $\mathbf{C}^{CI}$ is a matrix of coefficients and $\mathbf{\varepsilon}^{CI}$ is a diagonal matrix of eigenvalues. The lowest eigenvalue corresponds to the ground state energy, while the eigenvector corresponding to the lowest eigenvalue gives the coefficients that minimize the energy. The matrix elements of the Configuration Interaction Hamiltonian are calculated using the Slater-Condon rules in the form
 
 \begin{equation}\label{eq:slater-condon-rules}
 \mathbf{H}_{ij}^{CI}=
@@ -66,8 +66,13 @@ assuming $k$ is the total number of electrons, and $n$ is the total number of sp
 
 ## Code Examples
 
+This section provides a simple example of a Configuration Interaction implementation. The code snippets are, as the previous coding examples, written in Python and use the NumPy library for numerical operations. The example demonstrates the generation of determinants, the construction of the Configuration Interaction Hamiltonian matrix, and the solution of the eigenvalue problem to obtain the ground state energy. The code is designed for educational purposes and may require modifications for practical applications, such as the inclusion of truncation schemes for larger systems. You are expected to have the Hartree--Fock calculations [here](hartreefockmethod.html#code-examples) completed before proceeding with the Configuration Interaction implementation, as the Configuration Interaction method builds on the Hartree--Fock method.
+
 ### Exercise
 
+In the exercise, you are expected to calculate the Full Configuration Interaction energy for a simple system. The exercise is provided in the Listing <!--\ref{code:ci_exercise}--> below.
+
+<!--{id=code:ci_exercise caption="Configuration Interaction exercise code."}-->
 ```python
 """
 Since we already calculated the necessary integrals in the MS basis, we can proceed. The next step involves generating determinants. We will store these in a simple list, with each determinant represented by an array of numbers, where each number corresponds to an occupied spinorbital. Since we are programming for Full Configuration Interaction (FCI), we aim to generate all possible determinants. However, should we decide to implement methods like CIS, CID, or CISD, we could easily limit the number of excitations. It is important to remember that for all CI methods, the rest of the code remains unchanged. The only difference lies in the determinants used. Don't overcomplicate this. Generating all possible determinants can be efficiently achieved using a simple list comprehension. I recommend employing the combinations function from the itertools package to facilitate this task.
@@ -91,6 +96,7 @@ We can now proceed to filling the CI Hamiltonian. The loop is simple.
 """
 for i in range(Hci.shape[0]):
     for j in range(Hci.shape[1]):
+
         """
         The challenging part of this process is aligning the determinants. In this step, I transfer the contents of the j-th determinant into the "aligned" determinant. It's important not to alter the j-th determinant directly within its original place, as doing so could disrupt the computation of other matrix elements. Instead, we carry out the next steps on the determinant now contained in the "aligned" variable. Additionally, the element sign is defined at this stage. You probably want to leave this unchanged.
         """
@@ -119,6 +125,9 @@ E_FCI = 0
 
 ### Solution
 
+The solution to the exercise is provided in the Listing <!--\ref{code:ci_solution}--> below. It includes the generation of determinants, the construction of the Configuration Interaction Hamiltonian matrix, and the solution of the eigenvalue problem to obtain the ground state energy.
+
+<!--{id=code:ci_solution caption="Configuration Interaction exercise code solution."}-->
 ```python
 # generate the determiants
 dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]

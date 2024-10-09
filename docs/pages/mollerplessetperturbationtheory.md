@@ -70,9 +70,13 @@ To calculate the 4th order correction, we would need to write 39 terms, which is
 
 ## Code Examples
 
+In a similar fashion to the Hartree--Fock method, we can implement the Møller--Plesset perturbation theory in Python. The code below first proposes a self-contained exercise to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The solution is then provided in the following code snippet. You should append the code after your Hartree--Fock implementation, since the MP2 and MP3 methods are built on top of the Hartree--Fock method so should have already completed the Hartree--Fock calculations [here](hartreefockmethod.html#code-examples).
+
 ### Exercise
 
-<!--{id=code:mp_exercise caption="Møller–Plesset exercise code."}-->
+In the exercise, you are expected to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The exercise is provided in the Listing <!--\ref{code:mp_exercise}--> below.
+
+<!--{id=code:mp_exercise caption="Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order exercise code."}-->
 ```python
 """
 Since we have everything we need for the MP calculations, we can now calculate the MP2 correlation energy. The result should be stored in the "E_MP2" variable.
@@ -91,7 +95,9 @@ print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 
 ### Solution
 
-<!--{id=code:mp_solution caption="Møller–Plesset exercise code solution."}-->
+The solutions provided in the Listing <!--\ref{code:mp_solution}--> below are complete implementations of the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The code should be appended after the Hartree--Fock implementation. The code calculates the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies and prints the results.
+
+<!--{id=code:mp_solution caption="Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order exercise code solution."}-->
 ```python
 # energy containers
 E_MP2, E_MP3 = 0, 0
