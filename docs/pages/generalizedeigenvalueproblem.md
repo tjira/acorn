@@ -20,7 +20,7 @@ where $\mathbf{C}$ is a matrix of eigenvectors and $\mathbf{\Lambda}$ is a diago
 \mathbf{B}^{-1}\mathbf{A}\mathbf{C}=\mathbf{C}\mathbf{\Lambda}.
 \end{equation}
 
-This method is not always numerically stable, especially when the matrices $\mathbf{A}$ and $\mathbf{B}$ are ill-conditioned. Should you try to use this method for the Roothaan equations in the Hartree--Fock method, you would find that the solution is is not correct. A more stable approach is to modify the equation \ref{eq:gen_eig} as
+This method is not always numerically stable, especially when the matrices $\mathbf{A}$ and $\mathbf{B}$ are ill-conditioned. Should you try to use this method for the Roothaan equations in the Hartree--Fock method, you would find that the solution is is not correct. A more stable approach is to modify the equation \eqref{eq:gen_eig} as
 
 \begin{align}
 \mathbf{A}\mathbf{C}&=\mathbf{B}\mathbf{C}\mathbf{\Lambda}\nonumber \\\\\

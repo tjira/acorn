@@ -65,7 +65,7 @@ and the two-electron Coulomb repulsion integrals
 J\_{\mu\nu\kappa\lambda}=\braket{\phi\_{\mu}\phi\_{\mu}|\hat{J}|\phi\_{\kappa}\phi\_{\lambda}},
 \end{equation}
 
-which play crucial roles in the Hartree--Fock calculation.<!--\cite{10.1016/S0065-3276!08!60019-2}--> The Hartree--Fock method revolves around solving the Roothaan equations \ref{eq:roothaan} iteratively. The Fock matrix is defined as
+which play crucial roles in the Hartree--Fock calculation.<!--\cite{10.1016/S0065-3276!08!60019-2}--> The Hartree--Fock method revolves around solving the Roothaan equations \eqref{eq:roothaan} iteratively. The Fock matrix is defined as
 
 \begin{equation}\label{eq:fock}
 F\_{\mu\nu}=H\_{\mu\nu}^{core}+D\_{\kappa\lambda}(J\_{\mu\nu\kappa\lambda}-\frac{1}{2}J\_{\mu\lambda\kappa\nu})
@@ -109,7 +109,7 @@ W_{\mu\nu}=2C_{\mu i}C_{\nu i}\varepsilon_i
 
 To perform most of the post-Hartree--Fock calculations, we usually need to transform the integrals to the Molecular Spinorbital basis. We will describe it here and refer to it in the post-Hartree--Fock methods sections. We will also present the post-Hartree--Fock methods using the integrals in the Molecular Spinorbital basis (and its antisymmetrized form in case of the Coulomb integrals), since it is more general.
 
-All the integrals defined in the equations \ref{eq:hamiltonian}, \ref{eq:overlap}, and \ref{eq:coulomb} and even the Fock matrix in the equation \ref{eq:fock} are defined in the basis of atomic orbitals. To transform these integrals to the Molecular Spinorbital basis, we need to use the coefficient matrix $\mathbf{C}$ obtained from the solution of the Roothaan equations \ref{eq:roothaan}. The coefficient matrix $\mathbf{C}$, which is obtained from the Restricted Hartree--Fock calculation, is calculated in the spatial molecular orbital basis. The first step is to expand the coefficient matrix $\mathbf{C}$ to the Molecular Spinorbital basis. This can be done mathematically using the tiling matrix $\mathbf{P}\_{n\times 2n}$, defined as
+All the integrals defined in the equations \eqref{eq:hamiltonian}, \eqref{eq:overlap}, and \eqref{eq:coulomb} and even the Fock matrix in the equation \eqref{eq:fock} are defined in the basis of atomic orbitals. To transform these integrals to the Molecular Spinorbital basis, we need to use the coefficient matrix $\mathbf{C}$ obtained from the solution of the Roothaan equations \eqref{eq:roothaan}. The coefficient matrix $\mathbf{C}$, which is obtained from the Restricted Hartree--Fock calculation, is calculated in the spatial molecular orbital basis. The first step is to expand the coefficient matrix $\mathbf{C}$ to the Molecular Spinorbital basis. This can be done mathematically using the tiling matrix $\mathbf{P}\_{n\times 2n}$, defined as
 
 \begin{equation}
 \mathbf{P}=
