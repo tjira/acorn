@@ -52,7 +52,7 @@ E=\braket{\Psi\_0|e^{-\hat{\mathbf{T}}}\hat{\mathbf{H}}e^{\hat{\mathbf{T}}}|\Psi
 
 taking advantage of the exponential form of the wavefunction. We could then proceed to express the total energy for various Coupled Cluster methods like Coupled Cluster Doubles and Coupled Cluster Singles and Doubles, but the equations would be quite lengthy. Instead, we will leave the theory here and proceed to the actual calculations. One thing to keep in mind is that the CC equations are nonlinear and require iterative solution methods to obtain the final amplitudes. The initial guess for the amplitudes is often set to zero, and the equations are solved iteratively until convergence is achieved.
 
-## Implementation of CCD and CCSD
+## Implementation of Truncated Coupled Cluster Methods
 
 The derivation of the equations that are actually used to perform the calculations is quite lengthy and involves a lot of algebra. We will not go into the details here, but we will provide the final expressions for the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods.<!--\cite{10.1063/1.460620}--> The Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods are the most commonly used Coupled Cluster methods, and they are often used as benchmarks for other methods. All we need for the evaluation of the expressions below are the Coulomb integrals in the MS basis and physicists' notation, Fock matrix in the MS basis and the orbital energies obtained from the Hartree--Fock calculation. All these transformations are already explained [here](hartreefockmethod.html#the-integral-transforms) in the Hartree--Fock section. The expressions for the Coupled Cluster Doubles can be written as
 
@@ -111,7 +111,7 @@ t\_{ij}^{ab}=&\braket{ab||ij}+\hat{P}\_{(a/b)}\sum\_et\_{ij}^{ae}\left(\mathscr{
 
 The Coupled Cluster Singles and Doubles amplitude equations are, again, nonlinear and require iterative solution methods to obtain the final amplitudes. The initial guess for the amplitudes is often set to zero, and the equations are solved iteratively until convergence is achieved.
 
-## Code Examples
+## Coupled Cluster Singles and Doubles Code Example
 
 If you have completed the Hartree--Fock implementation [here](hartreefockmethod.html#code-examples), you can now proceed with the implementation of the Coupled Cluster Singles and Doubles methods. The code below first proposes a self-contained exercise to calculate the Coupled Cluster Singles and Doubles correlation energies. The solution is then provided in the following code snippet. You should append the code after your Hartree--Fock implementation, since the Coupled Cluster Singles and Doubles method is built on top of the Hartree--Fock method.
 
@@ -119,7 +119,7 @@ If you have completed the Hartree--Fock implementation [here](hartreefockmethod.
 
 In the exercise, you are expected to calculate the Coupled Cluster Singles and Doubles correlation energy. The exercise is provided in the Listing <!--\ref{code:cc_exercise}--> below.
 
-<!--{id=code:cc_exercise caption="Coupled Cluster method exercise code."}-->
+<!--{id=code:cc_exercise caption="Coupled Cluster Singles and Doubles exercise code."}-->
 ```python
 """
 We also have everything we need for the CC calculations. In this exercise, we will calculate the CCSD energy. Since the calculation will be iterative, I define here the CCSD energy as zero, the "E_CCSD_P" variable will be used to monitor convergence.
@@ -145,7 +145,7 @@ print("CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 
 The solutions provided in the Listing <!--\ref{code:cc_solution}--> below are complete implementations of the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles correlation energies. The code should be appended after the Hartree--Fock implementation. The code calculates the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles correlation energies and prints the results. The variable `args` is an argument parser that allows you to choose which method you want to calculate. Since the variable is not defined in this snippet (but is defined in the complete code), you can ignore it for now and remove the conditionals.
 
-<!--{id=code:cc_solution caption="Coupled Cluster method exercise code solution."}-->
+<!--{id=code:cc_solution caption="Coupled Cluster Doubles and Coupled Cluster Singles and Doubles method exercise code solution."}-->
 ```python
 # energy containers for all the CC methods
 E_CCD, E_CCD_P, E_CCSD, E_CCSD_P = 0, 1, 0, 1

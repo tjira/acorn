@@ -81,7 +81,18 @@ done && echo "" >> docs/tex/main.tex
 cat >> docs/tex/main.tex << EOL
 \begin{document}
 
-\maketitle
+\begin{titlepage}
+    \center
+    \textsc{\LARGE University of Chemistry and Technology, Prague}\\\\[1.5cm]
+    \rule{\linewidth}{0.5mm}\\\\[0.4cm]
+    {\huge\bfseries Algorithms of Quantum Chemistry}\\\\[0.4cm]
+    \rule{\linewidth}{0.5mm}\\\\[1.5cm]
+    {\large\textit{Author}}\\\\Tomáš \textsc{Jíra}
+    \vfill\vfill\vfill
+    {\large\today}
+    \vfill
+\end{titlepage}
+
 \tableofcontents
 EOL
 

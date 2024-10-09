@@ -18,7 +18,7 @@ Ultimately, we are interested in solving the Schrödinger equation in the form
 \hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi},
 \end{equation}
 
-where $\hat{H}$ is the molecular Hamiltonian operator, $\Psi$ is the molecular wave function, and $E$ is the total energy of the system. The Hartree--Fock method aims to approximate the wave function $\Psi$ by a single Slater determinant, which we will write in the form
+where $\hat{H}$ is the molecular Hamiltonian operator, $\ket{\Psi}$ is the molecular wave function, and $E$ is the total energy of the system. The Hartree--Fock method aims to approximate the wave function $\ket{\Psi}$ by a single Slater determinant, which we will write in the form
 
 \begin{equation}
 \ket{\Psi}=\ket{\chi\_1\chi\_2\cdots\chi\_N},
@@ -169,7 +169,7 @@ where $\mathbf{A}$ is an arbitrary one-electron integral. Since a lot of the pos
 
 where $a$, $b$, $c$ are virtual orbitals and $i$, $j$, $k$ are occupied orbitals. These tensors make the code more readable, easier to understand and also more efficient.
 
-## Code Examples<!--\label{sec:hf_code_examples}-->
+## Hartree--Fock Method and Integral Transform Code Example<!--\label{sec:hf_code_examples}-->
 
 This section provides code snippets for the Hartree--Fock method and the integral transforms to the Molecular Spinorbital basis. The code snippets are written in Python and use the NumPy package for numerical calculations. The exercises are designed to help you understand the implementation of the Hartree--Fock method and the transformation of integrals to the Molecular Spinorbital basis. The solutions are provided to guide you through the implementation process and ensure that you can verify your results.
 

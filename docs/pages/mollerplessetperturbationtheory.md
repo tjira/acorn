@@ -10,7 +10,7 @@ nav_order: 2
 
 Møller--Plesset Perturbation Theory is a quantum mechanical method used to improve the accuracy of electronic structure calculations within the framework of Hartree--Fock theory. It involves treating electron-electron correlation effects as a perturbation to the reference Hartree--Fock wave function. The method is named after its developers, physicists C. Møller and M. S. Plesset. By systematically including higher-order corrections, Møller--Plesset Perturbation Theory provides more accurate predictions of molecular properties compared to the initial Hartree--Fock approximation.
 
-## Theory of the Pertrubative Approach
+## Theory of the Perturbative Approach
 
 As for the Hartree--Fock method, we start with the Schrödinger equation in the form
 
@@ -57,20 +57,9 @@ E_{corr}^{MP3}=&\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{cd||ab}\brake
 
 To calculate the 4th order correction, we would need to write 39 terms, which is not practical. Higher-order corrections are usually not programmed this way, instead, the diagrammatic approach is used.<!--\cite{1014569052,10.1016/0010-4655!73!90016-7,10.1016/0010-4655!73!90017-9}-->
 
-{:.note}
-> Keep in mind that for the MP2 method we could integrate out the spin and obtain the correlation energy as
-> \begin{equation}
-> E_{corr}^{MP2}=\frac{1}{4}\sum_{iajb}\frac{J_{iajb}^{MO}(2J_{iajb}^{MO}-J_{ibja}^{MO})}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b}
-> \end{equation}
-> where $J_{pqrs}^{MO}$ are the Coulomb integrals in the molecular orbital (MO) basis calculated as
-> \begin{equation}
-> J_{pqrs}^{MO}=C_{\mu p}C_{\nu q}J_{\mu\nu\kappa\lambda}C_{\kappa r}C_{\lambda s}
-> \end{equation}
-> and $\varepsilon_i$ are the spatial orbital energies obtained from the solution of the Roothaan equations.
+## 2nd and 3rd Order Corrections Code Example
 
-## Code Examples
-
-In a similar fashion to the Hartree--Fock method, we can implement the Møller--Plesset perturbation theory in Python. The code below first proposes a self-contained exercise to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The solution is then provided in the following code snippet. You should append the code after your Hartree--Fock implementation, since the MP2 and MP3 methods are built on top of the Hartree--Fock method so should have already completed the Hartree--Fock calculations [here](hartreefockmethod.html#code-examples).
+In a similar fashion to the Hartree--Fock method, we can implement the Møller--Plesset perturbation theory in Python. The code below first proposes a self-contained exercise to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The solution is then provided in the following code snippet. You should append the code after your Hartree--Fock implementation, since the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order methods are built on top of the Hartree--Fock method so should have already completed the Hartree--Fock calculations [here](hartreefockmethod.html#code-examples).
 
 ### Exercise
 
