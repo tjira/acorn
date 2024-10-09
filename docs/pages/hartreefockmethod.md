@@ -24,7 +24,7 @@ where $\hat{H}$ is the molecular Hamiltonian operator, $\ket{\Psi}$ is the molec
 \ket{\Psi}=\ket{\chi\_1\chi\_2\cdots\chi\_N},
 \end{equation}
 
-where $\chi\_i$ represents a Molecular Spinorbital and N is the total number of electrons. The Hartree--Fock method seeks to optimize these molecular orbitals to minimize the total energy of the system, providing a reliable estimate of the electronic structure. However, in the Restricted Hartree--Fock method, we impose a constraint on the electron spin, and instead of spin orbitals, we work with spatial orbitals, which allows us to write the slater determinant in terms of spatial orbitals in the form
+where $\chi\_i$ represents a Molecular Spinorbital and $N$ is the total number of electrons. The Hartree--Fock method seeks to optimize these molecular orbitals to minimize the total energy of the system, providing a reliable estimate of the electronic structure. However, in the Restricted Hartree--Fock method, we impose a constraint on the electron spin, and instead of spin orbitals, we work with spatial orbitals, which allows us to write the slater determinant in terms of spatial orbitals in the form
 
 \begin{equation}
 \ket{\Psi}=\ket{\Phi\_1\Phi\_2\cdots\Phi\_{N/2}},

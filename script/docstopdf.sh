@@ -22,6 +22,8 @@ ACRONYMS=(
 
 # create the main LaTeX document
 cat > docs/tex/main.tex << EOL
+% This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
+
 \documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}
 
 \usepackage{amsmath} % all the math environments and symbols
@@ -161,10 +163,10 @@ sed -i 's/\\href{hartreefockmethod.html\\#the-integral-transforms}{here}/in sect
 sed -i 's/\\href{hartreefockmethod.html\\#code-examples}{here}/in section \\ref{sec:hf_code_examples}/g'             docs/tex/main.tex
 
 # replace file attachments
-sed -i 's/\\href{\/acorn\/python\/molecule.xyz}{molecule.xyz}/\\textattachfile[color=0 0 1]{..\/python\/molecule.xyz}{molecule.xyz}/g' docs/tex/main.tex
-sed -i 's/\\href{\/acorn\/python\/H_AO.mat}{H\\_AO.mat}/\\textattachfile[color=0 0 1]{..\/python\/H_AO.mat}{H\\_AO.mat}/g'             docs/tex/main.tex
-sed -i 's/\\href{\/acorn\/python\/S_AO.mat}{S\\_AO.mat}/\\textattachfile[color=0 0 1]{..\/python\/S_AO.mat}{S\\_AO.mat}/g'             docs/tex/main.tex
-sed -i 's/\\href{\/acorn\/python\/J_AO.mat}{J\\_AO.mat}/\\textattachfile[color=0 0 1]{..\/python\/J_AO.mat}{J\\_AO.mat}/g'             docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/molecule.xyz}{molecule.xyz}/\\textattachfile[color=0 0 1]{molecule.xyz}{molecule.xyz}/g' docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/H_AO.mat}{H\\_AO.mat}/\\textattachfile[color=0 0 1]{H_AO.mat}{H\\_AO.mat}/g'             docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/S_AO.mat}{S\\_AO.mat}/\\textattachfile[color=0 0 1]{S_AO.mat}{S\\_AO.mat}/g'             docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/J_AO.mat}{J\\_AO.mat}/\\textattachfile[color=0 0 1]{J_AO.mat}{J\\_AO.mat}/g'             docs/tex/main.tex
 
 # loop over all acronyms
 for ACRONYM in "${ACRONYMS[@]}"; do
@@ -184,6 +186,9 @@ done
 
 # replace section with chapters and subsections with sections
 sed -i 's/\\section/\\chapter/g ; s/\\subsection/\\section/g ; s/\\subsubsection/\\subsection/g' docs/tex/main.tex
+
+# copy additional files to the tex folder
+cp docs/python/*.mat docs/python/*.xyz docs/python/exercise/*.py docs/tex
 
 # compile the main LaTeX file to PDF
 cd docs/tex && pdflatex main && biber main && makeglossaries main && pdflatex main && pdflatex main && cd ../..
