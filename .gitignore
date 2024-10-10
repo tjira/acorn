@@ -30,9 +30,6 @@ molecule.xyz
 *.xml
 *.zip
 
-# nested files
-/docs/tex/*.py
-
 # folders
 .cache/
 _site/
@@ -40,6 +37,7 @@ external/
 build/
 temp/
 bin/
+tex/
 
 # nested folders
 /docs/python/

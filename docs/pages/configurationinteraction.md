@@ -48,7 +48,7 @@ where $\mathbf{C}^{CI}$ is a matrix of coefficients and $\mathbf{\varepsilon}^{C
 \end{cases}
 \end{equation}
 
-where $D\_i$ and $D\_j$ are Slater determinants, $\mathbf{H}^{core,MS}$ is the core Hamiltonian in the basis of molecular spinorbitals, and $\braket{pk\|\|lk}$ are the antisymmetrized Coulomb repulsion integrals in the basis of molecular spinorbitals and physicists' notation. The sums extend over all spinorbitals common between the two determinants. All the integrals in the MS basis are already explained [here](hartreefockmethod.html#the-integral-transforms). Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
+where $D\_i$ and $D\_j$ are Slater determinants, $\mathbf{H}^{core,MS}$ is the core Hamiltonian in the basis of molecular spinorbitals, and $\braket{pk\|\|lk}$ are the antisymmetrized Coulomb repulsion integrals in the basis of molecular spinorbitals and physicists' notation. The sums extend over all spinorbitals common between the two determinants. All the integrals in the MS basis are already explained [here](hartreefockmethod.html#integral-transforms-to-the-basis-of-molecular-spinorbitals). Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
 
 The problem with Configuration Interaction is that it is not size-extensive, meaning that the energy does not scale linearly with the number of electrons. This is because the Configuration Interaction wavefunction is not size-consistent, and the energy of a system is not the sum of the energies of its parts. This is a significant drawback of Configuration Interaction, as it limits its application to small systems.
 
@@ -64,13 +64,11 @@ N\_D=\binom{n}{k}
 
 assuming $k$ is the total number of electrons, and $n$ is the total number of spinorbitals. Each determinant is formed by permuting the electrons between spinorbitals. For practical representation, it's useful to describe determinants as arrays of numbers, where each number corresponds to the index of an occupied orbitals. For example, the ground state determinant for a system with 6 electrons and 10 spinorbitals can be represented as $\left\lbrace 0,1,2,3,4,5\right\rbrace$, whereas the determinant $\left\lbrace 0,1,2,3,4,6\right\rbrace$ represents an excited state with one electron excited from orbital 5 to orbital 6. Using the determinants, the Configuration Interaction Hamiltonian matrix \eqref{eq:ci-hamiltonian} can be constructed, and the eigenvalue problem \eqref{eq:ci-eigenvalue-problem} can be solved to obtain the ground and excited state energies.
 
-## Full Configuration Interaction Implementation Code Example
+## Full Configuration Interaction Code Exercise
 
-This section provides a simple example of a Full Configuration Interaction implementation. The code snippets are, as the previous coding examples, written in Python and use the NumPy library for numerical operations. The example demonstrates the generation of determinants, the construction of the Configuration Interaction Hamiltonian matrix, and the solution of the eigenvalue problem to obtain the ground state energy. The code is designed for educational purposes and may require modifications for practical applications, such as the inclusion of truncation schemes for larger systems. You are expected to have the Hartree--Fock calculations [here](hartreefockmethod.html#code-examples) completed before proceeding with the Configuration Interaction implementation, as the Configuration Interaction method builds on the Hartree--Fock method.
+This section provides a simple example of a Full Configuration Interaction implementation. The code snippets are, as the previous coding examples, written in Python and use the NumPy library for numerical operations. The example demonstrates the generation of determinants, the construction of the Configuration Interaction Hamiltonian matrix, and the solution of the eigenvalue problem to obtain the ground state energy. The code is designed for educational purposes and may require modifications for practical applications, such as the inclusion of truncation schemes for larger systems. You are expected to have the Hartree--Fock calculations [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise) completed before proceeding with the Configuration Interaction implementation, as the Configuration Interaction method builds on the Hartree--Fock method.
 
-### Exercise
-
-In the exercise, you are expected to calculate the Full Configuration Interaction energy for a simple system. The exercise is provided in the Listing <!--\ref{code:ci_exercise}--> below.
+In this exercise, you are expected to calculate the Full Configuration Interaction energy for a simple system. The exercise is provided in the Listing <!--\ref{code:ci_exercise}--> below.
 
 <!--{id=code:ci_exercise caption="Configuration Interaction exercise code."}-->
 ```python
@@ -123,52 +121,6 @@ You can finally solve the eigenvalue problem. Please, assign the correlation ene
 E_FCI = 0
 ```
 
-### Solution
-
-The solution to the exercise is provided in the Listing <!--\ref{code:ci_solution}--> below. It includes the generation of determinants, the construction of the Configuration Interaction Hamiltonian matrix, and the solution of the eigenvalue problem to obtain the ground state energy.
-
-<!--{id=code:ci_solution caption="Configuration Interaction exercise code solution."}-->
-```python
-# generate the determiants
-dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]
-
-# define the CI Hamiltonian
-Hci = np.zeros([len(dets), len(dets)])
-
-# define the Slater-Condon rules, "so" is an array of unique and common spinorbitals [unique, common]
-slater0 = lambda so: sum([Hms[m, m] for m in so]) + sum([0.5 * Jmsa[m, n, m, n] for m, n in it.product(so, so)])
-slater1 = lambda so: Hms[so[0], so[1]] + sum([Jmsa[so[0], m, so[1], m] for m in so[2:]])
-slater2 = lambda so: Jmsa[so[0], so[1], so[2], so[3]]
-
-# filling of the CI Hamiltonian
-for i in range(0, Hci.shape[0]):
-    for j in range(i, Hci.shape[1]):
-
-        # aligned determinant and the sign
-        aligned, sign = dets[j].copy(), 1
-
-        # align the determinant "j" to "i" and calculate the sign
-        for k in (k for k in range(len(aligned)) if aligned[k] != dets[i][k]):
-            while len(l := np.where(dets[i] == aligned[k])[0]) and l[0] != k:
-                aligned[[k, l[0]]] = aligned[[l[0], k]]; sign *= -1
-
-        # find the unique and common spinorbitals
-        so = np.block([
-            np.array([aligned[k] for k in range(len(aligned)) if aligned[k] not in dets[i]]),
-            np.array([dets[i][k] for k in range(len(dets[j])) if dets[i][k] not in aligned]),
-            np.array([aligned[k] for k in range(len(aligned)) if aligned[k] in dets[i]])
-        ]).astype(int)
-
-        # apply the Slater-Condon rules and multiply by the sign
-        if ((aligned - dets[i]) != 0).sum() == 0: Hci[i, j] = slater0(so) * sign
-        if ((aligned - dets[i]) != 0).sum() == 1: Hci[i, j] = slater1(so) * sign
-        if ((aligned - dets[i]) != 0).sum() == 2: Hci[i, j] = slater2(so) * sign
-
-        # fill the lower triangle
-        Hci[j, i] = Hci[i, j]
-
-# solve the eigensystem and assign energy
-eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
-```
+Solution to this exercise can be found [here](codesolutions.html#full-configuration-interaction).
 
 {:.cite}

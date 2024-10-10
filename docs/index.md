@@ -8,12 +8,12 @@ nav_order: 1
 
 ## Download Documents
 
-You can also download this documentation along with complementary documents in various formats. The documents are transpiled from the online version each commit.
+You can also download this documentation along with complementary files in various formats. The documents are transpiled from the online version each commit.
 
-### PDF Documents
+### Documents and Source Code
 
 [PDF Document](/acorn/tex/main.pdf){: .btn .btn-purple }
-[PDF Library](/acorn/tex/library.pdf){: .btn .btn-purple }
+[TeX Document](/acorn/tex/main.tex){: .btn .btn-purple }
 
 ### Electronic Structure Python Exercises
 

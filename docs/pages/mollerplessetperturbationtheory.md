@@ -41,29 +41,27 @@ where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix
 
 ## Implementation of 2nd and 3rd Order Corrections
 
-Having the antisymmetrized Coulomb integrals in the MS basis and physicists' notation defined [here](hartreefockmethod.html#the-integral-transforms), we can now proceed with the calculation of the correlation energy. We wil use the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals, while the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The 2nd order and 3rd
+Having the antisymmetrized Coulomb integrals in the MS basis and physicists' notation defined [here](hartreefockmethod.html#integral-transforms-to-the-basis-of-molecular-spinorbitals), we can now proceed with the calculation of the correlation energy. We wil use the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals, while the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The 2nd order and 3rd
 
 \begin{equation}
-E_{corr}^{MP2}=\frac{1}{4}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b}
+E_{corr}^{MP2}=\frac{1}{4}\sum\_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon\_{ij}^{ab}}
 \end{equation}
 
 The 3rd order correlation energy:
 
 \begin{align}
-E_{corr}^{MP3}=&\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{cd||ab}\braket{ij||cd}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_i+\varepsilon_j-\varepsilon_c-\varepsilon_d)}+\nonumber \\\\\
-&+\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||kl}\braket{kl||ab}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_k+\varepsilon_l-\varepsilon_a-\varepsilon_b)}+\nonumber \\\\\
-&+\sum_{ijab}\frac{\braket{ab||ij}\braket{cj||kb}\braket{ik||ac}}{(\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)(\varepsilon_i+\varepsilon_k-\varepsilon_a-\varepsilon_c)}
+E_{corr}^{MP3}=&\frac{1}{8}\sum\_{ijab}\frac{\braket{ab||ij}\braket{cd||ab}\braket{ij||cd}}{\varepsilon\_{ij}^{ab}\varepsilon\_{ij}^{cd}}+\nonumber \\\\\
+&+\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||kl}\braket{kl||ab}}{\varepsilon\_{ij}^{ab}\varepsilon\_{kl}^{ab}}+\nonumber \\\\\
+&+\sum_{ijab}\frac{\braket{ab||ij}\braket{cj||kb}\braket{ik||ac}}{\varepsilon\_{ij}^{ab}\varepsilon\_{ik}^{ac}}
 \end{align}
 
 To calculate the 4th order correction, we would need to write 39 terms, which is not practical. Higher-order corrections are usually not programmed this way, instead, the diagrammatic approach is used.<!--\cite{1014569052,10.1016/0010-4655!73!90016-7,10.1016/0010-4655!73!90017-9}-->
 
-## 2nd and 3rd Order Corrections Code Example
+## 2nd and 3rd Order Corrections Code Exercise
 
-In a similar fashion to the Hartree--Fock method, we can implement the Møller--Plesset perturbation theory in Python. The code below first proposes a self-contained exercise to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The solution is then provided in the following code snippet. You should append the code after your Hartree--Fock implementation, since the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order methods are built on top of the Hartree--Fock method so should have already completed the Hartree--Fock calculations [here](hartreefockmethod.html#code-examples).
+In a similar fashion to the Hartree--Fock method, we can implement the Møller--Plesset perturbation theory in Python. The code below first proposes a self-contained exercise to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The solution is then provided in the following code snippet. You should append the code after your Hartree--Fock implementation, since the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order methods are built on top of the Hartree--Fock method so should have already completed the Hartree--Fock calculations [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise).
 
-### Exercise
-
-In the exercise, you are expected to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The exercise is provided in the Listing <!--\ref{code:mp_exercise}--> below.
+In this exercise, you are expected to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The exercise is provided in the Listing <!--\ref{code:mp_exercise}--> below.
 
 <!--{id=code:mp_exercise caption="Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order exercise code."}-->
 ```python
@@ -82,27 +80,7 @@ print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 +       + VNN))
 print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 ```
 
-### Solution
-
-The solutions provided in the Listing <!--\ref{code:mp_solution}--> below are complete implementations of the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The code should be appended after the Hartree--Fock implementation. The code calculates the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies and prints the results.
-
-<!--{id=code:mp_solution caption="Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order exercise code solution."}-->
-```python
-# energy containers
-E_MP2, E_MP3 = 0, 0
-
-# calculate the MP2 correlation energy
-if args.mp2 or args.mp3:
-    E_MP2 += 0.25 * np.einsum("abij,ijab,abij", Jmsa[v, v, o, o], Jmsa[o, o, v, v], Emsd, optimize=True)
-    print("    MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
-
-# calculate the MP3 correlation energy
-if args.mp3:
-    E_MP3 += 0.125 * np.einsum("abij,cdab,ijcd,abij,cdij", Jmsa[v, v, o, o], Jmsa[v, v, v, v], Jmsa[o, o, v, v], Emsd, Emsd, optimize=True)
-    E_MP3 += 0.125 * np.einsum("abij,ijkl,klab,abij,abkl", Jmsa[v, v, o, o], Jmsa[o, o, o, o], Jmsa[o, o, v, v], Emsd, Emsd, optimize=True)
-    E_MP3 += 1.000 * np.einsum("abij,cjkb,ikac,abij,acik", Jmsa[v, v, o, o], Jmsa[v, o, o, v], Jmsa[o, o, v, v], Emsd, Emsd, optimize=True)
-    print("    MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
-```
+Solution to this exercise can be found [here](codesolutions.html#2nd-and-3rd-order-perturbative-corrections).
 
 {:.cite}
 > Cremer, Dieter. 2011. “Møller–Plesset Perturbation Theory: From Small Molecule Methods to Methods for Thousands of Atoms.” *WIREs Computational Molecular Science* 1: 509–30. <https://doi.org/10.1002/wcms.58>.
