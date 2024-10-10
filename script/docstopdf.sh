@@ -368,4 +368,4 @@ sed -i 's/\\section/\\chapter/g ; s/\\subsection/\\section/g ; s/\\subsubsection
 sed -i 's/\\chapter{Code Solutions}/\\begin{appendices}\\chapter{Code Solutions}/' docs/tex/main.tex
 
 # compile the main LaTeX file to PDF
-cd docs/tex && pdflatex main && biber main && makeglossaries main && pdflatex main && pdflatex main && rm *.md && cd ../..
+cd docs/tex && pdflatex main && biber main && makeglossaries main && pdflatex main && pdflatex main && cd ../..
