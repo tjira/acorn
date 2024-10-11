@@ -58,7 +58,9 @@ nlohmann::json default_input = R"(
             "adiabatic_population" : false,
             "diabatic_potential" : false,
             "adiabatic_potential" : false,
-            "energy" : false,
+            "total_energy" : false,
+            "potential_energy" : false,
+            "kinetic_energy" : false,
             "position" : false,
             "momentum" : false,
             "acf" : false
@@ -80,12 +82,16 @@ nlohmann::json default_input = R"(
         "data_export" : {
             "diabatic_population" : false,
             "adiabatic_population" : false,
-            "energy" : false,
+            "total_energy" : false,
             "position" : false,
             "momentum" : false,
-            "energy_mean" : false,
+            "total_energy_mean" : false,
             "position_mean" : false,
-            "momentum_mean" : false
+            "momentum_mean" : false,
+            "potential_energy" : false,
+            "potential_energy_mean" : false,
+            "kinetic_energy" : false,
+            "kinetic_energy_mean" : false
         }
     }
 }

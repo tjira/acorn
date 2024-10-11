@@ -113,7 +113,7 @@ The Coupled Cluster Singles and Doubles amplitude equations are, again, nonlinea
 
 ## Coupled Cluster Singles and Doubles Code Exercise
 
-If you have completed the Hartree--Fock implementation [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise), you can now proceed with the implementation of the Coupled Cluster Singles and Doubles methods. The code below first proposes a self-contained exercise to calculate the Coupled Cluster Singles and Doubles correlation energies. The solution is then provided in the following code snippet. You should append the code after your Hartree--Fock implementation, since the Coupled Cluster Singles and Doubles method is built on top of the Hartree--Fock method.
+If you have completed the Hartree--Fock implementation [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise), you can now proceed with the implementation of the Coupled Cluster Singles and Doubles methods. The code below proposes a self-contained exercise to calculate the Coupled Cluster Singles and Doubles correlation energies. You should append the code after your Hartree--Fock implementation, since the Coupled Cluster Singles and Doubles method is built on top of the Hartree--Fock method.
 
 In this exercise, you are expected to calculate the Coupled Cluster Singles and Doubles correlation energy. The exercise is provided in the Listing <!--\ref{code:cc_exercise}--> below.
 

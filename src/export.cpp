@@ -34,7 +34,7 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // export the diabatic populations
-        Export::EigenMatrixDouble(std::string("POPULATION_DIABATIC_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+        Export::EigenMatrixDouble(std::string("POPULATION-DIABATIC_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
 
     // export the diabatic density matrix
@@ -62,7 +62,7 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // export the diabatic populations
-        Export::EigenMatrixDouble(std::string("POPULATION_ADIABATIC_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+        Export::EigenMatrixDouble(std::string("POPULATION-ADIABATIC_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
 
     // export the position
@@ -117,8 +117,8 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         Export::EigenMatrixDouble(std::string("MOMENTUM-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
 
-    // export the energy
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.energy) {
+    // export the total energy
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.total_energy) {
 
         // create the matrix containing the energy
         data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, trajectory_data_vector.size());
@@ -134,11 +134,11 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // export the energy
-        Export::EigenMatrixDouble(std::string("ENERGY_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("TOTAL-ENERGY_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
     }
 
-    // export the energy
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.energy_mean) {
+    // export the total energy mean
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.total_energy_mean) {
 
         // create the matrix containing the energy
         data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, 1);
@@ -154,7 +154,77 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // export the energy mean
-        Export::EigenMatrixDouble(std::string("ENERGY-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+        Export::EigenMatrixDouble(std::string("TOTAL-ENERGY-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+    }
+
+    // export the potential energy
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.potential_energy) {
+
+        // create the matrix containing the energy
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, trajectory_data_vector.size());
+
+        // fill the matrix with the energy
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) {
+
+            // extract the potential matrix
+            const Eigen::MatrixXd& potential = input.adiabatic ? trajectory_data_vector.at(i).adiabatic_potential.at(j) : trajectory_data_vector.at(i).diabatic_potential.at(j);
+
+            // extract the state and assign the energy
+            int state = trajectory_data_vector.at(i).state(j); data_matrix.row(j)(i) = potential(state, state);
+        }
+
+        // export the energy
+        Export::EigenMatrixDouble(std::string("POTENTIAL-ENERGY_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
+    }
+
+    // export the potential energy mean
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.potential_energy_mean) {
+
+        // create the matrix containing the energy
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, 1);
+
+        // fill the matrix with the energy
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) {
+
+            // extract the potential matrix
+            const Eigen::MatrixXd& potential = input.adiabatic ? trajectory_data_vector.at(i).adiabatic_potential.at(j) : trajectory_data_vector.at(i).diabatic_potential.at(j);
+
+            // extract the state and assign the energy
+            int state = trajectory_data_vector.at(i).state(j); data_matrix(j, 0) += potential(state, state);
+        }
+
+        // export the energy mean
+        Export::EigenMatrixDouble(std::string("POTENTIAL-ENERGY-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
+    }
+
+    // export the kinetic energy
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.kinetic_energy) {
+
+        // create the matrix containing the energy
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, trajectory_data_vector.size());
+
+        // fill the matrix with the energy
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) {
+            int state = trajectory_data_vector.at(i).state(j); data_matrix.row(j)(i) = 0.5 * mass * trajectory_data_vector.at(i).velocity.row(j).squaredNorm();
+        }
+
+        // export the energy
+        Export::EigenMatrixDouble(std::string("KINETIC-ENERGY_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
+    }
+
+    // export the kinetic energy mean
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.kinetic_energy_mean) {
+
+        // create the matrix containing the energy
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations + 1, 1);
+
+        // fill the matrix with the energy
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) {
+            int state = trajectory_data_vector.at(i).state(j); data_matrix(j, 0) += 0.5 * mass * trajectory_data_vector.at(i).velocity.row(j).squaredNorm();
+        }
+
+        // export the energy mean
+        Export::EigenMatrixDouble(std::string("KINETIC-ENERGY-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
 }
 
@@ -244,7 +314,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         }
 
         // save the diabatic wavefunction
-        Export::EigenMatrixDouble(std::string("PSI_DIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, grid);
+        Export::EigenMatrixDouble(std::string("PSI-DIABATIC_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, grid);
     }
 
     // export the adiabatic wavefunctions
@@ -273,7 +343,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         }
 
         // save the diabatic wavefunction
-        Export::EigenMatrixDouble(std::string("PSI_ADIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, grid);
+        Export::EigenMatrixDouble(std::string("PSI-ADIABATIC_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, grid);
     }
 
     // export the diabatic density matrix
@@ -286,7 +356,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         for (size_t i = 0; i < iteration_data.size(); i++) data_matrix.row(i) = iteration_data.at(i).density_diabatic.reshaped();
 
         // save the diabatic density matrix
-        Export::EigenMatrixDouble(std::string("DENSITY_DIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("DENSITY-DIABATIC_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the adiabatic density matrix
@@ -299,7 +369,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         for (size_t i = 0; i < iteration_data.size(); i++) data_matrix.row(i) = iteration_data.at(i).density_adiabatic.reshaped();
 
         // save the adiabatic density matrix
-        Export::EigenMatrixDouble(std::string("DENSITY_ADIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("DENSITY-ADIABATIC_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the diabatic population matrix
@@ -314,7 +384,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         }
 
         // save the diabatic population
-        Export::EigenMatrixDouble(std::string("POPULATION_DIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("POPULATION-DIABATIC_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the adiabatic density matrix
@@ -329,7 +399,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         }
 
         // save the adiabatic population matrix
-        Export::EigenMatrixDouble(std::string("POPULATION_ADIABATIC_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("POPULATION-ADIABATIC_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the position
@@ -342,7 +412,7 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         for (size_t i = 0; i < iteration_data.size(); i++) data_matrix.row(i) = iteration_data.at(i).position;
 
         // save the wavefunction position
-        Export::EigenMatrixDouble(std::string("POSITION_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("POSITION_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the momentum
@@ -355,20 +425,46 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         for (size_t i = 0; i < iteration_data.size(); i++) data_matrix.row(i) = iteration_data.at(i).momentum;
 
         // save the wavefunction momentum
-        Export::EigenMatrixDouble(std::string("MOMENTUM_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("MOMENTUM_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 
-    // export the energy
-    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.energy) {
+    // export the total energy
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.total_energy) {
 
         // create the container for the energy
         data_matrix = Eigen::MatrixXd(iteration_data.size(), 1);
 
         // fill the data matrix with energy of the wavefunction
-        for (size_t i = 0; i < iteration_data.size(); i++) data_matrix(i) = iteration_data.at(i).energy;
+        for (size_t i = 0; i < iteration_data.size(); i++) data_matrix(i) = iteration_data.at(i).total_energy;
 
         // save the wavefunction energy
-        Export::EigenMatrixDouble(std::string("ENERGY_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("TOTAL-ENERGY_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+    }
+
+    // export the potential energy
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.potential_energy) {
+
+        // create the container for the energy
+        data_matrix = Eigen::MatrixXd(iteration_data.size(), 1);
+
+        // fill the data matrix with energy of the wavefunction
+        for (size_t i = 0; i < iteration_data.size(); i++) data_matrix(i) = iteration_data.at(i).potential_energy;
+
+        // save the wavefunction energy
+        Export::EigenMatrixDouble(std::string("POTENTIAL-ENERGY_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+    }
+
+    // export the kinetic energy
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.kinetic_energy) {
+
+        // create the container for the energy
+        data_matrix = Eigen::MatrixXd(iteration_data.size(), 1);
+
+        // fill the data matrix with energy of the wavefunction
+        for (size_t i = 0; i < iteration_data.size(); i++) data_matrix(i) = iteration_data.at(i).kinetic_energy;
+
+        // save the wavefunction energy
+        Export::EigenMatrixDouble(std::string("KINETIC-ENERGY_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 
     // export the autocorrelation function
@@ -381,6 +477,6 @@ void Export::WavefunctionTrajectory(const Input::QuantumDynamics& input, const s
         for (size_t i = 0; i < iteration_data.size(); i++) data_matrix(i, 0) = iteration_data.at(i).acf.real(), data_matrix(i, 1) = iteration_data.at(i).acf.imag();
 
         // save the wavefunction autocorrelation function
-        Export::EigenMatrixDouble(std::string("ACF_EXACT_") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
+        Export::EigenMatrixDouble(std::string("ACF_EXACT-") + (imaginary ? "IMAG" : "REAL") + "_"  + std::to_string(state + 1) + ".mat", data_matrix, time_variable);
     }
 }

@@ -43,22 +43,17 @@ Wavefunction Wavefunction::adiabatized(const std::vector<Eigen::MatrixXd>& trans
     return adiabatized_wavefunction;
 }
 
-double Wavefunction::energy(const Eigen::MatrixXd& diabatic_potential, const Eigen::MatrixXd& fourier_grid) const {
-    // define the kinetic and potential energy
-    double Ek = 0, Ep = 0;
+double Wavefunction::kinetic_energy(const Eigen::MatrixXd& fourier_grid) const {
+    // define the kinetic energy
+    double Ek = 0;
 
     // loop over all wavefunctions
     for (int i = 0, n = data.cols(); i < data.cols(); i++) {
-
-        // calculate the kinetic energy contribution
         Ek += (data.col(i).adjoint() * FourierTransform::IFFT(fourier_grid.array().pow(2).rowwise().sum() * FourierTransform::FFT(data.col(i), get_shape()).array(), get_shape()))(0).real();
-
-        // calculate the potential energy contributions
-        for (int j = 0; j < n; j++) Ep += (data.col(i).adjoint() * (diabatic_potential.col(i * n + j).array() * data.col(j).array()).matrix())(0).real();
     }
 
-    // return the total energy
-    return (0.5 * Ek / input.mass + Ep) * get_grid_spacing();
+    // return the kinetic energy
+    return 0.5 * Ek / input.mass * get_grid_spacing();
 }
 
 Eigen::VectorXd Wavefunction::momentum(const Eigen::MatrixXd& fourier_grid) const {
@@ -85,6 +80,23 @@ Eigen::VectorXd Wavefunction::position(const Eigen::MatrixXd& grid) const {
 
     // return the position
     return position * get_grid_spacing();
+}
+
+double Wavefunction::potential_energy(const Eigen::MatrixXd& diabatic_potential) const {
+    // define the potential energy
+    double Ep = 0;
+
+    // loop over all wavefunctions
+    for (int i = 0, n = data.cols(); i < data.cols(); i++) {
+        for (int j = 0; j < n; j++) Ep += (data.col(i).adjoint() * (diabatic_potential.col(i * n + j).array() * data.col(j).array()).matrix())(0).real();
+    }
+
+    // return the total energy
+    return Ep * get_grid_spacing();
+}
+
+double Wavefunction::total_energy(const Eigen::MatrixXd& diabatic_potential, const Eigen::MatrixXd& fourier_grid) const {
+    return kinetic_energy(fourier_grid) + potential_energy(diabatic_potential);
 }
 
 Eigen::MatrixXcd Wavefunction::get_data() const {

@@ -47,7 +47,7 @@ std::tuple<std::vector<Eigen::MatrixXd>, Eigen::MatrixXd> QuantumDynamics::get_t
 
 void QuantumDynamics::print_iteration(int iteration, const IterationData& iteration_data, long elapsed) const {
     // print the main iteration info
-    std::printf("%6d %20.14f %20.14f %20.14f %.2e %s [", iteration, iteration_data.energy, iteration_data.acf.real(), iteration_data.acf.imag(), iteration_data.energy_error, Timer::Format(elapsed).c_str());
+    std::printf("%6d %20.14f %20.14f %20.14f %.2e %s [", iteration, iteration_data.total_energy, iteration_data.acf.real(), iteration_data.acf.imag(), iteration_data.energy_error, Timer::Format(elapsed).c_str());
 
     // print the wavefunction position
     for (int i = 0; i < iteration_data.position.size(); i++) {std::printf("%s%8.3f", i ? ", " : "", iteration_data.position(i));} std::printf("] [");
@@ -73,8 +73,8 @@ void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefuncti
     auto [transformation_matrices, adiabatic_potential] = get_transformation_matrices(diabatic_potential);
 
     // export the potentials
-    if (input.data_export.adiabatic_potential) Export::EigenMatrixDouble("POTENTIAL_ADIABATIC.mat", adiabatic_potential, grid);
-    if (input.data_export.diabatic_potential ) Export::EigenMatrixDouble("POTENTIAL_DIABATIC.mat",  diabatic_potential,  grid);
+    if (input.data_export.adiabatic_potential) Export::EigenMatrixDouble("POTENTIAL-ADIABATIC.mat", adiabatic_potential, grid);
+    if (input.data_export.diabatic_potential ) Export::EigenMatrixDouble("POTENTIAL-DIABATIC.mat",  diabatic_potential,  grid);
 
     // print the grid generation timing
     std::printf("%s\n", Timer::Format(Timer::Elapsed(grid_generation_timer)).c_str());
@@ -116,7 +116,7 @@ void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefuncti
             for (int k = 0; k < input.iterations + 1; k++) {
 
                 // start the timer, save the previous energy and define the iteration data
-                Timepoint iteration_timer = Timer::Now(); double energy_old = k ? iteration_data_vector.at(k - 1).energy : 0; IterationData iteration_data;
+                Timepoint iteration_timer = Timer::Now(); double energy_old = k ? iteration_data_vector.at(k - 1).total_energy : 0; IterationData iteration_data;
 
                 // propagate the wavefunction in diabatic basis
                 if (k) diabatic_wavefunction = (input.data_export.diabatic_wavefunction ? iteration_data_vector.at(k - 1).diabatic_wavefunction : diabatic_wavefunction).propagated(real_propagators, fourier_propagators);
@@ -133,8 +133,9 @@ void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefuncti
                 }
 
                 // calculate all the properties of the wavefunction
-                iteration_data.energy   = diabatic_wavefunction.energy(diabatic_potential, fourier_grid), iteration_data.energy_error = std::abs(iteration_data.energy - energy_old);
-                iteration_data.position = diabatic_wavefunction.position(grid),                           iteration_data.momentum     = diabatic_wavefunction.momentum(fourier_grid);
+                iteration_data.potential_energy = diabatic_wavefunction.potential_energy(diabatic_potential),      iteration_data.kinetic_energy = diabatic_wavefunction.kinetic_energy(fourier_grid);
+                iteration_data.position         = diabatic_wavefunction.position(grid),                            iteration_data.momentum       =       diabatic_wavefunction.momentum(fourier_grid);
+                iteration_data.total_energy     = iteration_data.kinetic_energy + iteration_data.potential_energy, iteration_data.energy_error   = std::abs(iteration_data.total_energy - energy_old);
 
                 // calculate the autocorrelation function
                 iteration_data.acf = (input.imaginary > j ? imaginary_diabatic_states.at(j) : initial_diabatic_wavefunction).overlap(diabatic_wavefunction);
@@ -165,7 +166,7 @@ void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefuncti
             Timepoint export_timer = Timer::Now(); std::printf("EXPORTING DATA FOR WAVEFUNCTION %03d (%s): ", j + 1, imaginary ? "ITP" : "RTP"); std::flush(std::cout);
 
             // export the wavefunction trajectory with data and save the energy
-            Export::WavefunctionTrajectory(input, iteration_data_vector, grid, j, imaginary); energies.at(j) = iteration_data_vector.back().energy;
+            Export::WavefunctionTrajectory(input, iteration_data_vector, grid, j, imaginary); energies.at(j) = iteration_data_vector.back().total_energy;
 
             // print the export time
             std::printf("%s\n", Timer::Format(Timer::Elapsed(export_timer)).c_str());

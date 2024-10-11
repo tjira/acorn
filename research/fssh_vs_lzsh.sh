@@ -30,7 +30,8 @@ read -r -d '' TEMPLATE_EXACT_DYN <<- EOM
         "diabatic_population" : true, "adiabatic_population" : true,
         "diabatic_potential"  : true, "adiabatic_potential"  : true,
         "position"            : true, "momentum"             : true,
-        "energy"              : true
+        "total_energy"        : true, "potential_energy"     : true,
+        "kinetic_energy"      : true
     }
 }
 EOM
@@ -46,7 +47,8 @@ read -r -d '' TEMPLATE_SH_DYN <<- EOM
     "data_export" : {
         "diabatic_population" : true, "adiabatic_population" : true,
         "position_mean"       : true, "momentum_mean"        : true,
-        "energy_mean"         : true
+        "total_energy_mean"   : true, "potential_energy_mean": true,
+        "kinetic_energy_mean" : true
     }
 }
 EOM
@@ -186,9 +188,9 @@ for MODEL in ${MODELS[@]}; do
         acorn -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES && rm *.json
 
         # get the populations at the last time step
-        POP_EXACT=$(tail -n 1 POPULATION_ADIABATIC_EXACT_REAL_1.mat | awk -v i=$IS '{print $(i+1)}');
-        POP_FSSH=$( tail -n 1 POPULATION_ADIABATIC_FS-ADIABATIC.mat | awk -v i=$IS '{print $(i+1)}');
-        POP_LZSH=$( tail -n 1 POPULATION_ADIABATIC_LZ-ADIABATIC.mat | awk -v i=$IS '{print $(i+1)}')
+        POP_EXACT=$(tail -n 1 POPULATION-ADIABATIC_EXACT-REAL_1.mat | awk -v i=$IS '{print $(i+1)}');
+        POP_FSSH=$( tail -n 1 POPULATION-ADIABATIC_FS-ADIABATIC.mat | awk -v i=$IS '{print $(i+1)}');
+        POP_LZSH=$( tail -n 1 POPULATION-ADIABATIC_LZ-ADIABATIC.mat | awk -v i=$IS '{print $(i+1)}')
 
         # append the populations to the file
         echo "${MOMENTUM} ${POP_EXACT} ${POP_FSSH} ${POP_LZSH}" >> "${MODEL}_FINAL_POPULATIONS.mat"
@@ -205,19 +207,22 @@ for MODEL in ${MODELS[@]}; do
         DIA_INDICES=""; ADIA_INDICES=""; for (( i=0; i<$STATES; i++ )); do DIA_INDICES+=$(echo "$i*$STATES+$i" | bc -l)","; ADIA_INDICES+="$i,"; done
 
         # plot the population
-        plot-1d.py POPULATION_ADIABATIC_EXACT_REAL_1.mat POPULATION_ADIABATIC_FS-ADIABATIC.mat POPULATION_ADIABATIC_LZ-ADIABATIC.mat --legend "${LEGEND_POP[@]}" --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --output "POPULATION_ADIABATIC_${MODEL}_P=${MOMENTUM}" --png
+        plot-1d.py POPULATION-ADIABATIC_EXACT-REAL_1.mat POPULATION-ADIABATIC_FS-ADIABATIC.mat POPULATION-ADIABATIC_LZ-ADIABATIC.mat --legend "${LEGEND_POP[@]}" --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --output "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}" --png
 
         # plot the potentials
-        plot-1d.py "POTENTIAL_ADIABATIC.mat:${ADIA_INDICES::-1}" --legend "${LEGEND_POT_ADIA[@]}" --title "ADIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output "POTENTIAL_ADIABATIC_${MODEL}" --png
-        plot-1d.py "POTENTIAL_DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC_POTENTIAL: ${MODEL}"  --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)"  --output "POTENTIAL_DIABATIC_${MODEL}"  --png
+        plot-1d.py "POTENTIAL-ADIABATIC.mat:${ADIA_INDICES::-1}" --legend "${LEGEND_POT_ADIA[@]}" --title "ADIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output "POTENTIAL-ADIABATIC_${MODEL}" --png
+        plot-1d.py "POTENTIAL-DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC POTENTIAL: ${MODEL}"  --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)"  --output "POTENTIAL-DIABATIC_${MODEL}"  --png
 
         # plot the position and momentum
-        plot-1d.py POSITION_EXACT_REAL_1.mat POSITION-MEAN_FS-ADIABATIC.mat POSITION-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "POSITION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}" --png
-        plot-1d.py MOMENTUM_EXACT_REAL_1.mat MOMENTUM-MEAN_FS-ADIABATIC.mat MOMENTUM-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}" --png
-        plot-1d.py ENERGY_EXACT_REAL_1.mat   ENERGY-MEAN_FS-ADIABATIC.mat   ENERGY-MEAN_FS-ADIABATIC.mat   --legend "EXACT" "FSSH" "LZSH" --title "ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "ENERGY_${MODEL}_P=${MOMENTUM}"   --png
+        plot-1d.py POSITION_EXACT-REAL_1.mat         POSITION-MEAN_FS-ADIABATIC.mat         POSITION-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "POSITION: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}"         --png
+        plot-1d.py MOMENTUM_EXACT-REAL_1.mat         MOMENTUM-MEAN_FS-ADIABATIC.mat         MOMENTUM-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "MOMENTUM: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}"         --png
+        plot-1d.py TOTAL-ENERGY_EXACT-REAL_1.mat     TOTAL-ENERGY-MEAN_FS-ADIABATIC.mat     TOTAL-ENERGY-MEAN_LZ-ADIABATIC.mat     --legend "EXACT" "FSSH" "LZSH" --title "TOTAL ENERGY: ${MODEL}"     --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}"     --png
+        plot-1d.py KINETIC-ENERGY_EXACT-REAL_1.mat   KINETIC-ENERGY-MEAN_FS-ADIABATIC.mat   KINETIC-ENERGY-MEAN_LZ-ADIABATIC.mat   --legend "EXACT" "FSSH" "LZSH" --title "KINETIC ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}"   --png
+        plot-1d.py POTENTIAL-ENERGY_EXACT-REAL_1.mat POTENTIAL-ENERGY-MEAN_FS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "POTENTIAL ENERGY: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}" --png
 
         # make the trajectory analysis image
-        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "POPULATION_ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png" "MOMENTUM_${MODEL}_P=${MOMENTUM}.png" "ENERGY_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORIES_${MODEL}_P=${MOMENTUM}.png"
+        montage "POTENTIAL-ADIABATIC_${MODEL}.png" "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"     -mode concatenate -tile x1 "TRAJECTORIES-GENERAL_${MODEL}_P=${MOMENTUM}.png"
+        montage "POTENTIAL-ADIABATIC_${MODEL}.png" "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}.png"       "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}.png" "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORIES-ENERGETICS_${MODEL}_P=${MOMENTUM}.png"
 
         # remove every matrix except for the final populations
         mkdir -p .temp && mv "${MODEL}_FINAL_POPULATIONS.mat" .temp && rm *.mat && mv .temp/* . && rm -r .temp
@@ -227,18 +232,19 @@ for MODEL in ${MODELS[@]}; do
     plot-1d.py "${MODEL}_FINAL_POPULATIONS.mat" --legend "EXACT" "FSSH" "LZSH" --title "FINAL POPULATION: ${MODEL}" --xlabel "Initial Momentum (a.u.)" --ylabel "Final Population of the Initial State (S$IS)" --output "${MODEL}_FINAL_POPULATIONS" --png
 
     # make the comparison image
-    montage "POTENTIAL_ADIABATIC_${MODEL}.png" "${MODEL}_FINAL_POPULATIONS.png" -mode concatenate -tile x1 "COMPARISONS_${MODEL}.png"
+    montage "POTENTIAL-ADIABATIC_${MODEL}.png" "${MODEL}_FINAL_POPULATIONS.png" -mode concatenate -tile x1 "COMPARISONS_${MODEL}.png"
 
     # create the potential plot
-    montage "POTENTIAL_DIABATIC_${MODEL}.png" "POTENTIAL_ADIABATIC_${MODEL}.png" -mode concatenate -tile x1 "POTENTIALS_${MODEL}.png"
+    montage "POTENTIAL-DIABATIC_${MODEL}.png" "POTENTIAL-ADIABATIC_${MODEL}.png" -mode concatenate -tile x1 "POTENTIALS_${MODEL}.png"
     
     # remove every image except for comparisons, potentials and trajectories
-    mkdir -p .temp && mv COMPARISONS_*.png POTENTIALS_*.png TRAJECTORIES_*.png .temp && rm *.mat *.png && mv .temp/* . && rm -r .temp
+    mkdir -p .temp && mv COMPARISONS_*.png POTENTIALS_*.png TRAJECTORIES-*.png .temp && rm *.mat *.png && mv .temp/* . && rm -r .temp
 done
 
 # montage all the images together and remove the individual ones
 for MOMENTUM in ${MOMENTA[@]}; do
-    FILES=(${MODELS[@]/#/TRAJECTORIES_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "TRAJECTORIES_P=${MOMENTUM}.png" && rm "${FILES[@]/%/_P=${MOMENTUM}.png}"
+    FILES=(${MODELS[@]/#/TRAJECTORIES-GENERAL_}   ); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "TRAJECTORIES-GENERAL_P=${MOMENTUM}.png"    && rm "${FILES[@]/%/_P=${MOMENTUM}.png}"
+    FILES=(${MODELS[@]/#/TRAJECTORIES-ENERGETICS_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "TRAJECTORIES-ENERGETICS_P=${MOMENTUM}.png" && rm "${FILES[@]/%/_P=${MOMENTUM}.png}"
 done
 
 # montage all the potential images together and remove the individual ones

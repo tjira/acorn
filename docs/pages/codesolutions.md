@@ -6,13 +6,11 @@ nav_order: 1
 ---
 {% include mathjax.html %}
 
-# Code Solutions
+# Code Solutions<!--\label{sec:code_solutions}-->
 
 This section provides the solutions to all of the coding exercises provided in the text. The solutions are written in Python and use the NumPy library for numerical operations. The code snippets are self-contained and can be run in any Python environment. The solutions are organized by the exercise they correspond to and are presented in the same order as in the text.
 
 ## Hartree--Fock Method<!--\label{sec:hf_code_solution}-->
-
-The solutions provided in Listing <!--\ref{code:hf_solution}--> below are complete implementations of the Restricted Hartree--Fock method.
 
 <!--{id=code:hf_solution caption="Hartree--Fock method exercise code solution."}-->
 ```python
@@ -50,8 +48,6 @@ print("    RHF ENERGY: {:.8f}".format(E_HF + VNN))
 
 ## Integral Transform<!--\label{sec:int_code_solution}-->
 
-Listing <!--\ref{code:int_solution}--> below provides the solution to the exercise of transforming the core Hamiltonian, Fock matrix, Coulomb integrals, and creating the tensors of reciprocal differences of orbital energies in the molecular spinorbital basis.
-
 <!--{id=code:int_solution caption="Integral transform exercise code solution."}-->
 ```python
 # define the occ and virt spinorbital slices shorthand
@@ -83,8 +79,6 @@ Emss, Emsd = 1 / (epsms[o].reshape(-1) - epsms[v].reshape(-1, 1)), 1 / (epsms[o]
 
 ## 2nd and 3rd Order Perturbative Corrections<!--\label{sec:mp_code_solution}-->
 
-The solutions provided in the Listing <!--\ref{code:mp_solution}--> below are complete implementations of the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The code should be appended after the Hartree--Fock implementation. The code calculates the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies and prints the results.
-
 <!--{id=code:mp_solution caption="Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order exercise code solution."}-->
 ```python
 # energy containers
@@ -104,8 +98,6 @@ if args.mp3:
 ```
 
 ## Full Configuration Interaction<!--\label{sec:ci_code_solution}-->
-
-The solution to the exercise is provided in the Listing <!--\ref{code:ci_solution}--> below. It includes the generation of determinants, the construction of the Configuration Interaction Hamiltonian matrix, and the solution of the eigenvalue problem to obtain the ground state energy.
 
 <!--{id=code:ci_solution caption="Configuration Interaction exercise code solution."}-->
 ```python
@@ -152,8 +144,6 @@ eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 ```
 
 ## Coupled Cluster Singles and Doubles<!--\label{sec:cc_code_solution}-->
-
-The solutions provided in the Listing <!--\ref{code:cc_solution}--> below are complete implementations of the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles correlation energies. The code should be appended after the Hartree--Fock implementation. The code calculates the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles correlation energies and prints the results. The variable `args` is an argument parser that allows you to choose which method you want to calculate. Since the variable is not defined in this snippet (but is defined in the complete code), you can ignore it for now and remove the conditionals.
 
 <!--{id=code:cc_solution caption="Coupled Cluster Doubles and Coupled Cluster Singles and Doubles method exercise code solution."}-->
 ```python
@@ -258,4 +248,5 @@ if args.ccsd:
     # print the CCSD energy
     print("   CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 ```
+
 {:.cite}

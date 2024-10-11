@@ -1,5 +1,5 @@
 ---
-title: Hartree–Fock Method
+title: Hartree--Fock Method
 parent: Electronic Structure Methods
 layout: default
 nav_order: 1
@@ -12,41 +12,43 @@ The Hartree--Fock method stands as a cornerstone in quantum chemistry, offering 
 
 ## Theoretical Background
 
-Ultimately, we are interested in solving the Schrödinger equation in the form
+Our primary focus is on solving the Schrödinger equation in the following form:
 
 \begin{equation}
 \hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi},
 \end{equation}
 
-where $\hat{H}$ is the molecular Hamiltonian operator, $\ket{\Psi}$ is the molecular wave function, and $E$ is the total energy of the system. The Hartree--Fock method aims to approximate the wave function $\ket{\Psi}$ by a single Slater determinant, which we will write in the form
+where $\hat{\mathbf{H}}$ denotes the molecular Hamiltonian operator, $\ket{\Psi}$ represents the molecular wave function, and $E$ is the total energy of the system. The Hartree--Fock method aims to approximate the wave function $\ket{\Psi}$ using a single Slater determinant, which can be expressed as:
 
 \begin{equation}
 \ket{\Psi}=\ket{\chi\_1\chi\_2\cdots\chi\_N},
 \end{equation}
 
-where $\chi\_i$ represents a Molecular Spinorbital and $N$ is the total number of electrons. The Hartree--Fock method seeks to optimize these molecular orbitals to minimize the total energy of the system, providing a reliable estimate of the electronic structure. However, in the Restricted Hartree--Fock method, we impose a constraint on the electron spin, and instead of spin orbitals, we work with spatial orbitals, which allows us to write the slater determinant in terms of spatial orbitals in the form
+where $\chi\_i$ indicates a molecular spin orbital and $N$ is the total number of electrons. The goal of the Hartree--Fock method is to optimize these molecular orbitals in order to minimize the system's total energy, thereby providing a reliable estimate of the electronic structure.
+
+In the Restricted Hartree--Fock method, a constraint is placed on the electron spin, allowing us to work with spatial orbitals instead of spin orbitals. This enables us to express the Slater determinant in terms of spatial orbitals as follows:
 
 \begin{equation}
 \ket{\Psi}=\ket{\Phi\_1\Phi\_2\cdots\Phi\_{N/2}},
 \end{equation}
 
-where $\Phi\_i$ represents a molecular spatial orbital. We can see, that for the Restricted Hartree--Fock method, we need to have an even number of electrons in the system. In practical calculations, it is convenient to expand the molecular orbitals (spin or spatial) in terms of basis functions $\phi$ (usually sums of Gaussian functions) and work with the expansion coefficients. If we assume that the wavefunction is a single Slater determinant, our molecular orbitals are expanded in terms of basis functions and optimize the energy of such determinant, we arrive at the Roothaan equations in the form
+where $\Phi\_i$ represents a molecular spatial orbital. It is evident that, for the Restricted Hartree--Fock method, the system must contain an even number of electrons. In practical calculations, it is often convenient to expand the molecular orbitals (whether spin or spatial) in terms of basis functions $\phi$, typically represented as sums of Gaussian functions, and to work with the corresponding expansion coefficients. Assuming that the wave function can be expressed as a single Slater determinant, we expand our molecular orbitals in terms of these basis functions and optimize the energy of the determinant, leading us to the Roothaan equations given by:
 
 \begin{equation}\label{eq:roothaan}
 \mathbf{FC}=\mathbf{SC\varepsilon},
 \end{equation}
 
-where $\mathbf{F}$ is the Fock matrix (defined later), $\mathbf{C}$ is a matrix of orbital coefficients, $\mathbf{S}$ is the overlap matrix (also defined later), and $\mathbf{\varepsilon}$ represents orbital energies.
+where $\mathbf{F}$ is the Fock matrix (to be defined later), $\mathbf{C}$ is a matrix of orbital coefficients, $\mathbf{S}$ is the overlap matrix (also to be defined later), and $\mathbf{\varepsilon}$ represents the orbital energies.
 
-## Implementation of the Restricted Hartree–Fock Method
+## Implementation of the Restricted Hartree--Fock Method
 
-Let's begin by defining the core Hamiltonian, also known as the one-electron Hamiltonian. The core Hamiltonian represents a part of the full Hamiltonian that excludes electron-electron repulsion. In index notation, it is expressed as 
+Let us begin by defining the core Hamiltonian, also referred to as the one-electron Hamiltonian. The core Hamiltonian constitutes a portion of the full Hamiltonian that omits electron-electron repulsion. In index notation, it is expressed as
 
 \begin{equation}\label{eq:hamiltonian}
 H\_{\mu\nu}^{core}=T\_{\mu\nu}+V\_{\mu\nu}
 \end{equation}
 
-where $\mu$ and $\nu$ are indices of basis functions, $T\_{\mu\nu}$ is a kinetic energy matrix element and $V\_{\mu\nu}$ is a potential energy matrix element. These matrix elements are given as
+where $\mu$ and $\nu$ are indices of basis functions, $T\_{\mu\nu}$ denotes a kinetic energy matrix element and $V\_{\mu\nu}$ denotes a potential energy matrix element. These matrix elements given as
 
 \begin{align}
 T\_{\mu\nu}&=\braket{\phi\_{\mu}|\hat{T}|\phi\_{\nu}} \\\\\
@@ -93,7 +95,7 @@ where $Z\_A$ is the nuclear charge of atom A, and $R\_{AB}$ is the distance betw
 
 ### Gradient of the Restricted Hartree--Fock Method
 
-If we perform the calculation as described above and get the density matrix $\mathbf{D}$ we can evaluate the nuclear energy gradient as
+If we perform the calculation as described above and get the density matrix $\mathbf{D}$ we can evaluate the nuclear energy gradient as<!--\cite{10.1002/9780470749593.hrs006}-->
 
 \begin{equation}
 \frac{\partial E}{\partial X\_{A,i}}=D\_{\mu\nu}\frac{\partial H\_{\mu\nu}^{core}}{\partial X\_{A,i}}+2D\_{\mu\nu}D\_{\kappa\lambda}\frac{\partial J\_{\mu\nu\kappa\lambda}}{\partial X\_{A,i}}-2W\_{\mu\nu}\frac{\partial S\_{\mu\nu}}{\partial X\_{A,i}}
@@ -171,10 +173,11 @@ where $a$, $b$, $c$ are virtual orbitals and $i$, $j$, $k$ are occupied orbitals
 
 ## Hartree--Fock Method and Integral Transform Coding Exercise<!--\label{sec:hf_int_code_exercise}-->
 
-This section provides code snippets for the Hartree--Fock method and the integral transforms to the Molecular Spinorbital basis. The code snippets are written in Python and use the NumPy package for numerical calculations. The exercises are designed to help you understand the implementation of the Hartree--Fock method and the transformation of integrals to the Molecular Spinorbital basis. The solutions are provided to guide you through the implementation process and ensure that you can verify your results.
+This section provides code snippets for the Hartree--Fock method and the integral transforms to the Molecular Spinorbital basis. The code snippets are written in Python and use the NumPy package for numerical calculations. The exercises are designed to help you understand the implementation of the Hartree--Fock method and the transformation of integrals to the Molecular Spinorbital basis. The solutions are provided [here](codesolutions.html#code-solutions) to guide you through the implementation process and ensure that you can verify your results.
 
-The exercise codes are designed to be self-contained and can be run in any Python environment. They contain placeholders that you need to fill in to complete the implementation. The exercises assume that you have defined the `atoms`, `coords`, `S`, `H`, and `J` variables, which represent the list of atomic numbers, atomic coordinates, overlap matrix, core Hamiltonian, and Coulomb integral tensor, respectively. These variables can be generaly obtained from a .xyz molecule file and the output of a quantum chemistry software. If you want to just get to the coding part, you can save the [molecule.xyz](/acorn/python/molecule.xyz), [S_AO.mat](/acorn/python/S_AO.mat), [H_AO.mat](/acorn/python/H_AO.mat), and [J_AO.mat](/acorn/python/J_AO.mat) files to the same directory as the exercise codes and and load the variables using the Listing below. The `ATOM` variable is a dictionary that maps the atomic symbols to atomic numbers.
+The exercise codes are designed to be self-contained and can be run in any Python environment. They contain placeholders that you need to fill in to complete the implementation. The exercises assume that you have defined the `atoms`, `coords`, `S`, `H`, and `J` variables, which represent the list of atomic numbers, atomic coordinates, overlap matrix, core Hamiltonian, and Coulomb integral tensor, respectively. These variables can be generaly obtained from a .xyz molecule file and the output of a quantum chemistry software. If you want to just get to the coding part, you can save the [molecule.xyz](/acorn/python/molecule.xyz), [S_AO.mat](/acorn/python/S_AO.mat), [H_AO.mat](/acorn/python/H_AO.mat), and [J_AO.mat](/acorn/python/J_AO.mat) files to the same directory as the exercise codes and load the variables using the Listing <!--\ref{code:load_exercise}--> below. The `ATOM` variable is a dictionary that maps the atomic symbols to atomic numbers.
 
+<!--{id=code:load_exercise caption="Example loading of molecule and integrals over atomic basis functions into variables used throughout exercises."}-->
 ```py
 # get the atomic numbers and coordinates of all atoms
 atoms = np.array([ATOM[line.split()[0]] for line in open("molecule.xyz").readlines()[2:]], dtype=int)

@@ -24,7 +24,7 @@ ACRONYMS=(
 mkdir -p docs/tex && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
 
-\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}
+\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\pdfminorversion=7
 
 \begin{filecontents*}{molecule.xyz}
 3
@@ -182,16 +182,31 @@ water/RHF/STO-3G/-74.965901192180
     year = {2019},
     doi = {10.48550/arXiv.1903.11240}
 }
+
+@book{10.1002/9780470749593.hrs006,
+    author = {Yukio Yamaguchi and Henry F. Schaefer},
+    title = {Analytic Derivative Methods in Molecular Electronic Structure Theory: A New Dimension to Quantum Chemistry and its Applications to Spectroscopy},
+    publisher = {John Wiley \& Sons, Ltd},
+    year = {2011},
+    doi = {10.1002/9780470749593.hrs006}
+}
 \end{filecontents*}
 
 \usepackage[colorlinks=true,linkcolor=blue]{hyperref} % hyperlink package should be on top
+\hypersetup{
+    pdfauthor={Tom\'a\v s J\'ira},
+    pdftitle={Algorithms of Quantum Chemistry},
+    pdfsubject={Quantum Chemistry},
+    pdfkeywords={quantum,chemistry,algorithm}
+}
 
 \usepackage{amsmath} % all the math environments and symbols
 \usepackage[toc,page]{appendix} % appendices
 \usepackage{attachfile} % embedding files in PDF
 \usepackage{braket} % braket notation
 \usepackage[labelfont=bf]{caption} % bold captions
-\usepackage[left=2cm,top=2.5cm,right=2cm,bottom=2.5cm]{geometry} % page layout
+\usepackage[left=1.5cm,top=2cm,right=1.5cm,bottom=2cm]{geometry} % page layout
+\usepackage{lmodern} % Latin Modern font
 \usepackage{mathrsfs} % mathscr environment
 \usepackage{xcolor} % colors
 
@@ -308,8 +323,8 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
     [[ ! -z "$CONTENT_SOL_INT" ]] && awk -v content="$CONTENT_SOL_INT" -v i=$SOLUTION_CODE_COUNTER '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/codesolutions.md > temp.md && mv temp.md docs/pages/codesolutions.md && ((SOLUTION_CODE_COUNTER++))
 
     # replace some MD quirks with LaTeX quirks
-    cat temp.md | awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```python/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" \
-                | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d ; s/^```py$/```python/' \
+    cat temp.md | awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```py/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" \
+                | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d ; s/^```py{/```python{/' \
                 > temp.md
 
     # convert MD to LaTeX
@@ -333,6 +348,7 @@ sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/ ; s/\\\///g ; s
 # replace section references
 sed -i 's/\\href{hartreefockmethod.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g'  docs/tex/main.tex
 sed -i 's/\\href{hartreefockmethod.html\\#hartreefock-method-and-integral-transform-coding-exercise}{here}/in Section \\ref{sec:hf_int_code_exercise}/g' docs/tex/main.tex
+sed -i 's/\\href{codesolutions.html\\#code-solutions}{here}/in Section \\ref{sec:code_solutions}/g'                                                      docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#hartreefock-method}{here}/in Section \\ref{sec:hf_code_solution}/g'                                                docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#integral-transform}{here}/in Section \\ref{sec:int_code_solution}/g'                                               docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#2nd-and-3rd-order-perturbative-corrections}{here}/in Section \\ref{sec:mp_code_solution}/g'                        docs/tex/main.tex
@@ -365,7 +381,7 @@ done
 sed -i 's/\\section/\\chapter/g ; s/\\subsection/\\section/g ; s/\\subsubsection/\\subsection/g' docs/tex/main.tex
 
 # set the appendix
-sed -i 's/\\chapter{Code Solutions}/\\begin{appendices}\\chapter{Code Solutions}/' docs/tex/main.tex
+sed -i 's/\\chapter{\\texorpdfstring{Code Solutions/\\begin{appendices}\\chapter{\\texorpdfstring{Code Solutions/' docs/tex/main.tex
 
 # compile the main LaTeX file to PDF
 cd docs/tex && pdflatex main && biber main && makeglossaries main && pdflatex main && pdflatex main && cd ../..

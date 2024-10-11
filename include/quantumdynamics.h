@@ -7,7 +7,7 @@
 class QuantumDynamics {
 public:
     struct IterationData {
-        double energy, energy_error; std::complex<double> acf; Eigen::VectorXd position, momentum; Eigen::MatrixXd density_diabatic, density_adiabatic; Wavefunction diabatic_wavefunction, adiabatic_wavefunction;
+        double kinetic_energy, potential_energy, total_energy, energy_error; std::complex<double> acf; Eigen::VectorXd position, momentum; Eigen::MatrixXd density_diabatic, density_adiabatic; Wavefunction diabatic_wavefunction, adiabatic_wavefunction;
     };
 
     QuantumDynamics(const Input::QuantumDynamics& input) : input(input) {}
