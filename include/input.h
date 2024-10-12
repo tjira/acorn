@@ -14,11 +14,11 @@ struct Input {
     struct Integral {
         double precision;
         struct DataExport {
-            bool hamiltonian, coulomb, overlap;
+            bool hamiltonian, coulomb, overlap, hamiltonian_d1, coulomb_d1, overlap_d1;
         } data_export;
     } integral;
     struct HartreeFock {
-        bool generalized;
+        bool generalized, gradient;
         int diis_size, max_iter;
         double threshold;
         struct ConfigurationInteraction {
@@ -61,12 +61,12 @@ extern nlohmann::json default_input; extern int nthread;
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::System, basis, path, charge, multiplicity);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Wavefunction, dimension, mass, momentum, grid_limits, grid_points, guess);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral::DataExport, hamiltonian, coulomb, overlap);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral::DataExport, hamiltonian, coulomb, overlap, hamiltonian_d1, coulomb_d1, overlap_d1);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::Integral, precision, data_export);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::ConfigurationInteraction, cas, triplet);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::CoupledCluster, excitation, perturbation, max_iter, threshold);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock::MollerPlesset, order);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock, diis_size, max_iter, threshold, configuration_interaction, coupled_cluster, moller_plesset, generalized);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock, diis_size, max_iter, threshold, configuration_interaction, coupled_cluster, moller_plesset, generalized, gradient);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::QuantumDynamics::DataExport, diabatic_wavefunction, adiabatic_wavefunction, diabatic_density, adiabatic_density, diabatic_population, adiabatic_population, diabatic_potential, adiabatic_potential, total_energy, position, momentum, acf, potential_energy, kinetic_energy);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::QuantumDynamics, potential, imaginary, real, iterations, time_step, data_export);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::DataExport, total_energy, position, momentum, diabatic_population, adiabatic_population, total_energy_mean, position_mean, momentum_mean, potential_energy, potential_energy_mean, kinetic_energy, kinetic_energy_mean);

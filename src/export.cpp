@@ -270,6 +270,17 @@ void Export::TorchTensorDouble(const std::string& path, const torch::Tensor& ten
         }
     }
 
+    // write 3rd order tensor
+    if (tensor.sizes().size() == 3) {
+        for (int i = 0; i < tensor.sizes().at(0); i++) {
+            for (int j = 0; j < tensor.sizes().at(1); j++) {
+                for (int k = 0; k < tensor.sizes().at(2); k++) {
+                    file << std::setw(22) << tensor.index({i, j, k}).item().toDouble() << (j < tensor.sizes().at(1) - 1 ? " " : "");
+                }
+            } file << "\n";
+        }
+    }
+
     // write 4th order tensor
     if (tensor.sizes().size() == 4) {
         for (int i = 0; i < tensor.sizes().at(0); i++) {
@@ -277,6 +288,21 @@ void Export::TorchTensorDouble(const std::string& path, const torch::Tensor& ten
                 for (int k = 0; k < tensor.sizes().at(2); k++) {
                     for (int l = 0; l < tensor.sizes().at(3); l++) {
                         file << std::setw(22) << tensor.index({i, j, k, l}).item().toDouble() << (k < tensor.sizes().at(2) - 1 ? " " : "");
+                    }
+                } file << "\n";
+            }
+        }
+    }
+
+    // write 5th order tensor
+    if (tensor.sizes().size() == 5) {
+        for (int i = 0; i < tensor.sizes().at(0); i++) {
+            for (int j = 0; j < tensor.sizes().at(1); j++) {
+                for (int k = 0; k < tensor.sizes().at(2); k++) {
+                    for (int l = 0; l < tensor.sizes().at(3); l++) {
+                        for (int m = 0; m < tensor.sizes().at(4); m++) {
+                            file << std::setw(22) << tensor.index({i, j, k, l, m}).item().toDouble() << (k < tensor.sizes().at(2) - 1 ? " " : "");
+                        }
                     }
                 } file << "\n";
             }

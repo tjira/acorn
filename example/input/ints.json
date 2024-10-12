@@ -1,0 +1,16 @@
+{
+    "system" : {
+        "path" : "example/molecule/water.xyz",
+        "basis" : "sto-3g"
+    },
+    "integral" : {
+        "data_export" : {
+            "hamiltonian" : true,
+            "coulomb" : true,
+            "overlap" : true,
+            "hamiltonian_d1" : true,
+            "coulomb_d1" : true,
+            "overlap_d1" : true
+        }
+    }
+}

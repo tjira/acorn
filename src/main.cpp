@@ -79,11 +79,12 @@ int main(int argc, char** argv) {
         auto [input_json, input] = parse_input(program_input); System system; if (input_json.contains("system")) system = System(input.system);
 
         // define all the variables to store the results
-        double energy_hf = 0, energy_mp = 0, energy_cc = 0, energy_ci = 0; torch::Tensor H_AO, S_AO, J_AO, H_MS, J_MS_AP, F_MS, C_MS, E_CI, C_CI;
+        double energy_hf = 0, energy_mp = 0, energy_cc = 0, energy_ci = 0; torch::Tensor H_AO, dH_AO, S_AO, dS_AO, J_AO, dJ_AO, H_MS, J_MS_AP, F_MS, C_MS, E_CI, C_CI;
 
         // extract all the method booleans
         bool do_hartree_fock = input_json.contains("hartree_fock");
         bool do_integral = input_json.contains("integral") || do_hartree_fock;
+        bool do_integral_d1 = do_integral || (do_hartree_fock && input_json.at("hartree_fock").contains("gradient"));
         bool do_configuration_interaction = do_hartree_fock && input_json.at("hartree_fock").contains("configuration_interaction");
         bool do_coupled_cluster = do_hartree_fock && input_json.at("hartree_fock").contains("coupled_cluster");
         bool do_moller_plesset = do_hartree_fock && input_json.at("hartree_fock").contains("moller_plesset");
@@ -98,30 +99,38 @@ int main(int argc, char** argv) {
         if (input_json.contains("system")) printf("%s BASIS, %lu ATOMS, %d ELECTRONS, %d BASIS FUNCTIONS\n\n", system.get_basis().c_str(), system.get_atoms().size(), system.electrons(), system.basis_functions());
 
         // integral calculation
-        if (do_integral) {
+        if (do_integral || do_integral_d1) {
 
             // create the timer and print the calculation header
             Timepoint integral_calculation_timer = Timer::Now(); std::printf("INTEGRAL CALCULATION: "); std::flush(std::cout);
 
-            // calculate the one- and two-electron integrals
-            std::tie(H_AO, S_AO, J_AO) = Integral(input.integral).calculate(system.get_atoms(), system.get_shells());
+            // calculate the base integrals
+            if (do_integral) std::tie(H_AO, S_AO, J_AO) = Integral(input.integral).calculate(system.get_atoms(), system.get_shells());
+
+            // calculate the first derivatives
+            if (do_integral_d1) std::tie(dH_AO, dS_AO, dJ_AO) = Integral(input.integral).calculate_d1(system.get_atoms(), system.get_shells());
 
             // print the time taken to calculate the integrals
             std::printf("%s\n", Timer::Format(Timer::Elapsed(integral_calculation_timer)).c_str());
 
             // wrte the integrals to the disk
-            if (input.integral.data_export.hamiltonian || input.integral.data_export.coulomb || input.integral.data_export.overlap) {
+            if (input.integral.data_export.hamiltonian || input.integral.data_export.coulomb || input.integral.data_export.overlap || input.integral.data_export.hamiltonian_d1 || input.integral.data_export.coulomb_d1 || input.integral.data_export.overlap_d1) {
 
                 // create the export timer and print the header
                 Timepoint integral_export_timer = Timer::Now(); std::printf("WRITING INTS TO DISK: "); std::flush(std::cout);
 
-                // export the integrals
+                // export the base integrals
                 if (input.integral.data_export.hamiltonian) Export::TorchTensorDouble("H_AO.mat", H_AO);
                 if (input.integral.data_export.overlap    ) Export::TorchTensorDouble("S_AO.mat", S_AO);
                 if (input.integral.data_export.coulomb    ) Export::TorchTensorDouble("J_AO.mat", J_AO);
 
+                // export the first derivatives
+                if (input.integral.data_export.hamiltonian_d1) Export::TorchTensorDouble("dH_AO.mat", dH_AO);
+                if (input.integral.data_export.overlap_d1    ) Export::TorchTensorDouble("dS_AO.mat", dS_AO);
+                if (input.integral.data_export.coulomb_d1    ) Export::TorchTensorDouble("dJ_AO.mat", dJ_AO);
+
                 // print the time taken to export the integrals
-                std::printf("%s\n", Timer::Format(Timer::Elapsed(integral_export_timer)).c_str());
+                std::printf("%s%s", Timer::Format(Timer::Elapsed(integral_export_timer)).c_str(), do_hartree_fock ? "\n" : "");
             }
 
             // print the new line

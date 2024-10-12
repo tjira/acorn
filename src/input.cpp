@@ -21,11 +21,15 @@ nlohmann::json default_input = R"(
         "data_export" : {
             "hamiltonian" : false,
             "coulomb" : false,
-            "overlap" : false
+            "overlap" : false,
+            "hamiltonian_d1" : false,
+            "coulomb_d1" : false,
+            "overlap_d1" : false
         }
     },
     "hartree_fock" : {
         "generalized" : false,
+        "gradient" : false,
         "diis_size" : 5,
         "max_iter" : 100,
         "threshold" : 1e-8,
