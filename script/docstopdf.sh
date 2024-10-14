@@ -204,7 +204,6 @@ water/RHF/STO-3G/-74.965901192180
 \usepackage[toc,page]{appendix} % appendices
 \usepackage{attachfile} % embedding files in PDF
 \usepackage{braket} % braket notation
-\usepackage{feynmp-auto} % Feynman diagrams
 \usepackage{float} % floating figures
 \usepackage[labelfont=bf]{caption} % bold captions
 \usepackage[left=1.5cm,top=2cm,right=1.5cm,bottom=2cm]{geometry} % page layout
