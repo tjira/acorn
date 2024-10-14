@@ -110,6 +110,9 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
         // define and initialie the surface hopping algorithms
         FewestSwitches fewestswitches(input.surface_hopping, input.adiabatic, seed); LandauZener landauzener(input.surface_hopping, input.adiabatic, seed);
 
+        // define the vector of hopping geometries
+        std::vector<Eigen::VectorXd> hopping_geometry_vector;
+
         // define the initial conditions
         Eigen::MatrixXd position(input.iterations + 1, grid.cols()), velocity(input.iterations + 1, grid.cols()), acceleration(input.iterations + 1, grid.cols());
 
@@ -156,6 +159,9 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
                 velocity.row(j).array() = std::sqrt(velocity.row(j).squaredNorm() - 2 * (potential(new_state, new_state) - potential(state(j), state(j))) / mass); state(j) = new_state;
             }
 
+            // append the hopping geometry
+            if (j && state(j) != state(j - 1)) hopping_geometry_vector.push_back(position.row(j));
+
             // print the iteration info
             if ((j % input.log_interval_step == 0 || j && state(j) != state(j - 1)) && (i ? i + 1 : i) % input.log_interval_traj == 0) {
                 print_iteration(i + 1, j, {potential, position.row(j), velocity.row(j), state}, mass);
@@ -163,7 +169,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
         }
 
         // set the trajectory data
-        trajectory_data_vector.at(i) = {state, position, velocity, diabatic_potential_vector, adiabatic_potential_vector};
+        trajectory_data_vector.at(i) = {state, position, velocity, diabatic_potential_vector, adiabatic_potential_vector, hopping_geometry_vector};
     }
 
     // create the vector of populations

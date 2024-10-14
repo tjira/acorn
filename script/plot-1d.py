@@ -9,6 +9,7 @@ if __name__ == "__main__":
     # add the optional arguments
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
     parser.add_argument("-a", "--animate", type=int, help="Perform the animation with the specified column interval.")
+    parser.add_argument("-b", "--bins", type=int, default=10, help="The number of bins for the histogram.")
     parser.add_argument("-d", "--dpi", type=int, default=60, help="The resolution of the plot.")
     parser.add_argument("-l", "--legend", type=str, nargs="+", help="Add a legend to the plot.")
     parser.add_argument("-o", "--output", type=str, default="plot", help="The output file to save the plot.")
@@ -19,28 +20,35 @@ if __name__ == "__main__":
     parser.add_argument("--pdf", action="store_true", help="Save the plot as a pdf document.")
     parser.add_argument("--gif", action="store_true", help="Save the plot as a gif clip.")
     parser.add_argument("--mp4", action="store_true", help="Save the plot as an mp4 clip.")
+    parser.add_argument("--histogram", action="store_true", help="Plot the histogram of the data.")
 
     # add positional arguments
     parser.add_argument("files", nargs="+", help="The data files to plot.")
 
     # parse arguments and load data
-    args = parser.parse_args(); data = [np.loadtxt(file.split(":")[0], skiprows=1) for file in args.files];
+    args = parser.parse_args(); data = [np.loadtxt(file.split(":")[0], ndmin=2, skiprows=1) for file in args.files];
 
     # array of plotted columns for each file
-    columns = [list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else range(args.animate if args.animate else data[i].shape[1] - 1)) for i in range(len(data))]
+    columns = [list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else range(args.animate if args.animate else data[i].shape[1] - (not args.histogram))) for i in range(len(data))]
 
     # calculate the limits of the plot
-    xmin, xmax = min(map(lambda data: data[:, 0 ].min(), data)), max(map(lambda data: data[:, 0 ].max(), data))
-    ymin, ymax = min(map(lambda data: data[:, 1:].min(), data)), max(map(lambda data: data[:, 1:].max(), data))
+    xmin, xmax = min(map(lambda data: data[:, 0 ].min(), data)) if not args.histogram else 0, max(map(lambda data: data[:, 0 ].max(), data)) if not args.histogram else 0
+    ymin, ymax = min(map(lambda data: data[:, 1:].min(), data)) if not args.histogram else 0, max(map(lambda data: data[:, 1:].max(), data)) if not args.histogram else 0
 
     # create the figure and axis and define a function that returns the line index based on the file and column
     fig, ax = pt.subplots(figsize=(8, 6)); lineind = lambda i, j: (np.cumsum(list(map(len, columns)))[i - 1] if i else 0) + j
 
     # initialize the lines with the initial data
-    for i in range(len(data)): [ax.plot(data[i][:, 0], data[i][:, 1 + column]) for column in columns[i]]
+    for i in (e for e in range(len(data)) if not args.histogram):
+        [ax.plot(data[i][:, 0], data[i][:, 1 + column]) for column in columns[i]]
+
+    # initialize the histogram with the initial data
+    for i in (e for e in range(len(data)) if args.histogram):
+        [(lambda hist, bins: ax.plot(bins[:-1], hist))(*np.histogram(data[i][:, column], bins=np.histogram(data[0][:, 0], bins=args.bins)[1], density=True)) for column in columns[i]] # type: ignore
 
     # plotting function
-    update = lambda frame: [ax.lines[lineind(i, j)].set_ydata(data[i][:, 1 + frame * args.animate + columns[i][j]]) for j in range(len(columns[i])) for i in range(len(data))]
+    if not args.histogram: update = lambda frame: [ax.lines[lineind(i, j)].set_ydata(data[i][:, 1 + frame * args.animate + columns[i][j]]) for j in range(len(columns[i])) for i in range(len(data))]
+    if     args.histogram: update = lambda frame: [ax.lines[lineind(i, j)].set_ydata(data[i][:, 1 + frame * args.animate + columns[i][j]]) for j in range(len(columns[i])) for i in range(len(data))]
 
     # add the legend
     if args.legend: pt.legend(args.legend)
@@ -52,8 +60,12 @@ if __name__ == "__main__":
     if args.xlabel: ax.set_xlabel(args.xlabel)
     if args.ylabel: ax.set_ylabel(args.ylabel)
 
+    # failsafe against identical limits
+    if xmin == xmax: xmin, xmax = xmin - 1, xmax + 1
+    if ymin == ymax: ymin, ymax = ymin - 1, ymax + 1
+
     # set the limits of the plot
-    ax.set_xlim(xmin, xmax); ax.set_ylim(ymin - 0.05 * (ymax - ymin), ymax + 0.05 * (ymax - ymin))
+    ax.set_xlim(xmin, xmax) if not args.histogram else None; ax.set_ylim(ymin - 0.05 * (ymax - ymin), ymax + 0.05 * (ymax - ymin)) if not args.histogram else None
 
     # set the tight layout
     fig.tight_layout()

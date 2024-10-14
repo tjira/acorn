@@ -226,6 +226,24 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         // export the energy mean
         Export::EigenMatrixDouble(std::string("KINETIC-ENERGY-MEAN_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
+
+    // export the hopping geometries
+    if (input.data_export.hopping_geometry) {
+
+        // create the data of the hopping geometries
+        std::vector<Eigen::VectorXd> hopping_geometries;
+
+        // fill the hopping geometry data
+        for (int i = 0; i < input.trajectories; i++) for (size_t j = 0; j < trajectory_data_vector.at(i).hopping_geometry.size(); j++) {
+            hopping_geometries.push_back(trajectory_data_vector.at(i).hopping_geometry.at(j));
+        }
+
+        // transform the hopping geometries to a matrix
+        data_matrix = Eigen::MatrixXd::Zero(hopping_geometries.size(), hopping_geometries.front().rows()); for (size_t i = 0; i < hopping_geometries.size(); i++) data_matrix.row(i) = hopping_geometries.at(i).transpose();
+
+        // export the energy mean
+        Export::EigenMatrixDouble(std::string("HOPPING-GEOMETRIES_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix);
+    }
 }
 
 void Export::EigenMatrixDouble(const std::string& path, const Eigen::MatrixXd& matrix, const Eigen::MatrixXd& independent_variable) {

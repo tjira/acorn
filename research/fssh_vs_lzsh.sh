@@ -4,7 +4,7 @@
 # VARIABLES
 # ======================================================================================================================================================================================================
 
-CORES=1; PSTEP=10.0; TRAJS=1000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100;
+CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
 
 MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
 
@@ -48,7 +48,7 @@ read -r -d '' TEMPLATE_SH_DYN <<- EOM
         "diabatic_population" : true, "adiabatic_population" : true,
         "position_mean"       : true, "momentum_mean"        : true,
         "total_energy_mean"   : true, "potential_energy_mean": true,
-        "kinetic_energy_mean" : true
+        "kinetic_energy_mean" : true, "hopping_geometry"     : true
     }
 }
 EOM
@@ -131,8 +131,11 @@ IS_TS_4=2
 # END POTENTIALS
 # ======================================================================================================================================================================================================
 
+# remove all the previous files
+[[ $CLEAN -eq 1 ]] && rm -f *.mat *.json *.png
+
 # generate momenta
-MOMENTA=($(seq 10.0 $PSTEP 50.0))
+(( $(echo "$PSTEP <= 0" | bc -l) )) && MOMENTA=($PSTART) || MOMENTA=($(seq $PSTART $PSTEP $PEND))
 
 # loop over the models
 for MODEL in ${MODELS[@]}; do
@@ -211,7 +214,7 @@ for MODEL in ${MODELS[@]}; do
 
         # plot the potentials
         plot-1d.py "POTENTIAL-ADIABATIC.mat:${ADIA_INDICES::-1}" --legend "${LEGEND_POT_ADIA[@]}" --title "ADIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output "POTENTIAL-ADIABATIC_${MODEL}" --png
-        plot-1d.py "POTENTIAL-DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC POTENTIAL: ${MODEL}"  --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)"  --output "POTENTIAL-DIABATIC_${MODEL}"  --png
+        plot-1d.py "POTENTIAL-DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC POTENTIAL: ${MODEL}"  --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output  "POTENTIAL-DIABATIC_${MODEL}" --png
 
         # plot the position and momentum
         plot-1d.py POSITION_EXACT-REAL_1.mat         POSITION-MEAN_FS-ADIABATIC.mat         POSITION-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "POSITION: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}"         --png
@@ -220,12 +223,13 @@ for MODEL in ${MODELS[@]}; do
         plot-1d.py KINETIC-ENERGY_EXACT-REAL_1.mat   KINETIC-ENERGY-MEAN_FS-ADIABATIC.mat   KINETIC-ENERGY-MEAN_LZ-ADIABATIC.mat   --legend "EXACT" "FSSH" "LZSH" --title "KINETIC ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}"   --png
         plot-1d.py POTENTIAL-ENERGY_EXACT-REAL_1.mat POTENTIAL-ENERGY-MEAN_FS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "POTENTIAL ENERGY: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}" --png
 
+        # plot the hopping geometries
+        plot-1d.py HOPPING-GEOMETRIES_FS-ADIABATIC.mat --bins 100 --legend "FSSH" --title "HOPPING GEOMETRIES: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Relative Count" --output "HOPPING-GEOMETRIES_${MODEL}" --histogram --png
+
         # make the trajectory analysis image
         montage "POTENTIAL-ADIABATIC_${MODEL}.png" "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"     -mode concatenate -tile x1 "TRAJECTORIES-GENERAL_${MODEL}_P=${MOMENTUM}.png"
         montage "POTENTIAL-ADIABATIC_${MODEL}.png" "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}.png"       "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}.png" "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORIES-ENERGETICS_${MODEL}_P=${MOMENTUM}.png"
-
-        # remove every matrix except for the final populations
-        mkdir -p .temp && mv "${MODEL}_FINAL_POPULATIONS.mat" .temp && rm *.mat && mv .temp/* . && rm -r .temp
+        montage "POTENTIAL-ADIABATIC_${MODEL}.png" "HOPPING-GEOMETRIES_${MODEL}.png"                                                                                                         -mode concatenate -tile x1 "TRAJECTORIES-TRANSITIONS_${MODEL}_P=${MOMENTUM}.png"
     done
 
     # plot the population dependence on momentum

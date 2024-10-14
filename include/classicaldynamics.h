@@ -9,7 +9,7 @@
 class ClassicalDynamics {
 public:
     struct TrajectoryData {
-        Eigen::VectorXi state; Eigen::MatrixXd position, velocity; std::vector<Eigen::MatrixXd> diabatic_potential, adiabatic_potential;
+        Eigen::VectorXi state; Eigen::MatrixXd position, velocity; std::vector<Eigen::MatrixXd> diabatic_potential, adiabatic_potential; std::vector<Eigen::VectorXd> hopping_geometry;
     };
 
     ClassicalDynamics(const Input::ClassicalDynamics& input) : input(input) {}

@@ -204,10 +204,13 @@ water/RHF/STO-3G/-74.965901192180
 \usepackage[toc,page]{appendix} % appendices
 \usepackage{attachfile} % embedding files in PDF
 \usepackage{braket} % braket notation
+\usepackage{feynmp-auto} % Feynman diagrams
+\usepackage{float} % floating figures
 \usepackage[labelfont=bf]{caption} % bold captions
 \usepackage[left=1.5cm,top=2cm,right=1.5cm,bottom=2cm]{geometry} % page layout
 \usepackage{lmodern} % Latin Modern font
 \usepackage{mathrsfs} % mathscr environment
+\usepackage{subcaption} % subfigures
 \usepackage{xcolor} % colors
 
 \usepackage[backend=biber,style=chem-acs]{biblatex} % bibliography
@@ -331,17 +334,6 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
     pandoc --from markdown-auto_identifiers --listings --mathjax --to latex --wrap=none --output temp.tex temp.md && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
 done && echo "" >> docs/tex/main.tex
 
-# end the document
-cat >> docs/tex/main.tex << EOL
-\end{appendices}
-
-\printglossary[type=\acronymtype]
-
-\printbibliography
-
-\end{document}
-EOL
-
 # add raggedbottom before the listings and remove stupid escapes
 sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/ ; s/\\\///g ; s/\\passthrough/\\texttt/g' docs/tex/main.tex
 
@@ -383,5 +375,16 @@ sed -i 's/\\section/\\chapter/g ; s/\\subsection/\\section/g ; s/\\subsubsection
 # set the appendix
 sed -i 's/\\chapter{\\texorpdfstring{Code Solutions/\\begin{appendices}\\chapter{\\texorpdfstring{Code Solutions/' docs/tex/main.tex
 
+# end the document
+cat >> docs/tex/main.tex << EOL
+\end{appendices}
+
+\printglossary[type=\acronymtype]
+
+\printbibliography
+
+\end{document}
+EOL
+
 # compile the main LaTeX file to PDF
-cd docs/tex && pdflatex main && biber main && makeglossaries main && pdflatex main && pdflatex main && cd ../..
+cd docs/tex && pdflatex -shell-escape main && biber main && pdflatex -shell-escape main && pdflatex -shell-escape main && cd ../..
