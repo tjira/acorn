@@ -95,6 +95,29 @@ double System::nuclear_repulsion() const {
     return nuclear_repulsion_value;
 }
 
+torch::Tensor System::nuclear_repulsion_d1() const {
+    // create the variable
+    torch::Tensor nuclear_repulsion_value = torch::zeros_like(coordinates);
+
+    // calculate the repulsion derivative
+    for (int i = 0; i < (int)atomic_numbers.size(); i++) for (int j = 0; j < (int)atomic_numbers.size(); j++) {
+
+        // skip the same atom
+        if (i == j) continue;
+
+        // extract the vector
+        torch::Tensor vector = (coordinates.index({i, None}) - coordinates.index({j, None})).squeeze();
+
+        // calculate the derivative
+        nuclear_repulsion_value.index({i, 0}) -= vector.index({0}).item<double>() * atomic_numbers.at(i) * atomic_numbers.at(j) / std::pow(vector.norm().item<double>(), 3) / std::pow(ANGSTROM_TO_BOHR, 2);
+        nuclear_repulsion_value.index({i, 1}) -= vector.index({1}).item<double>() * atomic_numbers.at(i) * atomic_numbers.at(j) / std::pow(vector.norm().item<double>(), 3) / std::pow(ANGSTROM_TO_BOHR, 2);
+        nuclear_repulsion_value.index({i, 2}) -= vector.index({2}).item<double>() * atomic_numbers.at(i) * atomic_numbers.at(j) / std::pow(vector.norm().item<double>(), 3) / std::pow(ANGSTROM_TO_BOHR, 2);
+    }
+
+    // return the nuclear-nuclear repulsion of the system
+    return nuclear_repulsion_value;
+}
+
 int System::virtual_spinorbitals() const {
     return 2 * basis_functions() - electrons();
 }

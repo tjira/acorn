@@ -5,10 +5,12 @@
     },
     "integral" : {
         "data_export" : {
-            "hamiltonian" : true,
+            "kinetic" : true,
+            "nuclear" : true,
             "coulomb" : true,
             "overlap" : true,
-            "hamiltonian_d1" : true,
+            "kinetic_d1" : true,
+            "nuclear_d1" : true,
             "coulomb_d1" : true,
             "overlap_d1" : true
         }

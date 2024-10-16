@@ -64,16 +64,16 @@ torch::Tensor Integral::single_electron(libint2::Engine& engine, const libint2::
     return torch::from_blob(ints.data(), {nbf, nbf}, torch::kDouble).clone();
 }
 
-torch::Tensor Integral::double_electron_d1(libint2::Engine& engine, const libint2::BasisSet& shells) {
+torch::Tensor Integral::double_electron_d1(libint2::Engine& engine, const libint2::BasisSet& shells, const std::vector<libint2::Atom>& atoms) {
     // define the number of basis functions, matrix of integrals and shell to basis function map
-    int nbf = shells.nbf(), dim = 3; std::vector<double> ints(nbf * nbf * nbf * nbf * dim, 0); std::vector<size_t> sh2bf = shells.shell2bf();
+    int nbf = shells.nbf(), dim = 6; std::vector<double> ints; std::vector<size_t> sh2bf = shells.shell2bf();
 
-    // generate engine for every thread
-    std::vector<libint2::Engine> engines(nthread, engine);
+    // generate engine for every thread and initialize the integrals
+    std::vector<libint2::Engine> engines(nthread, engine); ints.resize(nbf * nbf * nbf * nbf * dim, 0);
 
     // loop over all unique elements
     #pragma omp parallel for num_threads(nthread)
-    for (size_t i = 0; i < shells.size(); i++) for (size_t j = i; j < shells.size(); j++) for (size_t k = i; k < shells.size(); k++) for (size_t l = (i == k ? j : k); l < shells.size(); l++) {
+    for (size_t i = 0; i < shells.size(); i++) for (size_t j = 0; j < shells.size(); j++) for (size_t k = 0; k < shells.size(); k++) for (size_t l = 0; l < shells.size(); l++) {
 
         // calculate the integral and skip if it is zero
         int integral_index = 0; engines.at(omp_get_thread_num()).compute(shells.at(i), shells.at(j), shells.at(k), shells.at(l)); if (engines.at(omp_get_thread_num()).results().at(0) == nullptr) continue;
@@ -87,13 +87,6 @@ torch::Tensor Integral::double_electron_d1(libint2::Engine& engine, const libint
                         // for every dimension
                         for (int q = 0; q < dim; q++) {
                             ints.at((m + sh2bf.at(i)) * nbf * nbf * nbf * dim + (n + sh2bf.at(j)) * nbf * nbf * dim + (o + sh2bf.at(k)) * nbf * dim + (p + sh2bf.at(l)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
-                            ints.at((m + sh2bf.at(i)) * nbf * nbf * nbf * dim + (n + sh2bf.at(j)) * nbf * nbf * dim + (p + sh2bf.at(l)) * nbf * dim + (o + sh2bf.at(k)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
-                            ints.at((n + sh2bf.at(j)) * nbf * nbf * nbf * dim + (m + sh2bf.at(i)) * nbf * nbf * dim + (o + sh2bf.at(k)) * nbf * dim + (p + sh2bf.at(l)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
-                            ints.at((n + sh2bf.at(j)) * nbf * nbf * nbf * dim + (m + sh2bf.at(i)) * nbf * nbf * dim + (p + sh2bf.at(l)) * nbf * dim + (o + sh2bf.at(k)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
-                            ints.at((o + sh2bf.at(k)) * nbf * nbf * nbf * dim + (p + sh2bf.at(l)) * nbf * nbf * dim + (m + sh2bf.at(i)) * nbf * dim + (n + sh2bf.at(j)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
-                            ints.at((o + sh2bf.at(k)) * nbf * nbf * nbf * dim + (p + sh2bf.at(l)) * nbf * nbf * dim + (n + sh2bf.at(j)) * nbf * dim + (m + sh2bf.at(i)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
-                            ints.at((p + sh2bf.at(l)) * nbf * nbf * nbf * dim + (o + sh2bf.at(k)) * nbf * nbf * dim + (m + sh2bf.at(i)) * nbf * dim + (n + sh2bf.at(j)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
-                            ints.at((p + sh2bf.at(l)) * nbf * nbf * nbf * dim + (o + sh2bf.at(k)) * nbf * nbf * dim + (n + sh2bf.at(j)) * nbf * dim + (m + sh2bf.at(i)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
                         }
 
                         // increment index
@@ -108,16 +101,19 @@ torch::Tensor Integral::double_electron_d1(libint2::Engine& engine, const libint
     return torch::from_blob(ints.data(), {nbf, nbf, nbf, nbf, dim}, torch::kDouble).clone();
 }
 
-torch::Tensor Integral::single_electron_d1(libint2::Engine& engine, const libint2::BasisSet& shells) {
+torch::Tensor Integral::single_electron_d1(libint2::Engine& engine, const libint2::BasisSet& shells, const std::vector<libint2::Atom>& atoms) {
     // define the number of basis functions and dimensions, matrix of integrals and shell to basis function map
-    int nbf = shells.nbf(), dim = 3; std::vector<double> ints(nbf * nbf * dim, 0); std::vector<size_t> sh2bf = shells.shell2bf();
+    int nbf = shells.nbf(), dim = 6; std::vector<double> ints; std::vector<size_t> sh2bf = shells.shell2bf();
 
-    // generate engine for every thread
-    std::vector<libint2::Engine> engines(nthread, engine);
+    // add dimensions if other coordinates are present
+    if (engine.oper() == libint2::Operator::nuclear) dim += 3 * atoms.size();
+
+    // generate engine for every thread and initialize the integrals
+    std::vector<libint2::Engine> engines(nthread, engine); ints.resize(nbf * nbf * dim, 0);
 
     // loop over all unique elements
     #pragma omp parallel for num_threads(nthread)
-    for (size_t i = 0; i < shells.size(); i++) for (size_t j = i; j < shells.size(); j++) {
+    for (size_t i = 0; i < shells.size(); i++) for (size_t j = 0; j < shells.size(); j++) {
 
         // calculate the integral and skip if it is zero
         int integral_index = 0; engines.at(omp_get_thread_num()).compute(shells.at(i), shells.at(j)); if (engines.at(omp_get_thread_num()).results().at(0) == nullptr) continue;
@@ -129,7 +125,6 @@ torch::Tensor Integral::single_electron_d1(libint2::Engine& engine, const libint
                 // for every dimension
                 for (int m = 0; m < dim; m++) {
                     ints.at((k + sh2bf.at(i)) * nbf * dim + (l + sh2bf.at(j)) * dim + m) = engines.at(omp_get_thread_num()).results().at(m)[integral_index];
-                    ints.at((l + sh2bf.at(j)) * nbf * dim + (k + sh2bf.at(i)) * dim + m) = engines.at(omp_get_thread_num()).results().at(m)[integral_index];
                 }
 
                 // increment index
@@ -142,7 +137,7 @@ torch::Tensor Integral::single_electron_d1(libint2::Engine& engine, const libint
     return torch::from_blob(ints.data(), {nbf, nbf, dim}, torch::kDouble).clone();
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> Integral::calculate(const std::vector<libint2::Atom>& atoms, const libint2::BasisSet& shells) const {
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> Integral::calculate(const std::vector<libint2::Atom>& atoms, const libint2::BasisSet& shells) const {
     // initialize libint
     libint2::initialize();
 
@@ -165,10 +160,10 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> Integral::calculate(cons
     libint2::finalize();
 
     // return the integrals
-    return std::make_tuple(T + V, S, J);
+    return std::make_tuple(T, V, S, J);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> Integral::calculate_d1(const std::vector<libint2::Atom>& atoms, const libint2::BasisSet& shells) const {
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> Integral::calculate_d1(const std::vector<libint2::Atom>& atoms, const libint2::BasisSet& shells) const {
     // initialize libint
     libint2::initialize();
 
@@ -182,14 +177,14 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> Integral::calculate_d1(c
     nuclear_engine_d1.set_params(libint2::make_point_charges(atoms));
     
     // calculate the integrals
-    torch::Tensor dT = single_electron_d1(kinetic_engine_d1, shells);
-    torch::Tensor dV = single_electron_d1(nuclear_engine_d1, shells);
-    torch::Tensor dS = single_electron_d1(overlap_engine_d1, shells);
-    torch::Tensor dJ = double_electron_d1(coulomb_engine_d1, shells);
+    torch::Tensor dT = single_electron_d1(kinetic_engine_d1, shells, atoms);
+    torch::Tensor dV = single_electron_d1(nuclear_engine_d1, shells, atoms);
+    torch::Tensor dS = single_electron_d1(overlap_engine_d1, shells, atoms);
+    torch::Tensor dJ = double_electron_d1(coulomb_engine_d1, shells, atoms);
 
     // finalize libint
     libint2::finalize();
 
     // return the integrals
-    return std::make_tuple(dT + dV, dS, dJ);
+    return std::make_tuple(dT, dV, dS, dJ);
 }

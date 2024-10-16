@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
         auto [input_json, input] = parse_input(program_input); System system; if (input_json.contains("system")) system = System(input.system);
 
         // define all the variables to store the results
-        double energy_hf = 0, energy_mp = 0, energy_cc = 0, energy_ci = 0; torch::Tensor H_AO, dH_AO, S_AO, dS_AO, J_AO, dJ_AO, H_MS, J_MS_AP, F_MS, C_MS, E_CI, C_CI;
+        double energy_hf = 0, energy_mp = 0, energy_cc = 0, energy_ci = 0; torch::Tensor T_AO, V_AO, S_AO, J_AO, dT_AO, dV_AO, dS_AO, dJ_AO, T_MS, V_MS, F_MS, C_MS, J_MS_AP, E_CI, C_CI;
 
         // extract all the method booleans
         bool do_hartree_fock = input_json.contains("hartree_fock");
@@ -105,29 +105,35 @@ int main(int argc, char** argv) {
             Timepoint integral_calculation_timer = Timer::Now(); std::printf("INTEGRAL CALCULATION: "); std::flush(std::cout);
 
             // calculate the base integrals
-            if (do_integral) std::tie(H_AO, S_AO, J_AO) = Integral(input.integral).calculate(system.get_atoms(), system.get_shells());
+            if (do_integral) std::tie(T_AO, V_AO, S_AO, J_AO) = Integral(input.integral).calculate(system.get_atoms(), system.get_shells());
 
             // calculate the first derivatives
-            if (do_integral_d1) std::tie(dH_AO, dS_AO, dJ_AO) = Integral(input.integral).calculate_d1(system.get_atoms(), system.get_shells());
+            if (do_integral_d1) std::tie(dT_AO, dV_AO, dS_AO, dJ_AO) = Integral(input.integral).calculate_d1(system.get_atoms(), system.get_shells());
 
             // print the time taken to calculate the integrals
             std::printf("%s\n", Timer::Format(Timer::Elapsed(integral_calculation_timer)).c_str());
 
-            // wrte the integrals to the disk
-            if (input.integral.data_export.hamiltonian || input.integral.data_export.coulomb || input.integral.data_export.overlap || input.integral.data_export.hamiltonian_d1 || input.integral.data_export.coulomb_d1 || input.integral.data_export.overlap_d1) {
+            // boolean to export the integrals to the disk
+            bool export_d0 = input.integral.data_export.kinetic    || input.integral.data_export.nuclear    || input.integral.data_export.coulomb    || input.integral.data_export.overlap;
+            bool export_d1 = input.integral.data_export.kinetic_d1 || input.integral.data_export.nuclear_d1 || input.integral.data_export.coulomb_d1 || input.integral.data_export.overlap_d1;
+
+            // write the integrals to the disk
+            if (export_d0 || export_d1) {
 
                 // create the export timer and print the header
                 Timepoint integral_export_timer = Timer::Now(); std::printf("WRITING INTS TO DISK: "); std::flush(std::cout);
 
                 // export the base integrals
-                if (input.integral.data_export.hamiltonian) Export::TorchTensorDouble("H_AO.mat", H_AO);
-                if (input.integral.data_export.overlap    ) Export::TorchTensorDouble("S_AO.mat", S_AO);
-                if (input.integral.data_export.coulomb    ) Export::TorchTensorDouble("J_AO.mat", J_AO);
+                if (input.integral.data_export.kinetic) Export::TorchTensorDouble("T_AO.mat", T_AO);
+                if (input.integral.data_export.nuclear) Export::TorchTensorDouble("V_AO.mat", V_AO);
+                if (input.integral.data_export.overlap) Export::TorchTensorDouble("S_AO.mat", S_AO);
+                if (input.integral.data_export.coulomb) Export::TorchTensorDouble("J_AO.mat", J_AO);
 
                 // export the first derivatives
-                if (input.integral.data_export.hamiltonian_d1) Export::TorchTensorDouble("dH_AO.mat", dH_AO);
-                if (input.integral.data_export.overlap_d1    ) Export::TorchTensorDouble("dS_AO.mat", dS_AO);
-                if (input.integral.data_export.coulomb_d1    ) Export::TorchTensorDouble("dJ_AO.mat", dJ_AO);
+                if (input.integral.data_export.kinetic_d1) Export::TorchTensorDouble("dT_AO.mat", dT_AO);
+                if (input.integral.data_export.nuclear_d1) Export::TorchTensorDouble("dV_AO.mat", dV_AO);
+                if (input.integral.data_export.overlap_d1) Export::TorchTensorDouble("dS_AO.mat", dS_AO);
+                if (input.integral.data_export.coulomb_d1) Export::TorchTensorDouble("dJ_AO.mat", dJ_AO);
 
                 // print the time taken to export the integrals
                 std::printf("%s%s", Timer::Format(Timer::Elapsed(integral_export_timer)).c_str(), do_hartree_fock ? "\n" : "");
@@ -137,14 +143,30 @@ int main(int argc, char** argv) {
             std::cout << std::endl;
         }
 
-        // Hartree-Fock method
-        if (do_hartree_fock) {
+        // Hartree--Fock method
+        if (torch::Tensor F, C; do_hartree_fock) {
 
             // perform the calculation
-            std::tie(F_MS, C_MS, energy_hf) = HartreeFock(input.hartree_fock).run(system, H_AO, S_AO, J_AO, torch::zeros_like(S_AO));
+            std::tie(F, C, energy_hf) = HartreeFock(input.hartree_fock).run(system, T_AO + V_AO, S_AO, J_AO, torch::zeros_like(S_AO));
+
+            // transform the results to the spin basis
+            C_MS = input.hartree_fock.generalized ? C : Transform::CoefficientSpin(C), F_MS = input.hartree_fock.generalized ? Transform::SingleSpatial(F, C_MS) : Transform::SingleSpin(F, C_MS);
 
             // print the final energy
             std::printf("\nFINAL HF ENERGY: %.11f\n", energy_hf + system.nuclear_repulsion());
+
+            // gradient of the Hartree--Fock method
+            if (input.hartree_fock.gradient) {
+
+                // calculate the nuclear repulsion gradient
+                torch::Tensor G = HartreeFock(input.hartree_fock).gradient(system, dT_AO, dV_AO, dS_AO, dJ_AO, F, C) + system.nuclear_repulsion_d1();
+
+                // print the gradient
+                std::cout << "\nNUCLEAR ENERGY GRADIENT: \n" << G << std::endl;
+
+                // print the norm of the gradient
+                std::printf("\nNORM OF THE GRADIENT: %.2e\n", G.norm().item<double>());
+            }
         }
 
         // integral transform
@@ -154,7 +176,7 @@ int main(int argc, char** argv) {
             Timepoint transform_timer = Timer::Now(); std::printf("INTEGRAL TRANSFORM: "); std::flush(std::cout);
 
             // transform the integrals
-            H_MS = Transform::SingleSpin(H_AO, C_MS), J_MS_AP = Transform::DoubleSpinAntsymPhys(J_AO, C_MS);
+            T_MS = Transform::SingleSpin(T_AO, C_MS), V_MS = Transform::SingleSpin(V_AO, C_MS), J_MS_AP = Transform::DoubleSpinAntsymPhys(J_AO, C_MS);
 
             // print the time taken to transform the integrals
             std::printf("%s\n", Timer::Format(Timer::Elapsed(transform_timer)).c_str());
@@ -174,7 +196,7 @@ int main(int argc, char** argv) {
         if (do_configuration_interaction) {
 
             // calculate the CI energies and coefficients
-            std::tie(E_CI, C_CI) = ConfigurationInteraction(input.hartree_fock.configuration_interaction).run(system, H_MS, J_MS_AP); energy_ci = E_CI.index({0}).item<double>() - energy_hf;
+            std::tie(E_CI, C_CI) = ConfigurationInteraction(input.hartree_fock.configuration_interaction).run(system, T_MS + V_MS, J_MS_AP); energy_ci = E_CI.index({0}).item<double>() - energy_hf;
 
             // print the final CI energy
             std::printf("\nFINAL %s ENERGY: %.14f\n", ConfigurationInteraction(input.hartree_fock.configuration_interaction).get_name().c_str(), energy_hf + energy_ci + system.nuclear_repulsion());

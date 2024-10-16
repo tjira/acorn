@@ -19,10 +19,12 @@ nlohmann::json default_input = R"(
     "integral" : {
         "precision" : 1e-12,
         "data_export" : {
-            "hamiltonian" : false,
+            "kinetic" : false,
+            "nuclear" : false,
             "coulomb" : false,
             "overlap" : false,
-            "hamiltonian_d1" : false,
+            "kinetic_d1" : false,
+            "nuclear_d1" : false,
             "coulomb_d1" : false,
             "overlap_d1" : false
         }
@@ -96,7 +98,8 @@ nlohmann::json default_input = R"(
             "potential_energy_mean" : false,
             "kinetic_energy" : false,
             "kinetic_energy_mean" : false,
-            "hopping_geometry" : false
+            "hopping_geometry" : false,
+            "hopping_time" : false
         }
     }
 }

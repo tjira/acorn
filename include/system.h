@@ -18,6 +18,7 @@ public:
     int get_multi() const;
     libint2::BasisSet get_shells() const;
     double nuclear_repulsion() const;
+    torch::Tensor nuclear_repulsion_d1() const;
     int virtual_spinorbitals() const;
 
 private:

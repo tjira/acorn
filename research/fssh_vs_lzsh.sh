@@ -4,9 +4,10 @@
 # VARIABLES
 # ======================================================================================================================================================================================================
 
-CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
+CORES=12; PSTART=10.0; PSTEP=00.0; PEND=50.0; TRAJS=10000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
 
 MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
+MODELS=("TULLY_1")
 
 # ======================================================================================================================================================================================================
 # START TEMPLATES
@@ -48,7 +49,8 @@ read -r -d '' TEMPLATE_SH_DYN <<- EOM
         "diabatic_population" : true, "adiabatic_population" : true,
         "position_mean"       : true, "momentum_mean"        : true,
         "total_energy_mean"   : true, "potential_energy_mean": true,
-        "kinetic_energy_mean" : true, "hopping_geometry"     : true
+        "kinetic_energy_mean" : true, "hopping_geometry"     : true,
+        "hopping_time"        : true
     }
 }
 EOM
@@ -225,11 +227,12 @@ for MODEL in ${MODELS[@]}; do
 
         # plot the hopping geometries
         plot-1d.py HOPPING-GEOMETRIES_FS-ADIABATIC.mat --bins 100 --legend "FSSH" --title "HOPPING GEOMETRIES: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Relative Count" --output "HOPPING-GEOMETRIES_${MODEL}" --histogram --png
+        plot-1d.py HOPPING-TIMES_FS-ADIABATIC.mat      --bins 100 --legend "FSSH" --title "HOPPING TIMES: ${MODEL}"      --xlabel "Time (a.u.)"       --ylabel "Relative Count" --output "HOPPING-TIMES_${MODEL}"      --histogram --png
 
         # make the trajectory analysis image
         montage "POTENTIAL-ADIABATIC_${MODEL}.png" "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"     -mode concatenate -tile x1 "TRAJECTORIES-GENERAL_${MODEL}_P=${MOMENTUM}.png"
         montage "POTENTIAL-ADIABATIC_${MODEL}.png" "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}.png"       "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}.png" "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORIES-ENERGETICS_${MODEL}_P=${MOMENTUM}.png"
-        montage "POTENTIAL-ADIABATIC_${MODEL}.png" "HOPPING-GEOMETRIES_${MODEL}.png"                                                                                                         -mode concatenate -tile x1 "TRAJECTORIES-TRANSITIONS_${MODEL}_P=${MOMENTUM}.png"
+        montage "POTENTIAL-ADIABATIC_${MODEL}.png" "HOPPING-GEOMETRIES_${MODEL}.png"                 "HOPPING-TIMES_${MODEL}.png"                                                            -mode concatenate -tile x1 "TRAJECTORIES-TRANSITIONS_${MODEL}_P=${MOMENTUM}.png"
     done
 
     # plot the population dependence on momentum
