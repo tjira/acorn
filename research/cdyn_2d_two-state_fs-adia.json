@@ -16,10 +16,10 @@
             "type" : "fewest-switches"
         },
         "adiabatic" : true,
-        "iterations" : 1000,
-        "time_step" : 1,
+        "iterations" : 10000,
+        "time_step" : 0.01,
         "trajectories" : 1000,
-        "log_interval_step" : 100,
+        "log_interval_step" : 500,
         "data_export" : {
             "diabatic_population" : true, "adiabatic_population" : true
         }

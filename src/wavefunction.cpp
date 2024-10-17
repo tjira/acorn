@@ -71,8 +71,8 @@ Eigen::VectorXd Wavefunction::momentum(const Eigen::MatrixXd& fourier_grid) cons
     Eigen::VectorXcd momentum = Eigen::VectorXd::Zero(input.dimension);
 
     // calculate the momentum
-    for (int i = 0; i < data.cols(); i++) {
-        momentum.array() -= (data.col(i).replicate(1, input.dimension).conjugate().array() * FourierTransform::IFFT(fourier_grid.rowwise().sum().array() * FourierTransform::FFT(data.col(i), get_shape()).array(), get_shape()).replicate(1, input.dimension).array()).sum();
+    for (int i = 0; i < data.cols(); i++) for (int j = 0; j < input.dimension; j++) {
+        momentum(j) -= (data.col(i).conjugate().array() * FourierTransform::IFFT(fourier_grid.col(j).array() * FourierTransform::FFT(data.col(i), get_shape()).array(), get_shape()).array()).sum();
     }
 
     // return the momentum
