@@ -163,7 +163,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             if (j && state(j) != state(j - 1)) hopping_geometry_vector.push_back(position.row(j)), hopping_time_vector.push_back(j * input.time_step);
 
             // print the iteration info
-            if ((j % input.log_interval_step == 0 || j && state(j) != state(j - 1)) && (i ? i + 1 : i) % input.log_interval_traj == 0) {
+            if ((j % input.log_interval_step == 0 || (j && state(j) != state(j - 1))) && (i ? i + 1 : i) % input.log_interval_traj == 0) {
                 print_iteration(i + 1, j, {potential, position.row(j), velocity.row(j), state}, mass);
             }
         }

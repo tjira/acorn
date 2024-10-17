@@ -7,8 +7,8 @@ struct Input {
         std::string basis, path; int charge, multiplicity;
     } system;
     struct Wavefunction {
-        int dimension, grid_points; double mass, momentum;
-        std::vector<double> grid_limits;
+        int dimension, grid_points; double mass;
+        std::vector<double> grid_limits, momentum;
         std::vector<std::string> guess;
     } wavefunction;
     struct Integral {

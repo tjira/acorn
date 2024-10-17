@@ -64,7 +64,7 @@ torch::Tensor Integral::single_electron(libint2::Engine& engine, const libint2::
     return torch::from_blob(ints.data(), {nbf, nbf}, torch::kDouble).clone();
 }
 
-torch::Tensor Integral::double_electron_d1(libint2::Engine& engine, const libint2::BasisSet& shells, const std::vector<libint2::Atom>& atoms) {
+torch::Tensor Integral::double_electron_d1(libint2::Engine& engine, const libint2::BasisSet& shells, const std::vector<libint2::Atom>&) {
     // define the number of basis functions, matrix of integrals and shell to basis function map
     int nbf = shells.nbf(), dim = 6; std::vector<double> ints; std::vector<size_t> sh2bf = shells.shell2bf();
 

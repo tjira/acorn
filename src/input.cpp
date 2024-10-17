@@ -14,7 +14,7 @@ nlohmann::json default_input = R"(
         "grid_limits" : [-8, 8],
         "grid_points" : 8,
         "mass" : 1.0,
-        "momentum" : 0.0
+        "momentum" : [0.0]
     },
     "integral" : {
         "precision" : 1e-12,

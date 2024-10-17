@@ -4,4 +4,5 @@
 - [x] Fix the configuration interaction code in the resmet.py file.
 - [x] Fix the configuration interaction docs to include all configurations.
 - [x] Implement CASCI for restricted version of CI.
-- [ ] Revise CISD in resmet.py file.
+- [x] Revise CISD in resmet.py file.
+- [ ] Fix the calculation of momentum for wavefunctions with higher dimensions.

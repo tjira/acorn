@@ -5,7 +5,7 @@
         "grid_limits" : [-24, 40],
         "grid_points" : 1024,
         "mass" : 2000,
-        "momentum" : 15
+        "momentum" : [15]
     },
     "quantum_dynamics" : {
         "potential" : [

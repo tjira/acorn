@@ -14,7 +14,17 @@ std::tuple<Wavefunction, Eigen::MatrixXd> Wavefunction::Initialize(const Input::
 
     // add the momentum to the wavefunction
     for (int i = 0; i < wavefunction.data.cols(); i++) {
-        wavefunction.data.col(i) = wavefunction.data.col(i).array() * (std::complex<double>(0, 1) * input.momentum * grid.rowwise().sum().array()).exp();
+
+        // define the exp momentum factor
+        Eigen::VectorXd scalar_product = Eigen::VectorXd::Zero(wavefunction.data.rows());
+
+        // calculate the scalar product of the momentum with coordinate
+        for (int j = 0; j < wavefunction.data.rows(); j++) for (int k = 0; k < input.dimension; k++) {
+            scalar_product(j) += grid(j, k) * input.momentum.at(k);
+        }
+
+        // add the momentum to the wavefunction
+        wavefunction.data.col(i) = wavefunction.data.col(i).array() * (std::complex<double>(0, 1) * scalar_product.array()).exp();
     }
 
     // normalize the wavefunction
@@ -48,7 +58,7 @@ double Wavefunction::kinetic_energy(const Eigen::MatrixXd& fourier_grid) const {
     double Ek = 0;
 
     // loop over all wavefunctions
-    for (int i = 0, n = data.cols(); i < data.cols(); i++) {
+    for (int i = 0; i < data.cols(); i++) {
         Ek += (data.col(i).adjoint() * FourierTransform::IFFT(fourier_grid.array().pow(2).rowwise().sum() * FourierTransform::FFT(data.col(i), get_shape()).array(), get_shape()))(0).real();
     }
 
@@ -58,15 +68,15 @@ double Wavefunction::kinetic_energy(const Eigen::MatrixXd& fourier_grid) const {
 
 Eigen::VectorXd Wavefunction::momentum(const Eigen::MatrixXd& fourier_grid) const {
     // define the momentum container
-    Eigen::VectorXd momentum = Eigen::VectorXd::Zero(input.dimension);
+    Eigen::VectorXcd momentum = Eigen::VectorXd::Zero(input.dimension);
 
     // calculate the momentum
     for (int i = 0; i < data.cols(); i++) {
-        momentum.array() -= (data.col(i).replicate(1, input.dimension).conjugate().array() * FourierTransform::IFFT(fourier_grid.rowwise().sum().array() * FourierTransform::FFT(data.col(i), get_shape()).array(), get_shape()).replicate(1, input.dimension).array()).sum().real();
+        momentum.array() -= (data.col(i).replicate(1, input.dimension).conjugate().array() * FourierTransform::IFFT(fourier_grid.rowwise().sum().array() * FourierTransform::FFT(data.col(i), get_shape()).array(), get_shape()).replicate(1, input.dimension).array()).sum();
     }
 
     // return the momentum
-    return momentum * get_grid_spacing();
+    return momentum.real() * get_grid_spacing();
 }
 
 Eigen::VectorXd Wavefunction::position(const Eigen::MatrixXd& grid) const {

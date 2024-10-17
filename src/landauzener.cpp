@@ -1,6 +1,6 @@
 #include "landauzener.h"
 
-LandauZener::LandauZener(const Input::ClassicalDynamics::SurfaceHopping& input, bool adiabatic, int seed) : input(input), adiabatic(adiabatic) {
+LandauZener::LandauZener(const Input::ClassicalDynamics::SurfaceHopping& input, bool adiabatic, int seed) : adiabatic(adiabatic), input(input) {
     this->dist = std::uniform_real_distribution<double>(0, 1), this->mt = std::mt19937(seed);
 }
 
