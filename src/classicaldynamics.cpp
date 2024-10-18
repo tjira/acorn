@@ -140,7 +140,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     if (initial_conditions) std::tie(initial_positions, initial_momenta, initial_diabatic_states) = read_initial_conditions(input.initial_conditions);
 
     // define the potential expressions
-    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(initial_conditions ? initial_positions.cols() : initial_position.cols());
+    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(initial_conditions ? initial_positions.cols() : initial_position.rows());
 
     // define the trajectory data vector and mass
     std::vector<TrajectoryData> trajectory_data_vector(input.trajectories); double mass = initial_conditions ? input.initial_conditions.mass : initial_diabatic_wavefunction.get_mass();
