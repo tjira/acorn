@@ -21,6 +21,7 @@ public:
     Eigen::MatrixXd get_grid() const;
     double get_grid_spacing() const;
     Eigen::MatrixXd get_fourier_grid() const;
+    Input::Wavefunction get_input() const;
     double get_mass() const;
     Wavefunction get_normalized() const;
     std::vector<int> get_shape() const;

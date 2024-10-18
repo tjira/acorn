@@ -50,13 +50,22 @@ void QuantumDynamics::print_iteration(int iteration, const IterationData& iterat
     std::printf("%6d %20.14f %20.14f %20.14f %.2e %s [", iteration, iteration_data.total_energy, iteration_data.acf.real(), iteration_data.acf.imag(), iteration_data.energy_error, Timer::Format(elapsed).c_str());
 
     // print the wavefunction position
-    for (int i = 0; i < iteration_data.position.size(); i++) {std::printf("%s%8.3f", i ? ", " : "", iteration_data.position(i));} std::printf("] [");
+    for (int i = 0; i < std::min((int)iteration_data.position.size(), 3); i++) std::printf("%s%8.3f", i ? ", " : "", iteration_data.position(i));
+
+    // print the brackets
+    std::printf("%s] [", iteration_data.position.size() > 3 ? ", ..." : "");
 
     // print the wavefunction momentum
-    for (int i = 0; i < iteration_data.momentum.size(); i++) {std::printf("%s%8.3f", i ? ", " : "", iteration_data.momentum(i));} std::printf("] [");
+    for (int i = 0; i < std::min((int)iteration_data.momentum.size(), 3); i++) std::printf("%s%8.3f", i ? ", " : "", iteration_data.momentum(i));
+
+    // print the brackets
+    std::printf("%s] [", iteration_data.momentum.size() > 3 ? ", ..." : "");
 
     // print the diabaic density matrix
-    for (size_t i = 0; i < input.potential.size(); i++) {std::printf("%s%8.3f", i ? ", " : "", iteration_data.density_diabatic(i, i));} std::printf("]\n");
+    for (size_t i = 0; i < std::min((int)input.potential.size(), 3); i++) std::printf("%s%8.3f", i ? ", " : "", iteration_data.density_diabatic(i, i));
+
+    // print the brackets
+    std::printf("%s]\n", input.potential.size() > 3 ? ", ..." : "");
 }
 
 void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunction_input) const {
@@ -109,8 +118,12 @@ void QuantumDynamics::run(const Input::Wavefunction& initial_diabatic_wavefuncti
             // print the header without the variable dimension variables
             std::printf("\n%s PROPAGATION OF STATE %d\n%6s %20s %20s %20s %8s %12s", imaginary ? "IMAGINARY" : "REAL", j + 1, "ITER", "ENERGY", "RE(ACF)", "IM(ACF)", "|dE|", "TIME");
 
-            // print the variable length header
-            std::printf(" %*s %*s %*s\n", (int)grid.cols() * 10, "POSITION", (int)grid.cols() * 10, "MOMENTUM", (int)(grid.cols() * input.potential.size()), "POPULATION");
+            // print the variable length header for the position and momentum
+            std::printf(" %*s", std::min((int)grid.cols(), 3) * 10 + (grid.cols() > 3 ? 5 : 0), "POSITION");
+            std::printf(" %*s", std::min((int)grid.cols(), 3) * 10 + (grid.cols() > 3 ? 5 : 0), "MOMENTUM");
+
+            // print the variable length header for the populations
+            std::printf(" %*s\n", std::min((int)input.potential.size(), 3) * 10 + (input.potential.size() > 3 ? 5 : 0), "POPULATIONS");
 
             // perform the propagation in imaginary time
             for (int k = 0; k < input.iterations + 1; k++) {

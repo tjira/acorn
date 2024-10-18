@@ -46,6 +46,9 @@ struct Input {
         struct DataExport {
             bool diabatic_population, adiabatic_population, total_energy, total_energy_mean, position, position_mean, momentum, momentum_mean, potential_energy, potential_energy_mean, kinetic_energy, kinetic_energy_mean, hopping_geometry, hopping_time;
         } data_export;
+        struct InitialConditions {
+            std::vector<std::vector<double>> positions, momenta; std::vector<int> states; int mass;
+        } initial_conditions;
         struct SurfaceHopping {
             int quantum_step_factor;
             std::string type;
@@ -70,6 +73,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::HartreeFock, diis_size, max_iter, thre
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::QuantumDynamics::DataExport, diabatic_wavefunction, adiabatic_wavefunction, diabatic_density, adiabatic_density, diabatic_population, adiabatic_population, diabatic_potential, adiabatic_potential, total_energy, position, momentum, acf, potential_energy, kinetic_energy);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::QuantumDynamics, potential, imaginary, real, iterations, time_step, data_export);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::DataExport, total_energy, position, momentum, diabatic_population, adiabatic_population, total_energy_mean, position_mean, momentum_mean, potential_energy, potential_energy_mean, kinetic_energy, kinetic_energy_mean, hopping_geometry, hopping_time);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::InitialConditions, positions, momenta, states, mass);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::SurfaceHopping, type, quantum_step_factor);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics, potential, iterations, trajectories, time_step, data_export, seed, adiabatic, surface_hopping, log_interval_step, log_interval_traj);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics, potential, iterations, trajectories, time_step, data_export, seed, adiabatic, surface_hopping, log_interval_step, log_interval_traj, initial_conditions);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input, system, wavefunction, integral, hartree_fock, quantum_dynamics, classical_dynamics);

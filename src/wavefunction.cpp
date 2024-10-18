@@ -130,6 +130,10 @@ Eigen::MatrixXd Wavefunction::get_grid() const {
     return grid;
 }
 
+Input::Wavefunction Wavefunction::get_input() const {
+    return input;
+}
+
 double Wavefunction::get_grid_spacing() const {
     return (input.grid_limits.at(1) - input.grid_limits.at(0)) / (input.grid_points - 1);
 }

@@ -44,14 +44,20 @@ Eigen::VectorXd ClassicalDynamics::evaluate_potential_derivative(std::vector<std
     return gradient;
 }
 
-std::vector<std::vector<Expression>> ClassicalDynamics::get_potential_expression(const Wavefunction& initial_diabatic_wavefunction) const {
+std::vector<std::vector<Expression>> ClassicalDynamics::get_potential_expression(int dims) const {
     // define the potential energy expressions
     std::vector<std::vector<Expression>> potential_expressions(nthread); for (int i = 0; i < nthread; i++) potential_expressions.at(i).reserve(input.potential.size() * input.potential.size());
+
+    // create the container for the variables
+    std::vector<std::string> variables(dims);
+
+    // fill the variables
+    for (int i = 0; i < dims; i++) variables.at(i) = dims > 3 ? "r" + std::to_string(i + 1) : std::vector<std::string>{"x", "y", "z"}.at(i);
 
     // fill the potential energy expressions
     for (size_t i = 0; i < input.potential.size(); i++) {
         for (size_t j = 0; j < input.potential.size(); j++) {
-            for (int k = 0; k < nthread; k++) potential_expressions.at(k).emplace_back(input.potential.at(i).at(j), initial_diabatic_wavefunction.get_variables());
+            for (int k = 0; k < nthread; k++) potential_expressions.at(k).emplace_back(input.potential.at(i).at(j), variables);
         }
     }
 
@@ -70,52 +76,105 @@ void ClassicalDynamics::print_iteration(int trajectory, int iteration, const std
     std::sprintf(buffer, "%8d %8d %20.14f %20.14f %20.14f %5d [", trajectory, iteration, potential_energy, kinetic_energy, potential_energy + kinetic_energy, states(iteration) + 1);
 
     // print the position
-    for (int k = 0; k < position.rows(); k++) {std::sprintf(buffer + strlen(buffer), "%s%8.3f", k ? ", " : "", position(k));} std::sprintf(buffer + strlen(buffer), "] [");
+    for (int k = 0; k < std::min((int)position.rows(), 3); k++) std::sprintf(buffer + strlen(buffer), "%s%8.3f", k ? ", " : "", position(k));
+
+    // print the brackets
+    std::sprintf(buffer + strlen(buffer), "%s] [" , position.rows() > 3 ? ", ..." : "");
 
     // print the momentum
-    for (int k = 0; k < velocity.rows(); k++) {std::sprintf(buffer + strlen(buffer), "%s%8.3f", k ? ", " : "", velocity(k) * mass);} std::sprintf(buffer + strlen(buffer), "]\n");
+    for (int k = 0; k < std::min((int)velocity.rows(), 3); k++) std::sprintf(buffer + strlen(buffer), "%s%8.3f", k ? ", " : "", velocity(k) * mass);
+
+    // print the brackets
+    std::sprintf(buffer + strlen(buffer), "%s]\n", velocity.rows() > 3 ? ", ..." : "");
 
     // print the buffer
     std::printf("%s", buffer);
 }
 
+std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXd> ClassicalDynamics::read_initial_conditions(const Input::ClassicalDynamics::InitialConditions& ic) const {
+    // throw an error if different lengths
+    if (ic.positions.size() != ic.momenta.size() || ic.positions.size() != ic.states.size()) throw std::runtime_error("THE NUMBER OF POSITIONS, MOMENTA AND STATES MUST BE THE SAME IN THE IC");
+
+    // define the initial position and momentum
+    Eigen::MatrixXd initial_positions(ic.positions.size(), ic.positions.at(0).size()), initial_momenta(ic.momenta.size(), ic.momenta.at(0).size());
+
+    // define the initial diabatic states
+    Eigen::VectorXd initial_diabatic_states(ic.states.size());
+
+    // fill the initial positions
+    for (size_t i = 0; i < ic.positions.size(); i++) for (size_t j = 0; j < ic.positions.at(i).size(); j++) initial_positions(i, j) = ic.positions.at(i).at(j);
+
+    // fill the initial momenta
+    for (size_t i = 0; i < ic.momenta.size(); i++) for (size_t j = 0; j < ic.momenta.at(i).size(); j++) initial_momenta(i, j) = ic.momenta.at(i).at(j);
+
+    // fill the initial diabatic states
+    for (size_t i = 0; i < ic.states.size(); i++) initial_diabatic_states(i) = ic.states.at(i) - 1;
+
+    // return the initial conditions
+    return {initial_positions, initial_momenta, initial_diabatic_states};
+}
+
 void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunction_input) const {
-    // define the initial wavefunction and extract the fourier grid
-    auto [initial_diabatic_wavefunction, grid] = Wavefunction::Initialize(initial_diabatic_wavefunction_input); Eigen::MatrixXd fourier_grid = initial_diabatic_wavefunction.get_fourier_grid();
+    bool initial_conditions = !input.initial_conditions.positions.empty() && !input.initial_conditions.momenta.empty() && !input.initial_conditions.states.empty();
 
-    // define the potential expressions and extract mass
-    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(initial_diabatic_wavefunction); double mass = initial_diabatic_wavefunction.get_mass();
+    // define the initial diabatic wavefunction, grids and initial confition variables
+    Wavefunction initial_diabatic_wavefunction; Eigen::MatrixXd grid, fourier_grid; Eigen::VectorXd initial_position, initial_momentum; int initial_diabatic_state;
 
-    // extract the initial position and momentum
-    Eigen::VectorXd initial_position = initial_diabatic_wavefunction.position(grid), initial_momentum = initial_diabatic_wavefunction.momentum(fourier_grid);
+    // define the initial position, momentum and diabatic state for all trajectories
+    Eigen::MatrixXd initial_positions, initial_momenta; Eigen::VectorXd initial_diabatic_states;
 
-    // define the initial state and the trajectory data
-    int initial_diabatic_state, initial_adiabatic_state; std::vector<TrajectoryData> trajectory_data_vector(input.trajectories);
+    // if no IC provided
+    if (!initial_conditions) {
 
-    // store the initial diabatic state
-    initial_diabatic_wavefunction.get_density().diagonal().maxCoeff(&initial_diabatic_state);
+        // initialize the initial wavefunction and fourier grid
+        std::tie(initial_diabatic_wavefunction, grid) = Wavefunction::Initialize(initial_diabatic_wavefunction_input); Eigen::MatrixXd fourier_grid = initial_diabatic_wavefunction.get_fourier_grid();
 
-    // define the diagonalizer for the initial potential
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> initial_potential_solver(evaluate_potential(potential_expressions, initial_position));
+        // extract the initial position and momentum
+        initial_position = initial_diabatic_wavefunction.position(grid), initial_momentum = initial_diabatic_wavefunction.momentum(fourier_grid);
 
-    // extract the initial adiabatic state
-    (initial_potential_solver.eigenvectors() * initial_diabatic_wavefunction.get_density() * initial_potential_solver.eigenvectors().transpose()).diagonal().maxCoeff(&initial_adiabatic_state);
+        // extract the initial diabatic state and the fourier grid
+        initial_diabatic_wavefunction.get_density().diagonal().maxCoeff(&initial_diabatic_state);
+    }
+
+    // if IC provided
+    if (initial_conditions) std::tie(initial_positions, initial_momenta, initial_diabatic_states) = read_initial_conditions(input.initial_conditions);
+
+    // define the potential expressions
+    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(initial_conditions ? initial_positions.cols() : initial_position.cols());
+
+    // define the trajectory data vector and mass
+    std::vector<TrajectoryData> trajectory_data_vector(input.trajectories); double mass = initial_conditions ? input.initial_conditions.mass : initial_diabatic_wavefunction.get_mass();
 
     // print the header with fixed length
     std::printf("CLASSICAL DYNAMICS\n%8s %8s %20s %20s %20s %5s", "TRAJ", "ITER", "EPOT", "EKIN", "ETOT", "STATE");
 
     // print the variable length header
-    std::printf(" %*s %*s\n", (int)grid.cols() * 10, "POSITION", (int)grid.cols() * 10, "MOMENTUM");
+    std::printf(" %*s %*s\n", std::min((int)grid.cols(), 3) * 10 + (grid.cols() > 3 ? 5 : 0), "POSITION", std::min((int)grid.cols(), 3) * 10 + (grid.cols() > 3 ? 5 : 0), "MOMENTUM");
 
     // loop over every trajectory
-    #pragma omp parallel for num_threads(nthread) shared(potential_expressions)
+    #pragma omp parallel for num_threads(nthread) shared(trajectory_data_vector, potential_expressions)
     for (int i = 0; i < input.trajectories; i++) {
+
+        // set the initial position, momentum and diabatic state
+        if (initial_conditions) initial_position = initial_positions.row(i), initial_momentum = initial_momenta.row(i), initial_diabatic_state = initial_diabatic_states(i);
+
+        // define the diagonalizer for the initial potential
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> initial_potential_solver(evaluate_potential(potential_expressions, initial_position));
+
+        // form the initial diabatic density matrix
+        Eigen::MatrixXd initial_diabatic_density = Eigen::MatrixXd::Zero(input.potential.size(), input.potential.size()); initial_diabatic_density(initial_diabatic_state, initial_diabatic_state) = 1;
+
+        // extract the initial adiabatic state
+        int initial_adiabatic_state; (initial_potential_solver.eigenvectors() * initial_diabatic_density * initial_potential_solver.eigenvectors().transpose()).diagonal().maxCoeff(&initial_adiabatic_state);
 
         // define the state vector with initial condition and seed
         Eigen::VectorXi state(input.iterations + 1); state(0) = input.adiabatic ? initial_adiabatic_state : initial_diabatic_state; int seed = input.trajectories * (input.seed + i) + 1;
 
         // define the mersenne twister for the trajectory and obtain initial conditions
         std::mt19937 mt(seed); auto [position, velocity, acceleration] = sample_initial_conditions(initial_position, initial_momentum, mt, mass);
+
+        // assign the fixed initial conditions if the wavefunction is not initialized
+        if (initial_conditions) position.row(0) = initial_positions.row(i), velocity.row(0) = initial_momenta.row(i) / mass;
 
         // define and initialize the population vector
         std::vector<Eigen::VectorXcd> population(input.iterations + 1, Eigen::VectorXd(input.potential.size())); population.at(0).setZero(); population.at(0)(state(0)) = 1;
