@@ -4,10 +4,9 @@
 # VARIABLES
 # ======================================================================================================================================================================================================
 
-CORES=12; PSTART=10.0; PSTEP=00.0; PEND=50.0; TRAJS=10000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
+CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
 
 MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
-MODELS=("TULLY_1")
 
 # ======================================================================================================================================================================================================
 # START TEMPLATES
@@ -181,9 +180,9 @@ for MODEL in ${MODELS[@]}; do
         jq --arg guess "${GUESS}" '.wavefunction |= . + {"guess" : ($guess | fromjson)}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # set the momentum
-        jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : ($momentum | fromjson)}' "exact_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL,,}_P=${MOMENTUM}.json"
-        jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : ($momentum | fromjson)}' "fssh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "fssh_${MODEL,,}_P=${MOMENTUM}.json"
-        jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : ($momentum | fromjson)}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : [($momentum | fromjson)]}' "exact_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL,,}_P=${MOMENTUM}.json"
+        jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : [($momentum | fromjson)]}' "fssh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "fssh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : [($momentum | fromjson)]}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # fill the json files with the surface hopping type
         jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "fewest-switches"}}' "fssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "fssh_${MODEL,,}_P=${MOMENTUM}.json"

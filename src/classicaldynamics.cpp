@@ -139,8 +139,11 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     // if IC provided
     if (initial_conditions) std::tie(initial_positions, initial_momenta, initial_diabatic_states) = read_initial_conditions(input.initial_conditions);
 
+    // extract the number of dimensions
+    int dims = initial_conditions ? initial_positions.cols() : initial_position.rows();
+
     // define the potential expressions
-    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(initial_conditions ? initial_positions.cols() : initial_position.rows());
+    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(dims);
 
     // define the trajectory data vector and mass
     std::vector<TrajectoryData> trajectory_data_vector(input.trajectories); double mass = initial_conditions ? input.initial_conditions.mass : initial_diabatic_wavefunction.get_mass();
@@ -149,7 +152,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     std::printf("CLASSICAL DYNAMICS\n%8s %8s %20s %20s %20s %5s", "TRAJ", "ITER", "EPOT", "EKIN", "ETOT", "STATE");
 
     // print the variable length header
-    std::printf(" %*s %*s\n", std::min((int)grid.cols(), 3) * 10 + (grid.cols() > 3 ? 5 : 0), "POSITION", std::min((int)grid.cols(), 3) * 10 + (grid.cols() > 3 ? 5 : 0), "MOMENTUM");
+    std::printf(" %*s %*s\n", std::min(dims, 3) * 10 + (dims > 3 ? 5 : 0), "POSITION", std::min(dims, 3) * 10 + (dims > 3 ? 5 : 0), "MOMENTUM");
 
     // loop over every trajectory
     #pragma omp parallel for num_threads(nthread) shared(trajectory_data_vector, potential_expressions)
