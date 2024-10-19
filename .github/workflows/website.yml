@@ -27,7 +27,7 @@ jobs:
         run: cp -r education/python docs
 
       - name: Compile Document
-        run: ./script/docstopdf.sh
+        run: ./script/general/docstopdf.sh
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

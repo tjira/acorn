@@ -4,6 +4,7 @@
 #include    "constant.h"
 #include   <libint2.hpp>
 #include <torch/torch.h>
+#include         <regex>
 
 using namespace torch::indexing;
 

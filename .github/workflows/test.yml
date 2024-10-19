@@ -25,22 +25,22 @@ jobs:
         run: pip install typing-extensions
 
       - name: Download Boost
-        run: ./script/libboost.sh
+        run: ./script/library/libboost.sh
 
       - name: Download Eigen
-        run: ./script/libeigen.sh
+        run: ./script/library/libeigen.sh
 
       - name: Download Headers
-        run: ./script/libheader.sh
+        run: ./script/library/libheader.sh
 
       - name: Build Libfftw
-        run: ./script/libfftw.sh
+        run: ./script/library/libfftw.sh
 
       - name: Build Libint
-        run: ./script/libint.sh
+        run: ./script/library/libint.sh
 
       - name: Build Libtorch
-        run: ./script/libtorch.sh
+        run: ./script/library/libtorch.sh
 
       - name: Configure Acorn
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
