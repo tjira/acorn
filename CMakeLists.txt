@@ -13,7 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # set output path
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
-# set the base compiler flags
+# set the debug and release compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -Wl,-rpath,'$ORIGIN' --coverage")
 set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native -Wl,-rpath,'$ORIGIN'")
 
@@ -25,9 +25,6 @@ include_directories(include example/diagram)
 
 # find the necessary packages
 find_package(OpenMP REQUIRED)
-
-# include the eigen directory
-include_directories(${EIGEN3_INCLUDE_DIR})
 
 # find installed libraries
 find_library(LIBTORCH_CPU NAMES torch_cpu PATHS external/lib NO_DEFAULT_PATH)
@@ -63,7 +60,7 @@ add_executable(acorn
 target_compile_definitions(acorn PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
 # link the libraries
-target_link_libraries(acorn ${LIBC10} ${LIBFFTW} ${LIBINT} ${LIBTORCH_CPU} ${LIBTORCH})
+target_link_libraries(acorn numa ${LIBC10} ${LIBFFTW} ${LIBINT} ${LIBTORCH_CPU} ${LIBTORCH})
 
 # link OpenMP
 if(OpenMP_CXX_FOUND)
