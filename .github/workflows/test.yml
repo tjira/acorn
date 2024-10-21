@@ -28,13 +28,16 @@ jobs:
         run: ./script/library/libeigen.sh
 
       - name: Build Libboost
-        run: ./script/library/libboost.sh
+        run: ./script/library/libboost.sh ON 2
 
       - name: Build Libfftw
         run: ./script/library/libfftw.sh ON 2
 
       - name: Build Libint
         run: ./script/library/libint.sh ON 2
+
+      - name: Build Libnuma
+        run: ./script/library/libnuma.sh ON 2
 
       - name: Build Libopenblas
         run: ./script/library/libopenblas.sh ON 2
