@@ -4,7 +4,7 @@
 mkdir -p external && git clone https://github.com/Dav1dde/glad.git external/libglad
 
 # configure the library
-cd external/libglad && pip install -t build . && ./build/bin/glad --api="gl:core=4.2" --out-path="$PWD/install" && cd -
+cd external/libglad && pip install -r requirements.txt && python -m glad --api="gl:core=4.2" --out-path="$PWD/install" && cd -
 
 # compile and install the library
 cd external/libglad && mkdir -p install/lib && gcc -c install/src/gl.c -o install/lib/libglad.a -Iinstall/include && cd -
