@@ -17,3 +17,6 @@ cd external/libint && make -j$CORES && make install && cd -
 
 # copy the compiled library
 cp -r external/libint/install/include external/libint/install/lib external/
+
+# remove the source
+rm -rf external/libint*

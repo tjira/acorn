@@ -14,3 +14,6 @@ cd external/libglm && cmake --build build --parallel $CORES && cmake --install b
 
 # copy the compiled library
 cp -r external/libglm/install/include external/libglm/install/lib external/
+
+# remove the source
+rm -rf external/libglm*

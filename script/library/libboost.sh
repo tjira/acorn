@@ -11,3 +11,6 @@ cd external/libboost && ./b2 install && cd -
 
 # copy the compiled library
 cp -r external/libboost/install/include external/libboost/install/lib external/
+
+# remove the source
+rm -rf external/libboost*

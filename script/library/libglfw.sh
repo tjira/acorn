@@ -14,3 +14,6 @@ cd external/libglfw && cmake --build build --parallel $CORES && cmake --install 
 
 # copy the compiled library
 cp -r external/libglfw/install/include external/libglfw/install/lib external/
+
+# remove the source
+rm -rf external/libglfw*

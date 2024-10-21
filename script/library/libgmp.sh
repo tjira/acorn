@@ -14,3 +14,6 @@ cd external/libgmp && make -j$CORES && make install && cd -
 
 # copy the compiled library
 cp -r external/libgmp/install/include external/libgmp/install/lib external/
+
+# remove the source
+rm -rf external/libgmp*

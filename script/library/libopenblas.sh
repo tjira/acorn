@@ -14,3 +14,6 @@ cd external/libopenblas && cmake --build build --parallel $CORES && cmake --inst
 
 # copy the compiled library
 cp -r external/libopenblas/install/include external/libopenblas/install/lib external/
+
+# remove the source
+rm -rf external/libopenblas*

@@ -14,3 +14,6 @@ cd external/libfftw && cmake --build build --parallel $CORES && cmake --install 
 
 # copy the compiled library
 cp -r external/libfftw/install/include external/libfftw/install/lib external/
+
+# remove the source
+rm -rf external/libfftw*

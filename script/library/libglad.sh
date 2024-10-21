@@ -11,3 +11,6 @@ cd external/libglad && mkdir -p install/lib && gcc -c install/src/gl.c -o instal
 
 # copy the compiled library
 cp -r external/libglad/install/include external/libglad/install/lib external/
+
+# remove the source
+rm -rf external/libglad*

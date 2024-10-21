@@ -14,3 +14,6 @@ cd external/libtorch && cmake --build build --parallel $CORES && cmake --install
 
 # copy the compiled library
 cp -r external/libtorch/build/lib external/ && cp -r external/libtorch/install/include external/libtorch/install/lib external/
+
+# remove the source
+rm -rf external/libtorch*

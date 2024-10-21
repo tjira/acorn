@@ -14,3 +14,6 @@ cd external/libnuma && make -j$CORES && make install && cd -
 
 # copy the compiled library
 cp -r external/libnuma/install/include external/libnuma/install/lib external/
+
+# remove the source
+rm -rf external/libnuma*

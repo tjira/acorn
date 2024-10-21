@@ -11,3 +11,6 @@ cd external/libeigen && cmake --build build && cmake --install build && cd -
 
 # copy the compiled library
 cp -r external/libeigen/install/include external/
+
+# remove the source
+rm -rf external/libeigen*

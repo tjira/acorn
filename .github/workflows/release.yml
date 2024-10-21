@@ -12,7 +12,7 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build_linux-shared_x86-64:
+  build-libs_linux-shared_x86-64:
     runs-on: ubuntu-22.04
 
     steps:
@@ -28,13 +28,25 @@ jobs:
         run: ./script/library/libeigen.sh
 
       - name: Build Libboost
-        run: ./script/library/libboost.sh
+        run: ./script/library/libboost.sh ON 2
 
       - name: Build Libfftw
         run: ./script/library/libfftw.sh ON 2
 
+      - name: Build Libglad
+        run: ./script/library/libglad.sh ON 2
+
+      - name: Build Libglfw
+        run: ./script/library/libglfw.sh ON 2
+
+      - name: Build Libglm
+        run: ./script/library/libglm.sh ON 2
+
       - name: Build Libint
         run: ./script/library/libint.sh ON 2
+
+      - name: Build Libnuma
+        run: ./script/library/libnuma.sh ON 2
 
       - name: Build Libopenblas
         run: ./script/library/libopenblas.sh ON 2
@@ -42,28 +54,16 @@ jobs:
       - name: Build Libtorch
         run: ./script/library/libtorch.sh ON 2
 
-      - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
-
-      - name: Build Acorn
-        run: cmake --build build --parallel 2
-
-      - name: Rename Binaries
-        run: |
-          mv bin/acorn bin/acorn_linux_x86-64
-
-      - name: Copy the Shared Libraries
-        run: cp external/lib/*.so bin/
+      - name: Package the Libraries
+        run: cd external && tar -czf acorn-libs_linux-shared_x86-64.tar.gz * && cd -
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-shared
-          path: |
-            bin/acorn_linux_x86-64
-            bin/*.so
+          name: libs_linux-shared
+          path: external/acorn-libs_linux-shared_x86-64.tar.gz
 
-  build_linux-static_x86-64:
+  build-libs_linux-static_x86-64:
     runs-on: ubuntu-22.04
 
     steps:
@@ -79,10 +79,19 @@ jobs:
         run: ./script/library/libeigen.sh
 
       - name: Build Libboost
-        run: ./script/library/libboost.sh
+        run: ./script/library/libboost.sh OFF 2
 
       - name: Build Libfftw
         run: ./script/library/libfftw.sh OFF 2
+
+      - name: Build Libglad
+        run: ./script/library/libglad.sh OFF 2
+
+      - name: Build Libglfw
+        run: ./script/library/libglfw.sh OFF 2
+
+      - name: Build Libglm
+        run: ./script/library/libglm.sh OFF 2
 
       - name: Build Libint
         run: ./script/library/libint.sh OFF 2
@@ -96,6 +105,56 @@ jobs:
       - name: Build Libtorch
         run: ./script/library/libtorch.sh OFF 2
 
+      - name: Package the Libraries
+        run: cd external && tar -czf acorn-libs_linux-static_x86-64.tar.gz * && cd -
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libs_linux-static
+          path: external/acorn-libs_linux-static_x86-64.tar.gz
+
+  build-acorn_linux-shared_x86-64:
+    runs-on: ubuntu-22.04
+    needs: [build-libs_linux-shared_x86-64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Extract the Libraries
+        run: mkdir external && mv libs_linux-shared/external/acorn-libs_linux-shared_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-shared_x86-64.tar.gz && cd -
+
+      - name: Configure Acorn
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
+
+      - name: Build Acorn
+        run: cmake --build build --parallel 2
+
+      - name: Rename Binaries
+        run: mv bin/acorn bin/acorn_linux-shared_x86-64
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-shared
+          path: bin/acorn_linux-shared_x86-64
+
+  build-acorn_linux-static_x86-64:
+    runs-on: ubuntu-22.04
+    needs: [build-libs_linux-static_x86-64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Extract the Libraries
+        run: mkdir external && mv libs_linux-static/external/acorn-libs_linux-static_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-static_x86-64.tar.gz && cd -
+
       - name: Configure Acorn
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=ON
 
@@ -103,19 +162,17 @@ jobs:
         run: cmake --build build --parallel 2
 
       - name: Rename Binaries
-        run: |
-          mv bin/acorn bin/acorn_linux_x86-64
+        run: mv bin/acorn bin/acorn_linux-static_x86-64
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-static
-          path: |
-            bin/acorn_linux_x86-64
+          path: bin/acorn_linux-static_x86-64
 
   release:
     runs-on: ubuntu-latest
-    needs: [build_linux-shared_x86-64, build_linux-static_x86-64]
+    needs: [build-acorn_linux-shared_x86-64, build-acorn_linux-static_x86-64]
 
     steps:
       - uses: actions/checkout@v4
@@ -126,22 +183,16 @@ jobs:
       - name: Remove Redundant Scripts
         run: rm basis/update.sh example/molecule/generate.sh
 
-      - name: Copy x86-64 Linux Shared Binaries to the Root Folder
-        run: |
-          cp linux-shared/acorn_linux_x86-64 acorn
-          cp linux-shared/*.so .
-
       - name: Create x86-64 Linux Shared Packages
-        run: |
-          tar -czf acorn_linux-shared_x86-64.tar.gz acorn basis example script/plot LICENSE.md *.so
-
-      - name: Copy x86-64 Linux Static Binaries to the Root Folder
-        run: |
-          cp linux-static/acorn_linux_x86-64 acorn
+        run: cp linux-shared/acorn_linux_x86-64 acorn && tar -czf acorn_linux-shared_x86-64.tar.gz acorn basis example script/plot LICENSE.md
 
       - name: Create x86-64 Linux Static Packages
+        run: cp linux-static/acorn_linux_x86-64 acorn && tar -czf acorn_linux-static_x86-64.tar.gz acorn basis example script/plot LICENSE.md
+
+      - name: Copy x86-64 Linux Shared and Static Libraries to the Root Folder
         run: |
-          tar -czf acorn_linux-static_x86-64.tar.gz acorn basis example script/plot LICENSE.md
+          mv libs_linux-shared/external/acorn-libs_linux-shared_x86-64.tar.gz .
+          mv libs_linux-static/external/acorn-libs_linux-static_x86-64.tar.gz .
 
       - name: Release linux-shared_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
@@ -155,4 +206,18 @@ jobs:
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
           file: acorn_linux-static_x86-64.tar.gz
+          tag: ${{github.ref}}
+
+      - name: Release linux-shared_x86-64 Version of Acorn Libraries
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn-libs_linux-shared_x86-64.tar.gz
+          tag: ${{github.ref}}
+
+      - name: Release linux-static_x86-64 Version of Acorn Libraries
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn-libs_linux-static_x86-64.tar.gz
           tag: ${{github.ref}}
