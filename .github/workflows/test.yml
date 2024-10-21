@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Necessary Packages
+        run: sudo apt install liblapack-dev
+
       - name: Install Python Packages
         run: pip install typing-extensions
 
