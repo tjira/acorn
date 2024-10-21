@@ -13,4 +13,4 @@ cd external/libtorch && cmake -B build -DBUILD_PYTHON=OFF -DBUILD_SHARED_LIBS=$S
 cd external/libtorch && cmake --build build --parallel $CORES && cmake --install build && cd -
 
 # copy the compiled library
-cp -r external/libtorch/install/include external/libtorch/install/lib external/
+cp -r external/libtorch/build/lib external/ && cp -r external/libtorch/install/include external/libtorch/install/lib external/

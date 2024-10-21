@@ -1,5 +1,5 @@
 # minimum cmake requirement
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.24)
 
 # project name
 project(Acorn)
@@ -26,12 +26,27 @@ include_directories(include example/diagram)
 # find the necessary packages
 find_package(OpenMP REQUIRED)
 
-# find installed libraries
+# find libraries needed for shared and static build
 find_library(LIBTORCH_CPU NAMES torch_cpu PATHS external/lib NO_DEFAULT_PATH)
+find_library(LIBOPENBLAS NAMES openblas PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBTORCH NAMES torch PATHS external/lib NO_DEFAULT_PATH)
-find_library(LIBFFTW NAMES fftw PATHS external/lib NO_DEFAULT_PATH)
-find_library(LIBINT NAMES int PATHS external/lib NO_DEFAULT_PATH)
+find_library(LIBFFTW NAMES fftw3 PATHS external/lib NO_DEFAULT_PATH)
+find_library(LIBNUMA NAMES numa PATHS external/lib NO_DEFAULT_PATH)
+find_library(LIBINT NAMES int2 PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBC10 NAMES c10 PATHS external/lib NO_DEFAULT_PATH)
+
+# find additional libraries needed only for the static build
+if(STATIC)
+    find_library(LIBPTHREADPOOL NAMES pthreadpool PATHS external/lib NO_DEFAULT_PATH)
+    find_library(LIBONNX_PROTO NAMES onnx_proto PATHS external/lib NO_DEFAULT_PATH)
+    find_library(LIBITTNOTIFY NAMES ittnotify PATHS external/lib NO_DEFAULT_PATH)
+    find_library(LIBPROTOBUF NAMES protobuf PATHS external/lib NO_DEFAULT_PATH)
+    find_library(LIBCPUINFO NAMES cpuinfo PATHS external/lib NO_DEFAULT_PATH)
+    find_library(LIBKINETO NAMES kineto PATHS external/lib NO_DEFAULT_PATH)
+    find_library(LIBNNPACK NAMES nnpack PATHS external/lib NO_DEFAULT_PATH)
+    find_library(LIBSLEEF NAMES sleef PATHS external/lib NO_DEFAULT_PATH)
+    find_library(LIBONNX NAMES onnx PATHS external/lib NO_DEFAULT_PATH)
+endif()
 
 # add the executable
 add_executable(acorn
@@ -59,8 +74,13 @@ add_executable(acorn
 # add compile definitions
 target_compile_definitions(acorn PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
-# link the libraries
-target_link_libraries(acorn numa ${LIBC10} ${LIBFFTW} ${LIBINT} ${LIBTORCH_CPU} ${LIBTORCH})
+# link the libraries needed for shared and static build
+target_link_libraries(acorn ${LIBC10} ${LIBFFTW} ${LIBINT} ${LIBNUMA} ${LIBOPENBLAS} ${LIBTORCH} ${LIBTORCH_CPU})
+
+# link the additional libraries needed only for the static build
+if(STATIC)
+    target_link_libraries(acorn gfortran $<LINK_LIBRARY:WHOLE_ARCHIVE,${LIBTORCH_CPU}> ${LIBCPUINFO} ${LIBITTNOTIFY} ${LIBKINETO} ${LIBNNPACK} ${LIBONNX} ${LIBONNX_PROTO} ${LIBPROTOBUF} ${LIBPTHREADPOOL} ${LIBSLEEF})
+endif()
 
 # link OpenMP
 if(OpenMP_CXX_FOUND)

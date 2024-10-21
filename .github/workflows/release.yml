@@ -12,38 +12,38 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build_linux_x86-64:
+  build_linux-shared_x86-64:
     runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Packages
-        run: sudo apt install -y libopenblas-dev
-
       - name: Install Python Packages
         run: pip install typing-extensions
-
-      - name: Download Boost
-        run: ./script/library/libboost.sh
-
-      - name: Download Eigen
-        run: ./script/library/libeigen.sh
 
       - name: Download Headers
         run: ./script/library/libheader.sh
 
+      - name: Download Libeigen
+        run: ./script/library/libeigen.sh
+
+      - name: Build Libboost
+        run: ./script/library/libboost.sh
+
       - name: Build Libfftw
-        run: ./script/library/libfftw.sh
+        run: ./script/library/libfftw.sh ON 2
 
       - name: Build Libint
-        run: ./script/library/libint.sh
+        run: ./script/library/libint.sh ON 2
+
+      - name: Build Libopenblas
+        run: ./script/library/libopenblas.sh ON 2
 
       - name: Build Libtorch
-        run: ./script/library/libtorch.sh
+        run: ./script/library/libtorch.sh ON 2
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
 
       - name: Build Acorn
         run: cmake --build build --parallel 2
@@ -58,14 +58,64 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux
+          name: linux-shared
           path: |
             bin/acorn_linux_x86-64
             bin/*.so
 
+  build_linux-static_x86-64:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python Packages
+        run: pip install typing-extensions
+
+      - name: Download Headers
+        run: ./script/library/libheader.sh
+
+      - name: Download Libeigen
+        run: ./script/library/libeigen.sh
+
+      - name: Build Libboost
+        run: ./script/library/libboost.sh
+
+      - name: Build Libfftw
+        run: ./script/library/libfftw.sh OFF 2
+
+      - name: Build Libint
+        run: ./script/library/libint.sh OFF 2
+
+      - name: Build Libnuma
+        run: ./script/library/libnuma.sh OFF 2
+
+      - name: Build Libopenblas
+        run: ./script/library/libopenblas.sh OFF 2
+
+      - name: Build Libtorch
+        run: ./script/library/libtorch.sh OFF 2
+
+      - name: Configure Acorn
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=ON
+
+      - name: Build Acorn
+        run: cmake --build build --parallel 2
+
+      - name: Rename Binaries
+        run: |
+          mv bin/acorn bin/acorn_linux_x86-64
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-static
+          path: |
+            bin/acorn_linux_x86-64
+
   release:
     runs-on: ubuntu-latest
-    needs: [build_linux_x86-64]
+    needs: [build_linux-shared_x86-64, build_linux-static_x86-64]
 
     steps:
       - uses: actions/checkout@v4
@@ -76,18 +126,33 @@ jobs:
       - name: Remove Redundant Scripts
         run: rm basis/update.sh example/molecule/generate.sh
 
-      - name: Copy x86-64 Linux Binaries to the Root Folder
+      - name: Copy x86-64 Linux Shared Binaries to the Root Folder
         run: |
-          cp linux/acorn_linux_x86-64 acorn
-          cp linux/*.so .
+          cp linux-shared/acorn_linux_x86-64 acorn
+          cp linux-shared/*.so .
 
-      - name: Create x86-64 Linux Packages
+      - name: Create x86-64 Linux Shared Packages
         run: |
-          tar -czf acorn_linux_x86-64.tar.gz acorn basis example script/plot.py LICENSE.md *.so
+          tar -czf acorn_linux-shared_x86-64.tar.gz acorn basis example script/plot LICENSE.md *.so
 
-      - name: Release linux_x86-64 Version of Acorn
+      - name: Copy x86-64 Linux Static Binaries to the Root Folder
+        run: |
+          cp linux-static/acorn_linux_x86-64 acorn
+
+      - name: Create x86-64 Linux Static Packages
+        run: |
+          tar -czf acorn_linux-static_x86-64.tar.gz acorn basis example script/plot LICENSE.md
+
+      - name: Release linux-shared_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn_linux_x86-64.tar.gz
+          file: acorn_linux-shared_x86-64.tar.gz
+          tag: ${{github.ref}}
+
+      - name: Release linux-static_x86-64 Version of Acorn
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn_linux-static_x86-64.tar.gz
           tag: ${{github.ref}}

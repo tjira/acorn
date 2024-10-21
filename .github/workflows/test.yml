@@ -18,32 +18,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install System Packages
-        run: sudo apt install -y libopenblas-dev
-
       - name: Install Python Packages
         run: pip install typing-extensions
-
-      - name: Download Boost
-        run: ./script/library/libboost.sh
-
-      - name: Download Eigen
-        run: ./script/library/libeigen.sh
 
       - name: Download Headers
         run: ./script/library/libheader.sh
 
+      - name: Download Libeigen
+        run: ./script/library/libeigen.sh
+
+      - name: Build Libboost
+        run: ./script/library/libboost.sh
+
       - name: Build Libfftw
-        run: ./script/library/libfftw.sh OFF 2
+        run: ./script/library/libfftw.sh ON 2
 
       - name: Build Libint
-        run: ./script/library/libint.sh OFF 2
+        run: ./script/library/libint.sh ON 2
+
+      - name: Build Libopenblas
+        run: ./script/library/libopenblas.sh ON 2
 
       - name: Build Libtorch
         run: ./script/library/libtorch.sh ON 2
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
 
       - name: Build Acorn
         run: cmake --build build --parallel 2
