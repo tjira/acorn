@@ -34,13 +34,13 @@ jobs:
         run: ./script/library/libheader.sh
 
       - name: Build Libfftw
-        run: ./script/library/libfftw.sh
+        run: ./script/library/libfftw.sh OFF 2
 
       - name: Build Libint
-        run: ./script/library/libint.sh
+        run: ./script/library/libint.sh OFF 2
 
       - name: Build Libtorch
-        run: ./script/library/libtorch.sh
+        run: ./script/library/libtorch.sh ON 2
 
       - name: Configure Acorn
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
