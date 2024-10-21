@@ -17,6 +17,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Og -Wall -Wextra -Wl,-rpath,'$ORIGIN' --coverage")
 set(CMAKE_CXX_FLAGS_RELEASE "-s -O3 -flto=auto -march=native -Wl,-rpath,'$ORIGIN'")
 
+# set static flags
+if(STATIC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+endif()
+
 # include the system directories
 include_directories(SYSTEM external/include external/include/eigen3 external/include/torch/csrc/api/include)
 
@@ -79,7 +84,7 @@ target_link_libraries(acorn ${LIBC10} ${LIBFFTW} ${LIBINT} ${LIBNUMA} ${LIBOPENB
 
 # link the additional libraries needed only for the static build
 if(STATIC)
-    target_link_libraries(acorn gfortran $<LINK_LIBRARY:WHOLE_ARCHIVE,${LIBTORCH_CPU}> ${LIBCPUINFO} ${LIBITTNOTIFY} ${LIBKINETO} ${LIBNNPACK} ${LIBONNX} ${LIBONNX_PROTO} ${LIBPROTOBUF} ${LIBPTHREADPOOL} ${LIBSLEEF})
+    target_link_libraries(acorn $<LINK_LIBRARY:WHOLE_ARCHIVE,${LIBTORCH_CPU}> ${LIBCPUINFO} ${LIBITTNOTIFY} ${LIBKINETO} ${LIBNNPACK} ${LIBONNX} ${LIBONNX_PROTO} ${LIBPROTOBUF} ${LIBPTHREADPOOL} ${LIBSLEEF})
 endif()
 
 # link OpenMP

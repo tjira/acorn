@@ -7,7 +7,7 @@ SHARED="OFF"; CORES=2; if [ $# -ne 0 ] && [ $# -ne 2 ]; then echo "ARGUMENTS: SH
 mkdir -p external && git clone https://github.com/OpenMathLib/OpenBLAS.git external/libopenblas
 
 # configure the library
-cd external/libopenblas && cmake -B build -DBUILD_SHARED_LIBS=$SHARED -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/install" && cd -
+cd external/libopenblas && cmake -B build -DBUILD_SHARED_LIBS=$SHARED -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/install" -DNOFORTRAN=ON && cd -
 
 # compile and install the library
 cd external/libopenblas && cmake --build build --parallel $CORES && cmake --install build && cd -
