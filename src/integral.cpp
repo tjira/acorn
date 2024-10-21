@@ -11,22 +11,29 @@ torch::Tensor Integral::double_electron(libint2::Engine& engine, const libint2::
     #pragma omp parallel for num_threads(nthread)
     for (size_t i = 0; i < shells.size(); i++) for (size_t j = i; j < shells.size(); j++) for (size_t k = i; k < shells.size(); k++) for (size_t l = (i == k ? j : k); l < shells.size(); l++) {
 
+        // get the thread id
+        #ifdef _OPENMP
+        int id = omp_get_thread_num();
+        #else
+        int id = 0;
+        #endif
+
         // calculate the integral and skip if it is zero
-        int integral_index = 0; engines.at(omp_get_thread_num()).compute(shells.at(i), shells.at(j), shells.at(k), shells.at(l)); if (engines.at(omp_get_thread_num()).results().at(0) == nullptr) continue;
+        int integral_index = 0; engines.at(id).compute(shells.at(i), shells.at(j), shells.at(k), shells.at(l)); if (engines.at(id).results().at(0) == nullptr) continue;
 
         // assign the integrals
         for (size_t m = 0; m < shells.at(i).size(); m++) {
             for (size_t n = 0; n < shells.at(j).size(); n++) {
                 for (size_t o = 0; o < shells.at(k).size(); o++) {
                     for (size_t p = 0; p < shells.at(l).size(); p++) {
-                        ints.at((m + sh2bf.at(i)) * nbf * nbf * nbf + (n + sh2bf.at(j)) * nbf * nbf + (o + sh2bf.at(k)) * nbf + (p + sh2bf.at(l))) = engines.at(omp_get_thread_num()).results().at(0)[integral_index  ];
-                        ints.at((m + sh2bf.at(i)) * nbf * nbf * nbf + (n + sh2bf.at(j)) * nbf * nbf + (p + sh2bf.at(l)) * nbf + (o + sh2bf.at(k))) = engines.at(omp_get_thread_num()).results().at(0)[integral_index  ];
-                        ints.at((n + sh2bf.at(j)) * nbf * nbf * nbf + (m + sh2bf.at(i)) * nbf * nbf + (o + sh2bf.at(k)) * nbf + (p + sh2bf.at(l))) = engines.at(omp_get_thread_num()).results().at(0)[integral_index  ];
-                        ints.at((n + sh2bf.at(j)) * nbf * nbf * nbf + (m + sh2bf.at(i)) * nbf * nbf + (p + sh2bf.at(l)) * nbf + (o + sh2bf.at(k))) = engines.at(omp_get_thread_num()).results().at(0)[integral_index  ];
-                        ints.at((o + sh2bf.at(k)) * nbf * nbf * nbf + (p + sh2bf.at(l)) * nbf * nbf + (m + sh2bf.at(i)) * nbf + (n + sh2bf.at(j))) = engines.at(omp_get_thread_num()).results().at(0)[integral_index  ];
-                        ints.at((o + sh2bf.at(k)) * nbf * nbf * nbf + (p + sh2bf.at(l)) * nbf * nbf + (n + sh2bf.at(j)) * nbf + (m + sh2bf.at(i))) = engines.at(omp_get_thread_num()).results().at(0)[integral_index  ];
-                        ints.at((p + sh2bf.at(l)) * nbf * nbf * nbf + (o + sh2bf.at(k)) * nbf * nbf + (m + sh2bf.at(i)) * nbf + (n + sh2bf.at(j))) = engines.at(omp_get_thread_num()).results().at(0)[integral_index  ];
-                        ints.at((p + sh2bf.at(l)) * nbf * nbf * nbf + (o + sh2bf.at(k)) * nbf * nbf + (n + sh2bf.at(j)) * nbf + (m + sh2bf.at(i))) = engines.at(omp_get_thread_num()).results().at(0)[integral_index++];
+                        ints.at((m + sh2bf.at(i)) * nbf * nbf * nbf + (n + sh2bf.at(j)) * nbf * nbf + (o + sh2bf.at(k)) * nbf + (p + sh2bf.at(l))) = engines.at(id).results().at(0)[integral_index  ];
+                        ints.at((m + sh2bf.at(i)) * nbf * nbf * nbf + (n + sh2bf.at(j)) * nbf * nbf + (p + sh2bf.at(l)) * nbf + (o + sh2bf.at(k))) = engines.at(id).results().at(0)[integral_index  ];
+                        ints.at((n + sh2bf.at(j)) * nbf * nbf * nbf + (m + sh2bf.at(i)) * nbf * nbf + (o + sh2bf.at(k)) * nbf + (p + sh2bf.at(l))) = engines.at(id).results().at(0)[integral_index  ];
+                        ints.at((n + sh2bf.at(j)) * nbf * nbf * nbf + (m + sh2bf.at(i)) * nbf * nbf + (p + sh2bf.at(l)) * nbf + (o + sh2bf.at(k))) = engines.at(id).results().at(0)[integral_index  ];
+                        ints.at((o + sh2bf.at(k)) * nbf * nbf * nbf + (p + sh2bf.at(l)) * nbf * nbf + (m + sh2bf.at(i)) * nbf + (n + sh2bf.at(j))) = engines.at(id).results().at(0)[integral_index  ];
+                        ints.at((o + sh2bf.at(k)) * nbf * nbf * nbf + (p + sh2bf.at(l)) * nbf * nbf + (n + sh2bf.at(j)) * nbf + (m + sh2bf.at(i))) = engines.at(id).results().at(0)[integral_index  ];
+                        ints.at((p + sh2bf.at(l)) * nbf * nbf * nbf + (o + sh2bf.at(k)) * nbf * nbf + (m + sh2bf.at(i)) * nbf + (n + sh2bf.at(j))) = engines.at(id).results().at(0)[integral_index  ];
+                        ints.at((p + sh2bf.at(l)) * nbf * nbf * nbf + (o + sh2bf.at(k)) * nbf * nbf + (n + sh2bf.at(j)) * nbf + (m + sh2bf.at(i))) = engines.at(id).results().at(0)[integral_index++];
                     }
                 }
             }
@@ -48,14 +55,21 @@ torch::Tensor Integral::single_electron(libint2::Engine& engine, const libint2::
     #pragma omp parallel for num_threads(nthread)
     for (size_t i = 0; i < shells.size(); i++) for (size_t j = i; j < shells.size(); j++) {
 
+        // get the thread id
+        #ifdef _OPENMP
+        int id = omp_get_thread_num();
+        #else
+        int id = 0;
+        #endif
+
         // calculate the integral and skip if it is zero
-        int integral_index = 0; engines.at(omp_get_thread_num()).compute(shells.at(i), shells.at(j)); if (engines.at(omp_get_thread_num()).results().at(0) == nullptr) continue;
+        int integral_index = 0; engines.at(id).compute(shells.at(i), shells.at(j)); if (engines.at(id).results().at(0) == nullptr) continue;
 
         // assign the integrals
         for (size_t k = 0; k < shells.at(i).size(); k++) {
             for (size_t l = 0; l < shells.at(j).size(); l++) {
-                ints.at((k + sh2bf.at(i)) * nbf + l + sh2bf.at(j)) = engines.at(omp_get_thread_num()).results().at(0)[integral_index  ];
-                ints.at((l + sh2bf.at(j)) * nbf + k + sh2bf.at(i)) = engines.at(omp_get_thread_num()).results().at(0)[integral_index++];
+                ints.at((k + sh2bf.at(i)) * nbf + l + sh2bf.at(j)) = engines.at(id).results().at(0)[integral_index  ];
+                ints.at((l + sh2bf.at(j)) * nbf + k + sh2bf.at(i)) = engines.at(id).results().at(0)[integral_index++];
             }
         }
     }
@@ -75,8 +89,15 @@ torch::Tensor Integral::double_electron_d1(libint2::Engine& engine, const libint
     #pragma omp parallel for num_threads(nthread)
     for (size_t i = 0; i < shells.size(); i++) for (size_t j = 0; j < shells.size(); j++) for (size_t k = 0; k < shells.size(); k++) for (size_t l = 0; l < shells.size(); l++) {
 
+        // get the thread id
+        #ifdef _OPENMP
+        int id = omp_get_thread_num();
+        #else
+        int id = 0;
+        #endif
+
         // calculate the integral and skip if it is zero
-        int integral_index = 0; engines.at(omp_get_thread_num()).compute(shells.at(i), shells.at(j), shells.at(k), shells.at(l)); if (engines.at(omp_get_thread_num()).results().at(0) == nullptr) continue;
+        int integral_index = 0; engines.at(id).compute(shells.at(i), shells.at(j), shells.at(k), shells.at(l)); if (engines.at(id).results().at(0) == nullptr) continue;
 
         // for every shell combination
         for (size_t m = 0; m < shells.at(i).size(); m++) {
@@ -86,7 +107,7 @@ torch::Tensor Integral::double_electron_d1(libint2::Engine& engine, const libint
 
                         // for every dimension
                         for (int q = 0; q < dim; q++) {
-                            ints.at((m + sh2bf.at(i)) * nbf * nbf * nbf * dim + (n + sh2bf.at(j)) * nbf * nbf * dim + (o + sh2bf.at(k)) * nbf * dim + (p + sh2bf.at(l)) * dim + q) = engines.at(omp_get_thread_num()).results().at(q)[integral_index];
+                            ints.at((m + sh2bf.at(i)) * nbf * nbf * nbf * dim + (n + sh2bf.at(j)) * nbf * nbf * dim + (o + sh2bf.at(k)) * nbf * dim + (p + sh2bf.at(l)) * dim + q) = engines.at(id).results().at(q)[integral_index];
                         }
 
                         // increment index
@@ -115,8 +136,15 @@ torch::Tensor Integral::single_electron_d1(libint2::Engine& engine, const libint
     #pragma omp parallel for num_threads(nthread)
     for (size_t i = 0; i < shells.size(); i++) for (size_t j = 0; j < shells.size(); j++) {
 
+        // get the thread id
+        #ifdef _OPENMP
+        int id = omp_get_thread_num();
+        #else
+        int id = 0;
+        #endif
+
         // calculate the integral and skip if it is zero
-        int integral_index = 0; engines.at(omp_get_thread_num()).compute(shells.at(i), shells.at(j)); if (engines.at(omp_get_thread_num()).results().at(0) == nullptr) continue;
+        int integral_index = 0; engines.at(id).compute(shells.at(i), shells.at(j)); if (engines.at(id).results().at(0) == nullptr) continue;
 
         // for every shell pair
         for (size_t k = 0; k < shells.at(i).size(); k++) {
@@ -124,7 +152,7 @@ torch::Tensor Integral::single_electron_d1(libint2::Engine& engine, const libint
 
                 // for every dimension
                 for (int m = 0; m < dim; m++) {
-                    ints.at((k + sh2bf.at(i)) * nbf * dim + (l + sh2bf.at(j)) * dim + m) = engines.at(omp_get_thread_num()).results().at(m)[integral_index];
+                    ints.at((k + sh2bf.at(i)) * nbf * dim + (l + sh2bf.at(j)) * dim + m) = engines.at(id).results().at(m)[integral_index];
                 }
 
                 // increment index

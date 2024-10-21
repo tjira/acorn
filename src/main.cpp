@@ -64,10 +64,10 @@ int main(int argc, char** argv) {
     std::printf(", JSON: %d.%d.%d", NLOHMANN_JSON_VERSION_MAJOR, NLOHMANN_JSON_VERSION_MINOR, NLOHMANN_JSON_VERSION_PATCH);
     std::printf(", LIBINT: %s", LIBINT_VERSION);
     std::printf(", EIGEN: %d.%d.%d", EIGEN_WORLD_VERSION, EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
-    std::printf(", TORCH: %s\n\n", TORCH_VERSION);
+    std::printf(", TORCH: %s", TORCH_VERSION);
 
     // print the compilation and execution timestamps
-    std::printf("PROGRAM COMPILED: %s\nPROGRAM EXECUTED: %s\n", __TIMESTAMP__, Timer::Local().c_str());
+    std::printf("\n\nPROGRAM COMPILED: %s\nPROGRAM EXECUTED: %s\n", __TIMESTAMP__, Timer::Local().c_str());
 
     // loop over all input files
     for (const std::string& program_input : program->get<std::vector<std::string>>("-i")) {

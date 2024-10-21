@@ -5,7 +5,11 @@ Eigen::MatrixXd ClassicalDynamics::evaluate_potential(std::vector<std::vector<Ex
     Eigen::MatrixXd potential(input.potential.size(), input.potential.size());
 
     // get the thread id
+    #ifdef _OPENMP
     int id = omp_get_thread_num();
+    #else
+    int id = 0;
+    #endif
 
     // evaluate the potential matrix
     for (size_t i = 0; i < input.potential.size(); i++) {
