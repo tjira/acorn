@@ -34,7 +34,7 @@ jobs:
         run: ./script/library/libtorch.sh ON 2
 
       - name: Remove Redundant Files
-        name: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.a external/lib/*.la external/include/*.f03
+        run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.a external/lib/*.la external/include/*.f03
 
       - name: Package the Libraries
         run: cd external && tar -czf acorn-libs_linux-shared_x86-64.tar.gz * && cd -
@@ -76,7 +76,7 @@ jobs:
         run: ./script/library/libtorch.sh OFF 2
 
       - name: Remove Redundant Files
-        name: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
+        run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
 
       - name: Package the Libraries
         run: cd external && tar -czf acorn-libs_linux-static_x86-64.tar.gz * && cd -
