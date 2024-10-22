@@ -6,11 +6,11 @@
 
 class Expression {
 public:
-    Expression() = default; Expression(const std::string& expression_string, const std::vector<std::string>& variable_strings);
+    Expression() = default; Expression(const std::string& expression_string, const std::vector<std::string>& variable_strings, const std::unordered_map<std::string, double>& constants = {});
 
     Eigen::VectorXd evaluate(const Eigen::MatrixXd& r);
     torch::Tensor evaluate(const torch::Tensor& r);
 
 private:
-    std::string expression_string; exprtk::expression<double> expression; std::vector<double> variables; std::vector<std::string> variable_strings;
+    std::string expression_string; exprtk::expression<double> expression; std::vector<double> variables; std::vector<std::string> variable_strings; std::unordered_map<std::string, double> constants;
 };

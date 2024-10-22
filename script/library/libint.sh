@@ -7,7 +7,7 @@ SHARED="no"; STATIC="yes" CORES=2; if [ $# -ne 0 ] && [ $# -ne 2 ]; then echo "A
 mkdir -p external && git clone https://github.com/evaleev/libint.git external/libint
 
 # export the paths to dependencies
-export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"
+export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"; export LD_LIBRARY_PATH="$PWD/external/lib:$LD_LIBRARY_PATH"
 
 # configure the library
 cd external/libint && ./autogen.sh && ./configure CXX=c++ CXXFLAGS="-O3 -march=native" --prefix="$PWD/install" --enable-1body=1 --enable-eri=1 --enable-shared=$SHARED --enable-static=$STATIC --with-cxxgen-optflags="-O3 -march=native" --with-max-am=6 && cd -

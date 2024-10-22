@@ -7,7 +7,7 @@ SHARED="OFF"; CORES=2; if [ $# -ne 0 ] && [ $# -ne 2 ]; then echo "ARGUMENTS: SH
 mkdir -p external && wget -O external/libtorch.tar.gz https://github.com/pytorch/pytorch/releases/download/v2.5.0/pytorch-v2.5.0.tar.gz && cd external && rm -rf libtorch && tar -xzvf libtorch* && mv pytorch* libtorch && cd -
 
 # export the paths to dependencies
-export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"
+export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"; export LD_LIBRARY_PATH="$PWD/external/lib:$LD_LIBRARY_PATH"
 
 # configure the library
 cd external/libtorch && cmake -B build -DBUILD_PYTHON=OFF -DBUILD_SHARED_LIBS=$SHARED -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/install" -DUSE_CUDA=OFF -DUSE_DISTRIBUTED=OFF -DUSE_FBGEMM=OFF -DUSE_MKLDNN=OFF -DUSE_OPENMP=OFF -DUSE_PYTORCH_QNNPACK=OFF -DUSE_ROCM=OFF -DUSE_XNNPACK=OFF -DUSE_XPU=OFF && cd -

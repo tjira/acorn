@@ -74,6 +74,7 @@ nlohmann::json default_input = R"(
     },
     "classical_dynamics" : {
         "potential" : [["0.5*x^2"]],
+        "constants" : {},
         "initial_conditions" : {
             "positions" : [],
             "momenta" : [],

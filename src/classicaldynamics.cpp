@@ -61,7 +61,7 @@ std::vector<std::vector<Expression>> ClassicalDynamics::get_potential_expression
     // fill the potential energy expressions
     for (size_t i = 0; i < input.potential.size(); i++) {
         for (size_t j = 0; j < input.potential.size(); j++) {
-            for (int k = 0; k < nthread; k++) potential_expressions.at(k).emplace_back(input.potential.at(i).at(j), variables);
+            for (int k = 0; k < nthread; k++) potential_expressions.at(k).emplace_back(input.potential.at(i).at(j), variables, input.constants);
         }
     }
 

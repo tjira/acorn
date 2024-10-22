@@ -1,6 +1,6 @@
 #include "expression.h"
 
-Expression::Expression(const std::string& expression_string, const std::vector<std::string>& variable_strings) : variables(variable_strings.size()) {
+Expression::Expression(const std::string& expression_string, const std::vector<std::string>& variable_strings, const std::unordered_map<std::string, double>& constants) : variables(variable_strings.size()), constants(constants) {
     // set the expression string and variable strings
     this->expression_string = expression_string; this->variable_strings = variable_strings;
 
@@ -10,13 +10,16 @@ Expression::Expression(const std::string& expression_string, const std::vector<s
     // add variables and constants to the expression
     for (size_t i = 0; i < variable_strings.size(); i++) {
         symbols.add_variable(variable_strings.at(i), variables.at(i));
-    } symbols.add_constants();
+    }
+
+    // add the constants
+    for (const auto& [key, value] : constants) symbols.add_constant(key, value);
 
     // register the symbol table
     expression.register_symbol_table(symbols);
 
     // parse the expression
-    exprtk::parser<double>().compile(expression_string, expression);
+    exprtk::parser<double>().compile(this->expression_string, expression);
 }
 
 Eigen::VectorXd Expression::evaluate(const Eigen::MatrixXd& r) {
