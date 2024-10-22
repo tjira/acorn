@@ -57,23 +57,8 @@ jobs:
       - name: Install Python Packages
         run: pip install typing-extensions
 
-      - name: Download Headers
-        run: ./script/library/libheader.sh
-
-      - name: Build Libfftw
-        run: ./script/library/libfftw.sh OFF 2
-
-      - name: Build Libint
-        run: ./script/library/libint.sh OFF 2
-
-      - name: Build Libnuma
-        run: ./script/library/libnuma.sh OFF 2
-
-      - name: Build Libopenblas
-        run: ./script/library/libopenblas.sh OFF 2
-
-      - name: Build Libtorch
-        run: ./script/library/libtorch.sh OFF 2
+      - name: Download and Compile Libraries
+        run: ./script/library/static.sh
 
       - name: Remove Redundant Files
         run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03

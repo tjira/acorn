@@ -19,22 +19,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libboost-dev libeigen3-dev libfftw3-dev libnuma-dev libopenblas-dev libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libeigen3-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Install Python Packages
         run: pip install typing-extensions
 
-      - name: Download Headers
-        run: ./script/library/libheader.sh
-
-      - name: Build Libint
-        run: ./script/library/libint.sh ON 2
-
-      - name: Build Libtorch
-        run: ./script/library/libtorch.sh ON 2
+      - name: Download and Compile Libraries
+        run: ./script/library/static.sh
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=ON
 
       - name: Build Acorn
         run: cmake --build build --parallel 2 --verbose
