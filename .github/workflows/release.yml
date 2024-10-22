@@ -197,8 +197,8 @@ jobs:
 
       - name: Copy x86-64 Linux Shared and Static Libraries to the Root Folder
         run: |
-          mv libs_linux-shared/external/acorn-libs_linux-shared_x86-64.tar.gz .
-          mv libs_linux-static/external/acorn-libs_linux-static_x86-64.tar.gz .
+          mv libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz .
+          mv libs_linux-static/acorn-libs_linux-static_x86-64.tar.gz .
 
       - name: Release linux-shared_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
