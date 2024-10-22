@@ -12,14 +12,14 @@ env:
   BUILD_TYPE: Debug
 
 jobs:
-  test_linux-shared_x86-64:
+  test_linux_x86-64:
     runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libeigen3-dev libfftw3-dev libnuma-dev libopenblas-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Install Python Packages
         run: pip install typing-extensions
@@ -27,32 +27,8 @@ jobs:
       - name: Download Headers
         run: ./script/library/libheader.sh
 
-      - name: Download Libeigen
-        run: ./script/library/libeigen.sh
-
-      - name: Build Libboost
-        run: ./script/library/libboost.sh ON 2
-
-      - name: Build Libfftw
-        run: ./script/library/libfftw.sh ON 2
-
-      - name: Build Libglad
-        run: ./script/library/libglad.sh ON 2
-
-      - name: Build Libglfw
-        run: ./script/library/libglfw.sh ON 2
-
-      - name: Build Libglm
-        run: ./script/library/libglm.sh ON 2
-
       - name: Build Libint
         run: ./script/library/libint.sh ON 2
-
-      - name: Build Libnuma
-        run: ./script/library/libnuma.sh ON 2
-
-      - name: Build Libopenblas
-        run: ./script/library/libopenblas.sh ON 2
 
       - name: Build Libtorch
         run: ./script/library/libtorch.sh ON 2
@@ -61,7 +37,7 @@ jobs:
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
 
       - name: Build Acorn
-        run: cmake --build build --parallel 2
+        run: cmake --build build --parallel 2 --verbose
 
       - name: Run Tests
         working-directory: build
@@ -71,58 +47,3 @@ jobs:
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{secrets.CODECOV_TOKEN}}
-
-  test_linux-static_x86-64:
-    runs-on: ubuntu-22.04
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Necessary Packages
-        run: sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
-
-      - name: Install Python Packages
-        run: pip install typing-extensions
-
-      - name: Download Headers
-        run: ./script/library/libheader.sh
-
-      - name: Download Libeigen
-        run: ./script/library/libeigen.sh
-
-      - name: Build Libboost
-        run: ./script/library/libboost.sh OFF 2
-
-      - name: Build Libfftw
-        run: ./script/library/libfftw.sh OFF 2
-
-      - name: Build Libglad
-        run: ./script/library/libglad.sh OFF 2
-
-      - name: Build Libglfw
-        run: ./script/library/libglfw.sh OFF 2
-
-      - name: Build Libglm
-        run: ./script/library/libglm.sh OFF 2
-
-      - name: Build Libint
-        run: ./script/library/libint.sh OFF 2
-
-      - name: Build Libnuma
-        run: ./script/library/libnuma.sh OFF 2
-
-      - name: Build Libopenblas
-        run: ./script/library/libopenblas.sh OFF 2
-
-      - name: Build Libtorch
-        run: ./script/library/libtorch.sh OFF 2
-
-      - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=ON
-
-      - name: Build Acorn
-        run: cmake --build build --parallel 2
-
-      - name: Run Tests
-        working-directory: build
-        run: ctest --verbose

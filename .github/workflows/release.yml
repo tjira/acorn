@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libeigen3-dev libfftw3-dev libnuma-dev libopenblas-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Install Python Packages
         run: pip install typing-extensions
@@ -27,35 +27,14 @@ jobs:
       - name: Download Headers
         run: ./script/library/libheader.sh
 
-      - name: Download Libeigen
-        run: ./script/library/libeigen.sh
-
-      - name: Build Libboost
-        run: ./script/library/libboost.sh ON 2
-
-      - name: Build Libfftw
-        run: ./script/library/libfftw.sh ON 2
-
-      - name: Build Libglad
-        run: ./script/library/libglad.sh ON 2
-
-      - name: Build Libglfw
-        run: ./script/library/libglfw.sh ON 2
-
-      - name: Build Libglm
-        run: ./script/library/libglm.sh ON 2
-
       - name: Build Libint
         run: ./script/library/libint.sh ON 2
 
-      - name: Build Libnuma
-        run: ./script/library/libnuma.sh ON 2
-
-      - name: Build Libopenblas
-        run: ./script/library/libopenblas.sh ON 2
-
       - name: Build Libtorch
         run: ./script/library/libtorch.sh ON 2
+
+      - name: Remove Redundant Files
+        name: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.a external/lib/*.la external/include/*.f03
 
       - name: Package the Libraries
         run: cd external && tar -czf acorn-libs_linux-shared_x86-64.tar.gz * && cd -
@@ -73,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libeigen3-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Install Python Packages
         run: pip install typing-extensions
@@ -81,23 +60,8 @@ jobs:
       - name: Download Headers
         run: ./script/library/libheader.sh
 
-      - name: Download Libeigen
-        run: ./script/library/libeigen.sh
-
-      - name: Build Libboost
-        run: ./script/library/libboost.sh OFF 2
-
       - name: Build Libfftw
         run: ./script/library/libfftw.sh OFF 2
-
-      - name: Build Libglad
-        run: ./script/library/libglad.sh OFF 2
-
-      - name: Build Libglfw
-        run: ./script/library/libglfw.sh OFF 2
-
-      - name: Build Libglm
-        run: ./script/library/libglm.sh OFF 2
 
       - name: Build Libint
         run: ./script/library/libint.sh OFF 2
@@ -110,6 +74,9 @@ jobs:
 
       - name: Build Libtorch
         run: ./script/library/libtorch.sh OFF 2
+
+      - name: Remove Redundant Files
+        name: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
 
       - name: Package the Libraries
         run: cd external && tar -czf acorn-libs_linux-static_x86-64.tar.gz * && cd -
@@ -127,6 +94,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Necessary Packages
+        run: sudo apt install libboost-dev libeigen3-dev libfftw3-dev libnuma-dev libopenblas-dev libwayland-dev libxkbcommon-dev xorg-dev
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
 
@@ -137,7 +107,7 @@ jobs:
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
 
       - name: Build Acorn
-        run: cmake --build build --parallel 2
+        run: cmake --build build --parallel 2 --verbose
 
       - name: Rename Binaries
         run: mv bin/acorn bin/acorn_linux-shared_x86-64
@@ -155,6 +125,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Necessary Packages
+        run: sudo apt install libboost-dev libeigen3-dev libwayland-dev libxkbcommon-dev xorg-dev
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
 
@@ -165,7 +138,7 @@ jobs:
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=ON
 
       - name: Build Acorn
-        run: cmake --build build --parallel 2
+        run: cmake --build build --parallel 2 --verbose
 
       - name: Rename Binaries
         run: mv bin/acorn bin/acorn_linux-static_x86-64

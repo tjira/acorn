@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # compile parameters
-SHARED="no"; STATIC="yes" CORES=2; if [ $# -ne 0 ] && [ $# -ne 2 ]; then echo "ARGUMENTS: SHARED(ON/OFF) CORES(1,2,...)"; exit 1; fi; if [ $# -eq 2 ]; then SHARED=$1; CORES=$2; fi; if [ $SHARED == "ON" ]; then SHARED="yes"; STATIC="no"; fi
+SHARED="no"; STATIC="yes"; CORES=2; if [ $# -ne 0 ] && [ $# -ne 2 ]; then echo "ARGUMENTS: SHARED(ON/OFF) CORES(1,2,...)"; exit 1; fi; if [ $# -eq 2 ]; then SHARED=$1; CORES=$2; fi; if [ $SHARED == "ON" ]; then SHARED="yes"; STATIC="no"; fi
 
 # download the library
 mkdir -p external && git clone https://github.com/evaleev/libint.git external/libint
