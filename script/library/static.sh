@@ -6,7 +6,7 @@ CORES=2
 export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LD_LIBRARY_PATH="$PWD/external/lib:$LD_LIBRARY_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"
 
 # make the folders
-mkdir -p external && mkdir -p external/include mkdir -p external/lib
+mkdir -p external && mkdir -p external/include mkdir && -p external/lib
 
 # download argparse
 wget -O external/include/argparse.hpp https://raw.githubusercontent.com/p-ranav/argparse/master/include/argparse/argparse.hpp
