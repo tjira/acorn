@@ -19,22 +19,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libboost-dev libeigen3-dev libfftw3-dev libnuma-dev libopenblas-dev libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Install Python Packages
         run: pip install typing-extensions
 
-      - name: Download Headers
-        run: ./script/library/libheader.sh
-
-      - name: Build Libint
-        run: ./script/library/libint.sh ON 2
-
-      - name: Build Libtorch
-        run: ./script/library/libtorch.sh ON 2
+      - name: Download and Compile Libraries
+        run: ./script/library/shared.sh
 
       - name: Remove Redundant Files
-        run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.a external/lib/*.la external/include/*.f03
+        run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
 
       - name: Package the Libraries
         run: cd external && tar -czf acorn-libs_linux-shared_x86-64.tar.gz * && cd -
@@ -52,7 +46,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libboost-dev libeigen3-dev libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Install Python Packages
         run: pip install typing-extensions
@@ -80,7 +74,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libboost-dev libeigen3-dev libfftw3-dev libnuma-dev libopenblas-dev libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
@@ -111,7 +105,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libboost-dev libeigen3-dev libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4

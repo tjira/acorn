@@ -6,7 +6,7 @@ CORES=2
 export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LD_LIBRARY_PATH="$PWD/external/lib:$LD_LIBRARY_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"
 
 # make the folders
-mkdir -p external && mkdir -p external/include mkdir && -p external/lib
+mkdir -p external && mkdir -p external/include && mkdir -p external/lib
 
 # download argparse
 wget -O external/include/argparse.hpp https://raw.githubusercontent.com/p-ranav/argparse/master/include/argparse/argparse.hpp
@@ -16,6 +16,9 @@ wget -O external/include/json.hpp https://raw.githubusercontent.com/nlohmann/jso
 
 # download exprtk
 wget -O external/include/exprtk.hpp https://raw.githubusercontent.com/ArashPartow/exprtk/master/exprtk.hpp
+
+# download eigen
+wget -O external/libeigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
 
 # download fftw
 wget -O external/libfftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
@@ -34,6 +37,14 @@ wget -O external/libtorch.tar.gz https://github.com/pytorch/pytorch/releases/dow
 
 # unpack the archives
 cd external && for ARCHIVE in *.tar.gz; do tar -xzf $ARCHIVE --warning=no-unknown-keyword; done; cd ..
+
+# compile eigen
+cd external/eigen-3.4.0 && cmake -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$PWD/install" \
+    -DEIGEN_BUILD_DOC=OFF \
+    -DEIGEN_TEST_NOQT=ON \
+&& cmake --build build --parallel $CORES && cmake --install build && cp -r install/* .. ; cd ../..
 
 # compile fftw
 cd external/fftw-3.3.10 && cmake -B build \

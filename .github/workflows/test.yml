@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Necessary Packages
-        run: sudo apt install libboost-dev libeigen3-dev libwayland-dev libxkbcommon-dev xorg-dev
+        run: sudo apt install libboost-dev libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Install Python Packages
         run: pip install typing-extensions
