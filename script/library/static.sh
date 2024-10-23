@@ -2,8 +2,8 @@
 
 CORES=2
 
-# set paths
-export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LD_LIBRARY_PATH="$PWD/external/lib:$LD_LIBRARY_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"
+# set environment paths
+export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"; export Eigen3_DIR="$PWD/external/share/eigen3/cmake"
 
 # make the folders
 mkdir -p external && mkdir -p external/include && mkdir -p external/lib
