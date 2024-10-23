@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CORES=12
+CORES=2
 
 # set environment paths
 export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"; export Eigen3_DIR="$PWD/external/share/eigen3/cmake"
