@@ -25,7 +25,7 @@ jobs:
         run: pip install typing-extensions
 
       - name: Download and Compile Libraries
-        run: ./script/general/library.sh
+        run: ./script/general/library.sh SHARED 2
 
       - name: Remove Redundant Files
         run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
@@ -52,7 +52,7 @@ jobs:
         run: pip install typing-extensions
 
       - name: Download and Compile Libraries
-        run: ./script/general/library.sh
+        run: ./script/general/library.sh STATIC 2
 
       - name: Remove Redundant Files
         run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
@@ -83,7 +83,7 @@ jobs:
         run: mkdir external && mv libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-shared_x86-64.tar.gz && cd -
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=ON
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
 
       - name: Build Acorn
         run: cmake --build build --parallel 2 --verbose

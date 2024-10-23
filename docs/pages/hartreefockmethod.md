@@ -35,7 +35,7 @@ In the Restricted Hartree--Fock method, a constraint is placed on the electron s
 where $\Phi\_i$ represents a molecular spatial orbital. It is evident that, for the Restricted Hartree--Fock method, the system must contain an even number of electrons. In practical calculations, it is often convenient to expand the molecular orbitals (whether spin or spatial) in terms of basis functions $\phi$, typically represented as sums of Gaussian functions, and to work with the corresponding expansion coefficients. Assuming that the wave function can be expressed as a single Slater determinant, we expand our molecular orbitals in terms of these basis functions and optimize the energy of the determinant, leading us to the Roothaan equations given by:
 
 \begin{equation}\label{eq:roothaan}
-\mathbf{FC}=\mathbf{SC\varepsilon},
+\mathbf{FC}=\mathbf{SC}\mathbf{\varepsilon},
 \end{equation}
 
 where $\mathbf{F}$ is the Fock matrix (to be defined later), $\mathbf{C}$ is a matrix of orbital coefficients, $\mathbf{S}$ is the overlap matrix (also to be defined later), and $\mathbf{\varepsilon}$ represents the orbital energies.

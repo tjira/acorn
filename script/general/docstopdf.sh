@@ -20,6 +20,9 @@ ACRONYMS=(
     "Molecular Spinorbital/MS"
 )
 
+# copy the edu scripts
+cp -r education/python docs/
+
 # create the main LaTeX document
 mkdir -p docs/tex && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
@@ -204,7 +207,7 @@ water/RHF/STO-3G/-74.965901192180
 \usepackage[toc,page]{appendix} % appendices
 \usepackage{attachfile} % embedding files in PDF
 \usepackage{braket} % braket notation
-\usepackage{float} % floating figures
+\usepackage{bm} % bold math symbols
 \usepackage[labelfont=bf]{caption} % bold captions
 \usepackage[left=1.5cm,top=2cm,right=1.5cm,bottom=2cm]{geometry} % page layout
 \usepackage{lmodern} % Latin Modern font
@@ -325,16 +328,16 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
     [[ ! -z "$CONTENT_SOL_INT" ]] && awk -v content="$CONTENT_SOL_INT" -v i=$SOLUTION_CODE_COUNTER '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/codesolutions.md > temp.md && mv temp.md docs/pages/codesolutions.md && ((SOLUTION_CODE_COUNTER++))
 
     # replace some MD quirks with LaTeX quirks
-    cat temp.md | awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```py/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" \
-                | sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d ; s/^```py{/```python{/' \
-                > temp.md
+    awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```py/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" | \
+    sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d ; s/^```py{/```python{/' \
+    > temp.md
 
     # convert MD to LaTeX
     pandoc --from markdown-auto_identifiers --listings --mathjax --to latex --wrap=none --output temp.tex temp.md && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
 done && echo "" >> docs/tex/main.tex
 
-# add raggedbottom before the listings and remove stupid escapes
-sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/ ; s/\\\///g ; s/\\passthrough/\\texttt/g' docs/tex/main.tex
+# replace some conversion artifacts
+sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/ ; s/\\\///g ; s/\\passthrough/\\texttt/g ; s/\\mathbf{\\varepsilon}/\\bm{\\varepsilon}/g' docs/tex/main.tex
 
 # replace section references
 sed -i 's/\\href{hartreefockmethod.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g'  docs/tex/main.tex

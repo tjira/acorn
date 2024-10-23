@@ -74,7 +74,7 @@ Jms = np.einsum("ip,jq,ijkl,kr,ls->pqrs", Cms, Cms, np.kron(np.eye(2), np.kron(n
 Jmsa = (Jms - Jms.swapaxes(1, 3)).transpose(0, 2, 1, 3)
 
 # create the tensors of reciprocal differences of orbital energies in MS basis used in post-HF methods
-Emss, Emsd = 1 / (epsms[o].reshape(-1) - epsms[v].reshape(-1, 1)), 1 / (epsms[o].reshape(-1) + epsms[o].reshape(-1, 1) - epsms[v].reshape(-1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1))
+Emss, Emsd = (epsms[o].reshape(-1) - epsms[v].reshape(-1, 1)), (epsms[o].reshape(-1) + epsms[o].reshape(-1, 1) - epsms[v].reshape(-1, 1, 1) - epsms[v].reshape(-1, 1, 1, 1))
 ```
 
 ## 2nd and 3rd Order Perturbative Corrections<!--\label{sec:mp_code_solution}-->
@@ -86,14 +86,14 @@ E_MP2, E_MP3 = 0, 0
 
 # calculate the MP2 correlation energy
 if args.mp2 or args.mp3:
-    E_MP2 += 0.25 * np.einsum("abij,ijab,abij", Jmsa[v, v, o, o], Jmsa[o, o, v, v], Emsd, optimize=True)
+    E_MP2 += 0.25 * np.einsum("abij,ijab,abij", Jmsa[v, v, o, o], Jmsa[o, o, v, v], Emsd**-1, optimize=True)
     print("    MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 + VNN))
 
 # calculate the MP3 correlation energy
 if args.mp3:
-    E_MP3 += 0.125 * np.einsum("abij,cdab,ijcd,abij,cdij", Jmsa[v, v, o, o], Jmsa[v, v, v, v], Jmsa[o, o, v, v], Emsd, Emsd, optimize=True)
-    E_MP3 += 0.125 * np.einsum("abij,ijkl,klab,abij,abkl", Jmsa[v, v, o, o], Jmsa[o, o, o, o], Jmsa[o, o, v, v], Emsd, Emsd, optimize=True)
-    E_MP3 += 1.000 * np.einsum("abij,cjkb,ikac,abij,acik", Jmsa[v, v, o, o], Jmsa[v, o, o, v], Jmsa[o, o, v, v], Emsd, Emsd, optimize=True)
+    E_MP3 += 0.125 * np.einsum("abij,cdab,ijcd,abij,cdij", Jmsa[v, v, o, o], Jmsa[v, v, v, v], Jmsa[o, o, v, v], Emsd**-1, Emsd**-1, optimize=True)
+    E_MP3 += 0.125 * np.einsum("abij,ijkl,klab,abij,abkl", Jmsa[v, v, o, o], Jmsa[o, o, o, o], Jmsa[o, o, v, v], Emsd**-1, Emsd**-1, optimize=True)
+    E_MP3 += 1.000 * np.einsum("abij,cjkb,ikac,abij,acik", Jmsa[v, v, o, o], Jmsa[v, o, o, v], Jmsa[o, o, v, v], Emsd**-1, Emsd**-1, optimize=True)
     print("    MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 ```
 
@@ -175,7 +175,7 @@ if args.ccd:
         ccd1, ccd2, ccd4 = ccd1 - ccd1.transpose(1, 0, 2, 3), ccd2 - ccd2.transpose(0, 1, 3, 2), ccd4 - ccd4.transpose(0, 1, 3, 2)
 
         # update the t-amplitudes
-        t2 = Emsd * (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3 + ccd1 + ccd2 + ccd3 + ccd4)
+        t2 = (Jmsa[v, v, o, o] + lccd1 + lccd2 + lccd3 + ccd1 + ccd2 + ccd3 + ccd4) / Emsd
 
         # evaluate the energy
         E_CCD_P, E_CCD = E_CCD, 0.25 * np.einsum("ijab,abij", Jmsa[o, o, v, v], t2, optimize=True)
@@ -240,7 +240,7 @@ if args.ccsd:
         rhs_T2 -= P5.transpose(0, 1, 2, 3) - P5.transpose(1, 0, 2, 3)
 
         # Update T1 and T2 amplitudes
-        t1, t2 = rhs_T1 * Emss, rhs_T2 * Emsd
+        t1, t2 = rhs_T1 / Emss, rhs_T2 / Emsd
 
         # evaluate the energy
         E_CCSD_P, E_CCSD = E_CCSD, np.einsum("ia,ai", Fms[o, v], t1) + 0.25 * np.einsum("ijab,abij", Jmsa[o, o, v, v], t2) + 0.5 * np.einsum("ijab,ai,bj", Jmsa[o, o, v, v], t1, t1)
