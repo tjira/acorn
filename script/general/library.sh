@@ -89,7 +89,6 @@ cd external/pytorch-v2.5.0 && cmake -B build \
     -DUSE_CUDA=OFF \
     -DUSE_DISTRIBUTED=OFF \
     -DUSE_FBGEMM=OFF \
-    -DUSE_LAPACK=ON \
     -DUSE_MKLDNN=OFF \
     -DUSE_OPENMP=OFF \
     -DUSE_PYTORCH_QNNPACK=OFF \
