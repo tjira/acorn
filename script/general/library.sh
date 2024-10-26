@@ -71,9 +71,18 @@ cd external/numactl-2.0.18 && ./configure \
     --prefix="$PWD/install" \
 && make -j$CORES && make install && cp -r install/* .. ; cd ../..
 
-# compile openblas
+# compile shared openblas
 cd external/OpenBLAS-0.3.28 && cmake -B build \
-    -DBUILD_SHARED_LIBS=$SHARED \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_FLAGS="-Wno-error=incompatible-pointer-types" \
+    -DCMAKE_INSTALL_PREFIX="$PWD/install" \
+    -DNOFORTRAN=ON \
+&& cmake --build build --parallel $CORES && cmake --install build && cp -r install/* .. ; cd ../..
+
+# compile static openblas
+cd external/OpenBLAS-0.3.28 && cmake -B build \
+    -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="-Wno-error=incompatible-pointer-types" \
     -DCMAKE_INSTALL_PREFIX="$PWD/install" \
@@ -99,3 +108,6 @@ cd external/pytorch-v2.5.0 && cmake -B build \
 
 # remove sources
 cd external && rm -rf eigen-3.4.0 fftw-3.3.10 libint-2.9.0 numactl-2.0.18 OpenBLAS-0.3.28 pytorch-v2.5.0 bin share *.tar.gz ; cd ..
+
+# remove the other type of libraries
+[ $SHARED == 1 ] && rm external/lib/*.a*; [ $STATIC == 1 ] && rm external/lib/*.so*
