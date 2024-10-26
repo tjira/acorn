@@ -81,7 +81,7 @@ cd external/OpenBLAS-0.3.28 && cmake -B build \
 && cmake --build build --parallel $CORES && cmake --install build && cp -r install/* .. ; cd ../..
 
 # compile static openblas
-cd external/OpenBLAS-0.3.28 && cmake -B build \
+[ $STATIC == 1 ] && cd external/OpenBLAS-0.3.28 && cmake -B build \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="-Wno-error=incompatible-pointer-types" \
