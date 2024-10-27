@@ -106,5 +106,9 @@ cd external/pytorch-v2.5.0 && cmake -B build \
     -DUSE_XPU=OFF \
 && cmake --build build --parallel $CORES && cmake --install build && cp -r build/lib .. && cp -r install/* .. && cd ../..
 
+# remove libraries of the other type
+[ $SHARED == 1 ] && rm -f external/lib/*.a*
+[ $STATIC == 1 ] && rm -f external/lib/*.s*
+
 # remove sources
 cd external && rm -rf eigen-3.4.0 fftw-3.3.10 libint-2.9.0 numactl-2.0.18 OpenBLAS-0.3.28 pytorch-v2.5.0 bin share *.tar.gz ; cd ..
