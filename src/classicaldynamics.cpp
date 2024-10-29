@@ -224,7 +224,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             if (input.surface_hopping.type == "landau-zener" && j > 1) {
                 new_state = landauzener.jump(input.adiabatic ? adiabatic_potential_vector : diabatic_potential_vector, j, state(j), input.time_step);
             } else if (input.surface_hopping.type == "fewest-switches" && j) {
-                std::tie(population.at(j), new_state) = fewestswitches.jump(population.at(j - 1), phi_vector, potential.diagonal(), j, state(j), input.time_step);
+                std::tie(population.at(j), new_state) = fewestswitches.jump(population.at(j - 1), phi_vector, adiabatic_potential_vector, j, state(j), input.time_step);
             }
 
             // update the velocity and the state

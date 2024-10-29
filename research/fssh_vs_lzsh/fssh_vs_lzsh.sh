@@ -154,21 +154,24 @@ for MODEL in ${MODELS[@]}; do
     for MOMENTUM in ${MOMENTA[@]}; do
 
         # create the json files
-        echo "{}" > exact_${MODEL,,}_P=${MOMENTUM}.json && echo "{}" > fssh_${MODEL,,}_P=${MOMENTUM}.json && echo "{}" > lzsh_${MODEL,,}_P=${MOMENTUM}.json
+        echo "{}" > exact_${MODEL,,}_P=${MOMENTUM}.json && echo "{}" > fssh_${MODEL,,}_P=${MOMENTUM}.json && echo "{}" > kfssh_${MODEL,,}_P=${MOMENTUM}.json && echo "{}" > lzsh_${MODEL,,}_P=${MOMENTUM}.json
 
         # fill the json files with the templated wavefunctions
         jq --arg wavefunction "${TEMPLATE_WAVEFUNCTION}" '. |= . + {"wavefunction" : ($wavefunction | fromjson)}' "exact_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg wavefunction "${TEMPLATE_WAVEFUNCTION}" '. |= . + {"wavefunction" : ($wavefunction | fromjson)}' "fssh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "fssh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq --arg wavefunction "${TEMPLATE_WAVEFUNCTION}" '. |= . + {"wavefunction" : ($wavefunction | fromjson)}' "kfssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg wavefunction "${TEMPLATE_WAVEFUNCTION}" '. |= . + {"wavefunction" : ($wavefunction | fromjson)}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # fill the json files with the templated dynamics
         jq --arg dynamics "${TEMPLATE_EXACT_DYN}" '. |= . + {"quantum_dynamics"   : ($dynamics | fromjson)}' "exact_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg dynamics "${TEMPLATE_SH_DYN}"    '. |= . + {"classical_dynamics" : ($dynamics | fromjson)}' "fssh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "fssh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq --arg dynamics "${TEMPLATE_SH_DYN}"    '. |= . + {"classical_dynamics" : ($dynamics | fromjson)}' "kfssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg dynamics "${TEMPLATE_SH_DYN}"    '. |= . + {"classical_dynamics" : ($dynamics | fromjson)}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # fill the json files with the potential
         jq --arg potential "$(eval echo \$"POTENTIAL_${MODEL}")" '.quantum_dynamics   |= . + {"potential" : ($potential | fromjson)}' "exact_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg potential "$(eval echo \$"POTENTIAL_${MODEL}")" '.classical_dynamics |= . + {"potential" : ($potential | fromjson)}' "fssh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "fssh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq --arg potential "$(eval echo \$"POTENTIAL_${MODEL}")" '.classical_dynamics |= . + {"potential" : ($potential | fromjson)}' "kfssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg potential "$(eval echo \$"POTENTIAL_${MODEL}")" '.classical_dynamics |= . + {"potential" : ($potential | fromjson)}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # get the number of states and create the guess and legend array
@@ -183,31 +186,36 @@ for MODEL in ${MODELS[@]}; do
         # add the guess to the json files
         jq --arg guess "${GUESS}" '.wavefunction |= . + {"guess" : ($guess | fromjson)}' "exact_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg guess "${GUESS}" '.wavefunction |= . + {"guess" : ($guess | fromjson)}' "fssh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "fssh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq --arg guess "${GUESS}" '.wavefunction |= . + {"guess" : ($guess | fromjson)}' "kfssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg guess "${GUESS}" '.wavefunction |= . + {"guess" : ($guess | fromjson)}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # set the momentum
         jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : [($momentum | fromjson)]}' "exact_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : [($momentum | fromjson)]}' "fssh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "fssh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : [($momentum | fromjson)]}' "kfssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL,,}_P=${MOMENTUM}.json"
         jq --arg momentum "${MOMENTUM}" '.wavefunction |= . + {"momentum" : [($momentum | fromjson)]}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # fill the json files with the surface hopping type
-        jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "fewest-switches"}}' "fssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "fssh_${MODEL,,}_P=${MOMENTUM}.json"
-        jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "landau-zener"   }}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "fewest-switches", "kappa" : false}}' "fssh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "fssh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "fewest-switches", "kappa" : true }}' "kfssh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL,,}_P=${MOMENTUM}.json"
+        jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "landau-zener"                    }}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # run the dynamics and delete the inputs
-        $ACORN -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES && rm *.json
+        $ACORN -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "kfssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES && rm *.json
 
         # get the populations at the last time step
-        POP_EXACT=$(tail -n 1 POPULATION-ADIABATIC_EXACT-REAL_1.mat | awk -v i=$IS '{print $(i+1)}');
-        POP_FSSH=$( tail -n 1 POPULATION-ADIABATIC_FS-ADIABATIC.mat | awk -v i=$IS '{print $(i+1)}');
-        POP_LZSH=$( tail -n 1 POPULATION-ADIABATIC_LZ-ADIABATIC.mat | awk -v i=$IS '{print $(i+1)}')
+        POP_EXACT=$(tail -n 1 POPULATION-ADIABATIC_EXACT-REAL_1.mat  | awk -v i=$IS '{print $(i+1)}');
+        POP_FSSH=$( tail -n 1 POPULATION-ADIABATIC_FS-ADIABATIC.mat  | awk -v i=$IS '{print $(i+1)}');
+        POP_KFSSH=$(tail -n 1 POPULATION-ADIABATIC_KFS-ADIABATIC.mat | awk -v i=$IS '{print $(i+1)}');
+        POP_LZSH=$( tail -n 1 POPULATION-ADIABATIC_LZ-ADIABATIC.mat  | awk -v i=$IS '{print $(i+1)}')
 
         # append the populations to the file
-        echo "${MOMENTUM} ${POP_EXACT} ${POP_FSSH} ${POP_LZSH}" >> "${MODEL}_FINAL_POPULATIONS.mat"
+        echo "${MOMENTUM} ${POP_EXACT} ${POP_FSSH} ${POP_KFSSH} ${POP_LZSH}" >> "${MODEL}_FINAL_POPULATIONS.mat"
 
         # fill the legend array for the population
         for (( i=0; i<$STATES; i++ )); do LEGEND_POP+=("S${i} EXACT"); done
         for (( i=0; i<$STATES; i++ )); do LEGEND_POP+=("S${i} FSSH" ); done
+        for (( i=0; i<$STATES; i++ )); do LEGEND_POP+=("S${i} KFSSH"); done
         for (( i=0; i<$STATES; i++ )); do LEGEND_POP+=("S${i} LZSH" ); done
 
         # fill the legend array for the potentials
@@ -217,22 +225,22 @@ for MODEL in ${MODELS[@]}; do
         DIA_INDICES=""; ADIA_INDICES=""; for (( i=0; i<$STATES; i++ )); do DIA_INDICES+=$(echo "$i*$STATES+$i" | bc -l)","; ADIA_INDICES+="$i,"; done
 
         # plot the population
-        $PLOT_1D POPULATION-ADIABATIC_EXACT-REAL_1.mat POPULATION-ADIABATIC_FS-ADIABATIC.mat POPULATION-ADIABATIC_LZ-ADIABATIC.mat --legend "${LEGEND_POP[@]}" --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --output "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}" --png
+        $PLOT_1D POPULATION-ADIABATIC_EXACT-REAL_1.mat POPULATION-ADIABATIC_FS-ADIABATIC.mat POPULATION-ADIABATIC_KFS-ADIABATIC.mat POPULATION-ADIABATIC_LZ-ADIABATIC.mat --legend "${LEGEND_POP[@]}" --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --output "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}" --png
 
         # plot the potentials
         $PLOT_1D "POTENTIAL-ADIABATIC.mat:${ADIA_INDICES::-1}" --legend "${LEGEND_POT_ADIA[@]}" --title "ADIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output "POTENTIAL-ADIABATIC_${MODEL}" --png
         $PLOT_1D "POTENTIAL-DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC POTENTIAL: ${MODEL}"  --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output  "POTENTIAL-DIABATIC_${MODEL}" --png
 
         # plot the position and momentum
-        $PLOT_1D POSITION_EXACT-REAL_1.mat         POSITION-MEAN_FS-ADIABATIC.mat         POSITION-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "POSITION: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}"         --png
-        $PLOT_1D MOMENTUM_EXACT-REAL_1.mat         MOMENTUM-MEAN_FS-ADIABATIC.mat         MOMENTUM-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "MOMENTUM: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}"         --png
-        $PLOT_1D TOTAL-ENERGY_EXACT-REAL_1.mat     TOTAL-ENERGY-MEAN_FS-ADIABATIC.mat     TOTAL-ENERGY-MEAN_LZ-ADIABATIC.mat     --legend "EXACT" "FSSH" "LZSH" --title "TOTAL ENERGY: ${MODEL}"     --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}"     --png
-        $PLOT_1D KINETIC-ENERGY_EXACT-REAL_1.mat   KINETIC-ENERGY-MEAN_FS-ADIABATIC.mat   KINETIC-ENERGY-MEAN_LZ-ADIABATIC.mat   --legend "EXACT" "FSSH" "LZSH" --title "KINETIC ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}"   --png
-        $PLOT_1D POTENTIAL-ENERGY_EXACT-REAL_1.mat POTENTIAL-ENERGY-MEAN_FS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "POTENTIAL ENERGY: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}" --png
+        $PLOT_1D POSITION_EXACT-REAL_1.mat         POSITION-MEAN_FS-ADIABATIC.mat         POSITION-MEAN_KFS-ADIABATIC.mat         POSITION-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "KFSSH" "LZSH" --title "POSITION: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}"         --png
+        $PLOT_1D MOMENTUM_EXACT-REAL_1.mat         MOMENTUM-MEAN_FS-ADIABATIC.mat         MOMENTUM-MEAN_KFS-ADIABATIC.mat         MOMENTUM-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "KFSSH" "LZSH" --title "MOMENTUM: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}"         --png
+        $PLOT_1D TOTAL-ENERGY_EXACT-REAL_1.mat     TOTAL-ENERGY-MEAN_FS-ADIABATIC.mat     TOTAL-ENERGY-MEAN_KFS-ADIABATIC.mat     TOTAL-ENERGY-MEAN_LZ-ADIABATIC.mat     --legend "EXACT" "FSSH" "KFSSH" "LZSH" --title "TOTAL ENERGY: ${MODEL}"     --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}"     --png
+        $PLOT_1D KINETIC-ENERGY_EXACT-REAL_1.mat   KINETIC-ENERGY-MEAN_FS-ADIABATIC.mat   KINETIC-ENERGY-MEAN_KFS-ADIABATIC.mat   KINETIC-ENERGY-MEAN_LZ-ADIABATIC.mat   --legend "EXACT" "FSSH" "KFSSH" "LZSH" --title "KINETIC ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}"   --png
+        $PLOT_1D POTENTIAL-ENERGY_EXACT-REAL_1.mat POTENTIAL-ENERGY-MEAN_FS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_KFS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "KFSSH" "LZSH" --title "POTENTIAL ENERGY: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}" --png
 
         # plot the hopping geometries
-        $PLOT_1D HOPPING-GEOMETRIES_FS-ADIABATIC.mat --bins 100 --legend "FSSH" --title "HOPPING GEOMETRIES: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Relative Count" --output "HOPPING-GEOMETRIES_${MODEL}" --histogram --png
-        $PLOT_1D HOPPING-TIMES_FS-ADIABATIC.mat      --bins 100 --legend "FSSH" --title "HOPPING TIMES: ${MODEL}"      --xlabel "Time (a.u.)"       --ylabel "Relative Count" --output "HOPPING-TIMES_${MODEL}"      --histogram --png
+        $PLOT_1D HOPPING-GEOMETRIES_FS-ADIABATIC.mat HOPPING-GEOMETRIES_KFS-ADIABATIC.mat --bins 100 --legend "FSSH" "KFSSH" --title "HOPPING GEOMETRIES: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Relative Count" --output "HOPPING-GEOMETRIES_${MODEL}" --histogram --png
+        $PLOT_1D HOPPING-TIMES_FS-ADIABATIC.mat           HOPPING-TIMES_KFS-ADIABATIC.mat --bins 100 --legend "FSSH" "KFSSH" --title "HOPPING TIMES: ${MODEL}"      --xlabel "Time (a.u.)"       --ylabel "Relative Count" --output "HOPPING-TIMES_${MODEL}"      --histogram --png
 
         # make the trajectory analysis image
         montage "POTENTIAL-ADIABATIC_${MODEL}.png" "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"     -mode concatenate -tile x1 "TRAJECTORIES-GENERAL_${MODEL}_P=${MOMENTUM}.png"

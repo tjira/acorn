@@ -90,7 +90,8 @@ nlohmann::json default_input = R"(
         "log_interval_traj" : 1,
         "surface_hopping" : {
             "quantum_step_factor" : 10,
-            "type" : "fewest-switches"
+            "type" : "fewest-switches",
+            "kappa" : false
         },
         "data_export" : {
             "diabatic_population" : false,

@@ -52,6 +52,7 @@ struct Input {
         struct SurfaceHopping {
             int quantum_step_factor;
             std::string type;
+            bool kappa;
         } surface_hopping;
         bool adiabatic;
         int iterations, trajectories, seed, log_interval_step, log_interval_traj;
@@ -75,6 +76,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::QuantumDynamics::DataExport, diabatic_
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::QuantumDynamics, potential, imaginary, real, iterations, time_step, data_export);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::DataExport, total_energy, position, momentum, diabatic_population, adiabatic_population, total_energy_mean, position_mean, momentum_mean, potential_energy, potential_energy_mean, kinetic_energy, kinetic_energy_mean, hopping_geometry, hopping_time);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::InitialConditions, positions, momenta, states, mass);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::SurfaceHopping, type, quantum_step_factor);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics::SurfaceHopping, kappa, type, quantum_step_factor);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input::ClassicalDynamics, potential, constants, iterations, trajectories, time_step, data_export, seed, adiabatic, surface_hopping, log_interval_step, log_interval_traj, initial_conditions);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Input, system, wavefunction, integral, hartree_fock, quantum_dynamics, classical_dynamics);

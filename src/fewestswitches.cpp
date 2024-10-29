@@ -1,5 +1,7 @@
 #include "fewestswitches.h"
 
+#include <iostream>
+
 FewestSwitches::FewestSwitches(const Input::ClassicalDynamics::SurfaceHopping& input, bool adiabatic, int seed) : input(input), adiabatic(adiabatic) {
     // throw an error if diabatic mode requested
     if (!adiabatic && input.type == "fewest-switches") throw std::invalid_argument("DIABATIC MODE FOR FSSH NOT IMPLEMENTED YET");
@@ -21,6 +23,32 @@ Eigen::MatrixXd FewestSwitches::calculate_derivative_coupling(const Eigen::Matri
 
     // return the derivative coupling matrix
     return derivative_coupling.log() / time_step;
+}
+
+Eigen::MatrixXd FewestSwitches::calculate_derivative_coupling_kappa(const std::vector<Eigen::MatrixXd>& potential_vector, int iteration, double time_step) {
+    // define the derivative coupling matrix
+    Eigen::MatrixXd derivative_coupling(potential_vector.at(0).rows(), potential_vector.at(0).cols()); derivative_coupling.setZero();
+
+    // calculate the derivative coupling
+    for (int i = 0; i < derivative_coupling.rows(); i++) for (int j = 0; j < i; j++) {
+
+        // calculate the energy differences needed for the second derivative
+        double energy_difference_0 = potential_vector.at(iteration - 0)(i, i) - potential_vector.at(iteration - 0)(j, j);
+        double energy_difference_1 = potential_vector.at(iteration - 1)(i, i) - potential_vector.at(iteration - 1)(j, j);
+        double energy_difference_2 = potential_vector.at(iteration - 2)(i, i) - potential_vector.at(iteration - 2)(j, j);
+
+        // calculate the second derivative of the energy difference
+        double energy_difference_second_derivative = (energy_difference_0 - 2 * energy_difference_1 + energy_difference_2) / std::pow(time_step, 2);
+
+        // set the second derivative to zero if it is zero
+        if (energy_difference_second_derivative < 0) energy_difference_second_derivative = 0;
+
+        // calculate the derivative coupling
+        derivative_coupling(i, j) = 0.5 * std::sqrt(energy_difference_second_derivative / energy_difference_0);
+    }
+
+    // return the derivative coupling matrix
+    return derivative_coupling - derivative_coupling.transpose();
 }
 
 std::vector<std::tuple<int, double>> FewestSwitches::calculate_hopping_probabilities(const Eigen::VectorXcd& ci, const Eigen::MatrixXd& derivative_coupling, int state, double time_step) {
@@ -51,15 +79,20 @@ Eigen::VectorXcd FewestSwitches::propagate_population(const Eigen::VectorXcd& po
     return population + time_step / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
 }
 
-std::tuple<Eigen::VectorXcd, int> FewestSwitches::jump(Eigen::VectorXcd population, const std::vector<Eigen::MatrixXd>& phi_vector, const Eigen::VectorXd& potential, int iteration, int state, double time_step) {
-    // calculate the derivative coupling and define the new state
-    Eigen::MatrixXd derivative_coupling = calculate_derivative_coupling(phi_vector.at(iteration), phi_vector.at(iteration - 1), time_step); int new_state = state;
+std::tuple<Eigen::VectorXcd, int> FewestSwitches::jump(Eigen::VectorXcd population, const std::vector<Eigen::MatrixXd>& phi_vector, const std::vector<Eigen::MatrixXd>& potential_vector, int iteration, int state, double time_step) {
+    // define the derivative coupling and the new state
+    Eigen::MatrixXd derivative_coupling; int new_state = state;
+
+    // calculate the derivative coupling
+    if (input.kappa && iteration > 1) {
+        derivative_coupling = calculate_derivative_coupling_kappa(potential_vector, iteration, time_step);
+    } else derivative_coupling = calculate_derivative_coupling(phi_vector.at(iteration), phi_vector.at(iteration - 1), time_step);
 
     // pripagate the populations
     for (int k = 0; k < input.quantum_step_factor; k++) {
 
         // propagate the population and generate a random number
-        population = propagate_population(population, potential, derivative_coupling, time_step / (double)input.quantum_step_factor); double random_number = dist(mt);
+        population = propagate_population(population, potential_vector.at(iteration).diagonal(), derivative_coupling, time_step / (double)input.quantum_step_factor); double random_number = dist(mt);
 
         // calculate the hopping probabilities
         std::vector<std::tuple<int, double>> hopping_probabilities = calculate_hopping_probabilities(population, derivative_coupling, state, time_step / (double)input.quantum_step_factor);

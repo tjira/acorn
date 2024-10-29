@@ -3,11 +3,13 @@
 #include   "quantumdynamics.h"
 
 void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const std::vector<ClassicalDynamics::TrajectoryData>& trajectory_data_vector, int mass) {
-    // define the output data matrix and the eigenvalue solver
-    Eigen::MatrixXd data_matrix; Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver;
+    // define the output data matrix, eigenvalue solver and the surface hopping algorithm name
+    Eigen::MatrixXd data_matrix; Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver; std::string algorithm;
 
     // get the surface hopping algorithm name
-    std::string algorithm = input.surface_hopping.type == "landau-zener" ? "LZ" : input.surface_hopping.type == "fewest-switches" ? "FS" : "";
+    if (input.surface_hopping.type == "fewest-switches" && !input.surface_hopping.kappa) algorithm =  "FS";
+    if (input.surface_hopping.type == "fewest-switches" && input.surface_hopping.kappa)  algorithm = "KFS";
+    if (input.surface_hopping.type == "landau-zener")                                     algorithm = "LZ";
 
     // export the diabatic density matrix
     if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations + 1, 0, input.time_step * input.iterations); input.data_export.diabatic_population) {
