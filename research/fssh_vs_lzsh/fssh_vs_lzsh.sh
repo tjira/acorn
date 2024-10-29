@@ -9,6 +9,12 @@ CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; LOG_INTERVAL_STEP=1000;
 MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
 
 # ======================================================================================================================================================================================================
+# EXECUTABLE PATHS
+# ======================================================================================================================================================================================================
+
+ACORN=./../../bin/acorn; PLOT_1D=./../../script/plot/plot-1d.py
+
+# ======================================================================================================================================================================================================
 # START TEMPLATES
 # ======================================================================================================================================================================================================
 
@@ -133,7 +139,7 @@ IS_TS_4=2
 # ======================================================================================================================================================================================================
 
 # remove all the previous files
-[[ $CLEAN -eq 1 ]] && rm -f *.mat *.json *.png
+[[ $CLEAN -eq 1 ]] && rm -f *.json *.mat *.png
 
 # generate momenta
 (( $(echo "$PSTEP <= 0" | bc -l) )) && MOMENTA=($PSTART) || MOMENTA=($(seq $PSTART $PSTEP $PEND))
@@ -189,7 +195,7 @@ for MODEL in ${MODELS[@]}; do
         jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "landau-zener"   }}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json" > temp.json && mv temp.json "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # run the dynamics and delete the inputs
-        acorn -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES && rm *.json
+        $ACORN -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES && rm *.json
 
         # get the populations at the last time step
         POP_EXACT=$(tail -n 1 POPULATION-ADIABATIC_EXACT-REAL_1.mat | awk -v i=$IS '{print $(i+1)}');
@@ -211,22 +217,22 @@ for MODEL in ${MODELS[@]}; do
         DIA_INDICES=""; ADIA_INDICES=""; for (( i=0; i<$STATES; i++ )); do DIA_INDICES+=$(echo "$i*$STATES+$i" | bc -l)","; ADIA_INDICES+="$i,"; done
 
         # plot the population
-        plot-1d.py POPULATION-ADIABATIC_EXACT-REAL_1.mat POPULATION-ADIABATIC_FS-ADIABATIC.mat POPULATION-ADIABATIC_LZ-ADIABATIC.mat --legend "${LEGEND_POP[@]}" --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --output "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}" --png
+        $PLOT_1D POPULATION-ADIABATIC_EXACT-REAL_1.mat POPULATION-ADIABATIC_FS-ADIABATIC.mat POPULATION-ADIABATIC_LZ-ADIABATIC.mat --legend "${LEGEND_POP[@]}" --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --output "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}" --png
 
         # plot the potentials
-        plot-1d.py "POTENTIAL-ADIABATIC.mat:${ADIA_INDICES::-1}" --legend "${LEGEND_POT_ADIA[@]}" --title "ADIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output "POTENTIAL-ADIABATIC_${MODEL}" --png
-        plot-1d.py "POTENTIAL-DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC POTENTIAL: ${MODEL}"  --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output  "POTENTIAL-DIABATIC_${MODEL}" --png
+        $PLOT_1D "POTENTIAL-ADIABATIC.mat:${ADIA_INDICES::-1}" --legend "${LEGEND_POT_ADIA[@]}" --title "ADIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output "POTENTIAL-ADIABATIC_${MODEL}" --png
+        $PLOT_1D "POTENTIAL-DIABATIC.mat:${DIA_INDICES::-1}"   --legend "${LEGEND_POT_DIA[@]}"  --title "DIABATIC POTENTIAL: ${MODEL}"  --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output  "POTENTIAL-DIABATIC_${MODEL}" --png
 
         # plot the position and momentum
-        plot-1d.py POSITION_EXACT-REAL_1.mat         POSITION-MEAN_FS-ADIABATIC.mat         POSITION-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "POSITION: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}"         --png
-        plot-1d.py MOMENTUM_EXACT-REAL_1.mat         MOMENTUM-MEAN_FS-ADIABATIC.mat         MOMENTUM-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "MOMENTUM: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}"         --png
-        plot-1d.py TOTAL-ENERGY_EXACT-REAL_1.mat     TOTAL-ENERGY-MEAN_FS-ADIABATIC.mat     TOTAL-ENERGY-MEAN_LZ-ADIABATIC.mat     --legend "EXACT" "FSSH" "LZSH" --title "TOTAL ENERGY: ${MODEL}"     --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}"     --png
-        plot-1d.py KINETIC-ENERGY_EXACT-REAL_1.mat   KINETIC-ENERGY-MEAN_FS-ADIABATIC.mat   KINETIC-ENERGY-MEAN_LZ-ADIABATIC.mat   --legend "EXACT" "FSSH" "LZSH" --title "KINETIC ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}"   --png
-        plot-1d.py POTENTIAL-ENERGY_EXACT-REAL_1.mat POTENTIAL-ENERGY-MEAN_FS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "POTENTIAL ENERGY: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}" --png
+        $PLOT_1D POSITION_EXACT-REAL_1.mat         POSITION-MEAN_FS-ADIABATIC.mat         POSITION-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "POSITION: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Position (a.u.)" --output "POSITION_${MODEL}_P=${MOMENTUM}"         --png
+        $PLOT_1D MOMENTUM_EXACT-REAL_1.mat         MOMENTUM-MEAN_FS-ADIABATIC.mat         MOMENTUM-MEAN_LZ-ADIABATIC.mat         --legend "EXACT" "FSSH" "LZSH" --title "MOMENTUM: ${MODEL}"         --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}"         --png
+        $PLOT_1D TOTAL-ENERGY_EXACT-REAL_1.mat     TOTAL-ENERGY-MEAN_FS-ADIABATIC.mat     TOTAL-ENERGY-MEAN_LZ-ADIABATIC.mat     --legend "EXACT" "FSSH" "LZSH" --title "TOTAL ENERGY: ${MODEL}"     --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}"     --png
+        $PLOT_1D KINETIC-ENERGY_EXACT-REAL_1.mat   KINETIC-ENERGY-MEAN_FS-ADIABATIC.mat   KINETIC-ENERGY-MEAN_LZ-ADIABATIC.mat   --legend "EXACT" "FSSH" "LZSH" --title "KINETIC ENERGY: ${MODEL}"   --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}"   --png
+        $PLOT_1D POTENTIAL-ENERGY_EXACT-REAL_1.mat POTENTIAL-ENERGY-MEAN_FS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "LZSH" --title "POTENTIAL ENERGY: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}" --png
 
         # plot the hopping geometries
-        plot-1d.py HOPPING-GEOMETRIES_FS-ADIABATIC.mat --bins 100 --legend "FSSH" --title "HOPPING GEOMETRIES: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Relative Count" --output "HOPPING-GEOMETRIES_${MODEL}" --histogram --png
-        plot-1d.py HOPPING-TIMES_FS-ADIABATIC.mat      --bins 100 --legend "FSSH" --title "HOPPING TIMES: ${MODEL}"      --xlabel "Time (a.u.)"       --ylabel "Relative Count" --output "HOPPING-TIMES_${MODEL}"      --histogram --png
+        $PLOT_1D HOPPING-GEOMETRIES_FS-ADIABATIC.mat --bins 100 --legend "FSSH" --title "HOPPING GEOMETRIES: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Relative Count" --output "HOPPING-GEOMETRIES_${MODEL}" --histogram --png
+        $PLOT_1D HOPPING-TIMES_FS-ADIABATIC.mat      --bins 100 --legend "FSSH" --title "HOPPING TIMES: ${MODEL}"      --xlabel "Time (a.u.)"       --ylabel "Relative Count" --output "HOPPING-TIMES_${MODEL}"      --histogram --png
 
         # make the trajectory analysis image
         montage "POTENTIAL-ADIABATIC_${MODEL}.png" "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"     -mode concatenate -tile x1 "TRAJECTORIES-GENERAL_${MODEL}_P=${MOMENTUM}.png"
@@ -235,7 +241,7 @@ for MODEL in ${MODELS[@]}; do
     done
 
     # plot the population dependence on momentum
-    plot-1d.py "${MODEL}_FINAL_POPULATIONS.mat" --legend "EXACT" "FSSH" "LZSH" --title "FINAL POPULATION: ${MODEL}" --xlabel "Initial Momentum (a.u.)" --ylabel "Final Population of the Initial State (S$IS)" --output "${MODEL}_FINAL_POPULATIONS" --png
+    $PLOT_1D "${MODEL}_FINAL_POPULATIONS.mat" --legend "EXACT" "FSSH" "LZSH" --title "FINAL POPULATION: ${MODEL}" --xlabel "Initial Momentum (a.u.)" --ylabel "Final Population of the Initial State (S$IS)" --output "${MODEL}_FINAL_POPULATIONS" --png
 
     # make the comparison image
     montage "POTENTIAL-ADIABATIC_${MODEL}.png" "${MODEL}_FINAL_POPULATIONS.png" -mode concatenate -tile x1 "COMPARISONS_${MODEL}.png"
