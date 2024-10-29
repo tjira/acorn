@@ -4,7 +4,7 @@
 # VARIABLES
 # ======================================================================================================================================================================================================
 
-CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
+CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=10000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
 
 MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
 
@@ -249,7 +249,7 @@ for MODEL in ${MODELS[@]}; do
     done
 
     # plot the population dependence on momentum
-    $PLOT_1D "${MODEL}_FINAL_POPULATIONS.mat" --legend "EXACT" "FSSH" "LZSH" --title "FINAL POPULATION: ${MODEL}" --xlabel "Initial Momentum (a.u.)" --ylabel "Final Population of the Initial State (S$IS)" --output "${MODEL}_FINAL_POPULATIONS" --png
+    $PLOT_1D "${MODEL}_FINAL_POPULATIONS.mat" --legend "EXACT" "FSSH" "KFSSH" "LZSH" --title "FINAL POPULATION: ${MODEL}" --xlabel "Initial Momentum (a.u.)" --ylabel "Final Population of the Initial State (S$IS)" --output "${MODEL}_FINAL_POPULATIONS" --png
 
     # make the comparison image
     montage "POTENTIAL-ADIABATIC_${MODEL}.png" "${MODEL}_FINAL_POPULATIONS.png" -mode concatenate -tile x1 "COMPARISONS_${MODEL}.png"
