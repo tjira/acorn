@@ -4,7 +4,7 @@
 # VARIABLES
 # ======================================================================================================================================================================================================
 
-CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=10000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
+CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; LOG_INTERVAL_STEP=1000; LOG_INTERVAL_TRAJ=100; CLEAN=1
 
 MODELS=("TULLY_1" "TULLY_2" "DS_1" "DS_2" "TS_1" "TS_2" "TS_3" "TS_4")
 

@@ -36,9 +36,11 @@ Eigen::MatrixXd FewestSwitches::calculate_derivative_coupling_kappa(const std::v
         double energy_difference_0 = potential_vector.at(iteration - 0)(i, i) - potential_vector.at(iteration - 0)(j, j);
         double energy_difference_1 = potential_vector.at(iteration - 1)(i, i) - potential_vector.at(iteration - 1)(j, j);
         double energy_difference_2 = potential_vector.at(iteration - 2)(i, i) - potential_vector.at(iteration - 2)(j, j);
+        double energy_difference_3 = potential_vector.at(iteration - 3)(i, i) - potential_vector.at(iteration - 3)(j, j);
 
         // calculate the second derivative of the energy difference
-        double energy_difference_second_derivative = (energy_difference_0 - 2 * energy_difference_1 + energy_difference_2) / std::pow(time_step, 2);
+        // double energy_difference_second_derivative = (energy_difference_0 - 2 * energy_difference_1 + energy_difference_2) / std::pow(time_step, 2);
+        double energy_difference_second_derivative = (2 * energy_difference_0 - 5 * energy_difference_1 + 4 * energy_difference_2 - energy_difference_3) / std::pow(time_step, 2);
 
         // set the second derivative to zero if it is zero
         if (energy_difference_second_derivative < 0) energy_difference_second_derivative = 0;
@@ -84,7 +86,7 @@ std::tuple<Eigen::VectorXcd, int> FewestSwitches::jump(Eigen::VectorXcd populati
     Eigen::MatrixXd derivative_coupling; int new_state = state;
 
     // calculate the derivative coupling
-    if (input.kappa && iteration > 1) {
+    if (input.kappa && iteration > 2) {
         derivative_coupling = calculate_derivative_coupling_kappa(potential_vector, iteration, time_step);
     } else derivative_coupling = calculate_derivative_coupling(phi_vector.at(iteration), phi_vector.at(iteration - 1), time_step);
 
