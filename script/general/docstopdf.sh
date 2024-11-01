@@ -23,12 +23,18 @@ ACRONYMS=(
 # copy the edu scripts
 cp -r education/python docs/
 
-# create the main LaTeX document
+# create the document class in the tex file
 mkdir -p docs/tex && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
 
-\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\pdfminorversion=7
+\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\pdfminorversion=7\title{Algorithms of Quantum Chemistry}\author{Tom\'a\v s \textsc{J\'ira}}
+EOL
 
+# add the contents of the educational scripts
+echo -e "\n\\\begin{filecontents*}{resmet.py}" >> docs/tex/main.tex && cat education/python/resmet.py >> docs/tex/main.tex && echo -e "\\\end{filecontents*}\n" >> docs/tex/main.tex
+
+# add the rest of the header
+cat >> docs/tex/main.tex << EOL
 \begin{filecontents*}{molecule.xyz}
 3
 water/RHF/STO-3G/-74.965901192180
@@ -195,13 +201,13 @@ water/RHF/STO-3G/-74.965901192180
 }
 \end{filecontents*}
 
-\usepackage[colorlinks=true,linkcolor=blue]{hyperref} % hyperlink package should be on top
-\hypersetup{
-    pdfauthor={Tom\'a\v s J\'ira},
-    pdftitle={Algorithms of Quantum Chemistry},
+\usepackage[colorlinks=true,linkcolor=blue,pdfa]{hyperref} % hyperlink package should be on top
+\makeatletter\hypersetup{
+    pdfauthor={\@author},
+    pdftitle={\@title},
     pdfsubject={Quantum Chemistry},
     pdfkeywords={quantum,chemistry,algorithm}
-}
+}\makeatother
 
 \usepackage{amsmath} % all the math environments and symbols
 \usepackage[toc,page]{appendix} % appendices
@@ -228,11 +234,12 @@ water/RHF/STO-3G/-74.965901192180
     identifierstyle=\color[rgb]{0.00,0.00,1.00},
     keywordstyle=\color[rgb]{1.00,0.50,0.00},
     numberstyle=\tiny\color[rgb]{0.50,0.50,0.50},
+    rulecolor=\color[rgb]{0.00,0.00,0.00},
     stringstyle=\color[rgb]{0.50,0.00,0.50},
     basicstyle=\ttfamily\footnotesize,
     breaklines=true,
-    numbers=left,
-    numbersep=5pt,
+    numbers=none,
+    frame=single,
     showstringspaces=false,
     captionpos=b,
     tabsize=2
@@ -251,9 +258,6 @@ water/RHF/STO-3G/-74.965901192180
 	fonttitle=\bfseries,
 	title=Example~\thetcbcounter: #2,#1
 }
-
-\title{Algorithms of Quantum Chemistry}
-\author{Tom\'a\v s J\'ira}
 EOL
 
 # add the acronym definitions
@@ -265,17 +269,17 @@ done && echo "" >> docs/tex/main.tex
 cat >> docs/tex/main.tex << EOL
 \begin{document}
 
-\begin{titlepage}
+\makeatletter\begin{titlepage}
     \center
     \textsc{\LARGE University of Chemistry and Technology, Prague}\\\\[1.5cm]
     \rule{\linewidth}{0.5mm}\\\\[0.4cm]
-    {\huge\bfseries Algorithms of Quantum Chemistry}\\\\[0.4cm]
+    {\huge\bfseries\@title}\\\\[0.4cm]
     \rule{\linewidth}{0.5mm}\\\\[1.5cm]
-    {\large\textit{Author}}\\\\Tomáš \textsc{Jíra}
+    {\large\textit{Author}}\\\\\@author
     \vfill\vfill\vfill
     {\large\today}
     \vfill
-\end{titlepage}
+\end{titlepage}\makeatother
 
 \tableofcontents
 EOL
@@ -354,6 +358,7 @@ sed -i 's/\\href{\/acorn\/python\/molecule.xyz}{molecule.xyz}/\\textattachfile[c
 sed -i 's/\\href{\/acorn\/python\/H_AO.mat}{H\\_AO.mat}/\\textattachfile[color=0 0 1]{H_AO.mat}{H\\_AO.mat}/g'             docs/tex/main.tex
 sed -i 's/\\href{\/acorn\/python\/S_AO.mat}{S\\_AO.mat}/\\textattachfile[color=0 0 1]{S_AO.mat}{S\\_AO.mat}/g'             docs/tex/main.tex
 sed -i 's/\\href{\/acorn\/python\/J_AO.mat}{J\\_AO.mat}/\\textattachfile[color=0 0 1]{J_AO.mat}{J\\_AO.mat}/g'             docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/resmet.py}{resmet.py}/\\textattachfile[color=0 0 1]{resmet.py}{resmet.py}/g'         docs/tex/main.tex
 
 # loop over all acronyms
 for ACRONYM in "${ACRONYMS[@]}"; do
@@ -375,7 +380,7 @@ done
 sed -i 's/\\section/\\chapter/g ; s/\\subsection/\\section/g ; s/\\subsubsection/\\subsection/g' docs/tex/main.tex
 
 # set the appendix
-sed -i 's/\\chapter{\\texorpdfstring{Code Solutions/\\begin{appendices}\\chapter{\\texorpdfstring{Code Solutions/' docs/tex/main.tex
+sed -i 's/\\chapter{\\texorpdfstring{Code Solutions/\n\\begin{appendices}\\chapter{\\texorpdfstring{Code Solutions/' docs/tex/main.tex
 
 # end the document
 cat >> docs/tex/main.tex << EOL

@@ -1,5 +1,5 @@
 ---
-title: Hartree--Fock Method
+title: Hartree–Fock Method
 parent: Electronic Structure Methods
 layout: default
 nav_order: 1

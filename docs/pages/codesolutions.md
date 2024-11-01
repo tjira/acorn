@@ -8,7 +8,7 @@ nav_order: 1
 
 # Code Solutions<!--\label{sec:code_solutions}-->
 
-This section provides the solutions to all of the coding exercises provided in the text. The solutions are written in Python and use the NumPy library for numerical operations. The code snippets are self-contained and can be run in any Python environment. The solutions are organized by the exercise they correspond to and are presented in the same order as in the text.
+This section provides the solutions to all of the coding exercises provided in the text. The solutions are written in Python and use the NumPy library for numerical operations. The code snippets are self-contained and can be run in any Python environment. The solutions are organized by the exercise they correspond to and are presented in the same order as in the text. For convenience, the full code solution file [resmet.py](/acorn/python/resmet.py) can be saved here.
 
 ## Hartree--Fock Method<!--\label{sec:hf_code_solution}-->
 

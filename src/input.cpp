@@ -78,7 +78,10 @@ nlohmann::json default_input = R"(
         "initial_conditions" : {
             "positions" : [],
             "momenta" : [],
-            "states" : [],
+            "diabatic_state" : -1,
+            "adiabatic_state" : -1,
+            "position_distribution" : [],
+            "momentum_distribution" : [],
             "mass" : 1
         },
         "iterations" : 1000,
