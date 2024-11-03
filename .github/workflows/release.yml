@@ -79,14 +79,11 @@ jobs:
       - name: Build Acorn
         run: cmake --build build --parallel 2 --verbose
 
-      - name: Rename Binaries
-        run: mv bin/acorn bin/acorn_linux-shared_x86-64
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-shared
-          path: bin/acorn_linux-shared_x86-64
+          path: bin/acorn
 
   build-acorn_linux-static_x86-64:
     runs-on: ubuntu-22.04
@@ -107,14 +104,11 @@ jobs:
       - name: Build Acorn
         run: cmake --build build --parallel 2 --verbose
 
-      - name: Rename Binaries
-        run: mv bin/acorn bin/acorn_linux-static_x86-64
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-static
-          path: bin/acorn_linux-static_x86-64
+          path: bin/acorn
 
   release:
     runs-on: ubuntu-latest
@@ -130,15 +124,10 @@ jobs:
         run: rm basis/update.sh example/molecule/generate.sh
 
       - name: Create x86-64 Linux Shared Packages
-        run: cp linux-shared/acorn_linux-shared_x86-64 acorn && tar -czf acorn_linux-shared_x86-64.tar.gz acorn basis example script/plot LICENSE.md
+        run: cp linux-shared/acorn . && tar -czf acorn_linux-shared_x86-64.tar.gz acorn basis example script/plot LICENSE.md
 
       - name: Create x86-64 Linux Static Packages
-        run: cp linux-static/acorn_linux-static_x86-64 acorn && tar -czf acorn_linux-static_x86-64.tar.gz acorn basis example script/plot LICENSE.md
-
-      - name: Copy x86-64 Linux Shared and Static Libraries to the Root Folder
-        run: |
-          mv libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz .
-          mv libs_linux-static/acorn-libs_linux-static_x86-64.tar.gz .
+        run: cp linux-static/acorn . && tar -czf acorn_linux-static_x86-64.tar.gz acorn basis example script/plot LICENSE.md
 
       - name: Release linux-shared_x86-64 Version of Acorn
         uses: svenstaro/upload-release-action@v2
@@ -158,12 +147,12 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn-libs_linux-shared_x86-64.tar.gz
+          file: libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz
           tag: ${{github.ref}}
 
       - name: Release linux-static_x86-64 Version of Acorn Libraries
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn-libs_linux-static_x86-64.tar.gz
+          file: libs_linux-static/acorn-libs_linux-static_x86-64.tar.gz
           tag: ${{github.ref}}
