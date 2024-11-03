@@ -46,7 +46,7 @@ Quantum Acorn, a collection of electronic structure methods compiled into a depe
 
 ## Features
 
-Below are all the important features of Acorn divided into categories. If you are looking for the educational scripts, you can find them in the education folder.
+Below are all the important features of Acorn divided into categories.
 
 ### Quantum Mechanical Methods
 
@@ -56,25 +56,31 @@ Below are all the important features of Acorn divided into categories. If you ar
 
 ## Compilation
 
-Before the compilation process, make sure you have [OpenBLAS](https://github.com/OpenMathLib/OpenBLAS) installed. On debian-based distributions, you can do it with the following command.
+All the libraries the program needs are included in the installation script. To install all the libraries, navigate to the project root directory and execute the following command.
 
 ```bash
-sudo apt install libopenblas-dev
+./script/general/library.sh SHARED 1
 ```
 
-After the OpenBLAS is installed on your system, you need to compile several other dependencies. Fortunately, the Acorn package contains a script to install them all-in-one. You can install all additional dependencies by executing `./script/liball.sh` from the root directory. Now, go grab some coffee, it can take several hours. After the library compilation is finished, the project configuration should finish without errors.
+You can also perform a static compilation. The number at the end is number of cores the compilation process uses. The program needs some heavy libraries so it takes some time. After the library compilation finishes, all the header files and compiled libraries can be found in the *external* directory. If you don't want to wait for the compilation process, you can also download libraries used in the latest release by running the following command.
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+./script/general/libdown.sh SHARED
 ```
 
-And we can build with the following command.
+This command also creates the *external* directory with libraries. After you have obtained the compiled libraries, configure the project by the following command.
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DSTATIC=OFF
+```
+
+And build with the following command.
 
 ```bash
 cmake --build build
 ```
 
-After the compilation the bin folder will be created along with the executables.
+After the compilation, the bin folder will be created along with the executable.
 
 ## Examples
 
