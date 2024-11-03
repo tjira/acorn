@@ -6,8 +6,6 @@
 # assign the arguments
 CORES=$3; MODE=$2; TYPE=${1,,}; [ $MODE == "STATIC" ] && STATIC=1 || STATIC=0; [ $MODE == "SHARED" ] && SHARED=1 || SHARED=0; [ $SHARED -eq 0 ] && [ $STATIC -eq 0 ] && echo "INVALID MODE" && exit 1
 
-echo ${TYPE^}
-
 # set environment paths
 export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"; export Eigen3_DIR="$PWD/external/share/eigen3/cmake"
 
