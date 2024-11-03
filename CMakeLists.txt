@@ -32,8 +32,8 @@ include_directories(include example/diagram)
 find_package(OpenMP REQUIRED)
 
 # find libraries needed for shared and static build
+find_library(LIBOPENBLAS NAMES openblas openblas_d PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBTORCH_CPU NAMES torch_cpu PATHS external/lib NO_DEFAULT_PATH)
-find_library(LIBOPENBLAS NAMES openblas PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBTORCH NAMES torch PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBFFTW NAMES fftw3 PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBNUMA NAMES numa PATHS external/lib NO_DEFAULT_PATH)
