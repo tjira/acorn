@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
   build-libs_linux-static_x86-64:
@@ -22,7 +22,7 @@ jobs:
         run: pip install typing-extensions
 
       - name: Download and Compile Libraries
-        run: ./script/general/library.sh STATIC 2
+        run: ./script/general/library.sh ${{env.BUILD_TYPE}} STATIC 2
 
       - name: Remove Redundant Files
         run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
