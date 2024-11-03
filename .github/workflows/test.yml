@@ -9,10 +9,10 @@ permissions:
   contents: write
 
 env:
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
-  build-libs_linux-static_x86-64:
+  build-libs_linux-shared_x86-64:
     runs-on: ubuntu-22.04
 
     steps:
@@ -22,23 +22,23 @@ jobs:
         run: pip install typing-extensions
 
       - name: Download and Compile Libraries
-        run: ./script/general/library.sh ${{env.BUILD_TYPE}} STATIC 2
+        run: ./script/general/library.sh SHARED 2
 
       - name: Remove Redundant Files
         run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
 
       - name: Package the Libraries
-        run: cd external && tar -czf acorn-libs_linux-static_x86-64.tar.gz * && cd -
+        run: cd external && tar -czf acorn-libs_linux-shared_x86-64.tar.gz * && cd -
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: libs_linux-static
-          path: external/acorn-libs_linux-static_x86-64.tar.gz
+          name: libs_linux-shared
+          path: external/acorn-libs_linux-shared_x86-64.tar.gz
 
-  test_linux-static_x86-64:
+  test_linux-shared_x86-64:
     runs-on: ubuntu-22.04
-    needs: [build-libs_linux-static_x86-64]
+    needs: [build-libs_linux-shared_x86-64]
 
     steps:
       - uses: actions/checkout@v4
@@ -47,10 +47,10 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: Extract the Libraries
-        run: mkdir external && mv libs_linux-static/acorn-libs_linux-static_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-static_x86-64.tar.gz && cd -
+        run: mkdir external && mv libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-shared_x86-64.tar.gz && cd -
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=ON
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
 
       - name: Build Acorn
         run: cmake --build build --parallel 2 --verbose

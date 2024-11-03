@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # check the number of arguments
-[ $# -ne 3 ] && echo "USAGE: $0 BUILD_TYPE COMPILE_MODE CORES" && exit 1
+[ $# -ne 2 ] && echo "USAGE: $0 MODE CORES" && exit 1
 
 # assign the arguments
-CORES=$3; MODE=$2; TYPE=${1,,}; [ $MODE == "STATIC" ] && STATIC=1 || STATIC=0; [ $MODE == "SHARED" ] && SHARED=1 || SHARED=0; [ $SHARED -eq 0 ] && [ $STATIC -eq 0 ] && echo "INVALID MODE" && exit 1
+CORES=$2; MODE=$1; [ $MODE == "STATIC" ] && STATIC=1 || STATIC=0; [ $MODE == "SHARED" ] && SHARED=1 || SHARED=0; [ $SHARED -eq 0 ] && [ $STATIC -eq 0 ] && echo "INVALID MODE" && exit 1
 
 # set environment paths
 export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"; export Eigen3_DIR="$PWD/external/share/eigen3/cmake"
@@ -44,7 +44,7 @@ cd external && for ARCHIVE in *.tar.gz; do tar -xzf $ARCHIVE --warning=no-unknow
 
 # compile eigen
 cd external/eigen-3.4.0 && cmake -B build \
-    -DCMAKE_BUILD_TYPE=${TYPE^} \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$PWD/install" \
     -DEIGEN_BUILD_DOC=OFF \
     -DEIGEN_TEST_NOQT=ON \
@@ -53,14 +53,14 @@ cd external/eigen-3.4.0 && cmake -B build \
 # compile fftw
 cd external/fftw-3.3.10 && cmake -B build \
     -DBUILD_SHARED_LIBS=$SHARED \
-    -DCMAKE_BUILD_TYPE=${TYPE^} \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$PWD/install" \
 && cmake --build build --parallel $CORES && cmake --install build && cp -r install/* .. && cd ../..
 
 # compile libint
 cd external/libint-2.9.0 && cmake -B build \
     -DBUILD_SHARED_LIBS=$SHARED \
-    -DCMAKE_BUILD_TYPE=${TYPE^} \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$PWD/install" \
 && cmake --build build --parallel $CORES && cmake --install build && cp -r install/* .. && cd ../..
 
@@ -74,7 +74,7 @@ cd external/numactl-2.0.18 && ./configure \
 # compile shared openblas
 cd external/OpenBLAS-0.3.28 && cmake -B build \
     -DBUILD_SHARED_LIBS=ON \
-    -DCMAKE_BUILD_TYPE=${TYPE^} \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="-Wno-error=incompatible-pointer-types" \
     -DCMAKE_INSTALL_PREFIX="$PWD/install" \
     -DNOFORTRAN=ON \
@@ -83,7 +83,7 @@ cd external/OpenBLAS-0.3.28 && cmake -B build \
 # compile static openblas
 [ $STATIC == 1 ] && cd external/OpenBLAS-0.3.28 && cmake -B build \
     -DBUILD_SHARED_LIBS=OFF \
-    -DCMAKE_BUILD_TYPE=${TYPE^} \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="-Wno-error=incompatible-pointer-types" \
     -DCMAKE_INSTALL_PREFIX="$PWD/install" \
     -DNOFORTRAN=ON \
@@ -93,7 +93,7 @@ cd external/OpenBLAS-0.3.28 && cmake -B build \
 cd external/pytorch-v2.5.0 && cmake -B build \
     -DBUILD_PYTHON=OFF \
     -DBUILD_SHARED_LIBS=$SHARED \
-    -DCMAKE_BUILD_TYPE=${TYPE^} \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$PWD/install" \
     -DUSE_CUDA=OFF \
     -DUSE_DISTRIBUTED=OFF \
