@@ -8,8 +8,6 @@ CORES=$3; MODE=$2; TYPE=${1,,}; [ $MODE == "STATIC" ] && STATIC=1 || STATIC=0; [
 
 echo ${TYPE^}
 
-exit
-
 # set environment paths
 export CPLUS_INCLUDE_PATH="$PWD/external/include:$CPLUS_INCLUDE_PATH"; export LIBRARY_PATH="$PWD/external/lib:$LIBRARY_PATH"; export Eigen3_DIR="$PWD/external/share/eigen3/cmake"
 
