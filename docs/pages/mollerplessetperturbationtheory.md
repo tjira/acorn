@@ -15,16 +15,16 @@ Møller--Plesset Perturbation Theory is a quantum mechanical method used to impr
 As for the Hartree--Fock method, we start with the Schrödinger equation in the form
 
 \begin{equation}
-\hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi},
+\hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi}
 \end{equation}
 
 where $\hat{\mathbf{H}}$ is the molecular Hamiltonian operator, $\ket{\Psi}$ is the molecular wave function, and $E$ is the total energy of the system. In the Møller--Plesset perturbation theory we write the Hamiltonian operator as
 
 \begin{equation}
-\hat{\mathbf{H}}=\hat{\mathbf{H}}^{(0)}+\lambda\hat{\mathbf{H}}^{'},
+\hat{\mathbf{H}}=\hat{\mathbf{H}}^{(0)}+\lambda\hat{\mathbf{H}}^{'}
 \end{equation}
 
-where $\hat{\mathbf{H}}^{(0)}$ is the Hamiltonian used in the Hartree--Fock method (the electrons are moving in the mean field), $\lambda$ is a parameter between 0 and 1, and $\hat{\mathbf{H}}^{'}$ is the perturbation operator representing the missing electron-electron interactions. We can then expand the wavefunction $\ket{\Psi}$ and total energy $E$ in a power series of $\lambda$ as
+where $\hat{\mathbf{H}}^{(0)}$ is the Hamiltonian used in the Hartree--Fock method (representing electrons moving in the mean field), $\lambda$ is a parameter between 0 and 1, and $\hat{\mathbf{H}}^{'}$ is the perturbation operator representing the missing electron-electron interactions not included in the Hartree--Fock approximation. We then expand the wavefunction $\ket{\Psi}$ and total energy $E$ as a power series in $\lambda$ as
 
 \begin{align}
 \ket{\Psi}&=\ket{\Psi^{(0)}}+\lambda\ket{\Psi^{(1)}}+\lambda^2\ket{\Psi^{(2)}}+\dots \\\\\
@@ -34,23 +34,23 @@ E&=E^{(0)}+\lambda E^{(1)}+\lambda^2 E^{(2)}+\dots
 and ask, how how does the total energy change with the included terms. After some algebra, we can show that the first order correction to the total energy is zero, the second order correction is given by
 
 \begin{equation}
-E_{corr}^{MP2}=\sum\_{s>0}\frac{H\_{0s}^{'}H\_{s0}^{'}}{E\_0-E\_s},
+E_{\mathrm{corr}}^{\mathrm{MP2}}=\sum\_{s>0}\frac{H\_{0s}^{'}H\_{s0}^{'}}{E\_0-E\_s}
 \end{equation}
 
-where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix element of the perturbation operator between the Hartree--Fock determinant and the doubly excited determinant, and $E\_0$ and $E\_s$ are the energies of the reference and doubly excited determinants, respectively.<!--\cite{10.1002/wcms.58,1014569052}--> We could express all higher-order corrections in a similar way, using only the matrix elements of the perturbation operator and the energies of the determinants. For practical calculations, we apply Slater-Condon rules to evaluate the matrix elements and use the orbital energies obtained from the Hartree--Fock calculation. The expressions for calculation are summarised below.
+where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix element of the perturbation operator between the Hartree--Fock determinant and the doubly excited determinant, and $E\_0$ and $E\_s$ are the energies of the reference and doubly excited determinants, respectively.<!--\cite{10.1002/wcms.58,1014569052}--> We could express all higher-order corrections in a similar way, using only the matrix elements of the perturbation operator and the energies of the determinants. For practical calculations, we apply Slater-Condon rules to evaluate the matrix elements and use the orbital energies obtained from the Hartree-Fock calculation. The expressions for calculation are summarised below.
 
 ## Implementation of 2nd and 3rd Order Corrections
 
-Having the antisymmetrized Coulomb integrals in the MS basis and physicists' notation defined [here](hartreefockmethod.html#integral-transforms-to-the-basis-of-molecular-spinorbitals), we can now proceed with the calculation of the correlation energy. We wil use the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals, while the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The 2nd order and 3rd
+Having the antisymmetrized two-electron integrals in the Molecular Spinorbital basis and physicists' notation defined [here](hartreefockmethod.html#integral-transforms-to-the-basis-of-molecular-spinorbitals), we can now proceed with the calculation of the correlation energy. The 2nd order correlation energy can be expressed as
 
 \begin{equation}
-E_{corr}^{MP2}=\frac{1}{4}\sum\_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon\_{ij}^{ab}}
+E_{\mathrm{corr}}^{\mathrm{MP2}}=\frac{1}{4}\sum\_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon\_{ij}^{ab}}
 \end{equation}
 
-The 3rd order correlation energy:
+and the 3rd order correlation energy as
 
 \begin{align}
-E_{corr}^{MP3}=&\frac{1}{8}\sum\_{ijab}\frac{\braket{ab||ij}\braket{cd||ab}\braket{ij||cd}}{\varepsilon\_{ij}^{ab}\varepsilon\_{ij}^{cd}}+\nonumber \\\\\
+E_{\mathrm{corr}}^{\mathrm{MP3}}=&\frac{1}{8}\sum\_{ijab}\frac{\braket{ab||ij}\braket{cd||ab}\braket{ij||cd}}{\varepsilon\_{ij}^{ab}\varepsilon\_{ij}^{cd}}+\nonumber \\\\\
 &+\frac{1}{8}\sum_{ijab}\frac{\braket{ab||ij}\braket{ij||kl}\braket{kl||ab}}{\varepsilon\_{ij}^{ab}\varepsilon\_{kl}^{ab}}+\nonumber \\\\\
 &+\sum_{ijab}\frac{\braket{ab||ij}\braket{cj||kb}\braket{ik||ac}}{\varepsilon\_{ij}^{ab}\varepsilon\_{ik}^{ac}}
 \end{align}
@@ -59,11 +59,9 @@ To calculate the 4th order correction, we would need to write 39 terms, which is
 
 ## 2nd and 3rd Order Corrections Code Exercise
 
-In a similar fashion to the Hartree--Fock method, we can implement the Møller--Plesset perturbation theory in Python. The code below proposes a self-contained exercise to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. You should append the code after your Hartree--Fock implementation, since the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order methods are built on top of the Hartree--Fock method [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise).
+Similar to the Hartree--Fock method, Møller--Plesset perturbation theory can also be implemented in Python. The code exercise below provides a self-contained guide to calculating the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. This exercise is designed to be appended to your existing Hartree--Fock implementation, as the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order methods build on the results of the Hartree--Fock procedure. You can access the foundational Hartree--Fock method and integral transformation coding exercise [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise). The exercise is provided in the Listing <!--\ref{code:mp_exercise}--> below
 
-In this exercise, you are expected to calculate the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. The exercise is provided in the Listing <!--\ref{code:mp_exercise}--> below.
-
-<!--{id=code:mp_exercise caption="Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order exercise code."}-->
+<!--{id=code:mp_exercise caption="Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order exercise code. The placeholders for the energies are initialized to zero. If you transformed all the necessary integrals in the previous exercise, you should be able to fill the placeholders with correct expressions."}-->
 ```python
 """
 Since we have everything we need for the MP calculations, we can now calculate the MP2 correlation energy. The result should be stored in the "E_MP2" variable.

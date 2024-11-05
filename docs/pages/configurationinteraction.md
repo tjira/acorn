@@ -12,16 +12,16 @@ Configuration Interaction is a post-Hartree--Fock, utilizing a linear variationa
 
 ## Theoretical Background of General Configuration Interaction
 
-The idea is quite simple, using the convention, that the indices $i$, $j$, $k$, and $l$ run over occupied spinorbitals and the indices $a$, $b$, $c$, and $d$ run over virtual spinorbitals. The Configuration Interaction wavefunction is written as
+In Configuration Interaction theory, we expand the wavefunction $\ket{\Psi}$ in terms of the Hartree--Fock reference determinant and its excited configurations as
 
 \begin{equation}
 \ket{\Psi}=c\_0\ket{\Psi\_0}+\left(\frac{1}{1!}\right)^2c\_i^a\ket{\Psi\_i^a}+\left(\frac{1}{2!}\right)^2c\_{ij}^{ab}\ket{\Psi\_{ij}^{ab}}+\left(\frac{1}{3!}\right)^2c\_{ijk}^{abc}\ket{\Psi\_{ijk}^{abc}}+\dots
 \end{equation}
 
-and we would like to know the coefficients $c$ that minimize the energy. To do that, we simply construct the hamiltonian matrix in the basis of excited determinants and diagonalize it. The Configuration Interaction Hamiltonian matrix $\mathbf{H}^{CI}$ is constructed as
+where we seek the coefficients $\mathbf{c}$ that minimize the energy. To determine these coefficients, we construct and diagonalize the Hamiltonian matrix in the basis of these excited determinants. The Configuration Interaction Hamiltonian matrix $\mathbf{H}^{\mathrm{CI}}$ is represented as
 
 \begin{equation}\label{eq:ci-hamiltonian}
-\mathbf{H}^{CI}=
+\mathbf{H}^{\mathrm{CI}}=
 \begin{bmatrix}
 \braket{\Psi\_0|\hat{H}|\Psi\_0} & \braket{\Psi\_0|\hat{H}|\Psi\_i^a} & \braket{\Psi\_0|\hat{H}|\Psi\_{ij}^{ab}} & \dots \\\\\
 \braket{\Psi\_i^a|\hat{H}|\Psi\_0} & \braket{\Psi\_i^a|\hat{H}|\Psi\_i^a} & \braket{\Psi\_i^a|\hat{H}|\Psi\_{ij}^{ab}} & \dots \\\\\
@@ -30,47 +30,45 @@ and we would like to know the coefficients $c$ that minimize the energy. To do t
 \end{bmatrix}
 \end{equation}
 
-and solving the eigenvalue problem
+After the Hamiltonian matrix is constructed, we solve the eigenvalue problem
 
 \begin{equation}\label{eq:ci-eigenvalue-problem}
-\mathbf{H}^{CI}\mathbf{C}^{CI}=\mathbf{C}^{CI}\mathbf{\varepsilon}^{CI}
+\mathbf{H}^{\mathrm{CI}}\mathbf{C}^{\mathrm{CI}}=\mathbf{C}^{\mathrm{CI}}\mathbf{\varepsilon}^{\mathrm{CI}}
 \end{equation}
 
-where $\mathbf{C}^{CI}$ is a matrix of coefficients and $\mathbf{\varepsilon}^{CI}$ is a diagonal matrix of eigenvalues. The lowest eigenvalue corresponds to the ground state energy, while the eigenvector corresponding to the lowest eigenvalue gives the coefficients that minimize the energy. The matrix elements of the Configuration Interaction Hamiltonian are calculated using the Slater-Condon rules in the form
+where $\mathbf{C}^{\mathrm{CI}}$ is a matrix of coefficients and $\mathbf{\varepsilon}^{\mathrm{CI}}$ is a diagonal matrix of eigenvalues. The lowest eigenvalue gives the ground-state energy, and the corresponding eigenvector provides the coefficients that minimize the energy. The elements of the Configuration Interaction Hamiltonian matrix are computed using the Slater--Condon rules, summarized in one function as
 
 \begin{equation}\label{eq:slater-condon-rules}
-\mathbf{H}_{ij}^{CI}=
+\mathbf{H}_{ij}^{\mathrm{CI}}=
 \begin{cases} 
-\displaystyle \sum_kH\_{kk}^{core,MS}+\frac{1}{2}\sum_k\sum_l\braket{kl||kl}&D_i=D_j \\\\\
-\displaystyle H\_{pr}^{core,MS}+\sum_k\braket{pk||lk}&D_i=\left\lbrace\dotsi p\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi\right\rbrace \\\\\
+\displaystyle \sum_kH\_{kk}^{\mathrm{core},\mathrm{MS}}+\frac{1}{2}\sum_k\sum_l\braket{kl||kl}&D_i=D_j \\\\\
+\displaystyle H\_{pr}^{\mathrm{core},\mathrm{MS}}+\sum_k\braket{pk||lk}&D_i=\left\lbrace\dotsi p\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi\right\rbrace \\\\\
 \displaystyle \vphantom{\sum_k}\braket{pq||rs}&D_i=\left\lbrace\dotsi p\dotsi q\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi s\dotsi\right\rbrace \\\\\
-\displaystyle \vphantom{\sum_k}0&\text{otherwise},
+\displaystyle \vphantom{\sum_k}0&\text{otherwise}
 \end{cases}
 \end{equation}
 
-where $D\_i$ and $D\_j$ are Slater determinants, $\mathbf{H}^{core,MS}$ is the core Hamiltonian in the basis of molecular spinorbitals, and $\braket{pk\|\|lk}$ are the antisymmetrized Coulomb repulsion integrals in the basis of molecular spinorbitals and physicists' notation. The sums extend over all spinorbitals common between the two determinants. All the integrals in the MS basis are already explained [here](hartreefockmethod.html#integral-transforms-to-the-basis-of-molecular-spinorbitals). Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
+where $D\_i$ and $D\_j$ are Slater determinants, $\mathbf{H}^{\mathrm{core},\mathrm{MS}}$ is the core Hamiltonian in the Molecular Spinorbital basis, and $\braket{pk\|\|lk}$ are the antisymmetrized two-electron integrals in Molecular Spinorbital basis and physicists' notation. The sums extend over all spinorbitals common between the two determinants. These integrals were previously transformed [here](hartreefockmethod.html#integral-transforms-to-the-basis-of-molecular-spinorbitals). Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
 
-The problem with Configuration Interaction is that it is not size-extensive, meaning that the energy does not scale linearly with the number of electrons. This is because the Configuration Interaction wavefunction is not size-consistent, and the energy of a system is not the sum of the energies of its parts. This is a significant drawback of Configuration Interaction, as it limits its application to small systems.
+An important caveat in Configuration Interaction theory is its lack of size-extensivity, which implies that the energy does not scale linearly with the number of electrons. This drawback stems from the fact that the Configuration Interaction wavefunction is not size-consistent, meaning the energy of a combined system is not simply the sum of the energies of its isolated parts. This limitation restricts the application of Configuration Interaction mainly to small molecular systems.
 
 ## Full Configuration Interaction Implementation
 
-Let's consider the Full Configuration Interaction method, which considers all possible electronic configurations within a given basis set. The Full Configuration Interaction method provides the most accurate description of the electronic structure, but its computational cost grows exponentially with the number of electrons and basis functions, making it infeasible for large systems.
+In Full Configuration Interaction, we aim to account for all possible electronic configurations within a chosen basis set, offering the most accurate wavefunction representation for the given basis. Although this method yields highly precise electronic structure information, it is computationally intensive. Its cost scales exponentially with both the number of electrons and basis functions, limiting its feasibility to smaller systems.
 
-The only thing that is needed, besides the general Configuration Interaction equations, are the determinants. For simplicity, we will include singlet and triplet states. The number of these determinants $N\_D$ can be for Full Configuration Interaction calculated using the binomial coefficients
+The Full Configuration Interaction process involves constructing all possible Slater determinants for a system. For simplicity, we’ll assume that we want to include both singlet and triplet states in our determinant space. The total number of these determinants $N\_D$ can be calculated using binomial coefficients
 
 \begin{equation}
 N\_D=\binom{n}{k}
 \end{equation}
 
-assuming $k$ is the total number of electrons, and $n$ is the total number of spinorbitals. Each determinant is formed by permuting the electrons between spinorbitals. For practical representation, it's useful to describe determinants as arrays of numbers, where each number corresponds to the index of an occupied orbitals. For example, the ground state determinant for a system with 6 electrons and 10 spinorbitals can be represented as $\left\lbrace 0,1,2,3,4,5\right\rbrace$, whereas the determinant $\left\lbrace 0,1,2,3,4,6\right\rbrace$ represents an excited state with one electron excited from orbital 5 to orbital 6. Using the determinants, the Configuration Interaction Hamiltonian matrix \eqref{eq:ci-hamiltonian} can be constructed, and the eigenvalue problem \eqref{eq:ci-eigenvalue-problem} can be solved to obtain the ground and excited state energies.
+where $k$ is the total number of electrons, and $n$ is the total number of spinorbitals. For practical representation, it's useful to describe determinants as arrays of numbers, where each number corresponds to the index of an occupied orbitals. For example, the ground state determinant for a system with 6 electrons can be represented as $\left\lbrace 0,1,2,3,4,5\right\rbrace$, whereas the determinant $\left\lbrace 0,1,2,3,4,6\right\rbrace$ represents an excited state with one electron excited from orbital 5 to orbital 6. Using the determinants, the Configuration Interaction Hamiltonian matrix \eqref{eq:ci-hamiltonian} can be constructed, and the eigenvalue problem \eqref{eq:ci-eigenvalue-problem} can be solved to obtain the ground and excited state energies.
 
 ## Full Configuration Interaction Code Exercise
 
-This section provides a simple example of a Full Configuration Interaction implementation. The code snippets are, as the previous coding examples, written in Python and use the NumPy library for numerical operations. The example demonstrates the generation of determinants, the construction of the Configuration Interaction Hamiltonian matrix, and the solution of the eigenvalue problem to obtain the ground state energy. The code is designed for educational purposes and may require modifications for practical applications, such as the inclusion of truncation schemes for larger systems. You are expected to have the Hartree--Fock exercise [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise) completed before proceeding with the Configuration Interaction implementation, as the Configuration Interaction method builds on the Hartree--Fock method.
+The Full Configuration Interaction example builds on the Hartree--Fock method and demonstrates how to implement a Full Configuration Interaction calculation in Python using NumPy. This exercise focuses on generating determinants, constructing the Configuration Interaction Hamiltonian matrix using Slater--Condon rules, and solving the eigenvalue problem to obtain the ground state energy. The code is designed for educational purposes and is based on prior Hartree--Fock results that can be done [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise). The exercise is provided in the Listing <!--\ref{code:ci_exercise}--> below.
 
-In this exercise, you are expected to calculate the Full Configuration Interaction energy for a simple system. The exercise is provided in the Listing <!--\ref{code:ci_exercise}--> below.
-
-<!--{id=code:ci_exercise caption="Configuration Interaction exercise code."}-->
+<!--{id=code:ci_exercise caption="Configuration Interaction exercise code. Here, student is expected to calculate the Configuration Interaction ground state energy. The task here is to fill the  Configuration Interaction Hamiltonian using the Slater--Condon rules and diagonalize it."}-->
 ```python
 """
 Since we already calculated the necessary integrals in the MS basis, we can proceed. The next step involves generating determinants. We will store these in a simple list, with each determinant represented by an array of numbers, where each number corresponds to an occupied spinorbital. Since we are programming for Full Configuration Interaction (FCI), we aim to generate all possible determinants. However, should we decide to implement methods like CIS, CID, or CISD, we could easily limit the number of excitations. It is important to remember that for all CI methods, the rest of the code remains unchanged. The only difference lies in the determinants used. Don't overcomplicate this. Generating all possible determinants can be efficiently achieved using a simple list comprehension. I recommend employing the combinations function from the itertools package to facilitate this task.

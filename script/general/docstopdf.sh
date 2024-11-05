@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PAGES=("hartreefockmethod" "mollerplessetperturbationtheory" "configurationinteraction" "coupledcluster" "codesolutions")
+PAGES=("electronicstructuremethods" "hartreefockmethod" "mollerplessetperturbationtheory" "configurationinteraction" "coupledcluster" "codesolutions")
 
 ACRONYMS=(
     "Restricted Hartree--Fock/RHF"
@@ -16,8 +16,9 @@ ACRONYMS=(
     "Coupled Cluster Singles and Doubles/CCSD"
     "Coupled Cluster Doubles/CCD"
     "Coupled Cluster/CC"
-    "Self-Consistent Field/SCF"
+    "Direct Inversion in the Iterative Subspace/DIIS"
     "Molecular Spinorbital/MS"
+    "Self-Consistent Field/SCF"
 )
 
 # copy the edu scripts
@@ -27,7 +28,7 @@ cp -r education/python docs/
 mkdir -p docs/tex && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
 
-\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\pdfminorversion=7\title{Algorithms of Quantum Chemistry}\author{Tom\'a\v s \textsc{J\'ira}}
+\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\pdfminorversion=7\title{Algorithms of Quantum Chemistry}\author{Tomáš \textsc{Jíra}, Jiří \textsc{Janoš}, Petr \textsc{Slavíček}}
 EOL
 
 # add the contents of the educational scripts
@@ -214,7 +215,7 @@ water/RHF/STO-3G/-74.965901192180
 \usepackage{attachfile} % embedding files in PDF
 \usepackage{braket} % braket notation
 \usepackage{bm} % bold math symbols
-\usepackage[labelfont=bf]{caption} % bold captions
+\usepackage[format=plain,labelfont=bf]{caption} % bold captions
 \usepackage[left=1.5cm,top=2cm,right=1.5cm,bottom=2cm]{geometry} % page layout
 \usepackage{lmodern} % Latin Modern font
 \usepackage{mathrsfs} % mathscr environment
@@ -333,7 +334,7 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
 
     # replace some MD quirks with LaTeX quirks
     awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```py/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" | \
-    sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.note}/d ; /^>/d ; s/^```py{/```python{/' \
+    sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.*}/d ; /^>/d ; s/^```py{/```python{/' \
     > temp.md
 
     # convert MD to LaTeX
@@ -342,6 +343,9 @@ done && echo "" >> docs/tex/main.tex
 
 # replace some conversion artifacts
 sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/ ; s/\\\///g ; s/\\passthrough/\\texttt/g ; s/\\mathbf{\\varepsilon}/\\bm{\\varepsilon}/g' docs/tex/main.tex
+
+# replace names of some sections
+sed -i 's/\\section{Electronic Structure Methods}/\\part{Electronic Structure Methods}/g'  docs/tex/main.tex
 
 # replace section references
 sed -i 's/\\href{hartreefockmethod.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g'  docs/tex/main.tex
@@ -354,11 +358,11 @@ sed -i 's/\\href{codesolutions.html\\#full-configuration-interaction}{here}/in S
 sed -i 's/\\href{codesolutions.html\\#coupled-cluster-singles-and-doubles}{here}/in Section \\ref{sec:cc_code_solution}/g'                               docs/tex/main.tex
 
 # replace file attachments
-sed -i 's/\\href{\/acorn\/python\/molecule.xyz}{molecule.xyz}/\\textattachfile[color=0 0 1]{molecule.xyz}{molecule.xyz}/g' docs/tex/main.tex
-sed -i 's/\\href{\/acorn\/python\/H_AO.mat}{H\\_AO.mat}/\\textattachfile[color=0 0 1]{H_AO.mat}{H\\_AO.mat}/g'             docs/tex/main.tex
-sed -i 's/\\href{\/acorn\/python\/S_AO.mat}{S\\_AO.mat}/\\textattachfile[color=0 0 1]{S_AO.mat}{S\\_AO.mat}/g'             docs/tex/main.tex
-sed -i 's/\\href{\/acorn\/python\/J_AO.mat}{J\\_AO.mat}/\\textattachfile[color=0 0 1]{J_AO.mat}{J\\_AO.mat}/g'             docs/tex/main.tex
-sed -i 's/\\href{\/acorn\/python\/resmet.py}{resmet.py}/\\textattachfile[color=0 0 1]{resmet.py}{resmet.py}/g'         docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/molecule.xyz}/\\textattachfile[color=0 0 1]{molecule.xyz}/g' docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/H_AO.mat}/\\textattachfile[color=0 0 1]{H_AO.mat}/g'         docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/S_AO.mat}/\\textattachfile[color=0 0 1]{S_AO.mat}/g'         docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/J_AO.mat}/\\textattachfile[color=0 0 1]{J_AO.mat}/g'         docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/resmet.py}/\\textattachfile[color=0 0 1]{resmet.py}/g'       docs/tex/main.tex
 
 # loop over all acronyms
 for ACRONYM in "${ACRONYMS[@]}"; do
