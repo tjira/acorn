@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install System Packages
+        run: sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
+
       - name: Install Python Packages
         run: pip install typing-extensions
 
