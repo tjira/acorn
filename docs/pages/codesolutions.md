@@ -141,6 +141,9 @@ for i in range(0, Hci.shape[0]):
 
 # solve the eigensystem and assign energy
 eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
+
+# print the results
+print("    FCI ENERGY: {:.8f}".format(E_HF + E_FCI + VNN))
 ```
 
 ## Coupled Cluster Singles and Doubles<!--\label{sec:cc_code_solution}-->

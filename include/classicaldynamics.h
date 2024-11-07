@@ -21,7 +21,7 @@ public:
     std::vector<std::vector<Expression>> get_potential_expression(int dims) const;
     void print_iteration(int trajectory, int iteration, const std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXi>& trajectory_data, double mass) const;
     void run(const Input::Wavefunction& initial_diabatic_wavefunction_input) const;
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> sample_initial_conditions(const Eigen::VectorXd& initial_position, const Eigen::VectorXd& initial_momentum, std::mt19937& mt, double mass) const;
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> sample_initial_conditions(const Input::ClassicalDynamics::InitialConditions& ic, const Eigen::VectorXd& initial_position, const Eigen::VectorXd& initial_momentum, std::mt19937& mt, double mass) const;
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXd> read_initial_conditions(const Input::ClassicalDynamics::InitialConditions& ic) const;
 
 private:

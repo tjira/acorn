@@ -106,32 +106,25 @@ std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXd> ClassicalDynamics:
     Eigen::MatrixXd initial_positions(input.trajectories, dims), initial_momenta(input.trajectories, dims); Eigen::VectorXd initial_diabatic_states(input.trajectories);
 
     // fill the initial conditions from the input
-    for (int i = 0; i < input.trajectories && !ic.positions.empty(); i++) for (size_t j = 0; j < dims; j++) initial_positions(i, j)    = ic.positions.at(i).at(j);
-    for (int i = 0; i < input.trajectories && !ic.positions.empty(); i++) for (size_t j = 0; j < dims; j++) initial_momenta(i, j)      =   ic.momenta.at(i).at(j);
+    for (int i = 0; i < input.trajectories && !ic.positions.empty(); i++) for (int j = 0; j < dims; j++) initial_positions(i, j)    = ic.positions.at(i).at(j);
+    for (int i = 0; i < input.trajectories && !ic.positions.empty(); i++) for (int j = 0; j < dims; j++) initial_momenta(i, j)      =   ic.momenta.at(i).at(j);
 
     // fill the initial states
     std::fill(initial_diabatic_states.begin(), initial_diabatic_states.end(), ic.diabatic_state - 1);
-
-    // fill the initial conditions from the distributions
-    for (int i = 0; i < input.trajectories && ic.positions.empty(); i++) for (int j = 0; j < dims; j++) {
-
-        // define the normal distributions
-        std::normal_distribution<double> position_dist(ic.position_distribution.at(j).at(0), ic.position_distribution.at(j).at(1));
-        std::normal_distribution<double> momentum_dist(ic.momentum_distribution.at(j).at(0), ic.momentum_distribution.at(j).at(1));
-
-        // sample the initial conditions
-        initial_positions(i, j) = position_dist(mt), initial_momenta(i, j) = momentum_dist(mt);
-    }
 
     // return the initial conditions
     return {initial_positions, initial_momenta, initial_diabatic_states};
 }
 
 void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunction_input) const {
+    // check if the initial conditions are provided
     bool initial_conditions = (!input.initial_conditions.positions.empty() && !input.initial_conditions.momenta.empty()) || (!input.initial_conditions.position_distribution.empty() && !input.initial_conditions.momentum_distribution.empty());
 
+    // throw an error if the specified initial state is adiabatic and diabatic dynamics is requested
+    if (initial_conditions && !input.adiabatic && input.initial_conditions.adiabatic_state != -1) throw std::runtime_error("THE INITIAL ADIABATIC STATE CANNOT BE SPECIFIED IN DIABATIC DYNAMICS");
+
     // define the initial diabatic wavefunction, grids and initial confition variables
-    Wavefunction initial_diabatic_wavefunction; Eigen::MatrixXd grid, fourier_grid; Eigen::VectorXd initial_position, initial_momentum; int initial_diabatic_state;
+    Eigen::VectorXd initial_position, initial_momentum; int initial_diabatic_state = input.initial_conditions.diabatic_state - 1; double mass = input.initial_conditions.mass;
 
     // define the initial position, momentum and diabatic state for all trajectories
     Eigen::MatrixXd initial_positions, initial_momenta; Eigen::VectorXd initial_diabatic_states;
@@ -140,26 +133,23 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     if (!initial_conditions) {
 
         // initialize the initial wavefunction and fourier grid
-        std::tie(initial_diabatic_wavefunction, grid) = Wavefunction::Initialize(initial_diabatic_wavefunction_input); Eigen::MatrixXd fourier_grid = initial_diabatic_wavefunction.get_fourier_grid();
+        auto [initial_diabatic_wavefunction, grid] = Wavefunction::Initialize(initial_diabatic_wavefunction_input); Eigen::MatrixXd fourier_grid = initial_diabatic_wavefunction.get_fourier_grid();
 
         // extract the initial position and momentum
         initial_position = initial_diabatic_wavefunction.position(grid), initial_momentum = initial_diabatic_wavefunction.momentum(fourier_grid);
 
         // extract the initial diabatic state and the fourier grid
-        initial_diabatic_wavefunction.get_density().diagonal().maxCoeff(&initial_diabatic_state);
+        initial_diabatic_wavefunction.get_density().diagonal().maxCoeff(&initial_diabatic_state), mass = initial_diabatic_wavefunction.get_mass();
     }
 
     // if IC provided
-    if (initial_conditions) std::tie(initial_positions, initial_momenta, initial_diabatic_states) = read_initial_conditions(input.initial_conditions);
+    if (initial_conditions && !input.initial_conditions.positions.empty()) std::tie(initial_positions, initial_momenta, initial_diabatic_states) = read_initial_conditions(input.initial_conditions);
 
     // extract the number of dimensions
-    int dims = initial_conditions ? initial_positions.cols() : initial_position.rows();
+    int dims = initial_conditions ? (input.initial_conditions.positions.empty() ? input.initial_conditions.position_distribution.size() : initial_positions.cols()) : initial_position.rows();
 
-    // define the potential expressions
-    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(dims);
-
-    // define the trajectory data vector and mass
-    std::vector<TrajectoryData> trajectory_data_vector(input.trajectories); double mass = initial_conditions ? input.initial_conditions.mass : initial_diabatic_wavefunction.get_mass();
+    // define the potential expressions and trajectory data vector
+    std::vector<std::vector<Expression>> potential_expressions = get_potential_expression(dims); std::vector<TrajectoryData> trajectory_data_vector(input.trajectories);
 
     // print the header with fixed length
     std::printf("CLASSICAL DYNAMICS\n%8s %8s %20s %20s %20s %5s", "TRAJ", "ITER", "EPOT", "EKIN", "ETOT", "STATE");
@@ -171,14 +161,20 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     #pragma omp parallel for num_threads(nthread) shared(trajectory_data_vector, potential_expressions)
     for (int i = 0; i < input.trajectories; i++) {
 
-        // set the initial position, momentum and diabatic state
-        if (initial_conditions) initial_position = initial_positions.row(i), initial_momentum = initial_momenta.row(i), initial_diabatic_state = initial_diabatic_states(i);
+        // define the trajectory seed and initial adiabatic seed
+        int seed = input.trajectories * (input.seed + i) + 1, initial_adiabatic_state = input.initial_conditions.adiabatic_state - 1;
 
-        // define the diagonalizer for the initial potential and the initial adiabatic state
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> initial_potential_solver(evaluate_potential(potential_expressions, initial_position)); int initial_adiabatic_state; 
+        // define the mersenne twister for the trajectory and obtain initial conditions
+        std::mt19937 mt(seed); auto [position, velocity, acceleration] = sample_initial_conditions(input.initial_conditions, initial_position, initial_momentum, mt, mass);
+
+        // assign the fixed initial conditions if they were provided
+        if (initial_positions.size() > 0) position.row(0) = initial_positions.row(i), velocity.row(0) = initial_momenta.row(i) / mass;
+
+        // define the diagonalizer for the initial potential
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> initial_potential_solver(evaluate_potential(potential_expressions, position.row(0)));
 
         // if the adiabatic state is not specified, find the one with the highest population
-        if (!initial_conditions || (initial_conditions && input.initial_conditions.adiabatic_state == -1)) {
+        if (!initial_conditions || (initial_conditions && input.initial_conditions.adiabatic_state < 0)) {
 
             // form the initial diabatic density matrix
             Eigen::MatrixXd initial_diabatic_density = Eigen::MatrixXd::Zero(input.potential.size(), input.potential.size()); initial_diabatic_density(initial_diabatic_state, initial_diabatic_state) = 1;
@@ -187,26 +183,14 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             (initial_potential_solver.eigenvectors() * initial_diabatic_density * initial_potential_solver.eigenvectors().transpose()).diagonal().maxCoeff(&initial_adiabatic_state);
         }
 
-        // throw an error if the specified state is adiabatic and diabatic dynamics is requested
-        if (initial_conditions && !input.adiabatic  && input.initial_conditions.adiabatic_state != -1) throw std::runtime_error("THE INITIAL ADIABATIC STATE CANNOT BE SPECIFIED IN DIABATIC DYNAMICS");
+        // define the state vector with initial condition
+        Eigen::VectorXi state(input.iterations + 1); state(0) = input.adiabatic ? initial_adiabatic_state : initial_diabatic_state;
 
-        // if the adiabatic state is specified, set the initial adiabatic state to the specified one
-        if (initial_conditions && input.initial_conditions.adiabatic_state != -1) initial_adiabatic_state = input.initial_conditions.adiabatic_state - 1;
-
-        // define the state vector with initial condition and seed
-        Eigen::VectorXi state(input.iterations + 1); state(0) = input.adiabatic ? initial_adiabatic_state : initial_diabatic_state; int seed = input.trajectories * (input.seed + i) + 1;
-
-        // define the mersenne twister for the trajectory and obtain initial conditions
-        std::mt19937 mt(seed); auto [position, velocity, acceleration] = sample_initial_conditions(initial_position, initial_momentum, mt, mass);
-
-        // assign the fixed initial conditions if the wavefunction is not initialized
-        if (initial_conditions) position.row(0) = initial_positions.row(i), velocity.row(0) = initial_momenta.row(i) / mass;
-
-        // define and initialize the population vector
-        std::vector<Eigen::VectorXcd> population(input.iterations + 1, Eigen::VectorXd(input.potential.size())); population.at(0).setZero(); population.at(0)(state(0)) = 1;
-
-        // define and initialie the surface hopping algorithms
+        // define and initialize the surface hopping algorithms
         FewestSwitches fewestswitches(input.surface_hopping, input.adiabatic, seed); LandauZener landauzener(input.surface_hopping, input.adiabatic, seed);
+
+        // define the current fssh population vector
+        Eigen::VectorXcd fssh_population = Eigen::VectorXcd::Zero(input.potential.size()); fssh_population(state(0)) = 1;
 
         // define the vector of hopping geometries and times
         std::vector<Eigen::VectorXd> hopping_geometry_vector; std::vector<double> hopping_time_vector;
@@ -218,7 +202,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
         for (int j = 0; j < input.iterations + 1; j++) {
 
             // evaluate the force
-            Eigen::VectorXd force(grid.cols()); if (j) force = -evaluate_potential_derivative(potential_expressions, position.row(j - 1), state(j - 1));
+            Eigen::VectorXd force(position.cols()); if (j) force = -evaluate_potential_derivative(potential_expressions, position.row(j - 1), state(j - 1));
 
             // calculate the velocity and accceleration
             if (j) {acceleration.row(j) = force / mass; velocity.row(j) = velocity.row(j - 1) + 0.5 * (acceleration.row(j - 1) + acceleration.row(j)) * input.time_step;}
@@ -243,7 +227,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             if (input.surface_hopping.type == "landau-zener" && j > 1) {
                 new_state = landauzener.jump(input.adiabatic ? adiabatic_potential_vector : diabatic_potential_vector, j, state(j), input.time_step);
             } else if (input.surface_hopping.type == "fewest-switches" && j) {
-                std::tie(population.at(j), new_state) = fewestswitches.jump(population.at(j - 1), phi_vector, adiabatic_potential_vector, j, state(j), input.time_step);
+                std::tie(fssh_population, new_state) = fewestswitches.jump(fssh_population, phi_vector, adiabatic_potential_vector, j, state(j), input.time_step);
             }
 
             // update the velocity and the state
@@ -252,7 +236,8 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             }
 
             // append the hopping geometry and time
-            if (j && state(j) != state(j - 1)) hopping_geometry_vector.push_back(position.row(j)), hopping_time_vector.push_back(j * input.time_step);
+            if (j && state(j) != state(j - 1) && input.data_export.hopping_geometry) hopping_geometry_vector.push_back(position.row(j));
+            if (j && state(j) != state(j - 1) && input.data_export.hopping_time    ) hopping_time_vector.push_back(j * input.time_step);
             
             // print the iteration info
             if ((j % input.log_interval_step == 0 || (j && state(j) != state(j - 1))) && (i ? i + 1 : i) % input.log_interval_traj == 0) {
@@ -283,13 +268,18 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
     std::printf("%s\n", Timer::Format(Timer::Elapsed(export_timer)).c_str());
 }
 
-std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> ClassicalDynamics::sample_initial_conditions(const Eigen::VectorXd& initial_position, const Eigen::VectorXd& initial_momentum, std::mt19937& mt, double mass) const {
+std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> ClassicalDynamics::sample_initial_conditions(const Input::ClassicalDynamics::InitialConditions& ic, const Eigen::VectorXd& initial_position, const Eigen::VectorXd& initial_momentum, std::mt19937& mt, double mass) const {
     // define the vector of distributions
-    std::vector<std::normal_distribution<double>> position_dist(initial_position.size()), momentum_dist(initial_momentum.size());
+    std::vector<std::normal_distribution<double>> position_dist(!ic.position_distribution.empty() ? ic.position_distribution.size() : initial_position.size());
+    std::vector<std::normal_distribution<double>> momentum_dist(!ic.momentum_distribution.empty() ? ic.momentum_distribution.size() : initial_momentum.size());
 
-    // fill the distributions
-    for (int i = 0; i < initial_position.size(); i++) position_dist.at(i) = std::normal_distribution<double>(initial_position(i), 0.5);
-    for (int i = 0; i < initial_momentum.size(); i++) momentum_dist.at(i) = std::normal_distribution<double>(initial_momentum(i), 1.0);
+    // fill the distributions for the initial wavefuction
+    for (int i = 0; i < position_dist.size() && ic.position_distribution.empty(); i++) position_dist.at(i) = std::normal_distribution<double>(initial_position(i), 0.5);
+    for (int i = 0; i < momentum_dist.size() && ic.momentum_distribution.empty(); i++) momentum_dist.at(i) = std::normal_distribution<double>(initial_momentum(i), 1.0);
+
+    // fill the distributions for the initial conditions
+    for (int i = 0; i < position_dist.size() && !ic.position_distribution.empty(); i++) position_dist.at(i) = std::normal_distribution<double>(ic.position_distribution.at(i).at(0), ic.position_distribution.at(i).at(1));
+    for (int i = 0; i < momentum_dist.size() && !ic.momentum_distribution.empty(); i++) momentum_dist.at(i) = std::normal_distribution<double>(ic.momentum_distribution.at(i).at(0), ic.momentum_distribution.at(i).at(1));
 
     // define the initial conditions
     Eigen::MatrixXd position(input.iterations + 1, position_dist.size()), velocity(input.iterations + 1, momentum_dist.size()), acceleration(input.iterations + 1, momentum_dist.size());

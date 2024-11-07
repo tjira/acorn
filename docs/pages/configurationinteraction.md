@@ -117,6 +117,9 @@ for i in range(Hci.shape[0]):
 You can finally solve the eigenvalue problem. Please, assign the correlation energy to the "E_FCI" variable.
 """
 E_FCI = 0
+
+# print the results
+print("FCI ENERGY: {:.8f}".format(E_HF + E_FCI + VNN))
 ```
 
 Solution to this exercise can be found [here](codesolutions.html#full-configuration-interaction).

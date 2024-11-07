@@ -312,8 +312,8 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
         CONTENT_SOL=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
     fi
     if [ "$PAGE" == "configurationinteraction" ]; then
-        CONTENT_EXC=$(sed -n '/# CONFIGURATION INTERACTION/,$p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL=$(sed -n '/# CONFIGURATION INTERACTION/,$p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+        CONTENT_EXC=$(sed -n '/# CONFIGURATION INTERACTION/,$p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -0 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL=$(sed -n '/# CONFIGURATION INTERACTION/,$p ; s/^    //' docs/python/resmet.py                   | head -n -0 | tail -n +4 | sed 's/^        //')
     fi
     if [ "$PAGE" == "coupledcluster" ]; then
         CONTENT_EXC=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
@@ -334,7 +334,7 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
 
     # replace some MD quirks with LaTeX quirks
     awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```py/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" | \
-    sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.*}/d ; /^>/d ; s/^```py{/```python{/' \
+    sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /^>/d ; s/^```py{/```python{/' \
     > temp.md
 
     # convert MD to LaTeX
