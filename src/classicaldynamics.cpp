@@ -274,12 +274,12 @@ std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> ClassicalDynamics:
     std::vector<std::normal_distribution<double>> momentum_dist(!ic.momentum_distribution.empty() ? ic.momentum_distribution.size() : initial_momentum.size());
 
     // fill the distributions for the initial wavefuction
-    for (int i = 0; i < position_dist.size() && ic.position_distribution.empty(); i++) position_dist.at(i) = std::normal_distribution<double>(initial_position(i), 0.5);
-    for (int i = 0; i < momentum_dist.size() && ic.momentum_distribution.empty(); i++) momentum_dist.at(i) = std::normal_distribution<double>(initial_momentum(i), 1.0);
+    for (size_t i = 0; i < position_dist.size() && ic.position_distribution.empty(); i++) position_dist.at(i) = std::normal_distribution<double>(initial_position(i), 0.5);
+    for (size_t i = 0; i < momentum_dist.size() && ic.momentum_distribution.empty(); i++) momentum_dist.at(i) = std::normal_distribution<double>(initial_momentum(i), 1.0);
 
     // fill the distributions for the initial conditions
-    for (int i = 0; i < position_dist.size() && !ic.position_distribution.empty(); i++) position_dist.at(i) = std::normal_distribution<double>(ic.position_distribution.at(i).at(0), ic.position_distribution.at(i).at(1));
-    for (int i = 0; i < momentum_dist.size() && !ic.momentum_distribution.empty(); i++) momentum_dist.at(i) = std::normal_distribution<double>(ic.momentum_distribution.at(i).at(0), ic.momentum_distribution.at(i).at(1));
+    for (size_t i = 0; i < position_dist.size() && !ic.position_distribution.empty(); i++) position_dist.at(i) = std::normal_distribution<double>(ic.position_distribution.at(i).at(0), ic.position_distribution.at(i).at(1));
+    for (size_t i = 0; i < momentum_dist.size() && !ic.momentum_distribution.empty(); i++) momentum_dist.at(i) = std::normal_distribution<double>(ic.momentum_distribution.at(i).at(0), ic.momentum_distribution.at(i).at(1));
 
     // define the initial conditions
     Eigen::MatrixXd position(input.iterations + 1, position_dist.size()), velocity(input.iterations + 1, momentum_dist.size()), acceleration(input.iterations + 1, momentum_dist.size());

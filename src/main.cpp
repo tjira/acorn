@@ -8,6 +8,10 @@
 #include               <argparse.hpp>
 #include              <sys/utsname.h>
 
+#ifdef GRAPHIC
+# include "viewer.h"
+#endif
+
 std::tuple<nlohmann::json, Input> parse_input(const std::filesystem::path& path) {
     // open the input file
     std::ifstream input_file_stream(path); if (!input_file_stream.good()) throw std::runtime_error("COULD NOT OPEN THE `" + path.string() + "` FILE");
@@ -36,6 +40,9 @@ std::unique_ptr<argparse::ArgumentParser> parse_arguments(int argc, char** argv)
     program->add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
     program->add_argument("-i", "--input").help("Input file to specify the calculations.").nargs(argparse::nargs_pattern::at_least_one);
     program->add_argument("-n", "--nthread").help("Number of threads to use during calculation.").default_value(1).scan<'i', int>();
+#ifdef GRAPHIC
+    program->add_argument("-s", "--show").help("Input file to show the int the graphical viewer.").nargs(argparse::nargs_pattern::at_least_one);
+#endif
 
     // parse the command line arguments
     try {program->parse_args(argc, argv);} catch (const std::runtime_error& error) {
@@ -68,6 +75,10 @@ int main(int argc, char** argv) {
 
     // print the compilation and execution timestamps
     std::printf("\n\nPROGRAM COMPILED: %s\nPROGRAM EXECUTED: %s\n", __TIMESTAMP__, Timer::Local().c_str());
+
+#ifdef GRAPHIC
+    if (program->is_used("-s")) {Viewer viewer(program->get<std::vector<std::string>>("-s")); return 0;}
+#endif
 
     // loop over all input files
     for (const std::string& program_input : program->get<std::vector<std::string>>("-i")) {

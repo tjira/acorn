@@ -39,6 +39,9 @@ find_library(LIBFFTW NAMES fftw3 PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBNUMA NAMES numa PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBINT NAMES int2 PATHS external/lib NO_DEFAULT_PATH)
 find_library(LIBC10 NAMES c10 PATHS external/lib NO_DEFAULT_PATH)
+if(GRAPHIC)
+    find_library(GLFW NAMES glfw PATHS external/lib NO_DEFAULT_PATH)
+endif()
 
 # find additional libraries needed only for the static build
 if(STATIC)
@@ -76,11 +79,41 @@ add_executable(acorn
     src/wavefunction.cpp
 )
 
+# add the graphic files
+if(GRAPHIC)
+    target_sources(acorn PRIVATE
+        src/viewer.cpp
+
+        external/src/glad.c
+
+        external/src/backends/imgui_impl_glfw.cpp
+        external/src/backends/imgui_impl_opengl3.cpp
+
+        external/src/imgui.cpp
+        external/src/imgui_demo.cpp
+        external/src/imgui_draw.cpp
+        external/src/imgui_tables.cpp
+        external/src/imgui_widgets.cpp
+
+        external/src/ImGuiFileDialog.cpp
+
+        external/src/implot.cpp
+        external/src/implot_demo.cpp
+        external/src/implot_items.cpp
+    )
+    target_compile_definitions(acorn PRIVATE GRAPHIC)
+endif()
+
 # add compile definitions
 target_compile_definitions(acorn PRIVATE DATADIR="${PROJECT_SOURCE_DIR}")
 
 # link the libraries needed for shared and static build
 target_link_libraries(acorn ${LIBC10} ${LIBFFTW} ${LIBINT} ${LIBNUMA} ${LIBOPENBLAS} ${LIBTORCH} ${LIBTORCH_CPU})
+
+# link the additional libraries needed only for the graphic build
+if(GRAPHIC)
+    target_link_libraries(acorn ${GLFW})
+endif()
 
 # link the additional libraries needed only for the static build
 if(STATIC)

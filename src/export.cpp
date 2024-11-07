@@ -222,7 +222,7 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
 
         // fill the matrix with the energy
         for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations + 1; j++) {
-            int state = trajectory_data_vector.at(i).state(j); data_matrix(j, 0) += 0.5 * mass * trajectory_data_vector.at(i).velocity.row(j).squaredNorm();
+            data_matrix(j, 0) += 0.5 * mass * trajectory_data_vector.at(i).velocity.row(j).squaredNorm();
         }
 
         // export the energy mean

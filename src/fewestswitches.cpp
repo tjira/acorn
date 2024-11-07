@@ -1,8 +1,6 @@
 #include "fewestswitches.h"
 
-#include <iostream>
-
-FewestSwitches::FewestSwitches(const Input::ClassicalDynamics::SurfaceHopping& input, bool adiabatic, int seed) : input(input), adiabatic(adiabatic) {
+FewestSwitches::FewestSwitches(const Input::ClassicalDynamics::SurfaceHopping& input, bool adiabatic, int seed) : adiabatic(adiabatic), input(input) {
     // throw an error if diabatic mode requested
     if (!adiabatic && input.type == "fewest-switches") throw std::invalid_argument("DIABATIC MODE FOR FSSH NOT IMPLEMENTED YET");
 

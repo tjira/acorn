@@ -27,6 +27,21 @@ wget -q -O external/libeigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/
 # download fftw
 wget -q -O external/libfftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
 
+# download glfw
+wget -q -O external/glfw.zip https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip
+
+# download glm
+wget -q -O external/glm.zip https://github.com/g-truc/glm/releases/download/1.0.1/glm-1.0.1-light.zip
+
+# download imgui
+wget -q -O external/imgui.tar.gz https://github.com/ocornut/imgui/archive/refs/tags/v1.91.4.tar.gz
+
+# download imguifiledialog
+wget -q -O external/imguifiledialog.tar.gz https://github.com/aiekick/ImGuiFileDialog/archive/refs/tags/v0.6.7.tar.gz
+
+# download implot
+wget -q -O external/implot.tar.gz https://github.com/epezent/implot/archive/refs/tags/v0.16.tar.gz
+
 # download libint
 wget -q -O external/libint.tar.gz https://github.com/evaleev/libint/releases/download/v2.9.0/libint-2.9.0-mpqc4.tgz
 
@@ -40,7 +55,8 @@ wget -q -O external/openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/rele
 wget -q -O external/libtorch.tar.gz https://github.com/pytorch/pytorch/releases/download/v2.5.0/pytorch-v2.5.0.tar.gz
 
 # unpack the archives
-cd external && for ARCHIVE in *.tar.gz; do tar -xzf $ARCHIVE --warning=no-unknown-keyword; done; cd ..
+cd external && for ARCHIVE in *.tar.gz; do tar -xzf  $ARCHIVE --warning=no-unknown-keyword; done; cd ..
+cd external && for ARCHIVE in *.zip;    do unzip -qq $ARCHIVE                             ; done; cd ..
 
 # compile eigen
 cd external/eigen-3.4.0 && cmake -B build \
@@ -52,6 +68,13 @@ cd external/eigen-3.4.0 && cmake -B build \
 
 # compile fftw
 cd external/fftw-3.3.10 && cmake -B build \
+    -DBUILD_SHARED_LIBS=$SHARED \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$PWD/install" \
+&& cmake --build build --parallel $CORES && cmake --install build && cp -r install/* .. && cd ../..
+
+# compile glfw
+cd external/glfw-3.4 && cmake -B build \
     -DBUILD_SHARED_LIBS=$SHARED \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$PWD/install" \
@@ -106,9 +129,18 @@ cd external/pytorch-v2.5.0 && cmake -B build \
     -DUSE_XPU=OFF \
 && cmake --build build --parallel $CORES && cmake --install build && cp -r build/lib .. && cp -r install/* .. && cd ../..
 
+# download glad
+pip install glad && glad --api="gl=4.2" --generator="c" --profile="core" --out-path="$PWD/external"
+
+# copy headers
+cp -r external/glm/* external/imgui-1.91.4/*.h external/imgui-1.91.4/backends external/ImGuiFileDialog-0.6.7/*.h external/ImGuiFileDialog-0.6.7/dirent external/implot-0.16/*.h external/include 
+
+# copy sources
+cp -r external/imgui-1.91.4/*.cpp external/imgui-1.91.4/backends external/ImGuiFileDialog-0.6.7/*.cpp external/implot-0.16/*.cpp external/src 
+
 # remove libraries of the other type
 [ $SHARED == 1 ] && rm -f external/lib/*.a*
 [ $STATIC == 1 ] && rm -f external/lib/*.s*
 
 # remove sources
-cd external && rm -rf eigen-3.4.0 fftw-3.3.10 libint-2.9.0 numactl-2.0.18 OpenBLAS-0.3.28 pytorch-v2.5.0 bin share *.tar.gz ; cd ..
+cd external && rm -rf eigen-3.4.0 fftw-3.3.10 glfw-3.4 glm imgui-1.91.4 ImGuiFileDialog-0.6.7 implot-0.16 libint-2.9.0 numactl-2.0.18 OpenBLAS-0.3.28 pytorch-v2.5.0 bin share *.tar.gz *.zip ; cd ..

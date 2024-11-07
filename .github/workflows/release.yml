@@ -74,7 +74,7 @@ jobs:
         run: mkdir external && mv libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-shared_x86-64.tar.gz && cd -
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=OFF
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DGRAPHIC=OFF -DSTATIC=OFF
 
       - name: Build Acorn
         run: cmake --build build --parallel 2 --verbose
@@ -99,7 +99,7 @@ jobs:
         run: mkdir external && mv libs_linux-static/acorn-libs_linux-static_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-static_x86-64.tar.gz && cd -
 
       - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC=ON
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DGRAPHIC=OFF -DSTATIC=ON
 
       - name: Build Acorn
         run: cmake --build build --parallel 2 --verbose

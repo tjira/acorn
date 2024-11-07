@@ -62,7 +62,7 @@ void QuantumDynamics::print_iteration(int iteration, const IterationData& iterat
     std::printf("%s] [", iteration_data.momentum.size() > 3 ? ", ..." : "");
 
     // print the diabaic density matrix
-    for (size_t i = 0; i < std::min((int)input.potential.size(), 3); i++) std::printf("%s%8.3f", i ? ", " : "", iteration_data.density_diabatic(i, i));
+    for (int i = 0; i < std::min((int)input.potential.size(), 3); i++) std::printf("%s%8.3f", i ? ", " : "", iteration_data.density_diabatic(i, i));
 
     // print the brackets
     std::printf("%s]\n", input.potential.size() > 3 ? ", ..." : "");
