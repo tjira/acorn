@@ -32,7 +32,7 @@ Viewer::Viewer(const std::vector<std::string>& inputs) : inputs(inputs) {
         std::vector<Eigen::MatrixXd> matrices; for (const std::string& input : inputs) matrices.push_back(read(input));
 
         // set the default indices
-        std::vector<std::tuple<int, std::vector<int>, int>> indices; for (int i = 0; i < matrices.size(); i++) indices.push_back({1, {1}, 0});
+        std::vector<std::tuple<int, std::vector<int>, int>> indices; for (size_t i = 0; i < matrices.size(); i++) indices.push_back({1, {1}, 0});
 
         // enter the render loop
         while (!glfwWindowShouldClose(pointer.window)) {
@@ -54,7 +54,7 @@ Viewer::Viewer(const std::vector<std::string>& inputs) : inputs(inputs) {
 
 void Viewer::gui_plot(const std::vector<Eigen::MatrixXd>& matrices, std::vector<std::tuple<int, std::vector<int>, int>>& indices) const {
     // begin the frame and extract window size
-    ImGui_ImplOpenGL3_NewFrame(); ImGui_ImplGlfw_NewFrame(); ImGui::NewFrame(); int width, height; glfwGetWindowSize(pointer.window, &width, &height);
+    ImGui_ImplOpenGL3_NewFrame(); ImGui_ImplGlfw_NewFrame(); ImGui::NewFrame(); int width, height, id = 0; glfwGetWindowSize(pointer.window, &width, &height);
 
     // show demo
     // ImGui::ShowDemoWindow(); ImPlot::ShowDemoWindow();
@@ -65,10 +65,9 @@ void Viewer::gui_plot(const std::vector<Eigen::MatrixXd>& matrices, std::vector<
     // begin the plot
     if (ImPlot::BeginPlot("##plot")) {
 
-
         // plot the data
-        for (int i = 0; i < matrices.size(); i++) for (int j = 0; j < std::get<1>(indices.at(i)).size(); j++) {
-            Eigen::VectorXd x = matrices.at(i).col(0), y = matrices.at(i).col(std::get<1>(indices.at(i)).at(j)); ImPlot::PlotLine("##", x.data(), y.data(), x.rows());
+        for (size_t i = 0; i < matrices.size(); i++) for (size_t j = 0; j < std::get<1>(indices.at(i)).size(); j++) {
+            ImPlot::PlotLine(("##" + std::to_string(id++)).c_str(), matrices.at(i).col(0).data(), matrices.at(i).col(std::get<1>(indices.at(i)).at(j)).data(), matrices.at(i).rows());
         }
 
         // end the plot
@@ -76,24 +75,24 @@ void Viewer::gui_plot(const std::vector<Eigen::MatrixXd>& matrices, std::vector<
     }
 
     // show the matrix plot options
-    for (size_t i = 0, j = 0; i < indices.size(); i++) {
+    for (size_t i = 0; i < indices.size(); i++) {
 
         // add the column sliders
-        for (size_t k = 0; k < std::get<1>(indices.at(i)).size(); k++, j++) {
-            ImGui::SetNextItemWidth(100); ImGui::PushID(j); if (k) {ImGui::SameLine();} ImGui::SliderInt("##", &std::get<1>(indices.at(i)).at(k), 0, matrices.at(i).cols() - 1); ImGui::PopID();
+        for (size_t j = 0; j < std::get<1>(indices.at(i)).size(); j++) {
+            ImGui::SetNextItemWidth(50); ImGui::PushID(id++); if (j) {ImGui::SameLine();} ImGui::SliderInt("##", &std::get<1>(indices.at(i)).at(j), 0, matrices.at(i).cols() - 1); ImGui::PopID();
         }
 
         // add the button to add a column to the plot
         ImGui::SameLine(); if (ImGui::Button("Add Column")) std::get<1>(indices.at(i)).push_back(std::get<1>(indices.at(i)).at(std::get<1>(indices.at(i)).size() - 1) + 1);
 
         // add the button to remove a column from the plot
-        ImGui::SameLine(); if (ImGui::Button(("Remove Column"))) if (std::get<1>(indices.at(i)).size() > 1) std::get<1>(indices.at(i)).pop_back();
+        ImGui::SameLine(); if (ImGui::Button("Remove Column")) if (std::get<1>(indices.at(i)).size() > 1) std::get<1>(indices.at(i)).pop_back();
 
         // add the animation step slider
-        ImGui::SameLine(); ImGui::SetNextItemWidth(100); ImGui::PushID(j); ImGui::SliderInt(("##" + std::to_string(i)).c_str(), &std::get<2>(indices.at(i)), 0, matrices.at(i).cols() - 1); ImGui::PopID();
+        ImGui::SameLine(); ImGui::SetNextItemWidth(50); ImGui::SliderInt(("##" + std::to_string(id++)).c_str(), &std::get<2>(indices.at(i)), 0, matrices.at(i).cols());
         
         // increase the indices
-        for (int& index : std::get<1>(indices.at(i))) index = (index + std::get<2>(indices.at(i))) % matrices.at(i).cols();
+        for (int& index : std::get<1>(indices.at(i))) index = (index + std::get<2>(indices.at(i))) % (matrices.at(i).cols() - std::get<0>(indices.at(i)));
     }
 
     // end the plotter window
