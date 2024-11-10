@@ -31,6 +31,7 @@ molecule.xyz
 *.zip
 
 # folders
+.zig-cache/
 .cache/
 _site/
 external/
