@@ -133,7 +133,7 @@ cd external/pytorch-v2.5.0 && cmake -B build \
 pip install glad && glad --api="gl=4.2" --generator="c" --profile="core" --out-path="$PWD/external"
 
 # copy headers
-cp -r external/glm/* external/imgui-1.91.4/*.h external/imgui-1.91.4/backends external/ImGuiFileDialog-0.6.7/*.h external/ImGuiFileDialog-0.6.7/dirent external/implot-0.16/*.h external/include 
+cp -r external/imgui-1.91.4/*.h external/imgui-1.91.4/backends external/ImGuiFileDialog-0.6.7/*.h external/ImGuiFileDialog-0.6.7/dirent external/implot-0.16/*.h external/include && mv external/glm external/include
 
 # copy sources
 cp -r external/imgui-1.91.4/*.cpp external/imgui-1.91.4/backends external/ImGuiFileDialog-0.6.7/*.cpp external/implot-0.16/*.cpp external/src 
@@ -143,4 +143,4 @@ cp -r external/imgui-1.91.4/*.cpp external/imgui-1.91.4/backends external/ImGuiF
 [ $STATIC == 1 ] && rm -f external/lib/*.s*
 
 # remove sources
-cd external && rm -rf eigen-3.4.0 fftw-3.3.10 glfw-3.4 glm imgui-1.91.4 ImGuiFileDialog-0.6.7 implot-0.16 libint-2.9.0 numactl-2.0.18 OpenBLAS-0.3.28 pytorch-v2.5.0 bin share *.tar.gz *.zip ; cd ..
+cd external && rm -rf eigen-3.4.0 fftw-3.3.10 glfw-3.4 imgui-1.91.4 ImGuiFileDialog-0.6.7 implot-0.16 libint-2.9.0 numactl-2.0.18 OpenBLAS-0.3.28 pytorch-v2.5.0 bin share *.tar.gz *.zip ; cd ..

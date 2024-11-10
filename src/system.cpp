@@ -6,16 +6,10 @@ System::System(const Input::System& input) : charge(input.charge), multi(input.m
 
     // throw an error if impossible combination of charge and multiplicity
     if (std::abs(charge) % 2 == 0 && multi % 2 == 0) throw std::runtime_error("MOLECULE CAN'T HAVE AN EVEN CHARGE AND MULTIPLICITY AT THE SAME TIME.");
-    if (std::abs(charge) % 2 == 1 && multi % 2 == 1) throw std::runtime_error("MOLECULE CAN'T HAVE AN ODD CHARGE AND MULTIPLICITY AT THE SAME TIME.");
+    if (std::abs(charge) % 2 == 1 && multi % 2 == 1) throw std::runtime_error("MOLECULE CAN'T HAVE AN ODD CHARGE AND MULTIPLICITY AT THE SAME TIME." );
 
     // check if the file stream is good
     if (!system_file_stream.good()) throw std::runtime_error("COULD NOT OPEN THE `" + input.path + "` FILE");
-
-    // fill the periodic table
-    for (std::stringstream periodic_table_stream(PERIODIC_TABLE); periodic_table_stream.good(); ptable.push_back(""), periodic_table_stream >> ptable.back()) {}
-
-    // define the symbol to atomic number map
-    auto symbol_to_atomic_number_map = [&ptable](const std::string& sm) {return std::find(ptable.begin(), ptable.end(), sm) - ptable.begin();};
 
     // extract the number of atoms, skip the first two lines and initialize the atomic number and position matrices
     std::getline(system_file_stream, line); std::stringstream(line) >> natoms; std::getline(system_file_stream, line); atomic_numbers.resize(natoms); coordinates = torch::zeros({natoms, 3}, torch::kDouble);
@@ -27,7 +21,7 @@ System::System(const Input::System& input) : charge(input.charge), multi(input.m
         double x, y, z; std::getline(system_file_stream, line), std::stringstream(line) >> sm >> x >> y >> z;
 
         // assign the atomic number and position
-        coordinates.index_put_({i, 0}, x), coordinates.index_put_({i, 1}, y), coordinates.index_put_({i, 2}, z), atomic_numbers.at(i) = symbol_to_atomic_number_map(sm) + 1;
+        coordinates.index_put_({i, 0}, x), coordinates.index_put_({i, 1}, y), coordinates.index_put_({i, 2}, z), atomic_numbers.at(i) = sm2an.at(sm);
     }
 }
 

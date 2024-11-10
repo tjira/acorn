@@ -26,7 +26,7 @@ std::tuple<nlohmann::json, Input> parse_input(const std::filesystem::path& path)
     return {input_json, patched_input.get<Input>()};
 }
 
-std::unique_ptr<argparse::ArgumentParser> parse_arguments(int argc, char** argv) {
+std::array<std::shared_ptr<argparse::ArgumentParser>, 3> parse_arguments(int argc, char** argv) {
     // extract the executable path and start the program timer
     std::filesystem::path executable_path = std::filesystem::weakly_canonical(std::filesystem::path(argv[0])).parent_path();
 
@@ -34,14 +34,24 @@ std::unique_ptr<argparse::ArgumentParser> parse_arguments(int argc, char** argv)
     if (!std::filesystem::is_directory(std::string(DATADIR) + "/basis")) setenv("LIBINT_DATA_PATH", executable_path.c_str(), true);
 
     // define the program
-    std::unique_ptr<argparse::ArgumentParser> program = std::make_unique<argparse::ArgumentParser>("Acorn Quantum Package", "1.0", argparse::default_arguments::none);
+    std::shared_ptr<argparse::ArgumentParser> program = std::make_shared<argparse::ArgumentParser>("Acorn Quantum Package", "1.0", argparse::default_arguments::none);
+
+    // add subcommands
+    std::shared_ptr<argparse::ArgumentParser> command_show = std::make_shared<argparse::ArgumentParser>("show");
+    std::shared_ptr<argparse::ArgumentParser> command_run  = std::make_shared<argparse::ArgumentParser>("run" );
+
+    // set the subcommand options
+    command_run ->add_argument("files").help("Input files int .json format to specify the calculations.").remaining();
+    command_show->add_argument("files").help("Input files in the .xyz format to show."                  ).remaining();
 
     // add the command line arguments
-    program->add_argument("-h", "--help").help("-- This help message.").default_value(false).implicit_value(true);
-    program->add_argument("-i", "--input").help("Input file to specify the calculations.").nargs(argparse::nargs_pattern::at_least_one);
-    program->add_argument("-n", "--nthread").help("Number of threads to use during calculation.").default_value(1).scan<'i', int>();
+    program->add_argument("-h", "--help"   ).help("-- This help message."                          ).default_value(false).implicit_value(true)                 ;
+    program->add_argument("-n", "--nthread").help("-- Number of threads to use during calculation.").default_value(1    )                     .scan<'i', int>();
+
+    // add the subparsers
+    program->add_subparser(*command_run );
 #ifdef GRAPHIC
-    program->add_argument("-s", "--show").help("Input file to show the int the graphical viewer.").nargs(argparse::nargs_pattern::at_least_one);
+    program->add_subparser(*command_show);
 #endif
 
     // parse the command line arguments
@@ -53,12 +63,12 @@ std::unique_ptr<argparse::ArgumentParser> parse_arguments(int argc, char** argv)
     nthread = program->get<int>("-n");
 
     // return the program
-    return program;
+    return {program, command_run, command_show};
 }
 
 int main(int argc, char** argv) {
     // define the program timer and parse the command line arguments
-    Timepoint program_timer = Timer::Now(); std::unique_ptr<argparse::ArgumentParser> program = parse_arguments(argc, argv);
+    Timepoint program_timer = Timer::Now(); auto [program, command_run, command_show] = parse_arguments(argc, argv);
 
     // print the program header
     std::printf("ACORN QUANTUM PACKAGE\n\n");
@@ -77,11 +87,11 @@ int main(int argc, char** argv) {
     std::printf("\n\nPROGRAM COMPILED: %s\nPROGRAM EXECUTED: %s\n", __TIMESTAMP__, Timer::Local().c_str());
 
 #ifdef GRAPHIC
-    if (program->is_used("-s")) {Viewer viewer(program->get<std::vector<std::string>>("-s")); return 0;}
+    if (program->is_subcommand_used("show")) {Viewer viewer(program->at<argparse::ArgumentParser>("show").get<std::vector<std::string>>("files")); return 0;}
 #endif
 
     // loop over all input files
-    for (const std::string& program_input : program->get<std::vector<std::string>>("-i")) {
+    for (const std::string& program_input : program->at<argparse::ArgumentParser>("run").get<std::vector<std::string>>("files")) {
 
         // print the input file being processed
         std::printf("\nPROCESSING INPUT FILE: %s\n\n", program_input.c_str());

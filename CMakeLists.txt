@@ -82,6 +82,11 @@ add_executable(acorn
 # add the graphic files
 if(GRAPHIC)
     target_sources(acorn PRIVATE
+        src/buffer.cpp
+        src/geometry.cpp
+        src/mesh.cpp
+        src/shader.cpp
+        src/trajectory.cpp
         src/viewer.cpp
 
         external/src/glad.c
@@ -129,23 +134,23 @@ endif()
 enable_testing()
 
 # add general tests
-add_test(NAME hf                          COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/hf.json                          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME mp2                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/mp2.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME mp3                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/mp3.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME mp4                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/mp4.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME fci                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/fci.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME ccd                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/ccd.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME ccd-t                       COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/ccd-t.json                       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME ccsd                        COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/ccsd.json                        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME ccsd-t                      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/ccsd-t.json                      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME qdyn_1d_imaginary_one-state COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_1d_imaginary_one-state.json WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME qdyn_2d_imaginary_one-state COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_2d_imaginary_one-state.json WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME qdyn_1d_real_one-state      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_1d_real_one-state.json      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME qdyn_2d_real_one-state      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_2d_real_one-state.json      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME qdyn_1d_real_two-state      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/qdyn_1d_real_two-state.json      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME cdyn_1d_two-state_fs-adia   COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/cdyn_1d_two-state_fs-adia.json   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME cdyn_1d_two-state_lz-adia   COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/cdyn_1d_two-state_lz-adia.json   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-add_test(NAME cdyn_1d_two-state_lz-dia    COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn -i ${PROJECT_SOURCE_DIR}/example/input/cdyn_1d_two-state_lz-dia.json    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME hf                          COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/hf.json                          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME mp2                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/mp2.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME mp3                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/mp3.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME mp4                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/mp4.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME fci                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/fci.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME ccd                         COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/ccd.json                         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME ccd-t                       COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/ccd-t.json                       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME ccsd                        COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/ccsd.json                        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME ccsd-t                      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/ccsd-t.json                      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME qdyn_1d_imaginary_one-state COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/qdyn_1d_imaginary_one-state.json WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME qdyn_2d_imaginary_one-state COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/qdyn_2d_imaginary_one-state.json WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME qdyn_1d_real_one-state      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/qdyn_1d_real_one-state.json      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME qdyn_2d_real_one-state      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/qdyn_2d_real_one-state.json      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME qdyn_1d_real_two-state      COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/qdyn_1d_real_two-state.json      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME cdyn_1d_two-state_fs-adia   COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/cdyn_1d_two-state_fs-adia.json   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME cdyn_1d_two-state_lz-adia   COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/cdyn_1d_two-state_lz-adia.json   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test(NAME cdyn_1d_two-state_lz-dia    COMMAND ${PROJECT_SOURCE_DIR}/bin/acorn run ${PROJECT_SOURCE_DIR}/example/input/cdyn_1d_two-state_lz-dia.json    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # add expected results of general tests
 set_property(TEST hf                          PROPERTY PASS_REGULAR_EXPRESSION "FINAL HF ENERGY: -74.965901"                            )

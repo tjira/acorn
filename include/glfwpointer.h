@@ -5,6 +5,12 @@
 
 #define WIDTH 1024
 #define HEIGHT 576
+#define SUBDIVISIONS 2
+#define SECTORS 16
+#define SMOOTH 1
+#define BINDINGFACTOR 0.013
+#define BONDSIZE 0.09
+#define ATOMSIZEFACTOR 0.007
 
 struct GLFWwindow;
 
@@ -15,7 +21,7 @@ struct GLFWPointer {
         glm::mat4 view, proj;
     } camera;
     struct Flags {
-        bool fullscreen = false, pause = false;
+        bool fullscreen = false, info = false, options = false, pause = false, plot = false, system = false, ptable = false;
     } flags;
     struct Light {
         float ambient = 0.4f, diffuse = 0.2f, specular = 0.4f, shininess = 4.0f;
