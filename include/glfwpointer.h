@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glm.hpp>
-#include  <string>
+#include <glm/glm.hpp>
+#include      <string>
 
 #define WIDTH 1024
 #define HEIGHT 576
