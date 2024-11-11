@@ -334,7 +334,7 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
 
     # replace some MD quirks with LaTeX quirks
     awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```py/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" | \
-    sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /^>/d ; s/^```py{/```python{/' \
+    sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\\|/|/g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /{:.cite}/d ; /{:.no_toc .text-delta}/d ; /^>/d ; s/^```py{/```python{/' \
     > temp.md
 
     # convert MD to LaTeX

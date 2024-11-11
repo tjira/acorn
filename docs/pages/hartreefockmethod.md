@@ -8,9 +8,9 @@ nav_order: 1
 
 # Hartree--Fock Method
 
-The Hartree--Fock method is a foundational approach in quantum chemistry, aimed at solving the electronic structure problem in molecules by determining an optimal wave function. This method simplifies the complex interactions of electrons through a mean-field approximation, where each electron moves in an average field created by all others. This allows for the use of a single set of orbitals, leading to the construction of the Fock operator and iterative solutions to one-electron equations.
+The Hartree--Fock method is a foundational approach in quantum chemistry, aimed at solving the electronic structure problem in molecules by determining an optimal wavefunction. This method simplifies the complex interactions of electrons through a mean-field approximation, where each electron moves in an average field created by all others. This allows for the use of a single set of orbitals, leading to the construction of the Fock operator and iterative solutions to one-electron equations.
 
-However, Hartree--Fock has notable limitations. Its reliance on a single-determinant wave function means it struggles to account for electron correlation. This leads to inaccuracies in energy predictions, particularly for systems with strong electron interactions, such as transition metal complexes or molecules with delocalized electrons.
+However, Hartree--Fock has notable limitations. Its reliance on a single-determinant wavefunction means it struggles to account for electron correlation. This leads to inaccuracies in energy predictions, particularly for systems with strong electron interactions, such as transition metal complexes or molecules with delocalized electrons.
 
 ## Theoretical Background
 
@@ -20,7 +20,7 @@ Our primary objective is to solve the Schrödinger equation in the form
 \hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi}
 \end{equation}
 
-where $\hat{\mathbf{H}}$ denotes the molecular Hamiltonian operator, $\ket{\Psi}$ represents the molecular wave function, and $E$ is the total energy of the system. The Hartree--Fock approximates the total wavefunction $\ket{\Psi}$ as a single Slater determinant, expressed as
+where $\hat{\mathbf{H}}$ denotes the molecular Hamiltonian operator, $\ket{\Psi}$ represents the molecular wavefunction, and $E$ is the total energy of the system. The Hartree--Fock approximates the total wavefunction $\ket{\Psi}$ as a single Slater determinant, expressed as
 
 \begin{equation}
 \ket{\Psi}=\ket{\chi\_1\chi\_2\cdots\chi\_N}

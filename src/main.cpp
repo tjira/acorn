@@ -26,7 +26,7 @@ std::tuple<nlohmann::json, Input> parse_input(const std::filesystem::path& path)
     return {input_json, patched_input.get<Input>()};
 }
 
-std::array<std::shared_ptr<argparse::ArgumentParser>, 3> parse_arguments(int argc, char** argv) {
+std::array<std::shared_ptr<argparse::ArgumentParser>, 4> parse_arguments(int argc, char** argv) {
     // extract the executable path and start the program timer
     std::filesystem::path executable_path = std::filesystem::weakly_canonical(std::filesystem::path(argv[0])).parent_path();
 
@@ -37,19 +37,23 @@ std::array<std::shared_ptr<argparse::ArgumentParser>, 3> parse_arguments(int arg
     std::shared_ptr<argparse::ArgumentParser> program = std::make_shared<argparse::ArgumentParser>("Acorn Quantum Package", "1.0", argparse::default_arguments::none);
 
     // add subcommands
-    std::shared_ptr<argparse::ArgumentParser> command_show = std::make_shared<argparse::ArgumentParser>("show");
-    std::shared_ptr<argparse::ArgumentParser> command_run  = std::make_shared<argparse::ArgumentParser>("run" );
+    std::shared_ptr<argparse::ArgumentParser> command_show     = std::make_shared<argparse::ArgumentParser>("show"    );
+    std::shared_ptr<argparse::ArgumentParser> command_integral = std::make_shared<argparse::ArgumentParser>("integral");
+    std::shared_ptr<argparse::ArgumentParser> command_run      = std::make_shared<argparse::ArgumentParser>("run"     );
 
     // set the subcommand options
-    command_run ->add_argument("files").help("Input files int .json format to specify the calculations.").remaining();
-    command_show->add_argument("files").help("Input files in the .xyz format to show."                  ).remaining();
+    command_run     ->add_argument("files")        .help("Input files int .json format to specify the calculations.").remaining();
+    command_show    ->add_argument("files")        .help("Input files in the .xyz format to show."                  ).remaining();
+    command_integral->add_argument("file")         .help("Input file in the .xyz format to use for integrals."      );
+    command_integral->add_argument("-b", "--basis").help("Basis to use for the integral calculation."               ).default_value("sto-3g");
 
     // add the command line arguments
     program->add_argument("-h", "--help"   ).help("-- This help message."                          ).default_value(false).implicit_value(true)                 ;
     program->add_argument("-n", "--nthread").help("-- Number of threads to use during calculation.").default_value(1    )                     .scan<'i', int>();
 
     // add the subparsers
-    program->add_subparser(*command_run );
+    program->add_subparser(*command_run     );
+    program->add_subparser(*command_integral);
 #ifdef GRAPHIC
     program->add_subparser(*command_show);
 #endif
@@ -63,12 +67,12 @@ std::array<std::shared_ptr<argparse::ArgumentParser>, 3> parse_arguments(int arg
     nthread = program->get<int>("-n");
 
     // return the program
-    return {program, command_run, command_show};
+    return {program, command_integral, command_run, command_show};
 }
 
 int main(int argc, char** argv) {
     // define the program timer and parse the command line arguments
-    Timepoint program_timer = Timer::Now(); auto [program, command_run, command_show] = parse_arguments(argc, argv);
+    Timepoint program_timer = Timer::Now(); auto [program, command_integral, command_run, command_show] = parse_arguments(argc, argv);
 
     // print the program header
     std::printf("ACORN QUANTUM PACKAGE\n\n");
@@ -86,18 +90,48 @@ int main(int argc, char** argv) {
     // print the compilation and execution timestamps
     std::printf("\n\nPROGRAM COMPILED: %s\nPROGRAM EXECUTED: %s\n", __TIMESTAMP__, Timer::Local().c_str());
 
+    // graphic block
 #ifdef GRAPHIC
     if (program->is_subcommand_used("show")) {Viewer viewer(program->at<argparse::ArgumentParser>("show").get<std::vector<std::string>>("files")); return 0;}
 #endif
 
+    // define the inputs
+    std::vector<std::tuple<nlohmann::json, Input>> inputs;
+
+    // extract the input files
+    if (program->is_subcommand_used("run")) for (const std::string& program_input : command_run->get<std::vector<std::string>>("files")) inputs.push_back(parse_input(program_input));
+
+    // add additional input files for the integral subcommand
+    if (program->is_subcommand_used("integral")) {
+
+        // create the default input
+        nlohmann::json input_json; input_json["integral"] = default_input.at("integral"), input_json["system"] = default_input.at("system");
+
+        // add the integral input
+        input_json.at("system").at("path")  = command_integral->get<std::string>("file" );
+        input_json.at("system").at("basis") = command_integral->get<std::string>("basis");
+
+        // enable exports
+        input_json.at("integral").at("data_export").at("kinetic") = true;
+        input_json.at("integral").at("data_export").at("nuclear") = true;
+        input_json.at("integral").at("data_export").at("coulomb") = true;
+        input_json.at("integral").at("data_export").at("overlap") = true;
+
+        // create the patched input
+        nlohmann::json patched_input = default_input; patched_input.merge_patch(input_json);
+
+        // add the input to the list
+        inputs.push_back({input_json, patched_input.get<Input>()});
+    }
+
     // loop over all input files
-    for (const std::string& program_input : program->at<argparse::ArgumentParser>("run").get<std::vector<std::string>>("files")) {
+    for (const std::tuple<nlohmann::json, Input>& program_input : inputs) {
 
-        // print the input file being processed
-        std::printf("\nPROCESSING INPUT FILE: %s\n\n", program_input.c_str());
+        // print the input file being processed and extract the input
+        auto [input_json, input] = program_input; std::cout << std::endl << input_json.dump(4) << std::endl << std::endl;
 
-        // parse the input file, initialize the system
-        auto [input_json, input] = parse_input(program_input); System system; if (input_json.contains("system")) system = System(input.system);
+        // initialize the system
+        System system; if (input_json.contains("system")) system = System(input.system);
 
         // define all the variables to store the results
         double energy_hf = 0, energy_mp = 0, energy_cc = 0, energy_ci = 0; torch::Tensor T_AO, V_AO, S_AO, J_AO, dT_AO, dV_AO, dS_AO, dJ_AO, T_MS, V_MS, F_MS, C_MS, J_MS_AP, E_CI, C_CI;
@@ -135,7 +169,7 @@ int main(int argc, char** argv) {
             std::printf("%s\n", Timer::Format(Timer::Elapsed(integral_calculation_timer)).c_str());
 
             // boolean to export the integrals to the disk
-            bool export_d0 = input.integral.data_export.kinetic    || input.integral.data_export.nuclear    || input.integral.data_export.coulomb    || input.integral.data_export.overlap;
+            bool export_d0 = input.integral.data_export.kinetic    || input.integral.data_export.nuclear    || input.integral.data_export.coulomb    || input.integral.data_export.overlap   ;
             bool export_d1 = input.integral.data_export.kinetic_d1 || input.integral.data_export.nuclear_d1 || input.integral.data_export.coulomb_d1 || input.integral.data_export.overlap_d1;
 
             // write the integrals to the disk

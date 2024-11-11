@@ -12,5 +12,8 @@ sed -n '/tableofcontents/,/appendices/{/tableofcontents/b;/appendices/b;p}' docs
 # extract the code solutions
 sed -n '/\\label{sec:hf_code_solution}/,/appendices/{/appendices/b;p}' docs/tex/main.tex > docs/tex/qmhandson/elstructure_solutions.tex
 
+# remove some additional lines
+sed -i '/\\part/d' docs/tex/qmhandson/elstructure.tex
+
 # remove first ald last line of the files
 sed -i '1d;$d' docs/tex/qmhandson/elstructure.tex && sed -i '$d' docs/tex/qmhandson/elstructure_solutions.tex
