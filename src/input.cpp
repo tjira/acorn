@@ -51,6 +51,7 @@ nlohmann::json default_input = R"(
     },
     "quantum_dynamics" : {
         "potential" : [["0.5*x^2"]],
+        "constants" : {},
         "imaginary" : 0,
         "real" : 0,
         "iterations" : 1000,

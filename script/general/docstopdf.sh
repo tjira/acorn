@@ -242,8 +242,7 @@ water/RHF/STO-3G/-74.965901192180
     numbers=none,
     frame=single,
     showstringspaces=false,
-    captionpos=b,
-    tabsize=2
+    captionpos=b
 }
 \lstset{style=code}
 

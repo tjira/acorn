@@ -6,7 +6,7 @@ Eigen::MatrixXd QuantumDynamics::get_diabatic_potential(const Eigen::MatrixXd& g
 
     // fill the diabatic potential
     for (size_t i = 0; i < input.potential.size(); i++) for (size_t j = 0; j < input.potential.size(); j++) {
-        diabatic_potential.col(i * input.potential.size() + j) = Expression(input.potential.at(i).at(j), variables).evaluate(grid);
+        diabatic_potential.col(i * input.potential.size() + j) = Expression(input.potential.at(i).at(j), variables, input.constants).evaluate(grid);
     }
 
     // return the diabatic potential
