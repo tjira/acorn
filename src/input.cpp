@@ -111,7 +111,9 @@ nlohmann::json default_input = R"(
             "kinetic_energy" : false,
             "kinetic_energy_mean" : false,
             "hopping_geometry" : false,
-            "hopping_time" : false
+            "hopping_time" : false,
+            "tdc" : false,
+            "tdc_mean" : false
         }
     }
 }

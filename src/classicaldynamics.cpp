@@ -189,14 +189,14 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
         // define and initialize the surface hopping algorithms
         FewestSwitches fewestswitches(input.surface_hopping, input.adiabatic, seed); LandauZener landauzener(input.surface_hopping, input.adiabatic, seed);
 
-        // define the current fssh population vector
+        // define the current fssh population vector and TDC
         Eigen::VectorXcd fssh_population = Eigen::VectorXcd::Zero(input.potential.size()); fssh_population(state(0)) = 1;
 
         // define the vector of hopping geometries and times
         std::vector<Eigen::VectorXd> hopping_geometry_vector; std::vector<double> hopping_time_vector;
 
         // define a vector to contain diabatic potentials and eigenvectors phi
-        std::vector<Eigen::MatrixXd> diabatic_potential_vector(input.iterations + 1), adiabatic_potential_vector(input.iterations + 1), phi_vector(input.iterations + 1);
+        std::vector<Eigen::MatrixXd> diabatic_potential_vector(input.iterations + 1), adiabatic_potential_vector(input.iterations + 1), phi_vector(input.iterations + 1), tdc_vector(input.iterations);
 
         // propagate the current trajectory
         for (int j = 0; j < input.iterations + 1; j++) {
@@ -211,7 +211,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             if (j) {position.row(j) = position.row(j - 1) + input.time_step * (velocity.row(j) + 0.5 * acceleration.row(j) * input.time_step), state(j) = state(j - 1);}
 
             // calculate the potential at the current point and assign it to the container and create the new state variable
-            Eigen::MatrixXd potential = evaluate_potential(potential_expressions, position.row(j)); diabatic_potential_vector.at(j) = potential; int new_state = state(j); 
+            Eigen::MatrixXd potential = evaluate_potential(potential_expressions, position.row(j)), tdc; diabatic_potential_vector.at(j) = potential; int new_state = state(j); 
 
             // adiabatization block
             if (input.adiabatic) {
@@ -227,7 +227,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             if (input.surface_hopping.type == "landau-zener" && j > 1) {
                 new_state = landauzener.jump(input.adiabatic ? adiabatic_potential_vector : diabatic_potential_vector, j, state(j), input.time_step);
             } else if (input.surface_hopping.type == "fewest-switches" && j) {
-                std::tie(fssh_population, new_state) = fewestswitches.jump(fssh_population, phi_vector, adiabatic_potential_vector, j, state(j), input.time_step);
+                std::tie(tdc, fssh_population, new_state) = fewestswitches.jump(fssh_population, phi_vector, adiabatic_potential_vector, j, state(j), input.time_step);
             }
 
             // update the velocity and the state
@@ -238,6 +238,9 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
             // append the hopping geometry and time
             if (j && state(j) != state(j - 1) && input.data_export.hopping_geometry) hopping_geometry_vector.push_back(position.row(j));
             if (j && state(j) != state(j - 1) && input.data_export.hopping_time    ) hopping_time_vector.push_back(j * input.time_step);
+
+            // append the TDC
+            if (j && (input.data_export.tdc || input.data_export.tdc_mean)) tdc_vector.at(j - 1) = tdc;
             
             // print the iteration info
             if ((j % input.log_interval_step == 0 || (j && state(j) != state(j - 1))) && (i ? i + 1 : i) % input.log_interval_traj == 0) {
@@ -246,7 +249,7 @@ void ClassicalDynamics::run(const Input::Wavefunction& initial_diabatic_wavefunc
         }
 
         // set the trajectory data
-        trajectory_data_vector.at(i) = {state, position, velocity, diabatic_potential_vector, adiabatic_potential_vector, hopping_geometry_vector, hopping_time_vector};
+        trajectory_data_vector.at(i) = {state, position, velocity, diabatic_potential_vector, adiabatic_potential_vector, tdc_vector, hopping_geometry_vector, hopping_time_vector};
     }
 
     // create the vector of populations

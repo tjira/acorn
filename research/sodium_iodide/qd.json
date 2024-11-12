@@ -19,7 +19,7 @@
             "au2ev" : 27.21138602, "au2a" : 0.529177
         },
         "real" : 1,
-        "iterations" : 9000,
+        "iterations" : 100000,
         "time_step" : 1,
         "data_export" : {
             "diabatic_population" : true, "adiabatic_population" : true,

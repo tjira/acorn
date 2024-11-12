@@ -25,12 +25,12 @@
             "kappa" : true
         },
         "adiabatic" : true,
-        "iterations" : 9000,
+        "iterations" : 12000,
         "time_step" : 1,
         "trajectories" : 1,
         "log_interval_step" : 1,
         "data_export" : {
-            "diabatic_population" : true, "adiabatic_population" : true
+            "diabatic_population" : true, "adiabatic_population" : true, "tdc" : true
         }
     }
 }

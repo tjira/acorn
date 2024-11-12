@@ -48,7 +48,7 @@ Eigen::MatrixXd FewestSwitches::calculate_derivative_coupling_kappa(const std::v
     }
 
     // return the derivative coupling matrix
-    return derivative_coupling - derivative_coupling.transpose();
+    return derivative_coupling.transpose() - derivative_coupling;
 }
 
 std::vector<std::tuple<int, double>> FewestSwitches::calculate_hopping_probabilities(const Eigen::VectorXcd& ci, const Eigen::MatrixXd& derivative_coupling, int state, double time_step) {
@@ -79,7 +79,7 @@ Eigen::VectorXcd FewestSwitches::propagate_population(const Eigen::VectorXcd& po
     return population + time_step / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
 }
 
-std::tuple<Eigen::VectorXcd, int> FewestSwitches::jump(Eigen::VectorXcd population, const std::vector<Eigen::MatrixXd>& phi_vector, const std::vector<Eigen::MatrixXd>& potential_vector, int iteration, int state, double time_step) {
+std::tuple<Eigen::MatrixXd, Eigen::VectorXcd, int> FewestSwitches::jump(Eigen::VectorXcd population, const std::vector<Eigen::MatrixXd>& phi_vector, const std::vector<Eigen::MatrixXd>& potential_vector, int iteration, int state, double time_step) {
     // define the derivative coupling and the new state
     Eigen::MatrixXd derivative_coupling; int new_state = state;
 
@@ -87,6 +87,8 @@ std::tuple<Eigen::VectorXcd, int> FewestSwitches::jump(Eigen::VectorXcd populati
     if (input.kappa && iteration > 2) {
         derivative_coupling = calculate_derivative_coupling_kappa(potential_vector, iteration, time_step);
     } else derivative_coupling = calculate_derivative_coupling(phi_vector.at(iteration), phi_vector.at(iteration - 1), time_step);
+
+    // offtdc.push_back(derivative_coupling(0, 1));
 
     // pripagate the populations
     for (int k = 0; k < input.quantum_step_factor; k++) {
@@ -113,5 +115,5 @@ std::tuple<Eigen::VectorXcd, int> FewestSwitches::jump(Eigen::VectorXcd populati
     }
 
     // return the propagated population and the new state
-    return {population, new_state};
+    return {derivative_coupling, population, new_state};
 }
