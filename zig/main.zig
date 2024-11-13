@@ -5,16 +5,19 @@ const Matrix            = @import("matrix.zig"           ).Matrix           ;
 const ModelPotential    = @import("modelpotential.zig"   ).ModelPotential   ;
 const Vector            = @import("vector.zig"           ).Vector           ;
 
+const evaluateModelPotential = @import("modelpotential.zig").evaluateModelPotential;
+
 const allocator = std.heap.page_allocator;
 
 pub fn main() !void {
-    const r0 = try Matrix(f64).init(1, 1, &[_]f64{2}, allocator);
-    const v0 = try Matrix(f64).init(1, 1, &[_]f64{0}, allocator);
-    const a0 = try Matrix(f64).init(1, 1, &[_]f64{0}, allocator);
-    const s0 = try Vector(u8).init(1, &[_]u8{0}, allocator);
-    const classical_dynamics = ClassicalDynamics(f64){.iterations = 10000, .mass = 1, .time_step = 0.01};
-    try classical_dynamics.run(ModelPotential(f64).tully, r0, v0, a0, s0);
+    const potential = ModelPotential(f64).tully1;
+    const r0 = try Matrix(f64).randNorm(1, 1, -10, 0.5, 1, allocator);
+    const p0 = try Matrix(f64).randNorm(1, 1,  12, 1.0, 1, allocator);
+    const a0 = try Matrix(f64).zero    (1, 1,              allocator);
+    const s0 = try Vector(u8 ).constant(1, 1,              allocator);
 
-    const A = try Matrix(f64).init(3, 2, &[_]f64{1, 2, 3, 4, 5, 6}, allocator);
-    try A.write("A.mat");
+    const classical_dynamics = ClassicalDynamics(f64){.iterations = 10, .mass = 2000, .time_step = 0.01, .adiabatic = false, .seed = 1};
+    try classical_dynamics.run(potential, r0, try p0.divScalar(classical_dynamics.mass), a0, s0);
+
+    try (try evaluateModelPotential(f64, potential, -16, 16, 1024, allocator)).write("POTENTIAL.mat");
 }

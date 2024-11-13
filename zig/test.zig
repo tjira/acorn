@@ -12,7 +12,7 @@ test "matrix_add" {
     const B = try Matrix(f64).init(2, 2, &matrix_2x2_2, allocator); defer B.deinit();
     const result = try A.add(B); defer result.deinit();
     const expected = try Matrix(f64).init(2, 2, &[_]f64{2, 4, 6, 6}, allocator); defer expected.deinit();
-    try std.testing.expect(try result.eqApprox(expected, tolerance));
+    try std.testing.expect(result.eqApprox(expected, tolerance));
 }
 
 test "matrix_div" {
@@ -20,7 +20,7 @@ test "matrix_div" {
     const B = try Matrix(f64).init(2, 2, &matrix_2x2_2, allocator); defer B.deinit();
     const result = try A.div(B); defer result.deinit();
     const expected = try Matrix(f64).init(2, 2, &[_]f64{1, 1, 5, 2}, allocator); defer expected.deinit();
-    try std.testing.expect(try result.eqApprox(expected, tolerance));
+    try std.testing.expect(result.eqApprox(expected, tolerance));
 }
 
 test "matrix_mul" {
@@ -28,7 +28,7 @@ test "matrix_mul" {
     const B = try Matrix(f64).init(2, 2, &matrix_2x2_2, allocator); defer B.deinit();
     const result = try A.mul(B); defer result.deinit();
     const expected = try Matrix(f64).init(2, 2, &[_]f64{1, 4, 5, 8}, allocator); defer expected.deinit();
-    try std.testing.expect(try result.eqApprox(expected, tolerance));
+    try std.testing.expect(result.eqApprox(expected, tolerance));
 }
 
 test "matrix_sub" {
@@ -36,5 +36,5 @@ test "matrix_sub" {
     const B = try Matrix(f64).init(2, 2, &matrix_2x2_2, allocator); defer B.deinit();
     const result = try A.sub(B); defer result.deinit();
     const expected = try Matrix(f64).init(2, 2, &[_]f64{0, 0, 4, 2}, allocator); defer expected.deinit();
-    try std.testing.expect(try result.eqApprox(expected, tolerance));
+    try std.testing.expect(result.eqApprox(expected, tolerance));
 }
