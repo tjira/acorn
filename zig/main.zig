@@ -13,10 +13,10 @@ pub fn potential_tully(r: Vector(f64)) !Matrix(f64) {
 }
 
 pub fn main() !void {
-    const r0m = try Matrix(f64).init(1, 1, &[_]f64{2}, allocator);
-    const v0m = try Matrix(f64).init(1, 1, &[_]f64{0}, allocator);
-    const a0m = try Matrix(f64).init(1, 1, &[_]f64{0}, allocator);
-    const s0v = try Vector(u8).init(1, &[_]u8{0}, allocator);
+    const r0 = try Matrix(f64).init(1, 1, &[_]f64{2}, allocator);
+    const v0 = try Matrix(f64).init(1, 1, &[_]f64{0}, allocator);
+    const a0 = try Matrix(f64).init(1, 1, &[_]f64{0}, allocator);
+    const s0 = try Vector(u8).init(1, &[_]u8{0}, allocator);
     const classicalDynamics = ClassicalDynamics{.iterations = 10000, .mass = 1, .timeStep = 0.01};
-    try classicalDynamics.run(potential_tully, r0m, v0m, a0m, s0v);
+    try classicalDynamics.run(potential_tully, r0, v0, a0, s0);
 }

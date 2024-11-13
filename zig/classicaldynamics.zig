@@ -10,11 +10,10 @@ pub const ClassicalDynamics = struct {
     mass: f64,
     timeStep: f64,
 
-    pub fn run(self: ClassicalDynamics, potential: fn (r: Vector(f64)) anyerror!Matrix(f64), r0m: Matrix(f64), v0m: Matrix(f64), a0m: Matrix(f64), s0v: Vector(u8)) !void {
-        if (r0m.rows != v0m.rows or r0m.rows != a0m.rows or r0m.rows != s0v.rows) return error.IncompatibleInitialConditions; // check for the same number of initial conditions
-        for (0..r0m.rows) |i| { // loop over all trajectories
-            const r0 = try r0m.row(i); const v0 = try v0m.row(i); const a0 = try a0m.row(i); const s0 = try s0v.at(i); // extract the initial conditions
-            try self.runTrajectory(potential, r0, v0, a0, s0); // run the trajectory
+    pub fn run(self: ClassicalDynamics, potential: fn (r: Vector(f64)) anyerror!Matrix(f64), r0: Matrix(f64), v0: Matrix(f64), a0: Matrix(f64), s0: Vector(u8)) !void {
+        if (r0.rows != v0.rows or r0.rows != a0.rows or r0.rows != s0.rows) return error.IncompatibleInitialConditions; // check for the same number of initial conditions
+        for (0..r0.rows) |i| { // loop over all trajectories
+            try self.runTrajectory(potential, try r0.row(i), try v0.row(i), try a0.row(i), try s0.at(i)); // run the trajectory
         }
     }
     fn runTrajectory(self: ClassicalDynamics, potential: fn (r: Vector(f64)) anyerror!Matrix(f64), r0: Vector(f64), v0: Vector(f64), a0: Vector(f64), s0: u8) !void {
