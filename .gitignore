@@ -42,6 +42,3 @@ tex/
 
 # nested folders
 /docs/python/
-
-# exceptions
-!/education/python/**
