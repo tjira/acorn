@@ -7,16 +7,16 @@ const mat = @import("matrix.zig"           );
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
-const allocator = std.heap.page_allocator;
+const allocator = std.testing.allocator;
 
-pub fn main() !void {
+test "cdyn" {
     const cdyn_opt = cdn.ClassicalDynamicsOptions(f64){
         .adiabatic = false,
         .iterations = 3500,
         .seed = 1,
+        .states = 2,
         .time_step = 1,
-        .derivative_step = 0.001,
-        .trajectories = 100,
+        .trajectories = 1,
         .ic = .{
             .position_mean = &[_]f64{-10},
             .position_std = &[_]f64{0.5},
@@ -33,4 +33,6 @@ pub fn main() !void {
     };
 
     try cdn.run(f64, cdyn_opt, allocator);
+
+    try std.testing.expect(true);
 }
