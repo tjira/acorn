@@ -1,23 +1,31 @@
 const std = @import("std");
 
-const ClassicalDynamics = @import("classicaldynamics.zig").ClassicalDynamics;
-const Matrix            = @import("matrix.zig"           ).Matrix           ;
-const ModelPotential    = @import("modelpotential.zig"   ).ModelPotential   ;
-const Vector            = @import("vector.zig"           ).Vector           ;
+const cdn = @import("classicaldynamics.zig");
+const mpt = @import("modelpotential.zig"   );
+const mat = @import("matrix.zig"           );
 
-const evaluateModelPotential = @import("modelpotential.zig").evaluateModelPotential;
+const Matrix = @import("matrix.zig").Matrix;
+const Vector = @import("vector.zig").Vector;
 
-const allocator = std.heap.page_allocator;
+const global_allocator = std.heap.page_allocator;
 
 pub fn main() !void {
-    const potential = ModelPotential(f64).tully1;
-    const r0 = try Matrix(f64).randNorm(1, 1, -10, 0.5, 1, allocator);
-    const p0 = try Matrix(f64).randNorm(1, 1,  12, 1.0, 1, allocator);
-    const a0 = try Matrix(f64).zero    (1, 1,              allocator);
-    const s0 = try Vector(u8 ).constant(1, 1,              allocator);
+    const cdyn_opt = cdn.ClassicalDynamicsOptions(f64){
+        .adiabatic = false,
+        .iterations = 3500,
+        .time_step = 1,
+        .trajectories = 1,
+        .seed = 1,
+        .ic = .{
+            .position_mean = &[_]f64{-10},
+            .position_std = &[_]f64{0.5},
+            .momentum_mean = &[_]f64{15},
+            .momentum_std = &[_]f64{1},
+            .state = 1,
+            .mass = 2000
+        },
+        .potential = mpt.doubleState1D_1,
+    };
 
-    const classical_dynamics = ClassicalDynamics(f64){.iterations = 10, .mass = 2000, .time_step = 0.01, .adiabatic = false, .seed = 1};
-    try classical_dynamics.run(potential, r0, try p0.divScalar(classical_dynamics.mass), a0, s0);
-
-    try (try evaluateModelPotential(f64, potential, -16, 16, 1024, allocator)).write("POTENTIAL.mat");
+    try cdn.run(f64, cdyn_opt, global_allocator);
 }
