@@ -18,9 +18,9 @@ pub fn main() !void {
         .seed = 1,
         .time_step = 1,
         .derivative_step = 0.001,
-        .trajectories = 1,
+        .trajectories = 1000,
         .ic = .{
-            .position_mean = &[_]f64{-10},
+            .position_mean = &[_]f64{-15},
             .position_std = &[_]f64{0.5},
             .momentum_mean = &[_]f64{15},
             .momentum_std = &[_]f64{1},
@@ -28,16 +28,43 @@ pub fn main() !void {
             .mass = 2000
         },
         .li = .{
-            .trajectory = 10,
+            .trajectory = 100,
             .iteration = 500
         },
-        .potential = mpt.doubleState1D_1,
+        .potential = mpt.tripleState1D_1,
     };
 
-    try cdn.run(f64, cdyn_opt, allocator);
+    try mpt.write(f64, "POTENTIAL.mat", cdyn_opt.potential, -16, 16, 1024, cdyn_opt.adiabatic, allocator); try cdn.run(f64, cdyn_opt, allocator);
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
-    var A = try Matrix(f64).init(5, 2, allocator); defer A.deinit(); A.linspace(-4, 4);
-    mat.print(f64, A);
+
+    // const r = try mpt.grid(f64, -16, 16, 1024, 1, allocator); defer r.deinit();
+    // const U = try mpt.evaluate(f64, mpt.tripleState1D_1, r, allocator); defer U.deinit();
+    //
+    // var Ur = try Matrix(f64).init(U.rows, r.cols + U.cols, allocator);
+    //
+    // r.hjoin(&Ur, U); try Ur.write("POTENTIAL.mat");
+    //
+    // try Ur.print(std.io.getStdOut().writer());
+
+    // const start = -16; const end = 16; const points = 1024;
+    // var Ur = try Matrix(f64).init(points, 4, allocator); defer Ur.deinit();
+    // var U = try Matrix(f64).init(3, 3, allocator); defer U.deinit();
+    // var r = try Vector(f64).init(1, allocator); defer r.deinit();
+    // for (0..points) |i| {
+    //     r.ptr(0).* = start + (end - start) / @as(f64, @floatFromInt(points - 1)) * @as(f64, @floatFromInt(i));
+    //     Ur.ptr(i, 0).* = r.at(0); mpt.tripleState1D_1(f64, &U, r);
+    //     for (0..U.rows) |j| Ur.ptr(i, j + 1).* = U.at(j, j);
+    // }
+    // try Ur.write("POTENTIAL.mat");
+
+    // var A = try Matrix(f64).init(2, 2, allocator); defer A.deinit();
+    // var B = try Matrix(f64).init(2, 2, allocator); defer B.deinit();
+    // var C = try Matrix(f64).init(2, 2, allocator); defer C.deinit();
+    // A.set(&[_]f64{1, 2, 2, 1}); try mat.eigh(f64, &B, &C, A, 1e-12);
+    //
+    // try A.print(std.io.getStdOut().writer());
+    // try B.print(std.io.getStdOut().writer());
+    // try C.print(std.io.getStdOut().writer());
 }
