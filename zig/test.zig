@@ -14,7 +14,6 @@ test "cdyn" {
         .adiabatic = false,
         .iterations = 3500,
         .seed = 1,
-        .states = 2,
         .time_step = 1,
         .trajectories = 1,
         .ic = .{

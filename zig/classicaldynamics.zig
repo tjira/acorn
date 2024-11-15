@@ -27,15 +27,18 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
 }
 
 pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.mem.Allocator) !void {
-    var prng = std.Random.DefaultPrng.init(opt.seed); const rand = prng.random();
+    var prng = std.Random.DefaultPrng.init(opt.seed); const rand = prng.random(); const nstate = try mpt.states(T, opt.potential);
 
-    var pop = try Matrix(T).init(opt.iterations, try mpt.states(T, opt.potential) + 1, allocator); defer pop.deinit(); pop.fill(0);
+    var pop = try Matrix(T).init(opt.iterations, nstate + 1, allocator); defer pop.deinit(); pop.fill(0);
+
+    for (0..opt.iterations) |i| pop.ptr(i, 0).* = @as(T, @floatFromInt(i + 1)) * opt.time_step;
 
     for (0..opt.trajectories) |i| {
 
-        var r = try Vector(T).init(1, allocator); defer r.deinit();
-        var p = try Vector(T).init(1, allocator); defer p.deinit();
-        var a = try Vector(T).init(1, allocator); defer a.deinit();
+        var r  = try Vector(T).init(1, allocator); defer  r.deinit();
+        var p  = try Vector(T).init(1, allocator); defer  p.deinit();
+        var a  = try Vector(T).init(1, allocator); defer  a.deinit();
+        var ap = try Vector(T).init(1, allocator); defer ap.deinit();
         var s = opt.ic.state; var sp = s; a.fill(0);
 
         for (0..r.rows) |j| r.ptr(j).* = opt.ic.position_mean[j] + opt.ic.position_std[j] * rand.floatNorm(T);
@@ -43,8 +46,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
         var v = try p.clone(); defer v.deinit(); v.ptr(0).* /= opt.ic.mass; var Ekin: T = 0; var Epot: T = 0;
 
-        var U = try Matrix(T).init(2, 2, allocator); defer U.deinit();
-        var F = try Vector(T).init(r.rows, allocator); defer F.deinit();
+        var U = try Matrix(T).init(nstate, nstate, allocator); defer U.deinit();
+        var F = try Vector(T).init(r.rows,         allocator); defer F.deinit();
 
         var U3 = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer U3[0].deinit(); defer U3[1].deinit(); defer U3[2].deinit();
 
@@ -52,7 +55,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
             if (j == 0 or sp != s) try mpt.evaluate(T, &U, &F, opt.potential, r, s, opt.derivative_step);
 
-            const ap = try a.clone(); defer ap.deinit(); sp = s;
+            @memcpy(ap.data, a.data); sp = s; pop.ptr(j, 1 + s).* += 1;
 
             for (0..r.rows) |k| {
                 a.ptr(k).* = F.at(k) / opt.ic.mass;
@@ -64,8 +67,6 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
             Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.ic.mass; Epot = U.at(s, s);
 
-            pop.ptr(j, 1 + s).* += 1;
-
             if (j > 2) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, rand);
 
             if ((i == 0 or (i + 1) % opt.li.trajectory == 0) and (j == 0 or (j + 1) % opt.li.iteration == 0)) {
@@ -73,8 +74,6 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
             }
         }
     }
-
-    for (0..opt.iterations) |i| pop.ptr(i, 0).* = @as(T, @floatFromInt(i + 1)) * opt.time_step;
 
     for (0..opt.iterations) |i| {for (0..try mpt.states(T, opt.potential)) |j| pop.ptr(i, j + 1).* /= opt.trajectories;}
 
