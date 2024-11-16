@@ -218,7 +218,7 @@ for MODEL in ${MODELS[@]}; do
         jq '.classical_dynamics |= . + {"surface_hopping" : {"type" : "landau-zener"                    }}' "lzsh_${MODEL,,}_P=${MOMENTUM}.json"  > temp.json && mv temp.json  "lzsh_${MODEL,,}_P=${MOMENTUM}.json"
 
         # run the dynamics and delete the inputs
-        $ACORN -i "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "kfssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" -n $CORES && rm *.json
+        $ACORN -n $CORES run "exact_${MODEL,,}_P=${MOMENTUM}.json" "fssh_${MODEL,,}_P=${MOMENTUM}.json" "kfssh_${MODEL,,}_P=${MOMENTUM}.json" "lzsh_${MODEL,,}_P=${MOMENTUM}.json" && rm *.json
 
         # get the populations at the last time step
         POP_EXACT=$(tail -n 1 POPULATION-ADIABATIC_EXACT-REAL_1.mat  | awk -v i=$IS '{print $(i+1)}');
@@ -256,13 +256,13 @@ for MODEL in ${MODELS[@]}; do
         $PLOT_1D POTENTIAL-ENERGY_EXACT-REAL_1.mat POTENTIAL-ENERGY-MEAN_FS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_KFS-ADIABATIC.mat POTENTIAL-ENERGY-MEAN_LZ-ADIABATIC.mat --legend "EXACT" "FSSH" "KFSSH" "LZSH" --title "POTENTIAL ENERGY: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "ENERGY (a.u.)"   --output "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}" --png
 
         # plot the hopping geometries
-        $PLOT_1D HOPPING-GEOMETRIES_FS-ADIABATIC.mat HOPPING-GEOMETRIES_KFS-ADIABATIC.mat --bins 100 --legend "FSSH" "KFSSH" --title "HOPPING GEOMETRIES: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Relative Count" --output "HOPPING-GEOMETRIES_${MODEL}" --histogram --png
-        $PLOT_1D HOPPING-TIMES_FS-ADIABATIC.mat           HOPPING-TIMES_KFS-ADIABATIC.mat --bins 100 --legend "FSSH" "KFSSH" --title "HOPPING TIMES: ${MODEL}"      --xlabel "Time (a.u.)"       --ylabel "Relative Count" --output "HOPPING-TIMES_${MODEL}"      --histogram --png
+        $PLOT_1D HOPPING-GEOMETRIES_FS-ADIABATIC.mat HOPPING-GEOMETRIES_KFS-ADIABATIC.mat --bins 100 --legend "FSSH" "KFSSH" --title "HOPPING GEOMETRIES: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Relative Count" --output "HOPPING-GEOMETRIES_${MODEL}_P=${MOMENTUM}" --histogram --png
+        $PLOT_1D HOPPING-TIMES_FS-ADIABATIC.mat           HOPPING-TIMES_KFS-ADIABATIC.mat --bins 100 --legend "FSSH" "KFSSH" --title "HOPPING TIMES: ${MODEL}"      --xlabel "Time (a.u.)"       --ylabel "Relative Count" --output "HOPPING-TIMES_${MODEL}_P=${MOMENTUM}"      --histogram --png
 
         # make the trajectory analysis image
         montage "POTENTIAL-ADIABATIC_${MODEL}.png" "POPULATION-ADIABATIC_${MODEL}_P=${MOMENTUM}.png" "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"     -mode concatenate -tile x1 "TRAJECTORIES-GENERAL_${MODEL}_P=${MOMENTUM}.png"
         montage "POTENTIAL-ADIABATIC_${MODEL}.png" "KINETIC-ENERGY_${MODEL}_P=${MOMENTUM}.png"       "POTENTIAL-ENERGY_${MODEL}_P=${MOMENTUM}.png" "TOTAL-ENERGY_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORIES-ENERGETICS_${MODEL}_P=${MOMENTUM}.png"
-        montage "POTENTIAL-ADIABATIC_${MODEL}.png" "HOPPING-GEOMETRIES_${MODEL}.png"                 "HOPPING-TIMES_${MODEL}.png"                                                            -mode concatenate -tile x1 "TRAJECTORIES-TRANSITIONS_${MODEL}_P=${MOMENTUM}.png"
+        montage "POTENTIAL-ADIABATIC_${MODEL}.png" "HOPPING-GEOMETRIES_${MODEL}_P=${MOMENTUM}.png"   "HOPPING-TIMES_${MODEL}_P=${MOMENTUM}.png"                                              -mode concatenate -tile x1 "TRAJECTORIES-TRANSITIONS_${MODEL}_P=${MOMENTUM}.png"
     done
 
     # plot the population dependence on momentum

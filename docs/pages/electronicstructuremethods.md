@@ -14,4 +14,4 @@ Moving beyond HF, the text delves into Møller--Plesset Perturbation Theory, whi
 
 The part culminates with a discussion on the Coupled Cluster theory, a highly accurate and computationally efficient method for capturing electron correlation effects, often used for small to medium-sized systems. By introducing truncations such as Coupled Cluster Doubles and Coupled Cluster Singles and Doubles, the text demonstrates how electron correlation can be systematically included while balancing computational cost. The Coupled Cluster section provides iterative coding exercises for calculating correlation energies, rounding out the document’s comprehensive approach to electronic structure methods in computational quantum chemistry. Through this blend of theory, mathematical formulations, and hands-on coding exercises, the document serves as an invaluable resource for building a strong foundational understanding of electronic structure methods.
 
-{: .no_toc .text-delta }
+{:.no_toc .text-delta}

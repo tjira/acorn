@@ -1,0 +1,33 @@
+{
+    "wavefunction" : {
+        "guess" : ["0", "0", "exp(-(x-4.96678210296807)^2)", "0"],
+        "dimension" : 1,
+        "grid_limits" : [3, 30],
+        "grid_points" : 4096,
+        "mass" : 35480.251398,
+        "momentum" : [50]
+    },
+    "classical_dynamics" : {
+        "potential" : [
+            ["((A2+(B2/(x*au2a))^8)*exp(-(x*au2a)/rho)-e2/(x*au2a)-e2*(lp+lm)/2/(x*au2a)^4-C2/(x*au2a)^6-2*e2*lm*lp/(x*au2a)^7+de)/au2ev", "A12*exp(-beta12*((x*au2a)-Rx)^2)/au2ev"],
+            ["A12*exp(-beta12*((x*au2a)-Rx)^2)/au2ev",                                                                                     "A1*exp(-beta1*((x*au2a)-R0))/au2ev"    ]
+        ],
+        "constants" : {
+            "A2" : 2760, "B2" : 2.398, "C2" : 11.3, "rho" : 0.3489, "e2" : 14.3996, "lp" : 0.408, "lm" : 6.431,
+            "A1" : 0.813, "beta1" : 4.08, "A12" : 0.055, "beta12" : 0.6931, "R0" : 2.67, "Rx" : 6.93, "de" : 2.075,
+
+            "au2ev" : 27.21138602, "au2a" : 0.529177
+        },
+        "surface_hopping" : {
+            "type" : "landau-zener"
+        },
+        "adiabatic" : true,
+        "iterations" : 100000,
+        "time_step" : 1,
+        "trajectories" : 100,
+        "log_interval_step" : 500,
+        "data_export" : {
+            "diabatic_population" : true, "adiabatic_population" : true
+        }
+    }
+}

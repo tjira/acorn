@@ -51,6 +51,7 @@ nlohmann::json default_input = R"(
     },
     "quantum_dynamics" : {
         "potential" : [["0.5*x^2"]],
+        "constants" : {},
         "imaginary" : 0,
         "real" : 0,
         "iterations" : 1000,
@@ -110,7 +111,9 @@ nlohmann::json default_input = R"(
             "kinetic_energy" : false,
             "kinetic_energy_mean" : false,
             "hopping_geometry" : false,
-            "hopping_time" : false
+            "hopping_time" : false,
+            "tdc" : false,
+            "tdc_mean" : false
         }
     }
 }

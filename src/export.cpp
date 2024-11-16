@@ -241,10 +241,10 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // transform the hopping geometries to a matrix
-        data_matrix = Eigen::MatrixXd::Zero(hopping_geometries.size(), hopping_geometries.front().rows()); for (size_t i = 0; i < hopping_geometries.size(); i++) data_matrix.row(i) = hopping_geometries.at(i).transpose();
+        if (!hopping_geometries.empty()) data_matrix = Eigen::MatrixXd::Zero(hopping_geometries.size(), hopping_geometries.front().rows()); for (size_t i = 0; i < hopping_geometries.size(); i++) data_matrix.row(i) = hopping_geometries.at(i).transpose();
 
         // export the energy mean
-        Export::EigenMatrixDouble(std::string("HOPPING-GEOMETRIES_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix);
+        if (!hopping_geometries.empty()) Export::EigenMatrixDouble(std::string("HOPPING-GEOMETRIES_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix);
     }
 
     // export the hopping times
@@ -259,10 +259,46 @@ void Export::ClassicalTrajectories(const Input::ClassicalDynamics& input, const 
         }
 
         // transform the hopping geometries to a matrix
-        data_matrix = Eigen::MatrixXd::Zero(hopping_times.size(), 1); for (size_t i = 0; i < hopping_times.size(); i++) data_matrix(i, 0) = hopping_times.at(i);
+        if (!hopping_times.empty()) data_matrix = Eigen::MatrixXd::Zero(hopping_times.size(), 1); for (size_t i = 0; i < hopping_times.size(); i++) data_matrix(i, 0) = hopping_times.at(i);
 
         // export the energy mean
-        Export::EigenMatrixDouble(std::string("HOPPING-TIMES_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix);
+        if (!hopping_times.empty()) Export::EigenMatrixDouble(std::string("HOPPING-TIMES_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix);
+    }
+
+    // export the TDC
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations, 1, input.time_step * input.iterations); input.data_export.tdc) {
+
+        // create the matrix containing the TDC
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations, trajectory_data_vector.size() * trajectory_data_vector.at(0).tdc.at(0).size());
+
+        // extract the tdc dimension
+        int dim = trajectory_data_vector.at(0).tdc.at(0).rows();
+
+        // fill the matrix with the TDC
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations; j++) for (int k = 0; k < dim * dim; k++) {
+            data_matrix.row(j)(i * dim * dim + k) = trajectory_data_vector.at(i).tdc.at(j)(k / dim, k % dim);
+        }
+
+        // export the energy
+        Export::EigenMatrixDouble(std::string("TDC_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix, time_variable);
+    }
+
+    // export the mean TDC
+    if (Eigen::VectorXd time_variable = Eigen::VectorXd::LinSpaced(input.iterations, 1, input.time_step * input.iterations); input.data_export.tdc_mean) {
+
+        // create the matrix containing the TDC mean
+        data_matrix = Eigen::MatrixXd::Zero(input.iterations, trajectory_data_vector.at(0).tdc.at(0).size());
+
+        // extract the tdc dimension
+        int dim = trajectory_data_vector.at(0).tdc.at(0).rows();
+
+        // fill the matrix with the the TDC
+        for (int i = 0; i < input.trajectories; i++) for (int j = 0; j < input.iterations; j++) for (int k = 0; k < dim * dim; k++) {
+            data_matrix.row(j)(k) += trajectory_data_vector.at(i).tdc.at(j)(k / dim, k % dim);
+        }
+
+        // export the energy
+        Export::EigenMatrixDouble(std::string("TDC_") + algorithm + (input.adiabatic ? "-ADIABATIC" : "-DIABATIC") + ".mat", data_matrix / input.trajectories, time_variable);
     }
 }
 
