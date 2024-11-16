@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const swap = @import("helper.zig").swap;
+
 pub fn Matrix(comptime T: type) type {
     return struct {
         data: []T, rows: usize, cols: usize, allocator: std.mem.Allocator,
@@ -58,10 +60,8 @@ pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     C.fill(0); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
 }
 
-pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T) !void {
-    @memcpy(J.data, A.data); var T1 = try A.clone(); defer T1.deinit(); var T2 = try A.clone(); defer T2.deinit();
-
-    var maxi: usize = undefined; var maxj: usize = undefined; var maxv: T = undefined; var phi: T = undefined; 
+pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T, T1: *Matrix(T), T2: *Matrix(T)) void {
+    @memcpy(J.data, A.data); var maxi: usize = undefined; var maxj: usize = undefined; var maxv: T = undefined; var phi: T = undefined; 
 
     while (!J.isdiag(tol)) : ({maxi = 0; maxj = 1; maxv = J.at(maxi, maxj);}) {
 
@@ -72,14 +72,24 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T
         C.ptr(maxi, maxi).* = std.math.cos(phi); C.ptr(maxj, maxj).* =  C.at(maxi, maxi);
         C.ptr(maxj, maxi).* = std.math.sin(phi); C.ptr(maxi, maxj).* = -C.at(maxj, maxi);
 
-        mm(T, &T1, J.*, C.*); transpose(T, &T2, C.*); mm(T, J, T2, T1);
+        mm(T, T1, J.*, C.*); transpose(T, T2, C.*); mm(T, J, T2.*, T1.*);
     }
 
-    var t: T = undefined;
-
     for (0..J.rows) |i| for (i..J.cols) |j| if (J.at(i, i) > J.at(j, j)) {
-        t = J.at(j, j); J.ptr(j, j).* = J.at(i, i); J.ptr(i, i).* = t; for (0..C.rows) |k| {t = C.at(k, i); C.ptr(k, i).* = C.at(k, j); C.ptr(k, j).* = t;}
+        swap(J.ptr(j, j), J.ptr(i, i)); for (0..C.rows) |k| swap(C.ptr(k, i), C.ptr(k, j));
     };
+}
+
+pub fn exph(comptime T: type, E: *Matrix(T), J: Matrix(T), C: Matrix(T), T1: *Matrix(T), T2: *Matrix(T)) void {
+    @memcpy(T1.data, J.data); for (0..J.rows) |i| T1.ptr(i, i).* = std.math.exp(J.at(i, i));
+
+    mm(T, T2, C, T1.*); transpose(T, T1, C); mm(T, E, T2.*, T1.*);
+}
+
+pub fn logh(comptime T: type, L: *Matrix(T), J: Matrix(T), C: Matrix(T), T1: *Matrix(T), T2: *Matrix(T)) void {
+    @memcpy(T1.data, J.data); for (0..J.rows) |i| T1.ptr(i, i).* = std.math.log10(J.at(i, i)) / std.math.log10e;
+
+    mm(T, T2, C, T1.*); transpose(T, T1, C); mm(T, L, T2.*, T1.*);
 }
 
 pub fn transpose(comptime T: type, B: *Matrix(T), A: Matrix(T)) void {

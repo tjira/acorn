@@ -45,13 +45,16 @@ pub fn evaluate(comptime T: type, potential: PotentialType(T), rvec: Matrix(T), 
     var A = try Matrix(T).init(try states(T, potential), try states(T, potential), rvec.allocator); defer A.deinit();
     var C = try Matrix(T).init(try states(T, potential), try states(T, potential), rvec.allocator); defer C.deinit();
 
+    var T1 = try Matrix(T).init(try states(T, potential), try states(T, potential), rvec.allocator); defer T1.deinit();
+    var T2 = try Matrix(T).init(try states(T, potential), try states(T, potential), rvec.allocator); defer T2.deinit();
+
     const U = try Matrix(T).init(rvec.rows, V.rows * V.rows, rvec.allocator); var r = try Vector(T).init(rvec.cols, rvec.allocator); defer r.deinit();
 
     for (0..rvec.rows) |i| {
         
         for (0..rvec.cols) |j| {r.ptr(j).* = rvec.at(i, j);} potential(T, &V, r);
 
-        if (adiabatic) {try mat.eigh(T, &A, &C, V, 1e-12); @memcpy(V.data, A.data);}
+        if (adiabatic) {mat.eigh(T, &A, &C, V, 1e-12, &T1, &T2); @memcpy(V.data, A.data);}
 
         for (V.data, 0..) |e, j| U.ptr(i, j).* = e;
     }
@@ -72,5 +75,5 @@ pub fn grid(comptime T: type, start: T, end: T, points: u32, dim: u32, allocator
 pub fn write(comptime T: type, path: []const u8, potential: PotentialType(T), start: T, end: T, points: u32, adiabatic: bool, allocator: std.mem.Allocator) !void {
     const r = try grid(T, start, end, points, try dims(T, potential), allocator); defer r.deinit(); const U = try evaluate(T, potential, r, adiabatic); defer U.deinit();
 
-    var Ur = try Matrix(f64).init(U.rows, r.cols + U.cols, allocator); defer Ur.deinit(); r.hjoin(&Ur, U); try Ur.write(path);
+    var V = try Matrix(f64).init(U.rows, r.cols + U.cols, allocator); defer V.deinit(); r.hjoin(&V, U); try V.write(path);
 }

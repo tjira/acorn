@@ -22,7 +22,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         time_step: T,
         trajectories: u32,
 
-        ic: InitialConditions, li: LogIntervals, potential: mpt.PotentialType(T),
+        initial_conditions: InitialConditions, log_intervals: LogIntervals, potential: mpt.PotentialType(T),
     };
 }
 
@@ -42,14 +42,17 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
     var A = try Matrix(T).init(nstate, nstate, allocator); defer A.deinit();
     var C = try Matrix(T).init(nstate, nstate, allocator); defer C.deinit();
 
+    var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
+    var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
+
     var U3 = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer U3[0].deinit(); defer U3[1].deinit(); defer U3[2].deinit();
 
     for (0..opt.trajectories) |i| {
 
-        for (0..r.rows) |j| r.ptr(j).* = opt.ic.position_mean[j] + opt.ic.position_std[j] * rand.floatNorm(T);
-        for (0..p.rows) |j| p.ptr(j).* = opt.ic.momentum_mean[j] + opt.ic.momentum_std[j] * rand.floatNorm(T);
+        for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand.floatNorm(T);
+        for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand.floatNorm(T);
 
-        v = try p.clone(); v.ptr(0).* /= opt.ic.mass; a.fill(0); var s = opt.ic.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
+        v = try p.clone(); v.ptr(0).* /= opt.initial_conditions.mass; a.fill(0); var s = opt.initial_conditions.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
 
         for (0..opt.iterations) |j| {
 
@@ -57,21 +60,27 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
             for (0..r.rows) |k| {
 
-                rt.ptr(k).* = r.at(k) + opt.derivative_step; opt.potential(T, &U, rt); const Up = U.at(s, s);
-                rt.ptr(k).* = r.at(k) - opt.derivative_step; opt.potential(T, &U, rt); const Um = U.at(s, s);
+                rt.ptr(k).* = r.at(k) + opt.derivative_step; opt.potential(T, &U, rt); if (opt.adiabatic) {mat.eigh(T, &A, &C, U, 1e-12, &T1, &T2); @memcpy(U.data, A.data);} const Up = U.at(s, s);
+                rt.ptr(k).* = r.at(k) - opt.derivative_step; opt.potential(T, &U, rt); if (opt.adiabatic) {mat.eigh(T, &A, &C, U, 1e-12, &T1, &T2); @memcpy(U.data, A.data);} const Um = U.at(s, s);
 
-                a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.ic.mass;
+                a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
                 v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
                 r.ptr(k).* += (v.at(k) + 0.5 * a.at(k) * opt.time_step) * opt.time_step;
             }
 
-            opt.potential(T, &U, r); @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.ic.mass; Epot = U.at(s, s);
+            opt.potential(T, &U, r); if (opt.adiabatic) {mat.eigh(T, &A, &C, U, 1e-12, &T1, &T2); @memcpy(U.data, A.data);} @memcpy(U3[j % 3].data, U.data);
+
+            Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.initial_conditions.mass; Epot = U.at(s, s);
+
+            if ((i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) {
+                std.debug.print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:4} {d:12.6}\n", .{i + 1, j + 1, Ekin, Epot, Ekin + Epot, s, r.at(0)});
+            }
 
             if (j > 2) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand);
 
-            if ((i == 0 or (i + 1) % opt.li.trajectory == 0) and (j == 0 or (j + 1) % opt.li.iteration == 0)) {
-                std.debug.print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:4} {d:12.6}\n", .{i + 1, j + 1, Ekin, Epot, Ekin + Epot, sp, r.at(0)});
-            }
+            if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
+
+            if (sp != s) {for (0..v.rows) |k| v.ptr(k).* *= std.math.sqrt((Ekin - U.at(s, s) + U.at(sp, sp)) / Ekin);}
         }
     }
 
@@ -81,22 +90,42 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
         std.debug.print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
     }
 
-    const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * opt.iterations);
-
-    var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write("POPULATION.mat"); pop_t.deinit();
+    try writeResults(T, opt, pop, allocator);
 }
 
 fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) !u32 {
-    var sn = s; var pm: T = 0; const rn = rand.float(T); _=adiabatic;
+    var sn = s; var pm: T = 0; var rn: T = undefined; var sampled = false;
 
-    for (0..U3[0].rows) |i| if (i != s and (U3[0].at(i, i) - U3[0].at(s, s)) * (U3[1].at(i, i) - U3[1].at(s, s)) < 0) {
+    if (!adiabatic) for (0..U3[0].rows) |i| if (i != s) {
+
+        if ((U3[0].at(i, i) - U3[0].at(s, s)) * (U3[1].at(i, i) - U3[1].at(s, s)) > 0) continue;
 
         const di = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const ds = (U3[0].at(s, s) - U3[1].at(s, s)) / time_step;
 
         const p = 1 - std.math.exp(-2 * std.math.pi * std.math.pow(T, U3[0].at(i, s), 2) / @abs(di - ds));
 
-        if (rn < p and p > pm) {sn = @intCast(i); pm = p;}
+        if (!sampled) {rn = rand.float(T); sampled = true;} if (rn < p and p > pm) {sn = @intCast(i); pm = p;}
+    };
+
+    if (adiabatic) for (0..U3[0].rows) |i| if (i != s) {
+
+        const di0 = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const ds0 = (U3[0].at(s, s) - U3[1].at(s, s)) / time_step;
+        const di1 = (U3[1].at(i, i) - U3[2].at(i, i)) / time_step; const ds1 = (U3[1].at(s, s) - U3[2].at(s, s)) / time_step;
+
+        if ((di0 - ds0) > 0 or (di1 - ds1) < 0) continue;
+
+        const ddi = (di0 - di1) / time_step; const dds = (ds0 - ds1) / time_step;
+
+        const p = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, U3[0].at(i, i) - U3[0].at(s, s), 3) / (ddi - dds)));
+
+        if (!sampled) {rn = rand.float(T); sampled = true;} if (rn < p and p > pm) {sn = @intCast(i); pm = p;}
     };
 
     return sn;
+}
+
+fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), allocator: std.mem.Allocator) !void {
+    const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * opt.iterations);
+
+    var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write("POPULATION.mat"); pop_t.deinit();
 }
