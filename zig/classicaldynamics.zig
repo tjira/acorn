@@ -6,6 +6,8 @@ const mpt = @import("modelpotential.zig");
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
+const stdout = std.io.getStdOut().writer();
+
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         const InitialConditions = struct {
@@ -27,67 +29,69 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
 }
 
 pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.mem.Allocator) !void {
-    var prng = std.Random.DefaultPrng.init(opt.seed); const rand = prng.random(); const nstate = try mpt.states(T, opt.potential);
+    var prng = std.Random.DefaultPrng.init(opt.seed); const rand = prng.random(); const ndim = try mpt.dims(T, opt.potential); const nstate = try mpt.states(T, opt.potential);
 
     var pop = try Matrix(T).init(opt.iterations, nstate, allocator); defer pop.deinit(); pop.fill(0);
 
-    var r  = try Vector(T).init(1, allocator); defer  r.deinit();
-    var p  = try Vector(T).init(1, allocator); defer  p.deinit();
-    var v  = try Vector(T).init(1, allocator); defer  v.deinit();
-    var a  = try Vector(T).init(1, allocator); defer  a.deinit();
-    var rt = try Vector(T).init(1, allocator); defer rt.deinit();
-    var ap = try Vector(T).init(1, allocator); defer ap.deinit();
+    {
+        var r  = try Vector(T).init(1, allocator); defer  r.deinit();
+        var p  = try Vector(T).init(1, allocator); defer  p.deinit();
+        var v  = try Vector(T).init(1, allocator); defer  v.deinit();
+        var a  = try Vector(T).init(1, allocator); defer  a.deinit();
+        var rt = try Vector(T).init(1, allocator); defer rt.deinit();
+        var ap = try Vector(T).init(1, allocator); defer ap.deinit();
 
-    var U = try Matrix(T).init(nstate, nstate, allocator); defer U.deinit();
-    var A = try Matrix(T).init(nstate, nstate, allocator); defer A.deinit();
-    var C = try Matrix(T).init(nstate, nstate, allocator); defer C.deinit();
+        var U  = try Matrix(T).init(nstate, nstate, allocator); defer  U.deinit();
+        var UA = try Matrix(T).init(nstate, nstate, allocator); defer UA.deinit();
+        var UC = try Matrix(T).init(nstate, nstate, allocator); defer UC.deinit();
 
-    var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
-    var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
+        var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
+        var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
 
-    var U3 = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer U3[0].deinit(); defer U3[1].deinit(); defer U3[2].deinit();
+        var U3 = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer U3[0].deinit(); defer U3[1].deinit(); defer U3[2].deinit();
 
-    for (0..opt.trajectories) |i| {
+        for (0..opt.trajectories) |i| {
 
-        for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand.floatNorm(T);
-        for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand.floatNorm(T);
+            for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand.floatNorm(T);
+            for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand.floatNorm(T);
 
-        v = try p.clone(); v.ptr(0).* /= opt.initial_conditions.mass; a.fill(0); var s = opt.initial_conditions.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
+            @memcpy(v.data, p.data); v.ptr(0).* /= opt.initial_conditions.mass; a.fill(0); var s = opt.initial_conditions.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
 
-        for (0..opt.iterations) |j| {
+            for (0..opt.iterations) |j| {
 
-            @memcpy(ap.data, a.data); sp = s; pop.ptr(j, s).* += 1;
+                @memcpy(ap.data, a.data); sp = s; pop.ptr(j, s).* += 1;
 
-            for (0..r.rows) |k| {
+                for (0..ndim) |k| {
 
-                rt.ptr(k).* = r.at(k) + opt.derivative_step; opt.potential(T, &U, rt); if (opt.adiabatic) {mat.eigh(T, &A, &C, U, 1e-12, &T1, &T2); @memcpy(U.data, A.data);} const Up = U.at(s, s);
-                rt.ptr(k).* = r.at(k) - opt.derivative_step; opt.potential(T, &U, rt); if (opt.adiabatic) {mat.eigh(T, &A, &C, U, 1e-12, &T1, &T2); @memcpy(U.data, A.data);} const Um = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) + opt.derivative_step; opt.potential(T, &U, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) - opt.derivative_step; opt.potential(T, &U, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
-                a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
-                v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
-                r.ptr(k).* += (v.at(k) + 0.5 * a.at(k) * opt.time_step) * opt.time_step;
+                    a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
+                    v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
+                    r.ptr(k).* += (v.at(k) + 0.5 * a.at(k) * opt.time_step) * opt.time_step;
+                }
+
+                opt.potential(T, &U, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} @memcpy(U3[j % 3].data, U.data);
+
+                Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.initial_conditions.mass; Epot = U.at(s, s);
+
+                if ((i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) {
+                    try stdout.print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:4} {d:12.6}\n", .{i + 1, j + 1, Ekin, Epot, Ekin + Epot, s, r.at(0)});
+                }
+
+                if (j > 2) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand);
+
+                if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
+
+                if (sp != s) {for (0..ndim) |k| v.ptr(k).* *= std.math.sqrt((Ekin - U.at(s, s) + U.at(sp, sp)) / Ekin);}
             }
-
-            opt.potential(T, &U, r); if (opt.adiabatic) {mat.eigh(T, &A, &C, U, 1e-12, &T1, &T2); @memcpy(U.data, A.data);} @memcpy(U3[j % 3].data, U.data);
-
-            Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.initial_conditions.mass; Epot = U.at(s, s);
-
-            if ((i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) {
-                std.debug.print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:4} {d:12.6}\n", .{i + 1, j + 1, Ekin, Epot, Ekin + Epot, s, r.at(0)});
-            }
-
-            if (j > 2) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand);
-
-            if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
-
-            if (sp != s) {for (0..v.rows) |k| v.ptr(k).* *= std.math.sqrt((Ekin - U.at(s, s) + U.at(sp, sp)) / Ekin);}
         }
     }
 
     for (0..opt.iterations) |i| {for (0..try mpt.states(T, opt.potential)) |j| pop.ptr(i, j).* /= opt.trajectories;}
 
     for (0..try mpt.states(T, opt.potential)) |i| {
-        std.debug.print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
+        try stdout.print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
     }
 
     try writeResults(T, opt, pop, allocator);

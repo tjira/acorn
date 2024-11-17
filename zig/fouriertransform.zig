@@ -1,16 +1,13 @@
 const std = @import("std");
 
-pub fn dft(comptime T: type, output: []std.math.Complex(T), input: []const std.math.Complex(T), shape: []const usize) void {
-    const length = shape[0];
+const asfloat = @import("helper.zig").asfloat;
 
-    for (0..length) |i| output[i] = std.math.Complex(T).init(0, 0);
+pub fn dft(comptime T: type, out: []std.math.Complex(T), in: []const std.math.Complex(T), shape: []const usize, factor: T) void {
+    const size = shape[0]; var exp = std.math.Complex(T).init(0, 0); for (0..size) |i| out[i] = std.math.Complex(T).init(0, 0);
 
-    for (0..length) |i| {
-        for (0..length) |j| {
+    for (0..size) |i| for (0..size) |j| {
+        exp.im = factor * 2 * std.math.pi * asfloat(T, i * j) / asfloat(T, size); out[i] = out[i].add(std.math.complex.exp(exp).mul(in[j]));
+    };
 
-            const exponent = std.math.Complex(T).init(0, -2 * std.math.pi * @as(T, @floatFromInt(i * j)) / @as(T, @floatFromInt(length)));
-
-            output[i] = output[i].add(std.math.complex.exp(exponent).mul(input[j]));
-        }
-    }
+    if (factor > 0) for (0..size) |i| {out[i] = out[i].div(std.math.Complex(T).init(asfloat(T, size), 0));};
 }

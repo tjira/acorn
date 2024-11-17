@@ -26,8 +26,14 @@ pub fn Matrix(comptime T: type) type {
         pub fn at(self: Matrix(T), i: usize, j: usize) T {
             return self.data[i * self.cols + j];
         }
+        pub fn col(self: Matrix(T), output: *Matrix(T), j: usize) void {
+            for (0..self.rows) |i| output.data[i] = self.at(i, j);
+        }
         pub fn ptr(self: Matrix(T), i: usize, j: usize) *T {
             return &self.data[i * self.cols + j];
+        }
+        pub fn row(self: Matrix(T), output: *Matrix(T), i: usize) void {
+            @memcpy(output.data, self.data[i * self.cols..(i + 1) * self.cols]);
         }
         pub fn set(self: Matrix(T), data: []const T) void {
             @memcpy(self.data[0..data.len], data);
@@ -56,12 +62,18 @@ pub fn Matrix(comptime T: type) type {
     };
 }
 
+pub fn cmm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    C.fill(T.init(0.0, 0.0)); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));};
+}
+
 pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     C.fill(0); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
 }
 
 pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T, T1: *Matrix(T), T2: *Matrix(T)) void {
-    @memcpy(J.data, A.data); var maxi: usize = undefined; var maxj: usize = undefined; var maxv: T = undefined; var phi: T = undefined; 
+    @memcpy(J.data, A.data); C.fill(0); var maxi: usize = undefined; var maxj: usize = undefined; var maxv: T = undefined; var phi: T = undefined; 
+
+    if (J.isdiag(tol)) for (0..A.rows) |i| {C.ptr(i, i).* = 1;};
 
     while (!J.isdiag(tol)) : ({maxi = 0; maxj = 1; maxv = J.at(maxi, maxj);}) {
 
@@ -75,7 +87,7 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T
         mm(T, T1, J.*, C.*); transpose(T, T2, C.*); mm(T, J, T2.*, T1.*);
     }
 
-    for (0..J.rows) |i| for (i..J.cols) |j| if (J.at(i, i) > J.at(j, j)) {
+    for (0..J.rows) |i| for (i + 1..J.cols) |j| if (J.at(i, i) > J.at(j, j)) {
         swap(J.ptr(j, j), J.ptr(i, i)); for (0..C.rows) |k| swap(C.ptr(k, i), C.ptr(k, j));
     };
 }
