@@ -26,7 +26,7 @@ pub fn main() !void {
         },
         .initial_conditions = .{
             .position = &[_]f64{1},
-            .momentum = &[_]f64{15},
+            .momentum = &[_]f64{0},
             .state = 0,
             .mass = 1
         },
@@ -35,6 +35,26 @@ pub fn main() !void {
         },
         .potential = mpt.harmonic1D_1,
     };
+
+    // const qdyn_opt = qdn.QuantumDynamicsOptions(f64){
+    //     .iterations = 350,
+    //     .time_step = 10,
+    //     .imaginary = false,
+    //     .grid = .{
+    //         .limits = &[_]f64{-16, 16},
+    //         .points = 256
+    //     },
+    //     .initial_conditions = .{
+    //         .position = &[_]f64{-10},
+    //         .momentum = &[_]f64{15},
+    //         .state = 1,
+    //         .mass = 2000
+    //     },
+    //     .log_intervals = .{
+    //         .iteration = 500
+    //     },
+    //     .potential = mpt.doubleState1D_1,
+    // };
 
     const cdyn_opt = cdn.ClassicalDynamicsOptions(f64){
         .adiabatic = false,

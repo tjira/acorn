@@ -48,6 +48,9 @@ pub fn Matrix(comptime T: type) type {
         pub fn linspace(self: Matrix(T), start: T, end: T) void {
             for (0..self.data.len) |i| self.data[i] = start + @as(T, @floatFromInt(i)) * (end - start) / @as(T, @floatFromInt(self.rows * self.cols - 1));
         }
+        pub fn setcol(self: Matrix(T), j: usize, other: Matrix(T)) void {
+            for (0..self.rows) |i| self.ptr(i, j).* = other.at(i, 0);
+        }
 
         pub fn hjoin(self: Matrix(T), output: *Matrix(T), other: Matrix(T)) void {
             for (0..self.rows) |i| {for (0..self.cols) |j| output.ptr(i, j).* = self.at(i, j); for (0..other.cols) |j| output.ptr(i, self.cols + j).* = other.at(i, j);}

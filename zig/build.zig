@@ -8,7 +8,7 @@ pub fn build(builder: *std.Build) void {
         .optimize = optimize,
         .root_source_file = builder.path("main.zig"),
         .target = builder.host,
-        .strip = true
+        .strip = false
     });
 
     builder.installArtifact(exe);
