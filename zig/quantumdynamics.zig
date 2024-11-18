@@ -1,11 +1,12 @@
-const std = @import("std");
+const std = @import("std"); const Complex = std.math.Complex;
 
-const ftr = @import("fouriertransform.zig");
 const mat = @import("matrix.zig"          );
 const mpt = @import("modelpotential.zig"  );
+const wfn = @import("wavefunction.zig"    );
 
-const Matrix = @import("matrix.zig").Matrix;
-const Vector = @import("vector.zig").Vector;
+const Matrix       = @import("matrix.zig"      ).Matrix      ;
+const Vector       = @import("vector.zig"      ).Vector      ;
+const Wavefunction = @import("wavefunction.zig").Wavefunction;
 
 const asfloat = @import("helper.zig").asfloat;
 
@@ -35,20 +36,20 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
 }
 
 pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.Allocator) !void {
-    const ndim = try mpt.dims(T, opt.potential); const nstate = try mpt.states(T, opt.potential);
-
-    var pop = try Matrix(T).init(opt.iterations, nstate, allocator); defer pop.deinit(); pop.fill(0);
+    var pop = try Matrix(T).init(opt.iterations, try mpt.states(T, opt.potential), allocator); defer pop.deinit(); pop.fill(0);
 
     {
-        var rvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, ndim), ndim, allocator); defer rvec.deinit();
-        var kvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, ndim), ndim, allocator); defer kvec.deinit();
+        var rvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, try mpt.dims(T, opt.potential)), try mpt.dims(T, opt.potential), allocator); defer rvec.deinit();
+        var kvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, try mpt.dims(T, opt.potential)), try mpt.dims(T, opt.potential), allocator); defer kvec.deinit();
 
-        var P = try Matrix(T).init(nstate, nstate, allocator); defer P.deinit();
+        const dr = (opt.grid.limits[1] - opt.grid.limits[0]) / asfloat(T, opt.grid.points - 1);
 
-        var W  = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), nstate, allocator); defer  W.deinit();
+        var W = try Wavefunction(T).init(try mpt.dims(T, opt.potential), try mpt.states(T, opt.potential), opt.grid.points, allocator); defer W.deinit();
 
-        var T1 = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), 1, allocator); defer T1.deinit();
-        var T2 = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), 1, allocator); defer T2.deinit();
+        var P = try Matrix(T).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer P.deinit();
+
+        var T1 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1, allocator); defer T1.deinit();
+        var T2 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1, allocator); defer T2.deinit();
 
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
@@ -57,52 +58,49 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
         var K = try kgridPropagators(T, opt, kvec, allocator); defer K.deinit();
         var V = try rgridPotentials (T, opt, rvec, allocator); defer V.deinit();
 
-        wfnGuess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.state); const dr = rvec.at(1, ndim - 1) - rvec.at(0, ndim - 1);
+        wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.state); W.normalize(dr);
 
         for (0..opt.iterations) |i| {
 
-            try wfnPropagate(T, &W, R, K, &T1, &T2);
+            wfn.propagate(T, &W, R, K, &T1, &T2); if (opt.imaginary) W.normalize(dr);
 
-            if (opt.imaginary) {const norm = wfnNorm(T, W, dr); for (0..W.rows) |j| for (0..W.cols) |k| {W.ptr(j, k).* = W.at(j, k).div(std.math.Complex(T).init(norm, 0));};}
+            const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1, &T2); const Epot: T = wfn.epot(T, W, V, dr);
 
-            const Ekin = wfnKineticEnergy(T, W, kvec, opt.initial_conditions.mass, dr, &T1, &T2); const Epot: T = wfnPotentialEnergy(T, W, V, dr);
-
-            wfnDensity(T, &P, W, dr); for (0..nstate) |j| pop.ptr(i, j).* = P.at(j, j);
+            wfn.density(T, &P, W, dr); for (0..W.nstate) |j| pop.ptr(i, j).* = P.at(j, j);
 
             if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) {
-
                 try stdout.print("{d:6} {d:12.6} {d:12.6} {d:12.6}", .{i + 1, Ekin, Epot, Ekin + Epot});
+            }
 
-                for (0..nstate) |j| try stdout.print(" {d:12.6}", .{P.at(j, j)}); try stdout.print("\n", .{});
+            if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) {
+                for (0..W.nstate) |j| try stdout.print(" {d:12.6}", .{P.at(j, j)}); try stdout.print("\n", .{});
             }
         }
 
         for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();}
     }
 
-    for (0..nstate) |i| {
+    for (0..try mpt.states(T, opt.potential)) |i| {
         try stdout.print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
     }
 
     try writeResults(T, opt, pop, allocator);
 }
 
-pub fn kgridPropagators(comptime T: type, opt: QuantumDynamicsOptions(T), kvec: Matrix(T), allocator: std.mem.Allocator) !std.ArrayList(Matrix(std.math.Complex(T))) {
-    const ndim = try mpt.dims(T, opt.potential); const nstate = try mpt.states(T, opt.potential);
+pub fn kgridPropagators(comptime T: type, opt: QuantumDynamicsOptions(T), kvec: Matrix(T), allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
+    const unit = Complex(T).init(if (opt.imaginary) 1 else 0, if (opt.imaginary) 0 else 1);
 
-    const unit = std.math.Complex(T).init(if (opt.imaginary) 1 else 0, if (opt.imaginary) 0 else 1);
+    var T1 = try Matrix(Complex(T)).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer T1.deinit();
 
-    var T1 = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer T1.deinit();
+    var K = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, kvec.rows);
 
-    var K = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, opt.grid.points);
+    for (0..kvec.rows) |i| {
 
-    for (0..opt.grid.points) |i| {
+        T1.fill(Complex(T).init(0, 0));
 
-        T1.fill(std.math.Complex(T).init(0, 0));
+        for (0..T1.rows) |j| for(0..kvec.cols) |k| {T1.ptr(j, j).* = T1.at(j, j).add(Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));};
 
-        for (0..nstate) |j| for(0..ndim) |k| {T1.ptr(j, j).* = T1.at(j, j).add(std.math.Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));};
-
-        for (0..nstate) |j| T1.ptr(j, j).* = std.math.complex.exp(T1.at(j, j).mul(std.math.Complex(T).init(-0.5 * opt.time_step / opt.initial_conditions.mass, 0)).mul(unit));
+        for (0..T1.rows) |j| T1.ptr(j, j).* = std.math.complex.exp(T1.at(j, j).mul(Complex(T).init(-0.5 * opt.time_step / opt.initial_conditions.mass, 0)).mul(unit));
 
         try K.append(try T1.clone());
     }
@@ -110,20 +108,20 @@ pub fn kgridPropagators(comptime T: type, opt: QuantumDynamicsOptions(T), kvec: 
     return K;
 }
 
-pub fn rgridPotentials(comptime T: type, opt: QuantumDynamicsOptions(T), rvec: Matrix(T), allocator: std.mem.Allocator) !std.ArrayList(Matrix(std.math.Complex(T))) {
-    const ndim = try mpt.dims(T, opt.potential); const nstate = try mpt.states(T, opt.potential); var r = try Vector(T).init(ndim, allocator); defer r.deinit();
+pub fn rgridPotentials(comptime T: type, opt: QuantumDynamicsOptions(T), rvec: Matrix(T), allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
+    var U  = try Matrix(T         ).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer  U.deinit();
+    var T1 = try Matrix(Complex(T)).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer T1.deinit();
+    var r  = try Vector(T         ).init(try mpt.dims  (T, opt.potential),                                   allocator); defer  r.deinit();
 
-    var U  = try Matrix(T).init(nstate, nstate, allocator); defer  U.deinit();
+    var V = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
 
-    var T1 = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer T1.deinit();
-
-    var V = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, opt.grid.points);
-
-    for (0..opt.grid.points) |i| {
+    for (0..rvec.rows) |i| {
         
-        for (0..ndim) |j| {r.ptr(j).* = rvec.at(i, j);} opt.potential(T, &U, r);
+        for (0..r.rows) |j| {r.ptr(j).* = rvec.at(i, j);} opt.potential(T, &U, r);
 
-        for (0..nstate) |j| for (0..nstate) |k| {T1.ptr(j, k).* = std.math.Complex(T).init(U.at(j, k), 0);};
+        for (0..U.rows) |j| for (0..U.rows) |k| {
+            T1.ptr(j, k).* = Complex(T).init(U.at(j, k), 0);
+        };
 
         try V.append(try T1.clone());
     }
@@ -131,135 +129,38 @@ pub fn rgridPotentials(comptime T: type, opt: QuantumDynamicsOptions(T), rvec: M
     return V;
 }
 
-pub fn rgridPropagators(comptime T: type, opt: QuantumDynamicsOptions(T), rvec: Matrix(T), allocator: std.mem.Allocator) !std.ArrayList(Matrix(std.math.Complex(T))) {
-    const ndim = try mpt.dims(T, opt.potential); const nstate = try mpt.states(T, opt.potential); var r = try Vector(T).init(ndim, allocator); defer r.deinit();
+pub fn rgridPropagators(comptime T: type, opt: QuantumDynamicsOptions(T), rvec: Matrix(T), allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
+    const unit = Complex(T).init(if (opt.imaginary) 1 else 0, if (opt.imaginary) 0 else 1);
 
-    const unit = std.math.Complex(T).init(if (opt.imaginary) 1 else 0, if (opt.imaginary) 0 else 1);
+    var U  = try Matrix(T         ).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer  U.deinit();
+    var UA = try Matrix(T         ).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer UA.deinit();
+    var UC = try Matrix(T         ).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer UC.deinit();
+    var T1 = try Matrix(T         ).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer T1.deinit();
+    var T2 = try Matrix(T         ).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer T2.deinit();
+    var T3 = try Matrix(Complex(T)).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer T3.deinit();
+    var T4 = try Matrix(Complex(T)).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer T4.deinit();
+    var r  = try Vector(T         ).init(try mpt.dims  (T, opt.potential),                                   allocator); defer  r.deinit();
 
-    var U  = try Matrix(T).init(nstate, nstate, allocator); defer  U.deinit();
-    var UA = try Matrix(T).init(nstate, nstate, allocator); defer UA.deinit();
-    var UC = try Matrix(T).init(nstate, nstate, allocator); defer UC.deinit();
-    var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
-    var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
+    var R = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, opt.grid.points);
 
-    var T3 = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer T3.deinit();
-    var T4 = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer T4.deinit();
-    var T5 = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer T5.deinit();
+    for (0..rvec.rows) |i| {
 
-    var R = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, opt.grid.points);
+        for (0..r.rows) |j| {r.ptr(j).* = rvec.at(i, j);} opt.potential(T, &U, r); mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); T3.fill(Complex(T).init(0, 0));
 
-    for (0..opt.grid.points) |i| {
+        for (0..U.rows) |j| T3.ptr(j, j).* = std.math.complex.exp(Complex(T).init(UA.at(j, j), 0).mul(Complex(T).init(-0.5 * opt.time_step, 0)).mul(unit));
 
-        for (0..ndim) |j| {r.ptr(j).* = rvec.at(i, j);} opt.potential(T, &U, r); mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2);
+        T4.fill(Complex(T).init(0, 0)); for (0..U.rows) |j| for (0..U.cols) |k| for (0..U.rows) |l| {
+            T4.ptr(j, k).* = T4.at(j, k).add(Complex(T).init(UC.at(j, l), 0).mul(T3.at(l, k)));
+        };
 
-        for (0..nstate) |j| for (0..nstate) |k| {T3.ptr(j, k).* = std.math.Complex(T).init(UA.at(j, k), 0);};
-        for (0..nstate) |j| for (0..nstate) |k| {T4.ptr(j, k).* = std.math.Complex(T).init(UC.at(j, k), 0);};
+        T3.fill(Complex(T).init(0, 0)); for (0..U.rows) |j| for (0..U.cols) |k| for (0..U.rows) |l| {
+            T3.ptr(j, k).* = T3.at(j, k).add(T4.at(j, l).mul(Complex(T).init(UC.at(k, l), 0)));
+        };
 
-        for (0..nstate) |j| T3.ptr(j, j).* = std.math.complex.exp(T3.at(j, j).mul(std.math.Complex(T).init(-0.5 * opt.time_step, 0)).mul(unit));
-
-        mat.cmm(std.math.Complex(T), &T5, T4, T3); mat.transpose(std.math.Complex(T), &T3, T4); mat.cmm(std.math.Complex(T), &T4, T5, T3);
-
-        try R.append(try T4.clone());
+        try R.append(try T3.clone());
     }
 
     return R;
-}
-
-pub fn wfnDensity(comptime T: type, P: *Matrix(T), W: Matrix(std.math.Complex(T)), dr: T) void {
-    P.fill(0); var pij = std.math.Complex(T).init(0, 0);
-
-    for (0..W.cols) |i| for (0..W.cols) |j| {
-        pij = std.math.Complex(T).init(0, 0); for (0..W.rows) |k| {pij = pij.add(W.at(k, i).mul(std.math.complex.conj(W.at(k, j))));} P.ptr(i, j).* = std.math.complex.abs(pij) * dr;
-    };
-}
-
-pub fn wfnGuess(comptime T: type, W: *Matrix(std.math.Complex(T)), rvec: Matrix(T), position: []const T, momentum: []const T, state: u32) void {
-    W.fill(std.math.Complex(T).init(0, 0));
-
-    for (0..W.rows) |i| for (0..W.cols) |j| if (j == state) {
-        W.ptr(i, j).* = std.math.Complex(T).init(std.math.exp(-(rvec.at(i, 0) - position[0]) * (rvec.at(i, 0) - position[0])), 0);
-    };
-
-    for (0..W.rows) |i| for (0..W.cols) |j| {
-        W.ptr(i, j).* = W.at(i, j).mul(std.math.complex.exp(std.math.Complex(T).init(0, rvec.at(i, 0) * momentum[0])));
-    };
-
-    const norm = wfnNorm(T, W.*, rvec.at(1, 0) - rvec.at(0, 0)); for (0..W.rows) |i| for (0..W.cols) |j| {W.ptr(i, j).* = W.at(i, j).div(std.math.Complex(T).init(norm, 0));};
-}
-
-pub fn wfnKineticEnergy(comptime T: type, W: Matrix(std.math.Complex(T)), kvec: Matrix(T), mass: T, dr: T, T1: *Matrix(std.math.Complex(T)), T2: @TypeOf(T1)) T {
-    var Ekin: T = 0;
-
-    for (0..W.cols) |i| {
-
-        W.col(T1, i); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows},  -1);
-
-        for (0..W.rows) |j| T2.ptr(j, 0).* = T2.at(j, 0).mul(std.math.Complex(T).init(kvec.at(j, 0) * kvec.at(j, 0), 0));
-
-        ftr.dft(T, T1.data, T2.data, &[_]usize{W.rows}, 1);
-
-        for (0..W.rows) |j| Ekin += T1.at(j, 0).mul(std.math.complex.conj(W.at(j, i))).re;
-    }
-
-    return 0.5 * Ekin / mass * dr;
-}
-
-pub fn wfnNorm(comptime T: type, W: Matrix(std.math.Complex(T)), dr: T) T {
-    var norm = std.math.Complex(T).init(0, 0);
-
-    for (0..W.cols) |i| for (0..W.cols) |j| for (0..W.rows) |k| {
-        norm = norm.add(std.math.complex.conj(W.at(k, i)).mul(W.at(k, j)));
-    };
-
-    return std.math.sqrt(std.math.complex.abs(norm) * dr);
-}
-
-pub fn wfnPotentialEnergy(comptime T: type, W: Matrix(std.math.Complex(T)), V: std.ArrayList(Matrix(std.math.Complex(T))), dr: T) T {
-    var Epot: T = 0;
-
-    for (0..W.rows) |i| for (0..W.cols) |j| for (0..W.cols) |k| {
-        Epot += std.math.complex.conj(W.at(i, k)).mul(V.items[i].at(j, k).mul(W.at(i, k))).re;
-    };
-
-    return Epot * dr;
-}
-
-pub fn wfnPropagate(comptime T: type, W: *Matrix(std.math.Complex(T)), R: std.ArrayList(Matrix(std.math.Complex(T))), K: @TypeOf(R), T1: @TypeOf(W), T2: @TypeOf(W)) !void {
-    var value = std.math.Complex(T).init(0, 0);
-
-    for (0..W.rows) |i| {
-        for (0..W.cols) |j| {
-            value = std.math.Complex(T).init(0, 0);
-            for (0..W.cols) |k| {
-                value = value.add(W.at(i, k).mul(R.items[i].at(j, k)));
-            }
-            W.ptr(i, j).* = value;
-        }
-    }
-
-    for (0..W.cols) |j| {W.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows},  1); W.setcol(j, T2.*);}
-
-    for (0..W.rows) |i| {
-        for (0..W.cols) |j| {
-            value = std.math.Complex(T).init(0, 0);
-            for (0..W.cols) |k| {
-                value = value.add(W.at(i, k).mul(K.items[i].at(j, k)));
-            }
-            W.ptr(i, j).* = value;
-        }
-    }
-
-    for (0..W.cols) |j| {W.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows}, -1); W.setcol(j, T2.*);}
-
-    for (0..W.rows) |i| {
-        for (0..W.cols) |j| {
-            value = std.math.Complex(T).init(0, 0);
-            for (0..W.cols) |k| {
-                value = value.add(W.at(i, k).mul(R.items[i].at(j, k)));
-            }
-            W.ptr(i, j).* = value;
-        }
-    }
 }
 
 fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T), allocator: std.mem.Allocator) !void {

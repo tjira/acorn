@@ -65,10 +65,6 @@ pub fn Matrix(comptime T: type) type {
     };
 }
 
-pub fn cmm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(T.init(0.0, 0.0)); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));};
-}
-
 pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     C.fill(0); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
 }
@@ -93,18 +89,6 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T
     for (0..J.rows) |i| for (i + 1..J.cols) |j| if (J.at(i, i) > J.at(j, j)) {
         swap(J.ptr(j, j), J.ptr(i, i)); for (0..C.rows) |k| swap(C.ptr(k, i), C.ptr(k, j));
     };
-}
-
-pub fn exph(comptime T: type, E: *Matrix(T), J: Matrix(T), C: Matrix(T), T1: *Matrix(T), T2: *Matrix(T)) void {
-    @memcpy(T1.data, J.data); for (0..J.rows) |i| T1.ptr(i, i).* = std.math.exp(J.at(i, i));
-
-    mm(T, T2, C, T1.*); transpose(T, T1, C); mm(T, E, T2.*, T1.*);
-}
-
-pub fn logh(comptime T: type, L: *Matrix(T), J: Matrix(T), C: Matrix(T), T1: *Matrix(T), T2: *Matrix(T)) void {
-    @memcpy(T1.data, J.data); for (0..J.rows) |i| T1.ptr(i, i).* = std.math.log10(J.at(i, i)) / std.math.log10e;
-
-    mm(T, T2, C, T1.*); transpose(T, T1, C); mm(T, L, T2.*, T1.*);
 }
 
 pub fn transpose(comptime T: type, B: *Matrix(T), A: Matrix(T)) void {

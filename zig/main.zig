@@ -14,50 +14,50 @@ const allocator = std.heap.page_allocator;
 pub fn main() !void {
     var timer = try std.time.Timer.start();
 
-    // const opt = qdn.QuantumDynamicsOptions(f64){
-    //     .iterations = 350,
-    //     .time_step = 10,
-    //     .imaginary = false,
-    //     .grid = .{
-    //         .limits = &[_]f64{-16, 24},
-    //         .points = 256
-    //     },
-    //     .initial_conditions = .{
-    //         .position = &[_]f64{-10},
-    //         .momentum = &[_]f64{15},
-    //         .state = 1,
-    //         .mass = 2000
-    //     },
-    //     .log_intervals = .{
-    //         .iteration = 50
-    //     },
-    //     .write = .{
-    //         .population = null
-    //     },
-    //     .potential = mpt.doubleState1D_1,
-    // };
     const opt = qdn.QuantumDynamicsOptions(f64){
-        .iterations = 100,
-        .time_step = 0.1,
-        .imaginary = true,
+        .iterations = 350,
+        .time_step = 10,
+        .imaginary = false,
         .grid = .{
-            .limits = &[_]f64{-8, 8},
-            .points = 64
+            .limits = &[_]f64{-16, 24},
+            .points = 256
         },
         .initial_conditions = .{
-            .position = &[_]f64{1},
-            .momentum = &[_]f64{0},
-            .state = 0,
-            .mass = 1
+            .position = &[_]f64{-10},
+            .momentum = &[_]f64{15},
+            .state = 1,
+            .mass = 2000
         },
         .log_intervals = .{
-            .iteration = 10
+            .iteration = 50
         },
         .write = .{
             .population = null
         },
-        .potential = mpt.harmonic1D_1,
+        .potential = mpt.doubleState1D_1,
     };
+    // const opt = qdn.QuantumDynamicsOptions(f64){
+    //     .iterations = 100,
+    //     .time_step = 0.1,
+    //     .imaginary = true,
+    //     .grid = .{
+    //         .limits = &[_]f64{-8, 8},
+    //         .points = 64
+    //     },
+    //     .initial_conditions = .{
+    //         .position = &[_]f64{1},
+    //         .momentum = &[_]f64{0},
+    //         .state = 0,
+    //         .mass = 1
+    //     },
+    //     .log_intervals = .{
+    //         .iteration = 10
+    //     },
+    //     .write = .{
+    //         .population = null
+    //     },
+    //     .potential = mpt.harmonic1D_1,
+    // };
     try qdn.run(f64, opt, allocator);
 
     const pot_start: f64 = -16; const pot_end: f64 = 16; const pot_points: f64 = 1024;

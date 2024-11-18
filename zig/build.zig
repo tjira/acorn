@@ -2,13 +2,15 @@ const std = @import("std");
 
 pub fn build(builder: *std.Build) void {
     const optimize = builder.standardOptimizeOption(.{});
+    const target   = builder.standardTargetOptions (.{});
 
     const exe = builder.addExecutable(.{
         .name = "acorn",
         .optimize = optimize,
         .root_source_file = builder.path("main.zig"),
-        .target = builder.host,
-        .strip = false
+        .single_threaded = true,
+        .strip = if (optimize != .Debug) true else false,
+        .target = target
     });
 
     builder.installArtifact(exe);
