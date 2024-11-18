@@ -22,6 +22,14 @@ pub fn Wavefunction(comptime T: type) type {
     };
 }
 
+pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(Complex(T)))) void {
+    WA.data.fill(Complex(T).init(0, 0));
+
+    for (0..W.data.rows) |i| for (0..W.nstate) |j| for (0..W.nstate) |k| {
+        WA.data.ptr(i, j).* = WA.data.at(i, j).add(VC.items[i].at(k, j).conjugate().mul(W.data.at(i, k)));
+    };
+}
+
 pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void {
     P.fill(0);
 
