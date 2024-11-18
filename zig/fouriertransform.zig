@@ -9,5 +9,5 @@ pub fn dft(comptime T: type, out: []std.math.Complex(T), in: []const std.math.Co
         exp.im = factor * 2 * std.math.pi * asfloat(T, i * j) / asfloat(T, size); out[i] = out[i].add(std.math.complex.exp(exp).mul(in[j]));
     };
 
-    if (factor < 0) for (0..size) |i| {out[i] = out[i].div(std.math.Complex(T).init(asfloat(T, size), 0));};
+    if (factor > 0) for (0..size) |i| {out[i] = out[i].div(std.math.Complex(T).init(asfloat(T, size), 0));};
 }

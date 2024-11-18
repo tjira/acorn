@@ -16,6 +16,9 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         const LogIntervals = struct {
             trajectory: u32, iteration: u32
         };
+        const Write = struct {
+            population: ?[]const u8
+        };
 
         adiabatic: bool,
         derivative_step: T,
@@ -24,7 +27,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         time_step: T,
         trajectories: u32,
 
-        initial_conditions: InitialConditions, log_intervals: LogIntervals, potential: mpt.PotentialType(T),
+        initial_conditions: InitialConditions, log_intervals: LogIntervals, write: Write, potential: mpt.PotentialType(T),
     };
 }
 
@@ -90,7 +93,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
     for (0..opt.iterations) |i| {for (0..try mpt.states(T, opt.potential)) |j| pop.ptr(i, j).* /= opt.trajectories;}
 
-    for (0..try mpt.states(T, opt.potential)) |i| {
+    for (0..nstate) |i| {
         try stdout.print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
     }
 
@@ -131,5 +134,7 @@ fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, ad
 fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), allocator: std.mem.Allocator) !void {
     const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * opt.iterations);
 
-    var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write("POPULATION.mat"); pop_t.deinit();
+    if (opt.write.population) |path| {
+        var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write(path); pop_t.deinit();
+    }
 }

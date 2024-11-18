@@ -22,12 +22,15 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         const LogIntervals = struct {
             iteration: u32
         };
+        const Write = struct {
+            population: ?[]const u8
+        };
 
         imaginary: bool,
         iterations: u32,
         time_step: f64,
 
-        grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals, potential: mpt.PotentialType(T),
+        grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals, write: Write, potential: mpt.PotentialType(T),
     };
 }
 
@@ -43,11 +46,9 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
         var P = try Matrix(T).init(nstate, nstate, allocator); defer P.deinit();
 
         var W  = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), nstate, allocator); defer  W.deinit();
-        var T1 = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), nstate, allocator); defer T1.deinit();
-        var T2 = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), nstate, allocator); defer T2.deinit();
 
-        var T3 = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), 1, allocator); defer T3.deinit();
-        var T4 = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), 1, allocator); defer T4.deinit();
+        var T1 = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), 1, allocator); defer T1.deinit();
+        var T2 = try Matrix(std.math.Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), 1, allocator); defer T2.deinit();
 
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
@@ -58,27 +59,29 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         wfnGuess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.state); const dr = rvec.at(1, ndim - 1) - rvec.at(0, ndim - 1);
 
-        // for (0..R.items.len) |i| try stdout.print("{d:12.6} {d:12.6}\n", .{K.items[i].at(0, 0).re, K.items[i].at(0, 0).im});
-
         for (0..opt.iterations) |i| {
 
-            wfnPropagate(T, &W, R, K, &T3, &T4);
-
-            // print the wfn
-            // for (0..W.rows) |j| try stdout.print("{d:12.6} {d:12.6} {d:12.6} {d:12.6}\n", .{W.at(j, 0).re, W.at(j, 0).im, W.at(j, 1).re, W.at(j, 1).im});
+            try wfnPropagate(T, &W, R, K, &T1, &T2);
 
             if (opt.imaginary) {const norm = wfnNorm(T, W, dr); for (0..W.rows) |j| for (0..W.cols) |k| {W.ptr(j, k).* = W.at(j, k).div(std.math.Complex(T).init(norm, 0));};}
 
-            const Ekin = wfnKineticEnergy(T, W, kvec, opt.initial_conditions.mass, dr, &T3, &T4); const Epot: T = wfnPotentialEnergy(T, W, V, dr);
+            const Ekin = wfnKineticEnergy(T, W, kvec, opt.initial_conditions.mass, dr, &T1, &T2); const Epot: T = wfnPotentialEnergy(T, W, V, dr);
 
             wfnDensity(T, &P, W, dr); for (0..nstate) |j| pop.ptr(i, j).* = P.at(j, j);
 
-            try stdout.print("{d:6} {d:12.6} {d:12.6} {d:12.6}", .{i + 1, Ekin, Epot, Ekin + Epot});
+            if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) {
 
-            for (0..nstate) |j| try stdout.print(" {d:12.6}", .{P.at(j, j)}); try stdout.print("\n", .{});
+                try stdout.print("{d:6} {d:12.6} {d:12.6} {d:12.6}", .{i + 1, Ekin, Epot, Ekin + Epot});
+
+                for (0..nstate) |j| try stdout.print(" {d:12.6}", .{P.at(j, j)}); try stdout.print("\n", .{});
+            }
         }
 
         for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();}
+    }
+
+    for (0..nstate) |i| {
+        try stdout.print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
     }
 
     try writeResults(T, opt, pop, allocator);
@@ -166,7 +169,7 @@ pub fn wfnDensity(comptime T: type, P: *Matrix(T), W: Matrix(std.math.Complex(T)
     P.fill(0); var pij = std.math.Complex(T).init(0, 0);
 
     for (0..W.cols) |i| for (0..W.cols) |j| {
-        for (0..W.rows) |k| {pij = pij.add(W.at(k, i).mul(std.math.complex.conj(W.at(k, j))));} P.ptr(i, j).* = std.math.complex.abs(pij) * dr;
+        pij = std.math.Complex(T).init(0, 0); for (0..W.rows) |k| {pij = pij.add(W.at(k, i).mul(std.math.complex.conj(W.at(k, j))));} P.ptr(i, j).* = std.math.complex.abs(pij) * dr;
     };
 }
 
@@ -177,7 +180,7 @@ pub fn wfnGuess(comptime T: type, W: *Matrix(std.math.Complex(T)), rvec: Matrix(
         W.ptr(i, j).* = std.math.Complex(T).init(std.math.exp(-(rvec.at(i, 0) - position[0]) * (rvec.at(i, 0) - position[0])), 0);
     };
 
-    for (0..W.rows) |i| for (0..W.cols) |j| if (j == state) {
+    for (0..W.rows) |i| for (0..W.cols) |j| {
         W.ptr(i, j).* = W.at(i, j).mul(std.math.complex.exp(std.math.Complex(T).init(0, rvec.at(i, 0) * momentum[0])));
     };
 
@@ -189,13 +192,13 @@ pub fn wfnKineticEnergy(comptime T: type, W: Matrix(std.math.Complex(T)), kvec: 
 
     for (0..W.cols) |i| {
 
-        W.col(T1, i); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows}, -1);
+        W.col(T1, i); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows},  -1);
 
         for (0..W.rows) |j| T2.ptr(j, 0).* = T2.at(j, 0).mul(std.math.Complex(T).init(kvec.at(j, 0) * kvec.at(j, 0), 0));
 
-        ftr.dft(T, T1.data, T2.data, &[_]usize{W.rows},  1);
+        ftr.dft(T, T1.data, T2.data, &[_]usize{W.rows}, 1);
 
-        for (0..W.rows) |j| Ekin += (T1.at(j, 0).mul(std.math.complex.conj(W.at(j, i)))).re;
+        for (0..W.rows) |j| Ekin += T1.at(j, 0).mul(std.math.complex.conj(W.at(j, i))).re;
     }
 
     return 0.5 * Ekin / mass * dr;
@@ -214,17 +217,16 @@ pub fn wfnNorm(comptime T: type, W: Matrix(std.math.Complex(T)), dr: T) T {
 pub fn wfnPotentialEnergy(comptime T: type, W: Matrix(std.math.Complex(T)), V: std.ArrayList(Matrix(std.math.Complex(T))), dr: T) T {
     var Epot: T = 0;
 
-    for (0..W.cols) |i| for (0..W.cols) |j| for (0..W.rows) |k| {
-        Epot += std.math.complex.abs(std.math.complex.conj(W.at(k, i)).mul(V.items[k].at(i, j).mul(W.at(k, j))));
+    for (0..W.rows) |i| for (0..W.cols) |j| for (0..W.cols) |k| {
+        Epot += std.math.complex.conj(W.at(i, k)).mul(V.items[i].at(j, k).mul(W.at(i, k))).re;
     };
 
     return Epot * dr;
 }
 
-pub fn wfnPropagate(comptime T: type, W: *Matrix(std.math.Complex(T)), R: std.ArrayList(Matrix(std.math.Complex(T))), K: @TypeOf(R), T1: @TypeOf(W), T2: @TypeOf(W)) void {
+pub fn wfnPropagate(comptime T: type, W: *Matrix(std.math.Complex(T)), R: std.ArrayList(Matrix(std.math.Complex(T))), K: @TypeOf(R), T1: @TypeOf(W), T2: @TypeOf(W)) !void {
     var value = std.math.Complex(T).init(0, 0);
 
-    // for (0..W.rows) |j| W.ptr(j, 0).* = W.at(j, 0).mul(R.items[j].at(0, 0));
     for (0..W.rows) |i| {
         for (0..W.cols) |j| {
             value = std.math.Complex(T).init(0, 0);
@@ -235,12 +237,8 @@ pub fn wfnPropagate(comptime T: type, W: *Matrix(std.math.Complex(T)), R: std.Ar
         }
     }
 
-    // _ = T1; _ = T2; _ = K;
+    for (0..W.cols) |j| {W.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows},  1); W.setcol(j, T2.*);}
 
-    // ftr.dft(T, T1.data, W.data, &[_]usize{W.rows}, -1);
-    for (0..W.cols) |j| {W.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows}, -1); W.setcol(j, T2.*);}
-
-    // for (0..W.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(K.items[j].at(0, 0));
     for (0..W.rows) |i| {
         for (0..W.cols) |j| {
             value = std.math.Complex(T).init(0, 0);
@@ -251,10 +249,8 @@ pub fn wfnPropagate(comptime T: type, W: *Matrix(std.math.Complex(T)), R: std.Ar
         }
     }
 
-    // ftr.dft(T, W.data, T1.data, &[_]usize{W.rows},  1);
-    for (0..W.cols) |j| {W.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows},  1); W.setcol(j, T2.*);}
+    for (0..W.cols) |j| {W.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.rows}, -1); W.setcol(j, T2.*);}
 
-    // for (0..W.rows) |j| W.ptr(j, 0).* = W.at(j, 0).mul(R.items[j].at(0, 0));
     for (0..W.rows) |i| {
         for (0..W.cols) |j| {
             value = std.math.Complex(T).init(0, 0);
@@ -269,5 +265,7 @@ pub fn wfnPropagate(comptime T: type, W: *Matrix(std.math.Complex(T)), R: std.Ar
 fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T), allocator: std.mem.Allocator) !void {
     const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * opt.iterations);
 
-    var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write("POPULATION_EXACT.mat"); pop_t.deinit();
+    if (opt.write.population) |path| {
+        var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write(path); pop_t.deinit();
+    }
 }
