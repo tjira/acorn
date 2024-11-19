@@ -48,9 +48,6 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
         var UA = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer UA.deinit();
         var UC = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer UC.deinit();
 
-        var T1 = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T1.deinit();
-        var T2 = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T2.deinit();
-
         var U3 = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer U3[0].deinit(); defer U3[1].deinit(); defer U3[2].deinit();
 
         for (0..opt.trajectories) |i| {
@@ -66,15 +63,15 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
                 for (0..r.rows) |k| {
 
-                    rt.ptr(k).* = r.at(k) + opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
-                    rt.ptr(k).* = r.at(k) - opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) + opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) - opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
                     a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
                     v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
                     r.ptr(k).* += (v.at(k) + 0.5 * a.at(k) * opt.time_step) * opt.time_step;
                 }
 
-                mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} @memcpy(U3[j % 3].data, U.data);
+                mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U); @memcpy(U.data, UA.data);} @memcpy(U3[j % 3].data, U.data);
 
                 Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.initial_conditions.mass; Epot = U.at(s, s);
 

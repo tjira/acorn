@@ -78,9 +78,6 @@ pub fn write(comptime T: type, path: []const u8, potential: []const u8, start: T
     var U  = try Matrix(T).init(nstate, nstate, allocator); defer  U.deinit();
     var UA = try Matrix(T).init(nstate, nstate, allocator); defer UA.deinit();
     var UC = try Matrix(T).init(nstate, nstate, allocator); defer UC.deinit();
-    var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
-    var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
-    var T3 = try Matrix(T).init(nstate, nstate, allocator); defer T3.deinit();
     var r  = try Vector(T).init(ndim,           allocator); defer  r.deinit();
 
     var R = try Matrix(T).init(nrow, ndim, allocator); defer R.deinit();
@@ -92,7 +89,7 @@ pub fn write(comptime T: type, path: []const u8, potential: []const u8, start: T
         
         for (0..ndim) |j| {r.ptr(j).* = R.at(i, j);} eval(T, &U, potential, r);
 
-        if (adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2, &T3); @memcpy(U.data, UA.data);}
+        if (adiabatic) {mat.eigh(T, &UA, &UC, U); @memcpy(U.data, UA.data);}
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;
     }

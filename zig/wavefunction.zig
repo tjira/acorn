@@ -107,7 +107,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
     };
 
     // print the wavefunctions
-    // for (0..W.data.rows) |j| {
-    //     try std.io.getStdOut().writer().print("{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n", .{W.data.at(j, 0).re, W.data.at(j, 0).im, W.data.at(j, 1).re, W.data.at(j, 1).im, W.data.at(j, 2).re, W.data.at(j, 2).im});
-    // }
+    for (0..W.data.rows) |j| {
+        try std.io.getStdOut().writer().print("{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n", .{W.data.at(j, 0).re, W.data.at(j, 0).im, W.data.at(j, 1).re, W.data.at(j, 1).im, W.data.at(j, 2).re, W.data.at(j, 2).im});
+    }
 }

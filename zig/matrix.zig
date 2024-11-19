@@ -1,8 +1,8 @@
 const std = @import("std");
 
-const swap = @import("helper.zig").swap;
+const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
-const eigen = @cImport(@cInclude("eigen3/Eigen/Core"));
+const swap = @import("helper.zig").swap;
 
 pub fn Matrix(comptime T: type) type {
     return struct {
@@ -71,31 +71,24 @@ pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     C.fill(0); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
 }
 
-pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T, T1: *Matrix(T), T2: *Matrix(T), T3: *Matrix(T)) void {
-    @memcpy(J.data, A.data); C.identity(); var maxi: usize = undefined; var maxj: usize = undefined; var maxv: T = undefined; var phi: T = undefined; 
+pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T)) void {
+    const m    = gsl.gsl_matrix_alloc(A.rows, A.cols);
+    const eval = gsl.gsl_vector_alloc(A.rows        );
+    const evec = gsl.gsl_matrix_alloc(A.rows, A.cols);
 
-    if (J.isdiag(tol)) for (0..A.rows) |i| {C.ptr(i, i).* = 1; for (J.data) |*e| e.* /= 1e2;};
+    for (0..A.rows) |i| for (0..A.cols) |j| gsl.gsl_matrix_set(m, i, j, A.at(i, j));
 
-    while (!J.isdiag(tol)) : ({maxi = 0; maxj = 1; maxv = J.at(maxi, maxj);}) {
+    const w = gsl.gsl_eigen_symmv_alloc(A.rows);
 
-        for (0..A.rows) |i| for (i + 1..A.cols) |j| if (J.at(i, j) > maxv) {maxi = i; maxj = j; maxv = J.at(i, j);};
+    _ = gsl.gsl_eigen_symmv(m, eval, evec, w);
 
-        phi = 0.5 * std.math.atan(2 * maxv / (J.at(maxi, maxi) - J.at(maxj, maxj))); T3.identity();
+    _ = gsl.gsl_eigen_symmv_sort(eval, evec, gsl.GSL_EIGEN_SORT_VAL_DESC);
 
-        T3.ptr(maxi, maxi).* = std.math.cos(phi); T3.ptr(maxj, maxj).* =  T3.at(maxi, maxi);
-        T3.ptr(maxj, maxi).* = std.math.sin(phi); T3.ptr(maxi, maxj).* = -T3.at(maxj, maxi);
+    for (0..A.rows) |i| for (0..A.cols) |j| {C.ptr(i, j).* = gsl.gsl_matrix_get(evec, i, j);};
+    for (0..A.rows) |i| J.ptr(i, i).* = gsl.gsl_vector_get(eval, i);
 
-        mm(T, T1, J.*, T3.*); transpose(T, T2, T3.*); mm(T, J, T2.*, T1.*);
-
-        mm(T, T1, C.*, T3.*); @memcpy(C.data, T1.data);
-    }
-
-    for (0..J.rows) |i| for (i + 1..J.cols) |j| if (J.at(i, i) > J.at(j, j)) {
-        swap(J.ptr(j, j), J.ptr(i, i)); for (0..C.rows) |k| swap(C.ptr(k, i), C.ptr(k, j));
-    };
-
-    const matrix = eigen.MatrixXd(3, 3);
-    _ = matrix;
+    gsl.gsl_eigen_symmv_free(w);
+    gsl.gsl_matrix_free(m);
 }
 
 pub fn transpose(comptime T: type, B: *Matrix(T), A: Matrix(T)) void {

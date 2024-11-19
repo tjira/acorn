@@ -48,7 +48,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         var P = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer P.deinit();
 
-        var T1 = try Matrix(T         ).init(mpt.states(opt.potential),           mpt.states(opt.potential), allocator); defer T1.deinit();
+        var T1 = try Matrix(T         ).init(mpt.states(opt.potential),                  mpt.states(opt.potential),        allocator); defer T1.deinit();
         var T2 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1,                                allocator); defer T2.deinit();
         var T3 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1,                                allocator); defer T3.deinit();
 
@@ -116,12 +116,9 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
     var U  = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer  U.deinit();
     var UA = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer UA.deinit();
     var UC = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer UC.deinit();
-    var T1 = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer T1.deinit();
-    var T2 = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer T2.deinit();
-    var T6 = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer T2.deinit();
+    var T1 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T1.deinit();
+    var T2 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T2.deinit();
     var T3 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T3.deinit();
-    var T4 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T4.deinit();
-    var T5 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T5.deinit();
     var r  = try Vector(T         ).init(mpt.dims  (potential),                        allocator); defer  r.deinit();
 
     var V  = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
@@ -132,26 +129,26 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
         
         for (0..r.rows) |j| r.ptr(j).* = rvec.at(i, j);
 
-        mpt.eval(T, &U, potential, r); mat.eigh(T, &UA, &UC, U, 1e-8, &T1, &T2, &T6);
+        mpt.eval(T, &U, potential, r); mat.eigh(T, &UA, &UC, U);
 
         for (0..U.rows) |j| for (0..U.rows) |k| {
-            T3.ptr(j, k).* = Complex(T).init(U .at(j, k), 0);
-            T4.ptr(j, k).* = Complex(T).init(UA.at(j, k), 0);
-            T5.ptr(j, k).* = Complex(T).init(UC.at(j, k), 0);
+            T1.ptr(j, k).* = Complex(T).init(U .at(j, k), 0);
+            T2.ptr(j, k).* = Complex(T).init(UA.at(j, k), 0);
+            T3.ptr(j, k).* = Complex(T).init(UC.at(j, k), 0);
         };
 
-        if (i == 1) {
+        // if (i == 1) {
             std.debug.print("\n{d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14}\n",
-                .{T3.at(0, 0).re, T3.at(0, 1).re, T3.at(0, 2).re,
-                  T3.at(1, 0).re, T3.at(1, 1).re, T3.at(1, 2).re,
-                  T3.at(2, 0).re, T3.at(2, 1).re, T3.at(2, 2).re});
+                .{T1.at(0, 0).re, T1.at(0, 1).re, T1.at(0, 2).re,
+                  T1.at(1, 0).re, T1.at(1, 1).re, T1.at(1, 2).re,
+                  T1.at(2, 0).re, T1.at(2, 1).re, T1.at(2, 2).re});
             std.debug.print("\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n",
-                .{T5.at(0, 0).re, T5.at(0, 0).im, T5.at(0, 1).re, T5.at(0, 1).im, T5.at(0, 2).re, T5.at(0, 2).im,
-                  T5.at(1, 0).re, T5.at(1, 0).im, T5.at(1, 1).re, T5.at(1, 1).im, T5.at(1, 2).re, T5.at(1, 2).im,
-                  T5.at(2, 0).re, T5.at(2, 0).im, T5.at(2, 1).re, T5.at(2, 1).im, T5.at(2, 2).re, T5.at(2, 2).im});
-        }
+                .{T3.at(0, 0).re, T3.at(0, 1).re, T3.at(0, 2).re, T3.at(0, 0).im, T3.at(0, 1).im, T3.at(0, 2).im,
+                  T3.at(1, 0).re, T3.at(1, 1).re, T3.at(1, 2).re, T3.at(1, 0).im, T3.at(1, 1).im, T3.at(1, 2).im,
+                  T3.at(2, 0).re, T3.at(2, 1).re, T3.at(2, 2).re, T3.at(2, 0).im, T3.at(2, 1).im, T3.at(2, 2).im});
+        // }
 
-        try V.append(try T3.clone()); try VA.append(try T4.clone()); try VC.append(try T5.clone());
+        try V.append(try T1.clone()); try VA.append(try T2.clone()); try VC.append(try T3.clone());
     }
 
     return .{V, VA, VC};
@@ -179,8 +176,15 @@ fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))), VC:
             T3.ptr(j, k).* = T3.at(j, k).add(T4.at(j, l).mul(VC.items[i].at(k, l)));
         };
 
+        // std.debug.print("\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n",
+        //     .{T3.at(0, 0).re, T3.at(0, 1).re, T3.at(0, 2).re, T3.at(0, 0).im, T3.at(0, 1).im, T3.at(0, 2).im,
+        //       T3.at(1, 0).re, T3.at(1, 1).re, T3.at(1, 2).re, T3.at(1, 0).im, T3.at(1, 1).im, T3.at(1, 2).im,
+        //       T3.at(2, 0).re, T3.at(2, 1).re, T3.at(2, 2).re, T3.at(2, 0).im, T3.at(2, 1).im, T3.at(2, 2).im});
+
         try R.append(try T3.clone());
     }
+
+    std.debug.print("\n", .{});
 
     return R;
 }
