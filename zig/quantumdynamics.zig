@@ -28,7 +28,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         adiabatic: bool,
         imaginary: bool,
         iterations: u32,
-        time_step: f64,
+        time_step: T,
 
         grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals, write: Write, potential: []const u8
     };
@@ -64,7 +64,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         for (0..opt.iterations) |i| {
 
-            wfn.propagate(T, &W, R, K, &T2, &T3); if (opt.imaginary) W.normalize(dr);
+            try wfn.propagate(T, &W, R, K, &T2, &T3); if (opt.imaginary) W.normalize(dr);
 
             if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
 
@@ -118,6 +118,7 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
     var UC = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer UC.deinit();
     var T1 = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer T1.deinit();
     var T2 = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer T2.deinit();
+    var T6 = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer T2.deinit();
     var T3 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T3.deinit();
     var T4 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T4.deinit();
     var T5 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T5.deinit();
@@ -131,13 +132,24 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
         
         for (0..r.rows) |j| r.ptr(j).* = rvec.at(i, j);
 
-        mpt.eval(T, &U, potential, r); mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2);
+        mpt.eval(T, &U, potential, r); mat.eigh(T, &UA, &UC, U, 1e-8, &T1, &T2, &T6);
 
         for (0..U.rows) |j| for (0..U.rows) |k| {
             T3.ptr(j, k).* = Complex(T).init(U .at(j, k), 0);
             T4.ptr(j, k).* = Complex(T).init(UA.at(j, k), 0);
             T5.ptr(j, k).* = Complex(T).init(UC.at(j, k), 0);
         };
+
+        if (i == 1) {
+            std.debug.print("\n{d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14}\n",
+                .{T3.at(0, 0).re, T3.at(0, 1).re, T3.at(0, 2).re,
+                  T3.at(1, 0).re, T3.at(1, 1).re, T3.at(1, 2).re,
+                  T3.at(2, 0).re, T3.at(2, 1).re, T3.at(2, 2).re});
+            std.debug.print("\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n",
+                .{T5.at(0, 0).re, T5.at(0, 0).im, T5.at(0, 1).re, T5.at(0, 1).im, T5.at(0, 2).re, T5.at(0, 2).im,
+                  T5.at(1, 0).re, T5.at(1, 0).im, T5.at(1, 1).re, T5.at(1, 1).im, T5.at(1, 2).re, T5.at(1, 2).im,
+                  T5.at(2, 0).re, T5.at(2, 0).im, T5.at(2, 1).re, T5.at(2, 1).im, T5.at(2, 2).re, T5.at(2, 2).im});
+        }
 
         try V.append(try T3.clone()); try VA.append(try T4.clone()); try VC.append(try T5.clone());
     }

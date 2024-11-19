@@ -33,8 +33,8 @@ pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC
 pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void {
     P.fill(0);
 
-    for (0..W.nstate) |i| for (0..W.nstate) |j| for (0..W.data.rows) |k| {
-        P.ptr(i, j).* += W.data.at(k, i).mul(W.data.at(k, j).conjugate()).re * dr;
+    for (0..W.nstate) |i| for (0..W.nstate) |j| {
+        var pij = Complex(T).init(0, 0); for (0..W.data.rows) |k| {pij = pij.add(W.data.at(k, i).mul(W.data.at(k, j).conjugate()));} P.ptr(i, j).* = pij.magnitude() * dr;
     };
 }
 
@@ -87,22 +87,27 @@ pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T
     return s * dr;
 }
 
-pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), T2: @TypeOf(T1)) void {
+pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), T2: @TypeOf(T1)) !void {
     var value = Complex(T).init(0, 0);
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| {
         value.re = 0; value.im = 0; for (0..W.data.cols) |k| {value = value.add(R.items[i].at(j, k).mul(W.data.at(i, k)));} W.data.ptr(i, j).* = value;
     };
 
-    for (0..W.data.cols) |j| {W.data.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.data.rows}, 1); W.data.setcol(j, T2.*);}
+    for (0..W.data.cols) |j| {W.data.col(T1, j); try ftr.fft_fftw(T, T2.data, T1.data, &[_]usize{W.data.rows},  1); W.data.setcol(j, T2.*);}
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| {
         value.re = 0; value.im = 0; for (0..W.data.cols) |k| {value = value.add(K.items[i].at(j, k).mul(W.data.at(i, k)));} W.data.ptr(i, j).* = value;
     };
 
-    for (0..W.data.cols) |j| {W.data.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.data.rows}, -1); W.data.setcol(j, T2.*);}
+    for (0..W.data.cols) |j| {W.data.col(T1, j); try ftr.fft_fftw(T, T2.data, T1.data, &[_]usize{W.data.rows}, -1); W.data.setcol(j, T2.*);}
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| {
         value.re = 0; value.im = 0; for (0..W.data.cols) |k| {value = value.add(R.items[i].at(j, k).mul(W.data.at(i, k)));} W.data.ptr(i, j).* = value;
     };
+
+    // print the wavefunctions
+    // for (0..W.data.rows) |j| {
+    //     try std.io.getStdOut().writer().print("{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n", .{W.data.at(j, 0).re, W.data.at(j, 0).im, W.data.at(j, 1).re, W.data.at(j, 1).im, W.data.at(j, 2).re, W.data.at(j, 2).im});
+    // }
 }

@@ -1,11 +1,11 @@
 {
     "adiabatic" : false,
     "imaginary" : false,
-    "iterations" : 1,
+    "iterations" : 300,
     "time_step" : 10,
     "grid" : {
         "limits" : [-16, 32],
-        "points" : 13
+        "points" : 512
     },
     "initial_conditions" : {
         "mass" : 2000,
@@ -14,10 +14,10 @@
         "state" : 1
     },
     "log_intervals" : {
-        "iteration" : 1
+        "iteration" : 50
     },
     "write" : {
         "population" : "POPULATION-EXACT.mat"
     },
-    "potential" : "tripleState1D_1"
+    "potential" : "doubleState1D_1"
 }

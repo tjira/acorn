@@ -20,7 +20,7 @@ pub fn Matrix(comptime T: type) type {
             for (0..self.data.len) |i| {if (@abs(other.data[i] - self.data[i]) > tol) return false;} return true;
         }
         pub fn isdiag(self: Matrix(T), tol: T) bool {
-            for (0..self.rows) |i| {for (i + 1..self.cols) |j| if (@abs(self.at(i, j)) > tol or @abs(self.at(j, i)) > tol) return false;} return true;
+            var sumsq: T = 0; for (0..self.rows) |i| {for (i + 1..self.cols) |j| sumsq += self.at(i, j) * self.at(i, j) + self.at(j, i) * self.at(j, i);} return sumsq < tol;
         }
 
         pub fn at(self: Matrix(T), i: usize, j: usize) T {
@@ -69,22 +69,30 @@ pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     C.fill(0); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
 }
 
-pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T, T1: *Matrix(T), T2: *Matrix(T)) void {
-    @memcpy(J.data, A.data); C.fill(0); var maxi: usize = undefined; var maxj: usize = undefined; var maxv: T = undefined; var phi: T = undefined; 
+pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T, T1: *Matrix(T), T2: *Matrix(T), T3: *Matrix(T)) void {
+    @memcpy(J.data, A.data); C.identity(); var maxi: usize = undefined; var maxj: usize = undefined; var maxv: T = undefined; var phi: T = undefined; 
 
-    if (J.isdiag(tol)) for (0..A.rows) |i| {C.ptr(i, i).* = 1;};
+    // for (J.data) |*e| e.* *= 10;
 
-    while (!J.isdiag(tol)) : ({maxi = 0; maxj = 1; maxv = J.at(maxi, maxj);}) {
+    if (J.isdiag(tol)) for (0..A.rows) |i| {C.ptr(i, i).* = 1; for (J.data) |*e| e.* /= 1e2;};
+
+    while (true) : ({maxi = 0; maxj = 1; maxv = J.at(maxi, maxj);}) {
 
         for (0..A.rows) |i| for (i + 1..A.cols) |j| if (J.at(i, j) > maxv) {maxi = i; maxj = j; maxv = J.at(i, j);};
 
-        phi = 0.5 * std.math.atan(2 * maxv / (J.at(maxi, maxi) - J.at(maxj, maxj))); C.identity();
+        if (maxv < 1e-4) break;
 
-        C.ptr(maxi, maxi).* = std.math.cos(phi); C.ptr(maxj, maxj).* =  C.at(maxi, maxi);
-        C.ptr(maxj, maxi).* = std.math.sin(phi); C.ptr(maxi, maxj).* = -C.at(maxj, maxi);
+        phi = 0.5 * std.math.atan(2 * maxv / (J.at(maxi, maxi) - J.at(maxj, maxj))); T3.identity();
 
-        mm(T, T1, J.*, C.*); transpose(T, T2, C.*); mm(T, J, T2.*, T1.*);
+        T3.ptr(maxi, maxi).* = std.math.cos(phi); T3.ptr(maxj, maxj).* =  T3.at(maxi, maxi);
+        T3.ptr(maxj, maxi).* = std.math.sin(phi); T3.ptr(maxi, maxj).* = -T3.at(maxj, maxi);
+
+        mm(T, T1, J.*, T3.*); transpose(T, T2, T3.*); mm(T, J, T2.*, T1.*);
+
+        mm(T, T1, C.*, T3.*); @memcpy(C.data, T1.data);
     }
+
+    // for (J.data) |*e| e.* /= 10;
 
     for (0..J.rows) |i| for (i + 1..J.cols) |j| if (J.at(i, i) > J.at(j, j)) {
         swap(J.ptr(j, j), J.ptr(i, i)); for (0..C.rows) |k| swap(C.ptr(k, i), C.ptr(k, j));
