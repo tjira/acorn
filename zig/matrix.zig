@@ -2,6 +2,8 @@ const std = @import("std");
 
 const swap = @import("helper.zig").swap;
 
+const eigen = @cImport(@cInclude("eigen3/Eigen/Core"));
+
 pub fn Matrix(comptime T: type) type {
     return struct {
         data: []T, rows: usize, cols: usize, allocator: std.mem.Allocator,
@@ -72,15 +74,11 @@ pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
 pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T, T1: *Matrix(T), T2: *Matrix(T), T3: *Matrix(T)) void {
     @memcpy(J.data, A.data); C.identity(); var maxi: usize = undefined; var maxj: usize = undefined; var maxv: T = undefined; var phi: T = undefined; 
 
-    // for (J.data) |*e| e.* *= 10;
-
     if (J.isdiag(tol)) for (0..A.rows) |i| {C.ptr(i, i).* = 1; for (J.data) |*e| e.* /= 1e2;};
 
-    while (true) : ({maxi = 0; maxj = 1; maxv = J.at(maxi, maxj);}) {
+    while (!J.isdiag(tol)) : ({maxi = 0; maxj = 1; maxv = J.at(maxi, maxj);}) {
 
         for (0..A.rows) |i| for (i + 1..A.cols) |j| if (J.at(i, j) > maxv) {maxi = i; maxj = j; maxv = J.at(i, j);};
-
-        if (maxv < 1e-4) break;
 
         phi = 0.5 * std.math.atan(2 * maxv / (J.at(maxi, maxi) - J.at(maxj, maxj))); T3.identity();
 
@@ -92,11 +90,12 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), tol: T
         mm(T, T1, C.*, T3.*); @memcpy(C.data, T1.data);
     }
 
-    // for (J.data) |*e| e.* /= 10;
-
     for (0..J.rows) |i| for (i + 1..J.cols) |j| if (J.at(i, i) > J.at(j, j)) {
         swap(J.ptr(j, j), J.ptr(i, i)); for (0..C.rows) |k| swap(C.ptr(k, i), C.ptr(k, j));
     };
+
+    const matrix = eigen.MatrixXd(3, 3);
+    _ = matrix;
 }
 
 pub fn transpose(comptime T: type, B: *Matrix(T), A: Matrix(T)) void {
