@@ -6,7 +6,7 @@ const mpt = @import("modelpotential.zig");
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
-// const stdout = std.io.getStdOut().writer();
+const asfloat = @import("helper.zig").asfloat;
 
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
@@ -27,29 +27,29 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         time_step: T,
         trajectories: u32,
 
-        initial_conditions: InitialConditions, log_intervals: LogIntervals, write: Write, potential: mpt.PotentialType(T),
+        initial_conditions: InitialConditions, log_intervals: LogIntervals, write: Write, potential: []const u8
     };
 }
 
 pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.mem.Allocator) !void {
     var prng = std.Random.DefaultPrng.init(opt.seed); const rand = prng.random();
 
-    var pop = try Matrix(T).init(opt.iterations, try mpt.states(T, opt.potential), allocator); defer pop.deinit(); pop.fill(0);
+    var pop = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator); defer pop.deinit(); pop.fill(0);
 
     {
-        var r  = try Vector(T).init(try mpt.dims(T, opt.potential), allocator); defer  r.deinit();
-        var p  = try Vector(T).init(try mpt.dims(T, opt.potential), allocator); defer  p.deinit();
-        var v  = try Vector(T).init(try mpt.dims(T, opt.potential), allocator); defer  v.deinit();
-        var a  = try Vector(T).init(try mpt.dims(T, opt.potential), allocator); defer  a.deinit();
-        var rt = try Vector(T).init(try mpt.dims(T, opt.potential), allocator); defer rt.deinit();
-        var ap = try Vector(T).init(try mpt.dims(T, opt.potential), allocator); defer ap.deinit();
+        var r  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  r.deinit();
+        var p  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  p.deinit();
+        var v  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  v.deinit();
+        var a  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  a.deinit();
+        var rt = try Vector(T).init(mpt.dims(opt.potential), allocator); defer rt.deinit();
+        var ap = try Vector(T).init(mpt.dims(opt.potential), allocator); defer ap.deinit();
 
-        var U  = try Matrix(T).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer  U.deinit();
-        var UA = try Matrix(T).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer UA.deinit();
-        var UC = try Matrix(T).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer UC.deinit();
+        var U  = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer  U.deinit();
+        var UA = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer UA.deinit();
+        var UC = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer UC.deinit();
 
-        var T1 = try Matrix(T).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer T1.deinit();
-        var T2 = try Matrix(T).init(try mpt.states(T, opt.potential), try mpt.states(T, opt.potential), allocator); defer T2.deinit();
+        var T1 = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T1.deinit();
+        var T2 = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T2.deinit();
 
         var U3 = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer U3[0].deinit(); defer U3[1].deinit(); defer U3[2].deinit();
 
@@ -66,15 +66,15 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
                 for (0..r.rows) |k| {
 
-                    rt.ptr(k).* = r.at(k) + opt.derivative_step; opt.potential(T, &U, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
-                    rt.ptr(k).* = r.at(k) - opt.derivative_step; opt.potential(T, &U, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) + opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) - opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
                     a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
                     v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
                     r.ptr(k).* += (v.at(k) + 0.5 * a.at(k) * opt.time_step) * opt.time_step;
                 }
 
-                opt.potential(T, &U, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} @memcpy(U3[j % 3].data, U.data);
+                mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);} @memcpy(U3[j % 3].data, U.data);
 
                 Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.initial_conditions.mass; Epot = U.at(s, s);
 
@@ -91,9 +91,9 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
         }
     }
 
-    for (0..opt.iterations) |i| {for (0..try mpt.states(T, opt.potential)) |j| pop.ptr(i, j).* /= opt.trajectories;}
+    for (0..opt.iterations) |i| {for (0..mpt.states(opt.potential)) |j| pop.ptr(i, j).* /= asfloat(T, opt.trajectories);}
 
-    for (0..try mpt.states(T, opt.potential)) |i| {
+    for (0..mpt.states(opt.potential)) |i| {
         try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
     }
 
@@ -132,7 +132,7 @@ fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, ad
 }
 
 fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), allocator: std.mem.Allocator) !void {
-    const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * opt.iterations);
+    const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * asfloat(T, opt.iterations));
 
     if (opt.write.population) |path| {
         var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write(path); pop_t.deinit();

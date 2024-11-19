@@ -11,18 +11,24 @@ pub fn PotentialType(comptime T: type) type {
     return fn (comptime T: type, U: *Matrix(T), r: Vector(T)) void;
 }
 
-pub fn dims(comptime T: type, potential: PotentialType(T)) !u32 {
-    if (potential == harmonic1D_1   ) return 1;
-    if (potential == doubleState1D_1) return 1;
-    if (potential == tripleState1D_1) return 1;
-    return error.PotentialNotKnown;
+pub fn dims(potential: []const u8) u32 {
+    if (std.mem.eql(u8, potential,    "harmonic1D_1")) return 1;
+    if (std.mem.eql(u8, potential, "doubleState1D_1")) return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_1")) return 1;
+    return 0;
 }
 
-pub fn states(comptime T: type, potential: PotentialType(T)) !u32 {
-    if (potential == harmonic1D_1   ) return 1;
-    if (potential == doubleState1D_1) return 2;
-    if (potential == tripleState1D_1) return 3;
-    return error.PotentialNotKnown;
+pub fn eval(comptime T: type, U: *Matrix(T), potential: []const u8, r: Vector(T)) void {
+    if (std.mem.eql(u8, potential,    "harmonic1D_1"))    harmonic1D_1(T, U, r);
+    if (std.mem.eql(u8, potential, "doubleState1D_1")) doubleState1D_1(T, U, r);
+    if (std.mem.eql(u8, potential, "tripleState1D_1")) tripleState1D_1(T, U, r);
+}
+
+pub fn states(potential: []const u8) u32 {
+    if (std.mem.eql(u8, potential,    "harmonic1D_1")) return 1;
+    if (std.mem.eql(u8, potential, "doubleState1D_1")) return 2;
+    if (std.mem.eql(u8, potential, "tripleState1D_1")) return 3;
+    return 0;
 }
 
 pub fn harmonic1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
@@ -66,8 +72,8 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
     };
 }
 
-pub fn write(comptime T: type, path: []const u8, potential: PotentialType(T), start: T, end: T, points: u32, adiabatic: bool, allocator: std.mem.Allocator) !void {
-    const ndim = try dims(T, potential); const nstate = try states(T, potential); const nrow = std.math.pow(u32, points, ndim); const ncol = nstate * nstate;
+pub fn write(comptime T: type, path: []const u8, potential: []const u8, start: T, end: T, points: u32, adiabatic: bool, allocator: std.mem.Allocator) !void {
+    const ndim = dims(potential); const nstate = states(potential); const nrow = std.math.pow(u32, points, ndim); const ncol = nstate * nstate;
 
     var U  = try Matrix(T).init(nstate, nstate, allocator); defer  U.deinit();
     var UA = try Matrix(T).init(nstate, nstate, allocator); defer UA.deinit();
@@ -83,7 +89,7 @@ pub fn write(comptime T: type, path: []const u8, potential: PotentialType(T), st
 
     for (0..R.rows) |i| {
         
-        for (0..ndim) |j| {r.ptr(j).* = R.at(i, j);} potential(T, &U, r);
+        for (0..ndim) |j| {r.ptr(j).* = R.at(i, j);} eval(T, &U, potential, r);
 
         if (adiabatic) {mat.eigh(T, &UA, &UC, U, 1e-12, &T1, &T2); @memcpy(U.data, UA.data);}
 

@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const asfloat = @import("helper.zig").asfloat;
+
 pub fn Vector(comptime T: type) type {
     return struct {
         data: []T, rows: usize, allocator: std.mem.Allocator,
@@ -25,7 +27,7 @@ pub fn Vector(comptime T: type) type {
             for (0..self.data.len) |i| self.data[i] = value;
         }
         pub fn linspace(self: Vector(T), start: T, end: T) void {
-            for (0..self.data.len) |i| self.data[i] = start + @as(T, @floatFromInt(i)) * (end - start) / @as(T, @floatFromInt(self.rows - 1));
+            for (0..self.data.len) |i| self.data[i] = start + asfloat(T, i) * (end - start) / asfloat(T, self.rows - 1);
         }
     };
 }
