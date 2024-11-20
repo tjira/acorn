@@ -12,7 +12,7 @@
             "momentum_std" : [1],
             "position_mean" : [-10],
             "position_std" : [0.5],
-            "state" : 2
+            "state" : 1
         },
         "log_intervals" : {
             "iteration" : 500,
@@ -21,6 +21,6 @@
         "write" : {
             "population" : "POPULATION-LZSH.mat"
         },
-        "potential" : "tripleState1D_1"
+        "potential" : "tully1D_1"
     }
 }

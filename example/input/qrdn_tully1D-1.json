@@ -20,6 +20,6 @@
         "write" : {
             "population" : "POPULATION-EXACT.mat"
         },
-        "potential" : "doubleState1D_1"
+        "potential" : "tully1D_1"
     }
 }

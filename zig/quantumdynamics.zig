@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex;
+const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const mat = @import("matrix.zig"          );
 const mpt = @import("modelpotential.zig"  );
@@ -112,31 +112,21 @@ fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T
 }
 
 fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(Complex(T))) {
-    var U  = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer  U.deinit();
-    var UA = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer UA.deinit();
-    var UC = try Matrix(T         ).init(mpt.states(potential), mpt.states(potential), allocator); defer UC.deinit();
-    var T1 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T1.deinit();
-    var T2 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T2.deinit();
-    var T3 = try Matrix(Complex(T)).init(mpt.states(potential), mpt.states(potential), allocator); defer T3.deinit();
-    var r  = try Vector(T         ).init(mpt.dims  (potential),                        allocator); defer  r.deinit();
+    const GSLW = gsl.gsl_eigen_symmv_alloc(mpt.states(potential)); defer gsl.gsl_eigen_symmv_free(GSLW);
+
+    var U  = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer  U.deinit();
+    var UA = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UA.deinit();
+    var UC = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UC.deinit();
 
     var V  = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
     var VA = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
     var VC = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
 
     for (0..rvec.rows) |i| {
-        
-        for (0..r.rows) |j| r.ptr(j).* = rvec.at(i, j);
 
-        mpt.eval(T, &U, potential, r); mat.eigh(T, &UA, &UC, U);
+        mpt.eval(T, &U, potential, rvec.rowptr(i).vectorptr()); mat.eigh(T, &UA, &UC, U, GSLW);
 
-        for (0..U.rows) |j| for (0..U.rows) |k| {
-            T1.ptr(j, k).* = Complex(T).init(U .at(j, k), 0);
-            T2.ptr(j, k).* = Complex(T).init(UA.at(j, k), 0);
-            T3.ptr(j, k).* = Complex(T).init(UC.at(j, k), 0);
-        };
-
-        try V.append(try T1.clone()); try VA.append(try T2.clone()); try VC.append(try T3.clone());
+        try V.append(try U.complex()); try VA.append(try UA.complex()); try VC.append(try UC.complex());
     }
 
     return .{V, VA, VC};
@@ -174,6 +164,6 @@ fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T)
     const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * asfloat(T, opt.iterations));
 
     if (opt.write.population) |path| {
-        var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write(path); pop_t.deinit();
+        var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); mat.hjoin(T, &pop_t, time, pop); try pop_t.write(path); pop_t.deinit();
     }
 }

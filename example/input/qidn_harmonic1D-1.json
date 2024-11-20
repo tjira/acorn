@@ -1,23 +1,25 @@
 {
-    "adiabatic" : true,
-    "iterations" : 100,
-    "time_step" : 0.1,
-    "imaginary" : true,
-    "grid" : {
-        "limits" : [-8, 8],
-        "points" : 64
-    },
-    "initial_conditions" : {
-        "position" : [1],
-        "momentum" : [0],
-        "state" : 0,
-        "mass" : 1
-    },
-    "log_intervals" : {
-        "iteration" : 10
-    },
-    "write" : {
-        "population" : null
-    },
-    "potential" : "harmonic1D_1"
+    "quantum_dynamics" : {
+        "adiabatic" : false,
+        "imaginary" : true,
+        "iterations" : 100,
+        "time_step" : 0.1,
+        "grid" : {
+            "limits" : [-8, 8],
+            "points" : 64
+        },
+        "initial_conditions" : {
+            "mass" : 1,
+            "momentum" : [0],
+            "position" : [1],
+            "state" : 0
+        },
+        "log_intervals" : {
+            "iteration" : 10
+        },
+        "write" : {
+            "population" : null
+        },
+        "potential" : "harmonic1D_1"
+    }
 }

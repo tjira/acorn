@@ -1,4 +1,4 @@
-const std = @import("std");
+const std = @import("std"); const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
@@ -37,6 +37,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
     var pop = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator); defer pop.deinit(); pop.fill(0);
 
     {
+        const GSLW = gsl.gsl_eigen_symmv_alloc(mpt.states(opt.potential)); defer gsl.gsl_eigen_symmv_free(GSLW);
+
         var r  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  r.deinit();
         var p  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  p.deinit();
         var v  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  v.deinit();
@@ -63,15 +65,15 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
                 for (0..r.rows) |k| {
 
-                    rt.ptr(k).* = r.at(k) + opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
-                    rt.ptr(k).* = r.at(k) - opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) + opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) - opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
                     a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
                     v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
                     r.ptr(k).* += (v.at(k) + 0.5 * a.at(k) * opt.time_step) * opt.time_step;
                 }
 
-                mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U); @memcpy(U.data, UA.data);} @memcpy(U3[j % 3].data, U.data);
+                mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data);} @memcpy(U3[j % 3].data, U.data);
 
                 Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.initial_conditions.mass; Epot = U.at(s, s);
 
@@ -132,6 +134,6 @@ fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(
     const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * asfloat(T, opt.iterations));
 
     if (opt.write.population) |path| {
-        var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); time.hjoin(&pop_t, pop); try pop_t.write(path); pop_t.deinit();
+        var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); mat.hjoin(T, &pop_t, time, pop); try pop_t.write(path); pop_t.deinit();
     }
 }

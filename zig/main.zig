@@ -1,36 +1,67 @@
 const std = @import("std");
 
+const allocator = std.heap.page_allocator; const fsize = 2048;
+
 const cdn = @import("classicaldynamics.zig");
-const ftr = @import("fouriertransform.zig");
-const mat = @import("matrix.zig"          );
-const mpt = @import("modelpotential.zig"  );
+const mat = @import("matrix.zig"           );
+const mpt = @import("modelpotential.zig"   );
 const qdn = @import("quantumdynamics.zig"  );
 
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
-const allocator = std.heap.page_allocator;
+const CDO = @import("classicaldynamics.zig").ClassicalDynamicsOptions;
+const QDO = @import("quantumdynamics.zig"  ).QuantumDynamicsOptions  ;
 
 pub fn main() !void {
-    var timer = try std.time.Timer.start();
+    var timer = try std.time.Timer.start(); var args = try std.process.argsWithAllocator(allocator); defer args.deinit();
 
-    // const path = "example/input/cdyn_tripleState1D-1.json";
-    const path = "example/input/qrdn_tripleState1D-1.json";
-    // const path = "example/input/qidn_harmonic1D-1.json";
+    _ = args.next(); while (args.next()) |arg| {
 
-    // const mode = cdn.ClassicalDynamicsOptions(f64);
-    const mode = qdn.QuantumDynamicsOptions(f64);
+        const filebuf = try std.fs.cwd().readFileAlloc(allocator, arg, fsize); defer allocator.free(filebuf);
 
-    const buffer = try std.fs.cwd().readFileAlloc(allocator, path, 2048); defer allocator.free(buffer);
-    const parsed = try std.json.parseFromSlice(mode, allocator, buffer, .{}); defer parsed.deinit();
-    const opt = parsed.value; std.debug.print("{s}\n", .{buffer});
+        const inputjs = try std.json.parseFromSlice(std.json.Value, allocator, filebuf, .{}); defer inputjs.deinit();
 
-    if (@TypeOf(opt) == cdn.ClassicalDynamicsOptions(f64)) try cdn.run(f64, opt, allocator);
-    if (@TypeOf(opt) == qdn.QuantumDynamicsOptions(f64)  ) try qdn.run(f64, opt, allocator);
+        if (inputjs.value.object.contains("classical_dynamics")) {
 
-    const pot_start: f64 = -16; const pot_end: f64 = 16; const pot_points: f64 = 1024;
-    try mpt.write(f64, "POTENTIAL-DIABATIC.mat",  opt.potential, pot_start, pot_end, pot_points, false, allocator);
-    try mpt.write(f64, "POTENTIAL-ADIABATIC.mat", opt.potential, pot_start, pot_end, pot_points, true,  allocator);
+            const obj = try std.json.parseFromValue(CDO(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
 
-    std.debug.print("\nTOTAL EXECUTION TIME: {}\n\n\n\n", .{std.fmt.fmtDuration(timer.read())});
+            try cdn.run(f64, obj.value, allocator);
+        }
+
+        if (inputjs.value.object.contains("quantum_dynamics")) {
+
+            const obj = try std.json.parseFromValue(QDO(f64), allocator, inputjs.value.object.get("quantum_dynamics").?, .{}); defer obj.deinit();
+
+            try qdn.run(f64, obj.value, allocator);
+        }
+
+        // if (inputjs.value.object.contains("model_potential")) {
+        //
+        //     const obj = try std.json.parseFromValue(MPO(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
+        //
+        //     try qdn.run(f64, obj.value, allocator);
+        // }
+    }
+
+    std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+
+    // const A = try Matrix(f64).init(2, 2, allocator); defer  A.deinit();
+    // var  AC = try Matrix(f64).init(2, 2, allocator); defer AC.deinit();
+    // var  AJ = try Matrix(f64).init(2, 2, allocator); defer AJ.deinit();
+    //
+    // var v = A.rowptr(0);
+    // A.ptr(0, 0).* = 1; A.ptr(0, 1).* = 2; A.ptr(1, 0).* = 2; A.ptr(1, 1).* = 1;
+
+    // v.ptr(0, 0).* = 12;
+
+    // try A.print(std.io.getStdOut().writer());
+
+    // mat.eigh(f64, &AJ, &AC, A);
+    //
+    // try A.print(std.io.getStdOut().writer());
+    // std.debug.print("\n", .{});
+    // try AJ.print(std.io.getStdOut().writer());
+    // std.debug.print("\n", .{});
+    // try AC.print(std.io.getStdOut().writer());
 }
