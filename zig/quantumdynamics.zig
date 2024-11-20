@@ -137,17 +137,6 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
             T3.ptr(j, k).* = Complex(T).init(UC.at(j, k), 0);
         };
 
-        // if (i == 1) {
-            std.debug.print("\n{d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14}\n",
-                .{T1.at(0, 0).re, T1.at(0, 1).re, T1.at(0, 2).re,
-                  T1.at(1, 0).re, T1.at(1, 1).re, T1.at(1, 2).re,
-                  T1.at(2, 0).re, T1.at(2, 1).re, T1.at(2, 2).re});
-            std.debug.print("\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n",
-                .{T3.at(0, 0).re, T3.at(0, 1).re, T3.at(0, 2).re, T3.at(0, 0).im, T3.at(0, 1).im, T3.at(0, 2).im,
-                  T3.at(1, 0).re, T3.at(1, 1).re, T3.at(1, 2).re, T3.at(1, 0).im, T3.at(1, 1).im, T3.at(1, 2).im,
-                  T3.at(2, 0).re, T3.at(2, 1).re, T3.at(2, 2).re, T3.at(2, 0).im, T3.at(2, 1).im, T3.at(2, 2).im});
-        // }
-
         try V.append(try T1.clone()); try VA.append(try T2.clone()); try VC.append(try T3.clone());
     }
 
@@ -176,15 +165,8 @@ fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))), VC:
             T3.ptr(j, k).* = T3.at(j, k).add(T4.at(j, l).mul(VC.items[i].at(k, l)));
         };
 
-        // std.debug.print("\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n{d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14} {d:20.14}\n",
-        //     .{T3.at(0, 0).re, T3.at(0, 1).re, T3.at(0, 2).re, T3.at(0, 0).im, T3.at(0, 1).im, T3.at(0, 2).im,
-        //       T3.at(1, 0).re, T3.at(1, 1).re, T3.at(1, 2).re, T3.at(1, 0).im, T3.at(1, 1).im, T3.at(1, 2).im,
-        //       T3.at(2, 0).re, T3.at(2, 1).re, T3.at(2, 2).re, T3.at(2, 0).im, T3.at(2, 1).im, T3.at(2, 2).im});
-
         try R.append(try T3.clone());
     }
-
-    std.debug.print("\n", .{});
 
     return R;
 }

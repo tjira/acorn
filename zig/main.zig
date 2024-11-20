@@ -14,12 +14,12 @@ const allocator = std.heap.page_allocator;
 pub fn main() !void {
     var timer = try std.time.Timer.start();
 
-    // const path = "example/input/cdyn_tripleState1D-1.json";
-    const path = "example/input/qrdn_tripleState1D-1.json";
+    const path = "example/input/cdyn_tripleState1D-1.json";
+    // const path = "example/input/qrdn_tripleState1D-1.json";
     // const path = "example/input/qidn_harmonic1D-1.json";
 
-    // const mode = cdn.ClassicalDynamicsOptions(f64);
-    const mode = qdn.QuantumDynamicsOptions(f64);
+    const mode = cdn.ClassicalDynamicsOptions(f64);
+    // const mode = qdn.QuantumDynamicsOptions(f64);
 
     const buffer = try std.fs.cwd().readFileAlloc(allocator, path, 2048); defer allocator.free(buffer);
     const parsed = try std.json.parseFromSlice(mode, allocator, buffer, .{}); defer parsed.deinit();
@@ -32,5 +32,5 @@ pub fn main() !void {
     try mpt.write(f64, "POTENTIAL-DIABATIC.mat",  opt.potential, pot_start, pot_end, pot_points, false, allocator);
     try mpt.write(f64, "POTENTIAL-ADIABATIC.mat", opt.potential, pot_start, pot_end, pot_points, true,  allocator);
 
-    std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+    std.debug.print("\nTOTAL EXECUTION TIME: {}\n\n\n\n", .{std.fmt.fmtDuration(timer.read())});
 }

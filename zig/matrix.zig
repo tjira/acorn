@@ -82,7 +82,7 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T)) void {
 
     _ = gsl.gsl_eigen_symmv(m, eval, evec, w);
 
-    _ = gsl.gsl_eigen_symmv_sort(eval, evec, gsl.GSL_EIGEN_SORT_VAL_DESC);
+    _ = gsl.gsl_eigen_symmv_sort(eval, evec, gsl.GSL_EIGEN_SORT_VAL_ASC);
 
     for (0..A.rows) |i| for (0..A.cols) |j| {C.ptr(i, j).* = gsl.gsl_matrix_get(evec, i, j);};
     for (0..A.rows) |i| J.ptr(i, i).* = gsl.gsl_vector_get(eval, i);

@@ -1,11 +1,11 @@
 {
-    "adiabatic" : false,
+    "adiabatic" : true,
     "imaginary" : false,
-    "iterations" : 1,
+    "iterations" : 300,
     "time_step" : 10,
     "grid" : {
         "limits" : [-16, 32],
-        "points" : 13
+        "points" : 1024
     },
     "initial_conditions" : {
         "mass" : 2000,
