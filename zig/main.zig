@@ -14,12 +14,12 @@ const allocator = std.heap.page_allocator;
 pub fn main() !void {
     var timer = try std.time.Timer.start();
 
-    const path = "example/input/cdyn_tripleState1D-1.json";
-    // const path = "example/input/qrdn_tripleState1D-1.json";
+    // const path = "example/input/cdyn_tripleState1D-1.json";
+    const path = "example/input/qrdn_tripleState1D-1.json";
     // const path = "example/input/qidn_harmonic1D-1.json";
 
-    const mode = cdn.ClassicalDynamicsOptions(f64);
-    // const mode = qdn.QuantumDynamicsOptions(f64);
+    // const mode = cdn.ClassicalDynamicsOptions(f64);
+    const mode = qdn.QuantumDynamicsOptions(f64);
 
     const buffer = try std.fs.cwd().readFileAlloc(allocator, path, 2048); defer allocator.free(buffer);
     const parsed = try std.json.parseFromSlice(mode, allocator, buffer, .{}); defer parsed.deinit();

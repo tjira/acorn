@@ -13,10 +13,7 @@ pub fn build(b: *std.Build) void {
         .target = target
     });
 
-    main_exe.linkSystemLibrary2("fftw3", .{}); 
-    main_exe.linkSystemLibrary2("gsl",   .{}); 
-    main_exe.linkLibC();
-    // main_exe.linkLibCpp();
+    main_exe.linkSystemLibrary2("gsl", .{}); main_exe.linkLibC();
 
     // const test_exe = b.addTest(.{
     //     .root_source_file = b.path("test/main.zig"),

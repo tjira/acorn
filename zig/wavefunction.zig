@@ -87,14 +87,14 @@ pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T
     return s.mul(Complex(T).init(dr, 0));
 }
 
-pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), T2: @TypeOf(T1)) !void {
+pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), T2: @TypeOf(T1)) void {
     for (0..W.data.rows) |i| {
         for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
         for (0..W.data.cols) |j| for (0..W.data.cols) |k| {T1.data[j] = T1.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));};
         for (0..W.data.cols) |j| W.data.ptr(i, j).* = T1.data[j];
     }
 
-    for (0..W.data.cols) |j| {W.data.col(T1, j); try ftr.fft_fftw(T, T2.data, T1.data, &[_]usize{W.data.rows},  1); W.data.setcol(j, T2.*);}
+    for (0..W.data.cols) |j| {W.data.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.data.rows},  1); W.data.setcol(j, T2.*);}
 
     for (0..W.data.rows) |i| {
         for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
@@ -102,7 +102,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
         for (0..W.data.cols) |j| W.data.ptr(i, j).* = T1.data[j];
     }
 
-    for (0..W.data.cols) |j| {W.data.col(T1, j); try ftr.fft_fftw(T, T2.data, T1.data, &[_]usize{W.data.rows}, -1); W.data.setcol(j, T2.*);}
+    for (0..W.data.cols) |j| {W.data.col(T1, j); ftr.dft(T, T2.data, T1.data, &[_]usize{W.data.rows}, -1); W.data.setcol(j, T2.*);}
 
     for (0..W.data.rows) |i| {
         for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);

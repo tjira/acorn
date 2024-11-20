@@ -48,9 +48,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         var P = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer P.deinit();
 
-        var T1 = try Matrix(T         ).init(mpt.states(opt.potential),                  mpt.states(opt.potential),        allocator); defer T1.deinit();
-        var T2 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1,                                allocator); defer T2.deinit();
-        var T3 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1,                                allocator); defer T3.deinit();
+        var T1 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1, allocator); defer T1.deinit();
+        var T2 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1, allocator); defer T2.deinit();
 
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
@@ -64,11 +63,11 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         for (0..opt.iterations) |i| {
 
-            try wfn.propagate(T, &W, R, K, &T2, &T3); if (opt.imaginary) W.normalize(dr);
+            wfn.propagate(T, &W, R, K, &T1, &T2); if (opt.imaginary) W.normalize(dr);
 
             if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
 
-            const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T2, &T3); const Epot: T = wfn.epot(T, W, V, dr);
+            const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1, &T2); const Epot: T = wfn.epot(T, W, V, dr);
 
             wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); for (0..W.nstate) |j| pop.ptr(i, j).* = P.at(j, j);
 

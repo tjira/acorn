@@ -5,7 +5,7 @@
     "time_step" : 10,
     "grid" : {
         "limits" : [-16, 32],
-        "points" : 1024
+        "points" : 512
     },
     "initial_conditions" : {
         "mass" : 2000,
