@@ -1,0 +1,9 @@
+{
+    "model_potential" : {
+        "adiabatic" : true,
+        "limits" : [-16, 16],
+        "output" : "POTENTIAL.mat",
+        "points" : 512,
+        "potential" : "tully1D_2"
+    }
+}

@@ -12,6 +12,7 @@ const Vector = @import("vector.zig").Vector;
 
 const CDO = @import("classicaldynamics.zig").ClassicalDynamicsOptions;
 const QDO = @import("quantumdynamics.zig"  ).QuantumDynamicsOptions  ;
+const MPO = @import("modelpotential.zig"   ).ModelPotentialOptions   ;
 
 pub fn main() !void {
     var timer = try std.time.Timer.start(); var args = try std.process.argsWithAllocator(allocator); defer args.deinit();
@@ -36,12 +37,12 @@ pub fn main() !void {
             try qdn.run(f64, obj.value, allocator);
         }
 
-        // if (inputjs.value.object.contains("model_potential")) {
-        //
-        //     const obj = try std.json.parseFromValue(MPO(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
-        //
-        //     try qdn.run(f64, obj.value, allocator);
-        // }
+        if (inputjs.value.object.contains("model_potential")) {
+
+            const obj = try std.json.parseFromValue(MPO(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
+
+            try mpt.write(f64, obj.value, allocator);
+        }
     }
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});

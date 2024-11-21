@@ -7,8 +7,14 @@ const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
 
-pub fn PotentialType(comptime T: type) type {
-    return fn (comptime T: type, U: *Matrix(T), r: Vector(T)) void;
+pub fn ModelPotentialOptions(comptime T: type) type {
+    return struct {
+        adiabatic: bool,
+        limits: []const T,
+        output: []const u8,
+        points: u32,
+        potential: []const u8
+    };
 }
 
 pub fn dims(potential: []const u8) u32 {
@@ -92,19 +98,26 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
     };
 }
 
-pub fn write(comptime T: type, path: []const u8, potential: []const u8, start: T, end: T, points: u32, adiabatic: bool, allocator: std.mem.Allocator) !void {
-    const GSLW = gsl.gsl_eigen_symmv_alloc(states(potential)); defer gsl.gsl_eigen_symmv_free(GSLW);
+pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
+    const GSLW = gsl.gsl_eigen_symmv_alloc(states(opt.potential)); defer gsl.gsl_eigen_symmv_free(GSLW);
 
-    var U  = try Matrix(T).init(states(potential), states(potential), allocator); defer  U.deinit();
-    var UA = try Matrix(T).init(states(potential), states(potential), allocator); defer UA.deinit();
-    var UC = try Matrix(T).init(states(potential), states(potential), allocator); defer UC.deinit();
+    var U  = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer  U.deinit();
+    var UA = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UA.deinit();
+    var UC = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UC.deinit();
 
-    var R = try Matrix(T).init(std.math.pow(u32, points, dims(potential)), dims(potential)                      , allocator); defer R.deinit();
-    var V = try Matrix(T).init(std.math.pow(u32, points, dims(potential)), states(potential) * states(potential), allocator); defer V.deinit();
+    var R = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential)), dims(opt.potential)                          , allocator); defer R.deinit();
+    var V = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential)), states(opt.potential) * states(opt.potential), allocator); defer V.deinit();
 
-    rgrid(T, &R, start, end, points); UA.fill(0);
+    rgrid(T, &R, opt.limits[0], opt.limits[1], opt.points);
 
-    for (0..R.rows) |i| {eval(T, &U, potential, R.rowptr(i).vectorptr()); if (adiabatic) {mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data);} for (U.data, 0..) |e, j| V.ptr(i, j).* = e;}
+    for (0..R.rows) |i| {
 
-    var VT = try Matrix(T).init(V.rows, R.cols + V.cols, allocator); mat.hjoin(T, &VT, R, V); try VT.write(path); VT.deinit();
+        eval(T, &U, opt.potential, R.rowptr(i).vectorptr());
+
+        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data);}
+
+        for (U.data, 0..) |e, j| V.ptr(i, j).* = e;
+    }
+
+    var VT = try Matrix(T).init(V.rows, R.cols + V.cols, allocator); mat.hjoin(T, &VT, R, V); try VT.write(opt.output); VT.deinit();
 }

@@ -70,12 +70,24 @@ pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     C.fill(0); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
 }
 
+pub fn eig(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), GSLW: *gsl.gsl_eigen_nonsymmv_workspace) void {
+    var GSLA = gsl.gsl_matrix_view_array(A.data.ptr, A.rows, A.cols);
+    var GSLC = gsl.gsl_matrix_view_array(C.data.ptr, A.rows, A.cols);
+    var GSLJ = gsl.gsl_vector_view_array(J.data.ptr, A.rows        );
+
+    J.fill(0); _ = gsl.gsl_eigen_nonsymmv(&GSLA.matrix, &GSLJ.vector, &GSLC.matrix, GSLW);
+
+    _ = gsl.gsl_eigen_nonsymmv_sort(&GSLJ.vector, &GSLC.matrix, gsl.GSL_EIGEN_SORT_VAL_ASC);
+
+    for (1..A.rows) |i| {J.ptr(i, i).* = J.at(0, i); J.ptr(0, i).* = 0;}
+}
+
 pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), GSLW: *gsl.gsl_eigen_symmv_workspace) void {
     var GSLA = gsl.gsl_matrix_view_array(A.data.ptr, A.rows, A.cols);
     var GSLC = gsl.gsl_matrix_view_array(C.data.ptr, A.rows, A.cols);
     var GSLJ = gsl.gsl_vector_view_array(J.data.ptr, A.rows        );
 
-    _ = gsl.gsl_eigen_symmv(&GSLA.matrix, &GSLJ.vector, &GSLC.matrix, GSLW);
+    J.fill(0); _ = gsl.gsl_eigen_symmv(&GSLA.matrix, &GSLJ.vector, &GSLC.matrix, GSLW);
 
     _ = gsl.gsl_eigen_symmv_sort(&GSLJ.vector, &GSLC.matrix, gsl.GSL_EIGEN_SORT_VAL_ASC);
 
