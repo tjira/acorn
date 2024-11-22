@@ -1,4 +1,4 @@
-const std = @import("std");
+const std = @import("std"); const builtin = @import("builtin");
 
 const allocator = std.heap.page_allocator; const fsize = 2048;
 
@@ -17,11 +17,15 @@ const MPO = @import("modelpotential.zig"   ).ModelPotentialOptions   ;
 pub fn main() !void {
     var timer = try std.time.Timer.start(); var args = try std.process.argsWithAllocator(allocator); defer args.deinit();
 
+    try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
+
     _ = args.next(); while (args.next()) |arg| {
 
         const filebuf = try std.fs.cwd().readFileAlloc(allocator, arg, fsize); defer allocator.free(filebuf);
 
         const inputjs = try std.json.parseFromSlice(std.json.Value, allocator, filebuf, .{}); defer inputjs.deinit();
+
+        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{arg});
 
         if (inputjs.value.object.contains("classical_dynamics")) {
 
@@ -46,23 +50,8 @@ pub fn main() !void {
     }
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+}
 
-    // const A = try Matrix(f64).init(2, 2, allocator); defer  A.deinit();
-    // var  AC = try Matrix(f64).init(2, 2, allocator); defer AC.deinit();
-    // var  AJ = try Matrix(f64).init(2, 2, allocator); defer AJ.deinit();
-    //
-    // var v = A.rowptr(0);
-    // A.ptr(0, 0).* = 1; A.ptr(0, 1).* = 2; A.ptr(1, 0).* = 2; A.ptr(1, 1).* = 1;
-
-    // v.ptr(0, 0).* = 12;
-
-    // try A.print(std.io.getStdOut().writer());
-
-    // mat.eigh(f64, &AJ, &AC, A);
-    //
-    // try A.print(std.io.getStdOut().writer());
-    // std.debug.print("\n", .{});
-    // try AJ.print(std.io.getStdOut().writer());
-    // std.debug.print("\n", .{});
-    // try AC.print(std.io.getStdOut().writer());
+test {
+    std.testing.refAllDecls(@This());
 }

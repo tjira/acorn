@@ -61,6 +61,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.state); W.normalize(dr);
 
+        try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}\n", .{"ITER", "EKIN", "EPOT", "ETOT"});
+
         for (0..opt.iterations) |i| {
 
             wfn.propagate(T, &W, R, K, &T1, &T2); if (opt.imaginary) W.normalize(dr);
@@ -72,11 +74,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
             wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); for (0..W.nstate) |j| pop.ptr(i, j).* = P.at(j, j);
 
             if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) {
-                try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6}", .{i + 1, Ekin, Epot, Ekin + Epot});
-            }
-
-            if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) {
-                for (0..W.nstate) |j| try std.io.getStdOut().writer().print(" {d:12.6}", .{P.at(j, j)}); try std.io.getStdOut().writer().print("\n", .{});
+                try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6}\n", .{i + 1, Ekin, Epot, Ekin + Epot});
             }
         }
 

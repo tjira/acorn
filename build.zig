@@ -1,30 +1,19 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
-    const optimize = b.standardOptimizeOption(.{});
-    const target   = b.standardTargetOptions (.{});
+pub fn build(builder: *std.Build) void {
+    const optimize = builder.standardOptimizeOption(.{});
+    const target   = builder.standardTargetOptions (.{});
 
-    const main_exe = b.addExecutable(.{
+    const executable = builder.addExecutable(.{
         .name = "acorn",
         .optimize = optimize,
-        .root_source_file = b.path("zig/main.zig"),
+        .root_source_file = builder.path("zig/main.zig"),
         .single_threaded = true,
         .strip = if (optimize != .Debug) true else false,
         .target = target
     });
 
-    main_exe.linkSystemLibrary2("gsl", .{}); main_exe.linkLibC();
+    executable.linkSystemLibrary2("gsl", .{}); executable.linkLibC();
 
-    // const test_exe = b.addTest(.{
-    //     .root_source_file = b.path("test/main.zig"),
-    //     .single_threaded = true,
-    //     .strip = if (optimize != .Debug) true else false,
-    //     .target = target
-    // });
-
-    b.installArtifact(main_exe);
-
-    // b.step("test", "Run the test executable").dependOn(&b.addRunArtifact(test_exe).step);
-    b.step("run",  "Run the main executable").dependOn(&b.addRunArtifact(main_exe).step);
-
+    builder.installArtifact(executable);
 }

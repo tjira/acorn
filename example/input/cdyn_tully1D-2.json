@@ -19,8 +19,9 @@
             "trajectory" : 100
         },
         "write" : {
-            "population" : "POPULATION-LZSH.mat"
+            "population" : "POPULATION-FSSH.mat"
         },
-        "potential" : "tully1D_2"
+        "potential" : "tully1D_2",
+        "type" : "fssh"
     }
 }
