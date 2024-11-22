@@ -31,13 +31,17 @@ pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC
 }
 
 pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void {
-    P.fill(0); for (0..W.nstate) |i| for (0..W.nstate) |j| {
+    P.fill(0);
+
+    for (0..W.nstate) |i| for (0..W.nstate) |j| {
         var pij = Complex(T).init(0, 0); for (0..W.data.rows) |k| {pij = pij.add(W.data.at(k, i).mul(W.data.at(k, j).conjugate()));} P.ptr(i, j).* = pij.magnitude() * dr;
     };
 }
 
 pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: T, T1: *Matrix(Complex(T)), T2: @TypeOf(T1)) T {
-    var Ekin: T = 0; for (0..W.nstate) |i| {
+    var Ekin: T = 0;
+
+    for (0..W.nstate) |i| {
 
         for (0..W.data.rows) |j| {T1.ptr(j, 0).* = W.data.at(j, i);} ftr.dft(T, T2.data, T1.data, &[_]usize{W.data.rows}, -1);
 
@@ -52,7 +56,9 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: 
 }
 
 pub fn epot(comptime T: type, W: Wavefunction(T), V: std.ArrayList(Matrix(Complex(T))), dr: T) T {
-    var Epot: T = 0; for (0..W.data.cols) |i| for (0..W.data.cols) |j| for (0..W.data.rows) |k| {
+    var Epot: T = 0;
+
+    for (0..W.data.cols) |i| for (0..W.data.cols) |j| for (0..W.data.rows) |k| {
         Epot += W.data.at(k, j).conjugate().mul(V.items[k].at(i, j).mul(W.data.at(k, j))).re;
     };
 
@@ -60,7 +66,9 @@ pub fn epot(comptime T: type, W: Wavefunction(T), V: std.ArrayList(Matrix(Comple
 }
 
 pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), position: []const T, momentum: []const T, state: u32) void {
-    W.data.fill(Complex(T).init(0, 0)); for (0..W.data.rows) |i| for (0..W.data.cols) |j| if (j == state) {
+    W.data.fill(Complex(T).init(0, 0));
+
+    for (0..W.data.rows) |i| for (0..W.data.cols) |j| if (j == state) {
         W.data.ptr(i, j).* = Complex(T).init(std.math.exp(-(rvec.at(i, 0) - position[0]) * (rvec.at(i, 0) - position[0])), 0);
     };
 
@@ -70,7 +78,9 @@ pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), position: [
 }
 
 pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T) Complex(T) {
-    var s = Complex(T).init(0, 0); for (0..W1.nstate) |i| for (0..W1.nstate) |j| for (0..W1.data.rows) |k| {
+    var s = Complex(T).init(0, 0);
+
+    for (0..W1.nstate) |i| for (0..W1.nstate) |j| for (0..W1.data.rows) |k| {
         s = s.add(W1.data.at(k, i).conjugate().mul(W2.data.at(k, j)));
     };
 

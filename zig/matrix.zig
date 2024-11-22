@@ -74,6 +74,10 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), GSLW: 
     for (1..A.rows) |i| {J.ptr(i, i).* = J.at(0, i); J.ptr(0, i).* = 0;}
 }
 
+pub fn transpose(comptime T: type, B: *Matrix(T), A: Matrix(T)) void {
+    for (0..A.rows) |i| for (0..A.cols) |j| {B.ptr(j, i).* = A.at(i, j);};
+}
+
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     for (0..A.rows) |i| {for (0..A.cols) |j| C.ptr(i, j).* = A.at(i, j); for (0..B.cols) |j| C.ptr(i, A.cols + j).* = B.at(i, j);}
 }

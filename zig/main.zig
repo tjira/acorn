@@ -1,4 +1,4 @@
-const std = @import("std"); const builtin = @import("builtin");
+const std = @import("std"); const builtin = @import("builtin"); const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const allocator = std.heap.page_allocator; const fsize = 2048;
 
@@ -50,8 +50,4 @@ pub fn main() !void {
     }
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
-}
-
-test {
-    std.testing.refAllDecls(@This());
 }

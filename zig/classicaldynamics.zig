@@ -130,7 +130,9 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 }
 
 fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), time_step: T) void {
-    TDC.fill(0); for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
+    TDC.fill(0);
+
+    for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
 
         const di0 = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const dj0 = (U3[0].at(j, j) - U3[1].at(j, j)) / time_step;
         const di1 = (U3[1].at(i, i) - U3[2].at(i, i)) / time_step; const dj1 = (U3[1].at(j, j) - U3[2].at(j, j)) / time_step;
@@ -142,7 +144,9 @@ fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matr
 }
 
 fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2: []const Matrix(T), time_step: T) void {
-    UCS.fill(0); for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
+    UCS.fill(0);
+
+    for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
         UCS.ptr(i, j).* += UC2[1].at(k, i) * UC2[0].at(k, j);
     };
 
