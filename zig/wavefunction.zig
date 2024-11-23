@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex;
+const std = @import("std"); const Complex = std.math.Complex; const gsl_fft = @cImport(@cInclude("gsl/gsl_fft_complex.h"));
 
 const ftr = @import("fouriertransform.zig");
 const mat = @import("matrix.zig"          );
@@ -38,16 +38,16 @@ pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void 
     };
 }
 
-pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: T, T1: *Matrix(Complex(T)), T2: @TypeOf(T1)) T {
+pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: T, T1: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) T {
     var Ekin: T = 0;
 
     for (0..W.nstate) |i| {
 
-        for (0..W.data.rows) |j| {T1.ptr(j, 0).* = W.data.at(j, i);} ftr.dft(T, T2.data, T1.data, &[_]usize{W.data.rows}, -1);
+        for (0..W.data.rows) |j| {T1.ptr(j, 0).* = W.data.at(j, i);} ftr.fft(T, T1.data, -1, GSLFT, GSLFW);
 
-        for (0..W.data.rows) |j| T2.ptr(j, 0).* = T2.at(j, 0).mul(Complex(T).init(kvec.at(j, 0) * kvec.at(j, 0), 0));
+        for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(kvec.at(j, 0) * kvec.at(j, 0), 0));
 
-        ftr.dft(T, T1.data, T2.data, &[_]usize{W.data.rows}, 1);
+        ftr.fft(T, T1.data, 1, GSLFT, GSLFW);
 
         for (0..W.data.rows) |j| Ekin += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re;
     }
@@ -87,7 +87,7 @@ pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T
     return s.mul(Complex(T).init(dr, 0));
 }
 
-pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), T2: @TypeOf(T1)) void {
+pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) void {
     for (0..W.data.rows) |i| {
         for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
         for (0..W.data.cols) |j| for (0..W.data.cols) |k| {T1.data[j] = T1.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));};
@@ -95,7 +95,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
     }
 
     for (0..W.data.cols) |j| {
-        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.dft(T, T2.data, T1.data, &[_]usize{W.data.rows}, 1); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T2.at(i, 0);}
+        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T1.data, -1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T1.at(i, 0);}
     }
 
     for (0..W.data.rows) |i| {
@@ -105,7 +105,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
     }
 
     for (0..W.data.cols) |j| {
-        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.dft(T, T2.data, T1.data, &[_]usize{W.data.rows}, -1); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T2.at(i, 0);}
+        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T1.data, 1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T1.at(i, 0);}
     }
 
     for (0..W.data.rows) |i| {

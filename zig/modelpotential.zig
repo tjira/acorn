@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
+const std = @import("std"); const Complex = std.math.Complex; const gsl_eigen = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const mat = @import("matrix.zig");
 
@@ -20,7 +20,10 @@ pub fn ModelPotentialOptions(comptime T: type) type {
 pub fn dims(potential: []const u8) u32 {
     if (std.mem.eql(u8, potential,    "harmonic1D_1")) return 1;
     if (std.mem.eql(u8, potential, "doubleState1D_1")) return 1;
+    if (std.mem.eql(u8, potential, "doubleState1D_2")) return 1;
     if (std.mem.eql(u8, potential, "tripleState1D_1")) return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_2")) return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_3")) return 1;
     if (std.mem.eql(u8, potential,       "tully1D_1")) return 1;
     if (std.mem.eql(u8, potential,       "tully1D_2")) return 1;
     return 0;
@@ -29,7 +32,10 @@ pub fn dims(potential: []const u8) u32 {
 pub fn eval(comptime T: type, U: *Matrix(T), potential: []const u8, r: Vector(T)) void {
     if (std.mem.eql(u8, potential,    "harmonic1D_1"))    harmonic1D_1(T, U, r);
     if (std.mem.eql(u8, potential, "doubleState1D_1")) doubleState1D_1(T, U, r);
+    if (std.mem.eql(u8, potential, "doubleState1D_2")) doubleState1D_2(T, U, r);
     if (std.mem.eql(u8, potential, "tripleState1D_1")) tripleState1D_1(T, U, r);
+    if (std.mem.eql(u8, potential, "tripleState1D_2")) tripleState1D_2(T, U, r);
+    if (std.mem.eql(u8, potential, "tripleState1D_3")) tripleState1D_3(T, U, r);
     if (std.mem.eql(u8, potential,       "tully1D_1"))       tully1D_1(T, U, r);
     if (std.mem.eql(u8, potential,       "tully1D_2"))       tully1D_2(T, U, r);
 }
@@ -37,7 +43,10 @@ pub fn eval(comptime T: type, U: *Matrix(T), potential: []const u8, r: Vector(T)
 pub fn states(potential: []const u8) u32 {
     if (std.mem.eql(u8, potential,    "harmonic1D_1")) return 1;
     if (std.mem.eql(u8, potential, "doubleState1D_1")) return 2;
+    if (std.mem.eql(u8, potential, "doubleState1D_2")) return 2;
     if (std.mem.eql(u8, potential, "tripleState1D_1")) return 3;
+    if (std.mem.eql(u8, potential, "tripleState1D_2")) return 3;
+    if (std.mem.eql(u8, potential, "tripleState1D_3")) return 3;
     if (std.mem.eql(u8, potential,       "tully1D_1")) return 2;
     if (std.mem.eql(u8, potential,       "tully1D_2")) return 2;
     return 0;
@@ -54,6 +63,13 @@ pub fn doubleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(1, 1).* = -0.01 * std.math.tanh(0.6 * r.at(0));
 }
 
+pub fn doubleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.001 * r.at(0);
+    U.ptr(0, 1).* = 0.001 * std.math.exp(-0.05 * r.at(0) * r.at(0));
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = -0.001 * r.at(0);
+}
+
 pub fn tripleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(0, 0).* = 0.03 * (std.math.tanh(1.6 * r.at(0)) + std.math.tanh(1.6 * (r.at(0) + 7)));
     U.ptr(0, 1).* = 0.005 * std.math.exp(-r.at(0) * r.at(0));
@@ -64,6 +80,30 @@ pub fn tripleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(2, 0).* = U.at(0, 2);
     U.ptr(2, 1).* = U.at(1, 2);
     U.ptr(2, 2).* = -0.03 * (std.math.tanh(1.6 * (r.at(0) + 7)) - std.math.tanh(1.6 * (r.at(0) - 7)));
+}
+
+pub fn tripleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.01 * std.math.tanh(0.5 * r.at(0));
+    U.ptr(0, 1).* = 0.001 * std.math.exp(-r.at(0) * r.at(0));
+    U.ptr(0, 2).* = 0.002 * std.math.exp(-r.at(0) * r.at(0));
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = 0;
+    U.ptr(1, 2).* = 0.001 * std.math.exp(-r.at(0) * r.at(0));
+    U.ptr(2, 0).* = U.at(0, 2);
+    U.ptr(2, 1).* = U.at(1, 2);
+    U.ptr(2, 2).* = -0.01 * std.math.tanh(0.5 * r.at(0));
+}
+
+pub fn tripleState1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.001 * r.at(0);
+    U.ptr(0, 1).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
+    U.ptr(0, 2).* = 0.002 * std.math.exp(-0.01 * r.at(0) * r.at(0));
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = 0;
+    U.ptr(1, 2).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
+    U.ptr(2, 0).* = U.at(0, 2);
+    U.ptr(2, 1).* = U.at(1, 2);
+    U.ptr(2, 2).* = -0.001 * r.at(0);
 }
 
 pub fn tully1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
@@ -99,7 +139,7 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
 }
 
 pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
-    const GSLW = gsl.gsl_eigen_symmv_alloc(states(opt.potential)); defer gsl.gsl_eigen_symmv_free(GSLW);
+    const GSLEW = gsl_eigen.gsl_eigen_symmv_alloc(states(opt.potential)); defer gsl_eigen.gsl_eigen_symmv_free(GSLEW);
 
     var U  = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UA.deinit();
@@ -114,7 +154,7 @@ pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem
 
         eval(T, &U, opt.potential, R.rowptr(i).vectorptr());
 
-        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data);}
+        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLEW); @memcpy(U.data, UA.data);}
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;
     }

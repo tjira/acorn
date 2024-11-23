@@ -1,8 +1,9 @@
-const std = @import("std"); const builtin = @import("builtin"); const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
+const std = @import("std"); const builtin = @import("builtin");
 
 const allocator = std.heap.page_allocator; const fsize = 2048;
 
 const cdn = @import("classicaldynamics.zig");
+const ftr = @import("fouriertransform.zig" );
 const mat = @import("matrix.zig"           );
 const mpt = @import("modelpotential.zig"   );
 const qdn = @import("quantumdynamics.zig"  );

@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
+const std = @import("std"); const Complex = std.math.Complex; const gsl_eigen = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
@@ -39,10 +39,9 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
     const fssh = std.mem.eql(u8, opt.type, "fssh"); const kfssh = std.mem.eql(u8, opt.type, "kfssh"); const lzsh = std.mem.eql(u8, opt.type, "lzsh");
 
     var pop = try Matrix(T).init(opt.iterations, std.math.pow(u32, mpt.states(opt.potential), 1), allocator); defer pop.deinit(); pop.fill(0);
-    var tdc = try Matrix(T).init(opt.iterations, std.math.pow(u32, mpt.states(opt.potential), 2), allocator); defer tdc.deinit(); tdc.fill(0);
 
     {
-        const GSLW = gsl.gsl_eigen_symmv_alloc(mpt.states(opt.potential)); defer gsl.gsl_eigen_symmv_free(GSLW);
+        const GSLW = gsl_eigen.gsl_eigen_symmv_alloc(mpt.states(opt.potential)); defer gsl_eigen.gsl_eigen_symmv_free(GSLW);
 
         var r  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  r.deinit();
         var p  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  p.deinit();
@@ -126,7 +125,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
         try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
     }
 
-    try writeResults(T, opt, pop, tdc, allocator);
+    try writeResults(T, opt, pop, allocator);
 }
 
 fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), time_step: T) void {
@@ -237,12 +236,10 @@ fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, ad
     return sn;
 }
 
-fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), tdc: Matrix(T), allocator: std.mem.Allocator) !void {
+fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), allocator: std.mem.Allocator) !void {
     const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * asfloat(T, opt.iterations));
 
     if (opt.write.population) |path| {
         var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); mat.hjoin(T, &pop_t, time, pop); try pop_t.write(path); pop_t.deinit();
     }
-
-    var tdc_t = try Matrix(T).init(opt.iterations, tdc.cols + 1, allocator); mat.hjoin(T, &tdc_t, time, tdc); try tdc_t.write("TDC.mat"); tdc_t.deinit();
 }

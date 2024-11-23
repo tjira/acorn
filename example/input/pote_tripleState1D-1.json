@@ -1,9 +1,0 @@
-{
-    "model_potential" : {
-        "adiabatic" : true,
-        "limits" : [-16, 16],
-        "output" : "POTENTIAL.mat",
-        "points" : 512,
-        "potential" : "tripleState1D_1"
-    }
-}
