@@ -7,7 +7,7 @@ pub fn build(builder: *std.Build) void {
     const executable = builder.addExecutable(.{
         .name = "acorn",
         .optimize = optimize,
-        .root_source_file = builder.path("zig/main.zig"),
+        .root_source_file = builder.path("src/main.zig"),
         .single_threaded = true,
         .strip = if (optimize != .Debug) true else false,
         .target = target

@@ -112,11 +112,12 @@ fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T
 }
 
 fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(Complex(T))) {
-    const GSLEW = gsl_eigen.gsl_eigen_symmv_alloc(mpt.states(potential)); defer gsl_eigen.gsl_eigen_symmv_free(GSLEW);
+    const GSLEW = gsl_eigen.gsl_eigen_symmv_alloc(6 * mpt.states(potential)); defer gsl_eigen.gsl_eigen_symmv_free(GSLEW);
 
     var U  = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UA.deinit();
     var UC = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UC.deinit();
+    var UT = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UT.deinit();
 
     var V  = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
     var VA = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
@@ -124,7 +125,7 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
 
     for (0..rvec.rows) |i| {
 
-        mpt.eval(T, &U, potential, rvec.rowptr(i).vectorptr()); mat.eigh(T, &UA, &UC, U, GSLEW);
+        mpt.eval(T, &U, potential, rvec.rowptr(i).vectorptr()); mat.eigh(T, &UA, &UC, U, &UT, GSLEW);
 
         try V.append(try U.complex()); try VA.append(try UA.complex()); try VC.append(try UC.complex());
     }

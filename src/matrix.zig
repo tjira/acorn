@@ -62,12 +62,17 @@ pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     C.fill(0); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
 }
 
-pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), GSLW: *gsl_eigen.gsl_eigen_symmv_workspace) void {
-    var GSLA = gsl_eigen.gsl_matrix_view_array(A.data.ptr, A.rows, A.cols);
-    var GSLC = gsl_eigen.gsl_matrix_view_array(C.data.ptr, A.rows, A.cols);
-    var GSLJ = gsl_eigen.gsl_vector_view_array(J.data.ptr, A.rows        );
+pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), AT: *Matrix(T), GSLW: *gsl_eigen.gsl_eigen_symmv_workspace) void {
+    var sumsq: T = 0; for (0..A.rows) |i| for (i + 1..A.cols) |j| {sumsq += 2 * A.at(i, j) * A.at(i, j); sumsq = std.math.sqrt(sumsq);};
 
-    J.fill(0); _ = gsl_eigen.gsl_eigen_symmv(&GSLA.matrix, &GSLJ.vector, &GSLC.matrix, GSLW);
+    J.fill(0); C.fill(0); @memcpy(AT.data, A.data);
+
+    var GSLA = gsl_eigen.gsl_matrix_view_array(AT.data.ptr, A.rows, A.cols);
+    var GSLC = gsl_eigen.gsl_matrix_view_array( C.data.ptr, A.rows, A.cols);
+    var GSLJ = gsl_eigen.gsl_vector_view_array( J.data.ptr, A.rows        );
+
+    if (sumsq >  1e-14) _ = gsl_eigen.gsl_eigen_symmv(&GSLA.matrix, &GSLJ.vector, &GSLC.matrix, GSLW);
+    if (sumsq <= 1e-14) {for (0..A.rows) |i| J.ptr(0, i).* = A.at(i, i); C.identity();}
 
     _ = gsl_eigen.gsl_eigen_symmv_sort(&GSLJ.vector, &GSLC.matrix, gsl_eigen.GSL_EIGEN_SORT_VAL_ASC);
 

@@ -144,6 +144,7 @@ pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem
     var U  = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UA.deinit();
     var UC = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UC.deinit();
+    var UT = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UT.deinit();
 
     var R = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential)), dims(opt.potential)                          , allocator); defer R.deinit();
     var V = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential)), states(opt.potential) * states(opt.potential), allocator); defer V.deinit();
@@ -154,7 +155,7 @@ pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem
 
         eval(T, &U, opt.potential, R.rowptr(i).vectorptr());
 
-        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLEW); @memcpy(U.data, UA.data);}
+        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &UT, GSLEW); @memcpy(U.data, UA.data);}
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;
     }

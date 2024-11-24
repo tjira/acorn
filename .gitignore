@@ -30,6 +30,11 @@ molecule.xyz
 *.xml
 *.zip
 
+# nested exts
+/research/fssh_vs_lzsh/*.json
+/research/fssh_vs_lzsh/*.mat
+/research/fssh_vs_lzsh/*.png
+
 # folders
 .zig-cache/
 .cache/

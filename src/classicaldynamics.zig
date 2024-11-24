@@ -53,6 +53,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
         var U    = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer   U.deinit();
         var UA   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer  UA.deinit();
         var UC   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer  UC.deinit();
+        var UT   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer  UT.deinit();
         var UCS  = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer UCS.deinit();
         var TDC  = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer TDC.deinit();
 
@@ -83,8 +84,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
                 for (0..r.rows) |k| {
 
-                    rt.ptr(k).* = r.at(k) + opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
-                    rt.ptr(k).* = r.at(k) - opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) + opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &UT, GSLW); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+                    rt.ptr(k).* = r.at(k) - opt.derivative_step; mpt.eval(T, &U, opt.potential, rt); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &UT, GSLW); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
                     a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
                     v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
@@ -93,7 +94,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
                 mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {
 
-                    mat.eigh(T, &UA, &UC, U, GSLW); @memcpy(U.data, UA.data); @memcpy(UC2[j % 2].data, UC.data);
+                    mat.eigh(T, &UA, &UC, U, &UT, GSLW); @memcpy(U.data, UA.data); @memcpy(UC2[j % 2].data, UC.data);
 
                     if (j > 0) for (0..UC.cols) |k| {
                         var overlap: T = 0; for (0..UC.rows) |l| {overlap += UC2[j % 2].at(l, k) * UC2[(j - 1) % 2].at(l, k);} if (overlap < 0) for (0..UC.rows) |l| {UC2[j % 2].ptr(l, k).* *= -1;};

@@ -95,7 +95,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
     }
 
     for (0..W.data.cols) |j| {
-        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T1.data, -1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T1.at(i, 0);}
+        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T1.data, 1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T1.at(i, 0);}
     }
 
     for (0..W.data.rows) |i| {
@@ -105,7 +105,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
     }
 
     for (0..W.data.cols) |j| {
-        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T1.data, 1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T1.at(i, 0);}
+        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T1.data, -1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T1.at(i, 0);}
     }
 
     for (0..W.data.rows) |i| {
