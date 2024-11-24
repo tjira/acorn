@@ -18,7 +18,12 @@
             "iteration" : 50
         },
         "write" : {
-            "population" : "POPULATION-EXACT.mat"
+            "kinetic_energy" : "KINETIC_ENERGY_EXACT.mat",
+            "momentum" : "MOMENTUM_EXACT.mat",
+            "population" : "POPULATION_EXACT.mat",
+            "position" : "POSITION_EXACT.mat",
+            "potential_energy" : "POTENTIAL_ENERGY_EXACT.mat",
+            "total_energy" : "TOTAL_ENERGY_EXACT.mat"
         },
         "potential" : "tully1D_1"
     }

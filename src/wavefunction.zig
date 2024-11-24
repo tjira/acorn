@@ -4,6 +4,7 @@ const ftr = @import("fouriertransform.zig");
 const mat = @import("matrix.zig"          );
 
 const Matrix = @import("matrix.zig").Matrix;
+const Vector = @import("vector.zig").Vector;
 
 pub fn Wavefunction(comptime T: type) type {
     return struct {
@@ -65,16 +66,31 @@ pub fn epot(comptime T: type, W: Wavefunction(T), V: std.ArrayList(Matrix(Comple
     return Epot * dr;
 }
 
-pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), position: []const T, momentum: []const T, state: u32) void {
+pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const T, p: []const T, state: u32) void {
     W.data.fill(Complex(T).init(0, 0));
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| if (j == state) {
-        W.data.ptr(i, j).* = Complex(T).init(std.math.exp(-(rvec.at(i, 0) - position[0]) * (rvec.at(i, 0) - position[0])), 0);
+        W.data.ptr(i, j).* = Complex(T).init(std.math.exp(-(rvec.at(i, 0) - r[0]) * (rvec.at(i, 0) - r[0])), 0);
     };
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| {
-        W.data.ptr(i, j).* = W.data.at(i, j).mul(std.math.complex.exp(Complex(T).init(0, rvec.at(i, 0) * momentum[0])));
+        W.data.ptr(i, j).* = W.data.at(i, j).mul(std.math.complex.exp(Complex(T).init(0, rvec.at(i, 0) * p[0])));
     };
+}
+
+pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matrix(T), dr: T, T1: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) void {
+    p.fill(0);
+
+    for (0..W.nstate) |i| {
+
+        for (0..W.data.rows) |j| {T1.ptr(j, 0).* = W.data.at(j, i);} ftr.fft(T, T1.data, -1, GSLFT, GSLFW);
+
+        for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(kvec.at(j, 0), 0));
+
+        ftr.fft(T, T1.data, 1, GSLFT, GSLFW);
+
+        for (0..W.data.rows) |j| p.ptr(0).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
+    }
 }
 
 pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T) Complex(T) {
@@ -85,6 +101,14 @@ pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T
     };
 
     return s.mul(Complex(T).init(dr, 0));
+}
+
+pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), dr: T) void {
+    r.fill(0);
+
+    for (0..W.nstate) |i| for (0..W.data.rows) |j| {
+        r.ptr(0).* += W.data.at(j, i).conjugate().mul(Complex(T).init(rvec.at(j, 0), 0)).mul(W.data.at(j, i)).re * dr;
+    };
 }
 
 pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) void {

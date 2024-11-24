@@ -18,7 +18,12 @@
             "iteration" : 10
         },
         "write" : {
-            "population" : null
+            "kinetic_energy" : null,
+            "momentum" : null,
+            "population" : null,
+            "position" : null,
+            "potential_energy" : null,
+            "total_energy" : null
         },
         "potential" : "harmonic1D_1"
     }

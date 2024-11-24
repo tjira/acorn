@@ -174,10 +174,40 @@ for MODEL in ${MODELS[@]}; do
         jq '.classical_dynamics.type |= "kfssh"' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
         jq '.classical_dynamics.type |=  "lzsh"'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
 
-        # fill the json files with the export names
-        jq --arg path "POPULATION_${MODEL}_P=${MOMENTUM}_EXACT.mat" '.quantum_dynamics  .write.population |= $path' "exact_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL}_P=${MOMENTUM}.json"
-        jq --arg path "POPULATION_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.population |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
-        jq --arg path "POPULATION_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.population |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
-        jq --arg path "POPULATION_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.population |= $path'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
+        # fill the json files with the population output
+        jq --arg path "POPULATION_${MODEL}_P=${MOMENTUM}_EXACT.mat"      '.quantum_dynamics  .write.population      |= $path' "exact_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.population_mean |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.population_mean |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.population_mean |= $path'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
+
+        # fill the json files with the kinetic energy output
+        jq --arg path "KINETIC_ENERGY_${MODEL}_P=${MOMENTUM}_EXACT.mat"      '.quantum_dynamics  .write.kinetic_energy      |= $path' "exact_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "KINETIC_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.kinetic_energy_mean |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "KINETIC_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.kinetic_energy_mean |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "KINETIC_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.kinetic_energy_mean |= $path'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
+
+        # fill the json files with the potential energy output
+        jq --arg path "POTENTIAL_ENERGY_${MODEL}_P=${MOMENTUM}_EXACT.mat"      '.quantum_dynamics  .write.potential_energy      |= $path' "exact_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POTENTIAL_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.potential_energy_mean |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POTENTIAL_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.potential_energy_mean |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POTENTIAL_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.potential_energy_mean |= $path'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
+
+        # fill the json files with the total energy output
+        jq --arg path "TOTAL_ENERGY_${MODEL}_P=${MOMENTUM}_EXACT.mat"      '.quantum_dynamics  .write.total_energy      |= $path' "exact_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "TOTAL_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.total_energy_mean |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "TOTAL_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.total_energy_mean |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "TOTAL_ENERGY_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.total_energy_mean |= $path'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
+
+        # fill the json files with the position output
+        jq --arg path "POSITION_${MODEL}_P=${MOMENTUM}_EXACT.mat"      '.quantum_dynamics  .write.position      |= $path' "exact_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POSITION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.position_mean |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POSITION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.position_mean |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "POSITION_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.position_mean |= $path'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
+
+        # fill the json files with the momentum output
+        jq --arg path "MOMENTUM_${MODEL}_P=${MOMENTUM}_EXACT.mat"      '.quantum_dynamics  .write.momentum      |= $path' "exact_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "MOMENTUM_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.momentum_mean |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "MOMENTUM_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.momentum_mean |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        jq --arg path "MOMENTUM_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.momentum_mean |= $path'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
     done
 done

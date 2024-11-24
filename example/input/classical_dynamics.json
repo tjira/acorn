@@ -19,7 +19,12 @@
             "trajectory" : 100
         },
         "write" : {
-            "population" : "POPULATION-FSSH.mat"
+            "kinetic_energy_mean" : "KINETIC_ENERGY_MEAN_FSSH.mat",
+            "momentum_mean" : "MOMENTUM_MEAN_FSSH.mat",
+            "population_mean" : "POPULATION_MEAN_FSSH.mat",
+            "position_mean" : "POSITION_MEAN_FSSH.mat",
+            "potential_energy_mean" : "POTENTIAL_ENERGY_MEAN_FSSH.mat",
+            "total_energy_mean" : "TOTAL_ENERGY_MEAN_FSSH.mat"
         },
         "potential" : "tully1D_1",
         "type" : "fssh"

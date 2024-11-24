@@ -22,7 +22,12 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             iteration: u32
         };
         const Write = struct {
-            population: ?[]const u8
+            kinetic_energy: ?[]const u8,
+            momentum: ?[]const u8,
+            population: ?[]const u8,
+            position: ?[]const u8,
+            potential_energy: ?[]const u8,
+            total_energy: ?[]const u8
         };
 
         adiabatic: bool,
@@ -35,7 +40,12 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
 }
 
 pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.Allocator) !void {
-    var pop = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator); defer pop.deinit(); pop.fill(0);
+    var pop      = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator);     defer  pop.deinit();      pop.fill(0);
+    var ekin     = try Matrix(T).init(opt.iterations, 1                        , allocator);     defer ekin.deinit();     ekin.fill(0);
+    var epot     = try Matrix(T).init(opt.iterations, 1                        , allocator);     defer epot.deinit();     epot.fill(0);
+    var etot     = try Matrix(T).init(opt.iterations, 1                        , allocator);     defer etot.deinit();     etot.fill(0);
+    var position = try Matrix(T).init(opt.iterations, mpt.dims(opt.potential)  , allocator); defer position.deinit(); position.fill(0);
+    var momentum = try Matrix(T).init(opt.iterations, mpt.dims(opt.potential)  , allocator); defer momentum.deinit(); momentum.fill(0);
 
     {
         const GSLFT = gsl_fft.gsl_fft_complex_wavetable_alloc(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential))); defer gsl_fft.gsl_fft_complex_wavetable_free(GSLFT);
@@ -43,6 +53,9 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         var rvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential)), mpt.dims(opt.potential), allocator); defer rvec.deinit();
         var kvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential)), mpt.dims(opt.potential), allocator); defer kvec.deinit();
+
+        var r = try Vector(T).init(mpt.dims(opt.potential), allocator); defer r.deinit(); r.fill(0);
+        var p = try Vector(T).init(mpt.dims(opt.potential), allocator); defer p.deinit(); p.fill(0);
 
         const dr = (opt.grid.limits[1] - opt.grid.limits[0]) / asfloat(T, opt.grid.points - 1);
 
@@ -73,7 +86,14 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
             const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1, GSLFT, GSLFW); const Epot: T = wfn.epot(T, W, V, dr);
 
-            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); for (0..W.nstate) |j| pop.ptr(i, j).* = P.at(j, j);
+            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); wfn.momentum(T, &p, W, kvec, dr, &T1, GSLFT, GSLFW);
+
+            if (opt.write.population       != null) for (0..W.nstate) |j| {pop.ptr(i, j).* = P.at(j, j);};
+            if (opt.write.position         != null) for (0..W.ndim) |j| {position.ptr(i, j).* = r.at(j);};
+            if (opt.write.momentum         != null) for (0..W.ndim) |j| {momentum.ptr(i, j).* = p.at(j);};
+            if (opt.write.kinetic_energy   != null) ekin.ptr(i, 0).* = Ekin                              ;
+            if (opt.write.potential_energy != null) epot.ptr(i, 0).* = Epot                              ;
+            if (opt.write.total_energy     != null) etot.ptr(i, 0).* = Ekin + Epot                       ;
 
             if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) {
                 try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6}\n", .{i + 1, Ekin, Epot, Ekin + Epot});
@@ -87,7 +107,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
         try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
     }
 
-    try writeResults(T, opt, pop, allocator);
+    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, allocator);
 }
 
 fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T, mass: T, imaginary: bool, allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
@@ -161,10 +181,30 @@ fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))), VC:
     return R;
 }
 
-fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T), allocator: std.mem.Allocator) !void {
+fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), allocator: std.mem.Allocator) !void {
     const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * asfloat(T, opt.iterations));
+
+    if (opt.write.kinetic_energy) |path| {
+        var ekin_t = try Matrix(T).init(opt.iterations, ekin.cols + 1, allocator); mat.hjoin(T, &ekin_t, time, ekin); try ekin_t.write(path); ekin_t.deinit();
+    }
 
     if (opt.write.population) |path| {
         var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); mat.hjoin(T, &pop_t, time, pop); try pop_t.write(path); pop_t.deinit();
+    }
+
+    if (opt.write.potential_energy) |path| {
+        var epot_t = try Matrix(T).init(opt.iterations, epot.cols + 1, allocator); mat.hjoin(T, &epot_t, time, epot); try epot_t.write(path); epot_t.deinit();
+    }
+
+    if (opt.write.total_energy) |path| {
+        var etot_t = try Matrix(T).init(opt.iterations, etot.cols + 1, allocator); mat.hjoin(T, &etot_t, time, etot); try etot_t.write(path); etot_t.deinit();
+    }
+
+    if (opt.write.position) |path| {
+        var position_t = try Matrix(T).init(opt.iterations, position.cols + 1, allocator); mat.hjoin(T, &position_t, time, position); try position_t.write(path); position_t.deinit();
+    }
+
+    if (opt.write.momentum) |path| {
+        var momentum_t = try Matrix(T).init(opt.iterations, momentum.cols + 1, allocator); mat.hjoin(T, &momentum_t, time, momentum); try momentum_t.write(path); momentum_t.deinit();
     }
 }
