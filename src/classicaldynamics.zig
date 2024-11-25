@@ -247,7 +247,7 @@ fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, ad
         const di0 = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const ds0 = (U3[0].at(s, s) - U3[1].at(s, s)) / time_step;
         const di1 = (U3[1].at(i, i) - U3[2].at(i, i)) / time_step; const ds1 = (U3[1].at(s, s) - U3[2].at(s, s)) / time_step;
 
-        if ((di0 - ds0) > 0 or (di1 - ds1) < 0) continue;
+        if ((di0 - ds0) * (di1 - ds1) > 0) continue;
 
         const ddi = (di0 - di1) / time_step; const dds = (ds0 - ds1) / time_step;
 

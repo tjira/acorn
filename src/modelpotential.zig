@@ -60,29 +60,29 @@ pub fn harmonic1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 }
 
 pub fn doubleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.01 * std.math.tanh(0.6 * r.at(0));
-    U.ptr(0, 1).* = 0.001 * std.math.exp(-r.at(0) * r.at(0));
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = -0.01 * std.math.tanh(0.6 * r.at(0));
-}
-
-pub fn doubleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(0, 0).* = 0.001 * r.at(0);
     U.ptr(0, 1).* = 0.001 * std.math.exp(-0.05 * r.at(0) * r.at(0));
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = -0.001 * r.at(0);
 }
 
-pub fn tripleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.03 * (std.math.tanh(1.6 * r.at(0)) + std.math.tanh(1.6 * (r.at(0) + 7)));
-    U.ptr(0, 1).* = 0.005 * std.math.exp(-r.at(0) * r.at(0));
-    U.ptr(0, 2).* = 0.005 * std.math.exp(-(r.at(0) + 7) * (r.at(0) + 7));
+pub fn doubleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.01 * std.math.tanh(0.6 * r.at(0));
+    U.ptr(0, 1).* = 0.001 * std.math.exp(-r.at(0) * r.at(0));
     U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = -0.03 * (std.math.tanh(1.6 * r.at(0)) + std.math.tanh(1.6 * (r.at(0) - 7)));
-    U.ptr(1, 2).* = 0.005 * std.math.exp(-(r.at(0) - 7) * (r.at(0) - 7));
+    U.ptr(1, 1).* = -0.01 * std.math.tanh(0.6 * r.at(0));
+}
+
+pub fn tripleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.001 * r.at(0);
+    U.ptr(0, 1).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
+    U.ptr(0, 2).* = 0.002 * std.math.exp(-0.01 * r.at(0) * r.at(0));
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = 0;
+    U.ptr(1, 2).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
     U.ptr(2, 0).* = U.at(0, 2);
     U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -0.03 * (std.math.tanh(1.6 * (r.at(0) + 7)) - std.math.tanh(1.6 * (r.at(0) - 7)));
+    U.ptr(2, 2).* = -0.001 * r.at(0);
 }
 
 pub fn tripleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
@@ -98,15 +98,15 @@ pub fn tripleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 }
 
 pub fn tripleState1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.001 * r.at(0);
-    U.ptr(0, 1).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
-    U.ptr(0, 2).* = 0.002 * std.math.exp(-0.01 * r.at(0) * r.at(0));
+    U.ptr(0, 0).* = 0.03 * (std.math.tanh(1.6 * r.at(0)) + std.math.tanh(1.6 * (r.at(0) + 7)));
+    U.ptr(0, 1).* = 0.005 * std.math.exp(-r.at(0) * r.at(0));
+    U.ptr(0, 2).* = 0.005 * std.math.exp(-(r.at(0) + 7) * (r.at(0) + 7));
     U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0;
-    U.ptr(1, 2).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
+    U.ptr(1, 1).* = -0.03 * (std.math.tanh(1.6 * r.at(0)) + std.math.tanh(1.6 * (r.at(0) - 7)));
+    U.ptr(1, 2).* = 0.005 * std.math.exp(-(r.at(0) - 7) * (r.at(0) - 7));
     U.ptr(2, 0).* = U.at(0, 2);
     U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -0.001 * r.at(0);
+    U.ptr(2, 2).* = -0.03 * (std.math.tanh(1.6 * (r.at(0) + 7)) - std.math.tanh(1.6 * (r.at(0) - 7)));
 }
 
 pub fn tully1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {

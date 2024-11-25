@@ -32,8 +32,8 @@ if __name__ == "__main__":
     columns = [list(map(int, args.files[i].split(":")[1].split(",")) if ":" in args.files[i] else range(args.animate if args.animate else data[i].shape[1] - (not args.histogram))) for i in range(len(data))]
 
     # calculate the limits of the plot
-    xmin, xmax = min(map(lambda data: data[:, 0 ].min(), data)) if not args.histogram else 0, max(map(lambda data: data[:, 0 ].max(), data)) if not args.histogram else 0
-    ymin, ymax = min(map(lambda data: data[:, 1:].min(), data)) if not args.histogram else 0, max(map(lambda data: data[:, 1:].max(), data)) if not args.histogram else 0
+    xmin, xmax = min([data[i][:, 0                          ].min() for i in range(len(data))]) if not args.histogram else 0, max([data[i][:, 0                          ].max() for i in range(len(data))]) if not args.histogram else 0
+    ymin, ymax = min([data[i][:, [j + 1 for j in columns[i]]].min() for i in range(len(data))]) if not args.histogram else 0, max([data[i][:, [j + 1 for j in columns[i]]].max() for i in range(len(data))]) if not args.histogram else 0
 
     # create the figure and axis and define a function that returns the line index based on the file and column
     fig, ax = pt.subplots(figsize=(8, 6)); lineind = lambda i, j: (np.cumsum(list(map(len, columns)))[i - 1] if i else 0) + j
