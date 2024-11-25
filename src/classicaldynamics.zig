@@ -39,7 +39,8 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
 }
 
 pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.mem.Allocator) !void {
-    var prng = std.Random.DefaultPrng.init(opt.seed); const rand = prng.random();
+    var prng_jump = std.Random.DefaultPrng.init(opt.seed); const rand_jump = prng_jump.random();
+    var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
 
     const fssh = std.mem.eql(u8, opt.type, "fssh"); const kfssh = std.mem.eql(u8, opt.type, "kfssh"); const lzsh = std.mem.eql(u8, opt.type, "lzsh");
 
@@ -78,13 +79,13 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
         try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});
 
-        if (r.rows > 1) for (0..r.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 14, .{});}; try std.io.getStdOut().writer().print(" {s:14}",   .{"POSITION"  });
-        if (v.rows > 1) for (0..v.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 14, .{});}; try std.io.getStdOut().writer().print(" {s:14}\n", .{"MOMENTUM"  });
+        if (r.rows > 1) for (0..r.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });
+        if (v.rows > 1) for (0..v.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}\n", .{"MOMENTUM"  });
 
         for (0..opt.trajectories) |i| {
 
-            for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand.floatNorm(T);
-            for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand.floatNorm(T);
+            for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
+            for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
 
             C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);
 
@@ -128,8 +129,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
                     try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, opt.initial_conditions.mass);
                 }
 
-                if ((lzsh         ) and j > 1) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand);
-                if ((fssh or kfssh) and j > 1) s = try fewestSwitches(T, &C, U, TDC, s, opt.time_step, rand, &K1, &K2, &K3, &K4);
+                if ((lzsh         ) and j > 1) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
+                if ((fssh or kfssh) and j > 1) s = try fewestSwitches(T, &C, U, TDC, s, opt.time_step, rand_jump, &K1, &K2, &K3, &K4);
 
                 if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
 
@@ -262,13 +263,13 @@ fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s
     try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j + 1, Ekin, Epot, Etot, s});
 
     for (0..r.rows) |k| {
-        try std.io.getStdOut().writer().print("{s}{d:12.4}", .{if (k == 0) "" else ", ", r.at(k)});
+        try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", r.at(k)});
     }
 
     try std.io.getStdOut().writer().print("] [", .{});
 
     for (0..v.rows) |k| {
-        try std.io.getStdOut().writer().print("{s}{d:12.4}", .{if (k == 0) "" else ", ", v.at(k) * mass});
+        try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", v.at(k) * mass});
     }
 
     try std.io.getStdOut().writer().print("]\n", .{});

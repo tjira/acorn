@@ -25,10 +25,10 @@ for MODEL in ${MODELS[@]}; do
         IS_COL_KFSSH=$(head -n 2 "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" | tail -n 1 | awk '{is=2; pop=$2; for(i=3; i<=NF; i++) if ($i > pop) {is=i; pop=$i;} print is - 2}')
         IS_COL_LZSH=$( head -n 2  "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat" | tail -n 1 | awk '{is=2; pop=$2; for(i=3; i<=NF; i++) if ($i > pop) {is=i; pop=$i;} print is - 2}')
 
-        POP_EXACT=$(tail -n 1 "POPULATION_${MODEL}_P=${MOMENTUM}_EXACT.mat"      | awk -v i=$IS_COL_EXACT '{print $(i+1)}');
-        POP_FSSH=$( tail -n 1  "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat" | awk -v i=$IS_COL_FSSH  '{print $(i+1)}');
-        POP_KFSSH=$(tail -n 1 "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" | awk -v i=$IS_COL_KFSSH '{print $(i+1)}');
-        POP_LZSH=$( tail -n 1  "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat" | awk -v i=$IS_COL_LZSH  '{print $(i+1)}');
+        POP_EXACT=$(tail -n 1 "POPULATION_${MODEL}_P=${MOMENTUM}_EXACT.mat"      | awk -v i=$IS_COL_EXACT '{print $(i+2)}');
+        POP_FSSH=$( tail -n 1  "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat" | awk -v i=$IS_COL_FSSH  '{print $(i+2)}');
+        POP_KFSSH=$(tail -n 1 "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" | awk -v i=$IS_COL_KFSSH '{print $(i+2)}');
+        POP_LZSH=$( tail -n 1  "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat" | awk -v i=$IS_COL_LZSH  '{print $(i+2)}');
 
         echo "${MOMENTUM} ${POP_EXACT} ${POP_FSSH} ${POP_KFSSH} ${POP_LZSH}" >> "FINAL_POPULATION_P_${MODEL}.mat"
 

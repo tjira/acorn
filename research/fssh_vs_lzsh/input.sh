@@ -6,7 +6,7 @@
 
 CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; CLEAN=1
 
-MODELS=("tully1D_1" "tully1D_2" "doubleState1D_1" "doubleState1D_2" "tripleState1D_1" "tripleState1D_2" "tripleState1D_3")
+MODELS=("tully1D_1" "tully1D_2" "tully1D_3" "doubleState1D_1" "doubleState1D_2" "tripleState1D_1" "tripleState1D_2" "tripleState1D_3")
 
 # ======================================================================================================================================================================================================
 # INITIAL STATE SPECIFICATION
@@ -14,6 +14,7 @@ MODELS=("tully1D_1" "tully1D_2" "doubleState1D_1" "doubleState1D_2" "tripleState
 
 DIS_tully1D_1=1; AIS_tully1D_1=1
 DIS_tully1D_2=1; AIS_tully1D_2=1
+DIS_tully1D_3=0; AIS_tully1D_3=1
 
 DIS_doubleState1D_1=1; AIS_doubleState1D_1=1
 DIS_doubleState1D_2=1; AIS_doubleState1D_2=1

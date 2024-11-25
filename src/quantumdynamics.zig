@@ -77,8 +77,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
 
-        if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 14, .{});}; try std.io.getStdOut().writer().print(" {s:14}",   .{"POSITION"  });
-        if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 14, .{});}; try std.io.getStdOut().writer().print(" {s:14}",   .{"MOMENTUM"  });
+        if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });
+        if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"MOMENTUM"  });
         if (W.nstate > 1) for (0..W.nstate - 1) |_| {try std.io.getStdOut().writer().print(" " ** 10, .{});}; try std.io.getStdOut().writer().print(" {s:10}\n", .{"POPULATION"});
 
         for (0..opt.iterations) |i| {
@@ -186,13 +186,13 @@ fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), p: V
         try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6} [", .{i + 1, Ekin, Epot, Ekin + Epot});
 
         for (0..r.rows) |j| {
-            try std.io.getStdOut().writer().print("{s}{d:12.4}", .{if (j == 0) "" else ", ", r.at(j)});
+            try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", r.at(j)});
         }
 
         try std.io.getStdOut().writer().print("] [", .{});
 
         for (0..p.rows) |j| {
-            try std.io.getStdOut().writer().print("{s}{d:12.4}", .{if (j == 0) "" else ", ", p.at(j)});
+            try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", p.at(j)});
         }
 
         try std.io.getStdOut().writer().print("] [", .{});

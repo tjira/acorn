@@ -26,6 +26,7 @@ pub fn dims(potential: []const u8) u32 {
     if (std.mem.eql(u8, potential, "tripleState1D_3")) return 1;
     if (std.mem.eql(u8, potential,       "tully1D_1")) return 1;
     if (std.mem.eql(u8, potential,       "tully1D_2")) return 1;
+    if (std.mem.eql(u8, potential,       "tully1D_3")) return 1;
     return 0;
 }
 
@@ -38,6 +39,7 @@ pub fn eval(comptime T: type, U: *Matrix(T), potential: []const u8, r: Vector(T)
     if (std.mem.eql(u8, potential, "tripleState1D_3")) tripleState1D_3(T, U, r);
     if (std.mem.eql(u8, potential,       "tully1D_1"))       tully1D_1(T, U, r);
     if (std.mem.eql(u8, potential,       "tully1D_2"))       tully1D_2(T, U, r);
+    if (std.mem.eql(u8, potential,       "tully1D_3"))       tully1D_3(T, U, r);
 }
 
 pub fn states(potential: []const u8) u32 {
@@ -49,6 +51,7 @@ pub fn states(potential: []const u8) u32 {
     if (std.mem.eql(u8, potential, "tripleState1D_3")) return 3;
     if (std.mem.eql(u8, potential,       "tully1D_1")) return 2;
     if (std.mem.eql(u8, potential,       "tully1D_2")) return 2;
+    if (std.mem.eql(u8, potential,       "tully1D_3")) return 2;
     return 0;
 }
 
@@ -110,7 +113,7 @@ pub fn tully1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(0, 0).* = if (r.at(0) > 0) 0.01 * (1 - std.math.exp(-1.6 * r.at(0))) else -0.01 * (1 - std.math.exp(1.6 * r.at(0)));
     U.ptr(0, 1).* = 0.005 * std.math.exp(-r.at(0) * r.at(0));
     U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = if (r.at(0) > 0) -0.01 * (1 - std.math.exp(-1.6 * r.at(0))) else 0.01 * (1 - std.math.exp(1.6 * r.at(0)));
+    U.ptr(1, 1).* = -U.at(0, 0);
 }
 
 pub fn tully1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
@@ -118,6 +121,13 @@ pub fn tully1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(0, 1).* = 0.0150 * std.math.exp(-0.06 * r.at(0) * r.at(0));
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = -0.1 * std.math.exp(-0.28 * r.at(0) * r.at(0)) + 0.05;
+}
+
+pub fn tully1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 6e-4;
+    U.ptr(0, 1).* = if (r.at(0) > 0) 0.1 * (2 - std.math.exp(-0.9 * r.at(0))) else 0.1 * std.math.exp(0.9 * r.at(0));
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = -U.at(0, 0);
 }
 
 pub fn kgrid(comptime T: type, k: *Matrix(T), start: T, end: T, points: u32) void {
