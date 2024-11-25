@@ -32,25 +32,23 @@ pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC
 }
 
 pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void {
-    P.fill(0);
-
     for (0..W.nstate) |i| for (0..W.nstate) |j| {
         var pij = Complex(T).init(0, 0); for (0..W.data.rows) |k| {pij = pij.add(W.data.at(k, i).mul(W.data.at(k, j).conjugate()));} P.ptr(i, j).* = pij.magnitude() * dr;
     };
 }
 
-pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: T, T1: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) T {
+pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: T, WS: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) T {
     var Ekin: T = 0;
 
     for (0..W.nstate) |i| {
 
-        for (0..W.data.rows) |j| {T1.ptr(j, 0).* = W.data.at(j, i);} ftr.fft(T, T1.data, -1, GSLFT, GSLFW);
+        for (0..W.data.rows) |j| {WS.ptr(j, 0).* = W.data.at(j, i);} ftr.fft(T, WS.data, -1, GSLFT, GSLFW);
 
-        for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(kvec.at(j, 0) * kvec.at(j, 0), 0));
+        for (0..W.data.rows) |j| WS.ptr(j, 0).* = WS.at(j, 0).mul(Complex(T).init(kvec.at(j, 0) * kvec.at(j, 0), 0));
 
-        ftr.fft(T, T1.data, 1, GSLFT, GSLFW);
+        ftr.fft(T, WS.data, 1, GSLFT, GSLFW);
 
-        for (0..W.data.rows) |j| Ekin += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re;
+        for (0..W.data.rows) |j| Ekin += WS.at(j, 0).mul(W.data.at(j, i).conjugate()).re;
     }
 
     return 0.5 * Ekin / mass * dr;
@@ -60,7 +58,7 @@ pub fn epot(comptime T: type, W: Wavefunction(T), V: std.ArrayList(Matrix(Comple
     var Epot: T = 0;
 
     for (0..W.data.cols) |i| for (0..W.data.cols) |j| for (0..W.data.rows) |k| {
-        Epot += W.data.at(k, j).conjugate().mul(V.items[k].at(i, j).mul(W.data.at(k, j))).re;
+        Epot += W.data.at(k, i).conjugate().mul(V.items[k].at(i, j).mul(W.data.at(k, j))).re;
     };
 
     return Epot * dr;
@@ -78,18 +76,18 @@ pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const 
     };
 }
 
-pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matrix(T), dr: T, T1: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) void {
+pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matrix(T), dr: T, WS: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) void {
     p.fill(0);
 
     for (0..W.nstate) |i| {
 
-        for (0..W.data.rows) |j| {T1.ptr(j, 0).* = W.data.at(j, i);} ftr.fft(T, T1.data, -1, GSLFT, GSLFW);
+        for (0..W.data.rows) |j| {WS.ptr(j, 0).* = W.data.at(j, i);} ftr.fft(T, WS.data, -1, GSLFT, GSLFW);
 
-        for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(kvec.at(j, 0), 0));
+        for (0..W.data.rows) |j| WS.ptr(j, 0).* = WS.at(j, 0).mul(Complex(T).init(kvec.at(j, 0), 0));
 
-        ftr.fft(T, T1.data, 1, GSLFT, GSLFW);
+        ftr.fft(T, WS.data, 1, GSLFT, GSLFW);
 
-        for (0..W.data.rows) |j| p.ptr(0).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
+        for (0..W.data.rows) |j| p.ptr(0).* += WS.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
 }
 
@@ -111,30 +109,30 @@ pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matri
     };
 }
 
-pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) void {
+pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), WS: *Matrix(Complex(T)), GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) void {
     for (0..W.data.rows) |i| {
-        for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
-        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {T1.data[j] = T1.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));};
-        for (0..W.data.cols) |j| W.data.ptr(i, j).* = T1.data[j];
+        for (0..W.data.cols) |j| WS.data[j] = Complex(T).init(0, 0);
+        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {WS.data[j] = WS.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));};
+        for (0..W.data.cols) |j| W.data.ptr(i, j).* = WS.data[j];
     }
 
     for (0..W.data.cols) |j| {
-        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T1.data, 1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T1.at(i, 0);}
+        for (0..W.data.rows) |i| {WS.data[i] = W.data.at(i, j);} ftr.fft(T, WS.data, -1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = WS.at(i, 0);}
     }
 
     for (0..W.data.rows) |i| {
-        for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
-        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {T1.data[j] = T1.data[j].add(K.items[i].at(j, k).mul(W.data.at(i, k)));};
-        for (0..W.data.cols) |j| W.data.ptr(i, j).* = T1.data[j];
+        for (0..W.data.cols) |j| WS.data[j] = Complex(T).init(0, 0);
+        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {WS.data[j] = WS.data[j].add(K.items[i].at(j, k).mul(W.data.at(i, k)));};
+        for (0..W.data.cols) |j| W.data.ptr(i, j).* = WS.data[j];
     }
 
     for (0..W.data.cols) |j| {
-        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T1.data, -1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T1.at(i, 0);}
+        for (0..W.data.rows) |i| {WS.data[i] = W.data.at(i, j);} ftr.fft(T, WS.data, 1, GSLFT, GSLFW); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = WS.at(i, 0);}
     }
 
     for (0..W.data.rows) |i| {
-        for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
-        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {T1.data[j] = T1.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));};
-        for (0..W.data.cols) |j| W.data.ptr(i, j).* = T1.data[j];
+        for (0..W.data.cols) |j| WS.data[j] = Complex(T).init(0, 0);
+        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {WS.data[j] = WS.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));};
+        for (0..W.data.cols) |j| W.data.ptr(i, j).* = WS.data[j];
     }
 }

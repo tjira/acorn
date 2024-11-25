@@ -62,9 +62,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
         var W  = try Wavefunction(T).init(mpt.dims(opt.potential), mpt.states(opt.potential), opt.grid.points, allocator); defer  W.deinit();
         var WA = try Wavefunction(T).init(mpt.dims(opt.potential), mpt.states(opt.potential), opt.grid.points, allocator); defer WA.deinit();
 
-        var P = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer P.deinit();
-
-        var T1 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1, allocator); defer T1.deinit();
+        var WS = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, W.ndim), 1,                         allocator); defer WS.deinit();
+        var P  = try Matrix(T         ).init(mpt.states(opt.potential),                  mpt.states(opt.potential), allocator); defer  P.deinit();
 
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
@@ -76,17 +75,21 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.state); W.normalize(dr);
 
-        try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}\n", .{"ITER", "EKIN", "EPOT", "ETOT"});
+        try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
+
+        if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 14, .{});}; try std.io.getStdOut().writer().print(" {s:14}",   .{"POSITION"  });
+        if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 14, .{});}; try std.io.getStdOut().writer().print(" {s:14}",   .{"MOMENTUM"  });
+        if (W.nstate > 1) for (0..W.nstate - 1) |_| {try std.io.getStdOut().writer().print(" " ** 10, .{});}; try std.io.getStdOut().writer().print(" {s:10}\n", .{"POPULATION"});
 
         for (0..opt.iterations) |i| {
 
-            wfn.propagate(T, &W, R, K, &T1, GSLFT, GSLFW); if (opt.imaginary) W.normalize(dr);
+            wfn.propagate(T, &W, R, K, &WS, GSLFT, GSLFW); if (opt.imaginary) W.normalize(dr);
 
             if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
 
-            const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1, GSLFT, GSLFW); const Epot: T = wfn.epot(T, W, V, dr);
+            const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &WS, GSLFT, GSLFW); const Epot: T = wfn.epot(T, W, V, dr);
 
-            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); wfn.momentum(T, &p, W, kvec, dr, &T1, GSLFT, GSLFW);
+            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); wfn.momentum(T, &p, W, kvec, dr, &WS, GSLFT, GSLFW);
 
             if (opt.write.population       != null) for (0..W.nstate) |j| {pop.ptr(i, j).* = P.at(j, j);};
             if (opt.write.position         != null) for (0..W.ndim) |j| {position.ptr(i, j).* = r.at(j);};
@@ -95,9 +98,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
             if (opt.write.potential_energy != null) epot.ptr(i, 0).* = Epot                              ;
             if (opt.write.total_energy     != null) etot.ptr(i, 0).* = Ekin + Epot                       ;
 
-            if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) {
-                try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6}\n", .{i + 1, Ekin, Epot, Ekin + Epot});
-            }
+            if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) try printIteration(T, @intCast(i), Ekin, Epot, r, p, P);
         }
 
         for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();} for (VA.items) |*e| {e.deinit();} for (VC.items) |*e| {e.deinit();}
@@ -113,19 +114,19 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T, mass: T, imaginary: bool, allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
     const unit = Complex(T).init(if (imaginary) 1 else 0, if (imaginary) 0 else 1);
 
-    var T1 = try Matrix(Complex(T)).init(nstate, nstate, allocator); defer T1.deinit();
+    var KI = try Matrix(Complex(T)).init(nstate, nstate, allocator); defer KI.deinit();
 
     var K = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, kvec.rows);
 
     for (0..kvec.rows) |i| {
 
-        T1.fill(Complex(T).init(0, 0));
+        KI.fill(Complex(T).init(0, 0));
 
-        for (0..T1.rows) |j| for(0..kvec.cols) |k| {T1.ptr(j, j).* = T1.at(j, j).add(Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));};
+        for (0..KI.rows) |j| for(0..kvec.cols) |k| {KI.ptr(j, j).* = KI.at(j, j).add(Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));};
 
-        for (0..T1.rows) |j| T1.ptr(j, j).* = std.math.complex.exp(T1.at(j, j).mul(Complex(T).init(-0.5 * time_step / mass, 0)).mul(unit));
+        for (0..KI.rows) |j| KI.ptr(j, j).* = std.math.complex.exp(KI.at(j, j).mul(Complex(T).init(-0.5 * time_step / mass, 0)).mul(unit));
 
-        try K.append(try T1.clone());
+        try K.append(try KI.clone());
     }
 
     return K;
@@ -156,29 +157,51 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
 fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))), VC: @TypeOf(VA), rvec: Matrix(T), time_step: T, imaginary: bool, allocator: std.mem.Allocator) !@TypeOf(VA) {
     const unit = Complex(T).init(if (imaginary) 1 else 0, if (imaginary) 0 else 1);
 
-    var T3 = try Matrix(Complex(T)).init(VA.items[0].rows, VA.items[0].rows, allocator); defer T3.deinit();
-    var T4 = try Matrix(Complex(T)).init(VA.items[0].rows, VA.items[0].rows, allocator); defer T4.deinit();
+    var RI1 = try Matrix(Complex(T)).init(VA.items[0].rows, VA.items[0].rows, allocator); defer RI1.deinit();
+    var RI2 = try Matrix(Complex(T)).init(VA.items[0].rows, VA.items[0].rows, allocator); defer RI2.deinit();
 
     var R = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
 
     for (0..rvec.rows) |i| {
 
-        T3.fill(Complex(T).init(0, 0)); for (0..T3.rows) |j| {
-            T3.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(Complex(T).init(-0.5 * time_step, 0)).mul(unit));
+        RI1.fill(Complex(T).init(0, 0)); for (0..RI1.rows) |j| {
+            RI1.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        T4.fill(Complex(T).init(0, 0)); for (0..T4.rows) |j| for (0..T4.cols) |k| for (0..T4.rows) |l| {
-            T4.ptr(j, k).* = T4.at(j, k).add(VC.items[i].at(j, l).mul(T3.at(l, k)));
+        RI2.fill(Complex(T).init(0, 0)); for (0..RI2.rows) |j| for (0..RI2.cols) |k| for (0..RI2.rows) |l| {
+            RI2.ptr(j, k).* = RI2.at(j, k).add(VC.items[i].at(j, l).mul(RI1.at(l, k)));
         };
 
-        T3.fill(Complex(T).init(0, 0)); for (0..T3.rows) |j| for (0..T3.cols) |k| for (0..T3.rows) |l| {
-            T3.ptr(j, k).* = T3.at(j, k).add(T4.at(j, l).mul(VC.items[i].at(k, l)));
+        RI1.fill(Complex(T).init(0, 0)); for (0..RI1.rows) |j| for (0..RI1.cols) |k| for (0..RI1.rows) |l| {
+            RI1.ptr(j, k).* = RI1.at(j, k).add(RI2.at(j, l).mul(VC.items[i].at(k, l)));
         };
 
-        try R.append(try T3.clone());
+        try R.append(try RI1.clone());
     }
 
     return R;
+}
+
+fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), p: Vector(T), P: Matrix(T)) !void {
+        try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6} [", .{i + 1, Ekin, Epot, Ekin + Epot});
+
+        for (0..r.rows) |j| {
+            try std.io.getStdOut().writer().print("{s}{d:12.4}", .{if (j == 0) "" else ", ", r.at(j)});
+        }
+
+        try std.io.getStdOut().writer().print("] [", .{});
+
+        for (0..p.rows) |j| {
+            try std.io.getStdOut().writer().print("{s}{d:12.4}", .{if (j == 0) "" else ", ", p.at(j)});
+        }
+
+        try std.io.getStdOut().writer().print("] [", .{});
+
+        for (0..P.rows) |j| {
+            try std.io.getStdOut().writer().print("{s}{d:8.5}", .{if (j == 0) "" else ", ", P.at(j, j)});
+        }
+
+        try std.io.getStdOut().writer().print("]\n", .{});
 }
 
 fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), allocator: std.mem.Allocator) !void {

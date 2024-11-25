@@ -76,7 +76,10 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
         var U3  = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer  U3[0].deinit(); defer  U3[1].deinit(); defer U3[2].deinit();
         var UC2 = [2]Matrix(T){try U.clone(), try U.clone()               }; defer UC2[0].deinit(); defer UC2[1].deinit()                      ;
 
-        try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}\n", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});
+        try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});
+
+        if (r.rows > 1) for (0..r.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 14, .{});}; try std.io.getStdOut().writer().print(" {s:14}",   .{"POSITION"  });
+        if (v.rows > 1) for (0..v.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 14, .{});}; try std.io.getStdOut().writer().print(" {s:14}\n", .{"MOMENTUM"  });
 
         for (0..opt.trajectories) |i| {
 
@@ -122,7 +125,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
                 if (opt.write.momentum_mean         != null) for (0..v.rows) |k| {momentum.ptr(j, k).* += v.at(k) * opt.initial_conditions.mass;};
 
                 if ((i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) {
-                    try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5}\n", .{i + 1, j + 1, Ekin, Epot, Ekin + Epot, s});
+                    try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, opt.initial_conditions.mass);
                 }
 
                 if ((lzsh         ) and j > 1) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand);
@@ -150,8 +153,6 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 }
 
 fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), time_step: T) void {
-    TDC.fill(0);
-
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
 
         const di0 = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const dj0 = (U3[0].at(j, j) - U3[1].at(j, j)) / time_step;
@@ -255,6 +256,22 @@ fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, ad
     };
 
     return sn;
+}
+
+fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), mass: T) !void {
+    try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j + 1, Ekin, Epot, Etot, s});
+
+    for (0..r.rows) |k| {
+        try std.io.getStdOut().writer().print("{s}{d:12.4}", .{if (k == 0) "" else ", ", r.at(k)});
+    }
+
+    try std.io.getStdOut().writer().print("] [", .{});
+
+    for (0..v.rows) |k| {
+        try std.io.getStdOut().writer().print("{s}{d:12.4}", .{if (k == 0) "" else ", ", v.at(k) * mass});
+    }
+
+    try std.io.getStdOut().writer().print("]\n", .{});
 }
 
 fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), allocator: std.mem.Allocator) !void {
