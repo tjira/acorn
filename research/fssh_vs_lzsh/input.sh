@@ -19,9 +19,9 @@ DIS_tully1D_3=0; AIS_tully1D_3=1
 DIS_doubleState1D_1=1; AIS_doubleState1D_1=1
 DIS_doubleState1D_2=1; AIS_doubleState1D_2=1
 
-DIS_tripleState1D_1=1; AIS_tripleState1D_1=2
+DIS_tripleState1D_1=2; AIS_tripleState1D_1=2
 DIS_tripleState1D_2=2; AIS_tripleState1D_2=2
-DIS_tripleState1D_3=2; AIS_tripleState1D_3=2
+DIS_tripleState1D_3=1; AIS_tripleState1D_3=2
 
 # ======================================================================================================================================================================================================
 # PROVIDED ARGUMENTS PARSING

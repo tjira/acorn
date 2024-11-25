@@ -22,10 +22,6 @@ pub fn Matrix(comptime T: type) type {
             var other = try Matrix(Complex(T)).init(self.rows, self.cols, self.allocator); for (0..self.data.len) |i| other.data[i] = Complex(T).init(self.data[i], 0); return other;
         }
 
-        pub fn eq(self: Matrix(T), other: Matrix(T), tol: T) bool {
-            for (0..self.data.len) |i| {if (@abs(other.data[i] - self.data[i]) > tol) return false;} return true;
-        }
-
         pub fn at(self: Matrix(T), i: usize, j: usize) T {
             return self.data[i * self.cols + j];
         }
@@ -59,7 +55,13 @@ pub fn Matrix(comptime T: type) type {
 }
 
 pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(0); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
+    if ( @hasField(T, "re")) {C.fill(T.init(0, 0)); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));};}
+    if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j) +   A.at(i, k) *   B.at(k, j)  ;};}
+}
+
+pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if ( @hasField(T, "re")) {C.fill(T.init(0, 0)); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k).conjugate()));};}
+    if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j) +   A.at(i, k) *   B.at(j, k)              ;};}
 }
 
 pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), AT: *Matrix(T), GSLW: *gsl_eigen.gsl_eigen_symmv_workspace) void {
