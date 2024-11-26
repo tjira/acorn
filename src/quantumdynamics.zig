@@ -120,11 +120,12 @@ fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T
 
     for (0..kvec.rows) |i| {
 
-        KI.fill(Complex(T).init(0, 0));
+        KI.fill(Complex(T).init(0, 0)); for (0..KI.rows) |j| {
 
-        for (0..KI.rows) |j| for(0..kvec.cols) |k| {KI.ptr(j, j).* = KI.at(j, j).add(Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));};
+            for(0..kvec.cols) |k| KI.ptr(j, j).* = KI.at(j, j).add(Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));
 
-        for (0..KI.rows) |j| KI.ptr(j, j).* = std.math.complex.exp(KI.at(j, j).mul(Complex(T).init(-0.5 * time_step / mass, 0)).mul(unit));
+            KI.ptr(j, j).* = std.math.complex.exp(KI.at(j, j).mul(Complex(T).init(-0.5 * time_step / mass, 0)).mul(unit));
+        }
 
         try K.append(try KI.clone());
     }
@@ -168,15 +169,7 @@ fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))), VC:
             RI1.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        RI2.fill(Complex(T).init(0, 0)); for (0..RI2.rows) |j| for (0..RI2.cols) |k| for (0..RI2.rows) |l| {
-            RI2.ptr(j, k).* = RI2.at(j, k).add(VC.items[i].at(j, l).mul(RI1.at(l, k)));
-        };
-
-        RI1.fill(Complex(T).init(0, 0)); for (0..RI1.rows) |j| for (0..RI1.cols) |k| for (0..RI1.rows) |l| {
-            RI1.ptr(j, k).* = RI1.at(j, k).add(RI2.at(j, l).mul(VC.items[i].at(k, l)));
-        };
-
-        try R.append(try RI1.clone());
+        mat.mm(Complex(T), &RI2, VC.items[i], RI1); mat.mma(Complex(T), &RI1, RI2, VC.items[i]); try R.append(try RI1.clone());
     }
 
     return R;

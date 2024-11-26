@@ -59,9 +59,24 @@ pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j) +   A.at(i, k) *   B.at(k, j)  ;};}
 }
 
+pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if ( @hasField(T, "re")) {C.fill(T.init(0, 0)); for (0..A.cols) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(k, i).conjugate().mul(B.at(k, j)));};}
+    if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.cols) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j) +   A.at(k, i) *               B.at(k, j)  ;};}
+}
+
 pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if ( @hasField(T, "re")) {C.fill(T.init(0, 0)); for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k).conjugate()));};}
-    if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.rows) |i| for (0..B.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j) +   A.at(i, k) *   B.at(j, k)              ;};}
+    if ( @hasField(T, "re")) {C.fill(T.init(0, 0)); for (0..A.rows) |i| for (0..B.rows) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k).conjugate()));};}
+    if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.rows) |i| for (0..B.rows) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j) +   A.at(i, k) *   B.at(j, k)              ;};}
+}
+
+pub fn mtma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if ( @hasField(T, "re")) {C.fill(T.init(0, 0)); for (0..A.cols) |i| for (0..B.rows) |j| for (0..A.cols) |k| {C.ptr(j, i).* = C.at(j, i).add(A.at(i, k).mul(B.at(j, k).conjugate()));};}
+    if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.cols) |i| for (0..B.rows) |j| for (0..A.cols) |k| {C.ptr(j, i).* = C.at(j, i) +   A.at(i, k) *   B.at(j, k)              ;};}
+}
+
+pub fn mamt(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if ( @hasField(T, "re")) {C.fill(T.init(0, 0)); for (0..A.cols) |i| for (0..B.rows) |j| for (0..A.cols) |k| {C.ptr(j, i).* = C.at(j, i).add(A.at(k, i).conjugate().mul(B.at(j, k)));};}
+    if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.cols) |i| for (0..B.rows) |j| for (0..A.cols) |k| {C.ptr(j, i).* = C.at(j, i) +   A.at(k, i) *               B.at(j, k)  ;};}
 }
 
 pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), AT: *Matrix(T), GSLW: *gsl_eigen.gsl_eigen_symmv_workspace) void {

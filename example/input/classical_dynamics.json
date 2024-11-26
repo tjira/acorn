@@ -19,6 +19,7 @@
             "trajectory" : 100
         },
         "write" : {
+            "fssh_coefficient_mean" : "FSSH_COEFFICIENT_MEAN.mat",
             "kinetic_energy_mean" : "KINETIC_ENERGY_MEAN_FSSH.mat",
             "momentum_mean" : "MOMENTUM_MEAN_FSSH.mat",
             "population_mean" : "POPULATION_MEAN_FSSH.mat",
