@@ -8,7 +8,6 @@ for MODEL in ${MODELS[@]}; do
 
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} EXACT"); done
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} FSSH" ); done
-    for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} KFSSH"); done
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} LZSH" ); done
 
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POT+=("S${i}"); done; for (( i=0; i<$NSTATE; i++ )); do INDICES_POT+=$(echo "$i*$NSTATE+$i" | bc -l)","; done

@@ -39,7 +39,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
     };
 }
 
-pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.Allocator) !void {
+pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !Vector(T) {
     var pop      = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator);     defer  pop.deinit();      pop.fill(0);
     var ekin     = try Matrix(T).init(opt.iterations, 1                        , allocator);     defer ekin.deinit();     ekin.fill(0);
     var epot     = try Matrix(T).init(opt.iterations, 1                        , allocator);     defer epot.deinit();     epot.fill(0);
@@ -75,11 +75,11 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
 
         wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.state); W.normalize(dr);
 
-        try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
+        if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
 
-        if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });
-        if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"MOMENTUM"  });
-        if (W.nstate > 1) for (0..W.nstate - 1) |_| {try std.io.getStdOut().writer().print(" " ** 10, .{});}; try std.io.getStdOut().writer().print(" {s:10}\n", .{"POPULATION"});
+        if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });}
+        if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"MOMENTUM"  });}
+        if (print) {if (W.nstate > 1) for (0..W.nstate - 1) |_| {try std.io.getStdOut().writer().print(" " ** 10, .{});}; try std.io.getStdOut().writer().print(" {s:10}\n", .{"POPULATION"});}
 
         for (0..opt.iterations) |i| {
 
@@ -98,17 +98,17 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), allocator: std.mem.
             if (opt.write.potential_energy != null) epot.ptr(i, 0).* = Epot                              ;
             if (opt.write.total_energy     != null) etot.ptr(i, 0).* = Ekin + Epot                       ;
 
-            if (i == 0 or (i + 1) % opt.log_intervals.iteration == 0) try printIteration(T, @intCast(i), Ekin, Epot, r, p, P);
+            if (print and (i == 0 or (i + 1) % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(i), Ekin, Epot, r, p, P);
         }
 
         for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();} for (VA.items) |*e| {e.deinit();} for (VC.items) |*e| {e.deinit();}
     }
 
     for (0..mpt.states(opt.potential)) |i| {
-        try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
+        if (print) {try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});}
     }
 
-    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, allocator);
+    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, allocator); return try pop.rowptr(opt.iterations - 1).vectorptr().clone();
 }
 
 fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T, mass: T, imaginary: bool, allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
@@ -223,4 +223,85 @@ fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T)
     if (opt.write.momentum) |path| {
         var momentum_t = try Matrix(T).init(opt.iterations, momentum.cols + 1, allocator); mat.hjoin(T, &momentum_t, time, momentum); try momentum_t.write(path); momentum_t.deinit();
     }
+}
+
+test "tully1D_1" {
+    var pop_result = try Vector(f64).init(2, std.testing.allocator); defer pop_result.deinit();
+
+    pop_result.ptr(0).* = 0.4105063;
+    pop_result.ptr(1).* = 0.5894936;
+
+    const opt = QuantumDynamicsOptions(f64){
+        .adiabatic = true,
+        .imaginary = false,
+        .iterations = 300,
+        .time_step = 10,
+        .grid = .{
+            .limits = &[_]f64{-16, 32},
+            .points = 512
+        },
+        .initial_conditions = .{
+            .mass = 2000,
+            .momentum = &[_]f64{15},
+            .position = &[_]f64{-10},
+            .state = 1
+        },
+        .log_intervals = .{
+            .iteration = 50
+        },
+        .write = .{
+            .kinetic_energy = "KINETIC_ENERGY_EXACT.mat",
+            .momentum = "MOMENTUM_EXACT.mat",
+            .population = "POPULATION_EXACT.mat",
+            .position = "POSITION_EXACT.mat",
+            .potential_energy = "POTENTIAL_ENERGY_EXACT.mat",
+            .total_energy = "TOTAL_ENERGY_EXACT.mat"
+        },
+        .potential = "tully1D_1"
+    };
+
+    const pop = try run(f64, opt, false, std.testing.allocator); defer pop.deinit();
+
+    try std.testing.expect(pop.eq(pop_result, 1e-7));
+}
+
+test "tripleState1D_1" {
+    var pop_result = try Vector(f64).init(3, std.testing.allocator); defer pop_result.deinit();
+
+    pop_result.ptr(0).* = 0.0940613;
+    pop_result.ptr(1).* = 0.0996653;
+    pop_result.ptr(2).* = 0.8062732;
+
+    const opt = QuantumDynamicsOptions(f64){
+        .adiabatic = true,
+        .imaginary = false,
+        .iterations = 300,
+        .time_step = 10,
+        .grid = .{
+            .limits = &[_]f64{-16, 32},
+            .points = 512
+        },
+        .initial_conditions = .{
+            .mass = 2000,
+            .momentum = &[_]f64{15},
+            .position = &[_]f64{-10},
+            .state = 2
+        },
+        .log_intervals = .{
+            .iteration = 50
+        },
+        .write = .{
+            .kinetic_energy = "KINETIC_ENERGY_EXACT.mat",
+            .momentum = "MOMENTUM_EXACT.mat",
+            .population = "POPULATION_EXACT.mat",
+            .position = "POSITION_EXACT.mat",
+            .potential_energy = "POTENTIAL_ENERGY_EXACT.mat",
+            .total_energy = "TOTAL_ENERGY_EXACT.mat"
+        },
+        .potential = "tripleState1D_1"
+    };
+
+    const pop = try run(f64, opt, false, std.testing.allocator); defer pop.deinit();
+
+    try std.testing.expect(pop.eq(pop_result, 1e-7));
 }

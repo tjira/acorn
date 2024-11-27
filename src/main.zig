@@ -39,7 +39,7 @@ pub fn main() !void {
 
             const obj = try std.json.parseFromValue(QDO(f64), allocator, inputjs.value.object.get("quantum_dynamics").?, .{}); defer obj.deinit();
 
-            try qdn.run(f64, obj.value, allocator);
+            const pop = try qdn.run(f64, obj.value, true, allocator); defer pop.deinit();
         }
 
         if (inputjs.value.object.contains("model_potential")) {
