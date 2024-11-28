@@ -267,12 +267,6 @@ fn mappingApproach(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
     _ = U; _ = TDC; _ = time_step;
     _ = s;
 
-    const FunctionX = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
-        for (0..FC.rows) |i| {K.ptr(i).* = FC.at(i).mul(Complex(T).init(FU.at(i, i), 0)).mulbyi().neg();} for (0..FC.rows) |i| for (0..FC.rows) |j| {
-            K.ptr(i).* = K.at(i).sub(FC.at(j).mul(Complex(T).init(FTDC.at(i, j), 0)));
-        };
-    }};
-
     for (0..iters) |_| {
 
     }
