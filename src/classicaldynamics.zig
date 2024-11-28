@@ -83,6 +83,14 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
         var KS2 = try Vector(T         ).init(C.rows, allocator); defer KS2.deinit();
         var KS3 = try Vector(T         ).init(C.rows, allocator); defer KS3.deinit();
         var KS4 = try Vector(T         ).init(C.rows, allocator); defer KS4.deinit();
+        var LS1 = try Vector(T         ).init(C.rows, allocator); defer LS1.deinit();
+        var LS2 = try Vector(T         ).init(C.rows, allocator); defer LS2.deinit();
+        var LS3 = try Vector(T         ).init(C.rows, allocator); defer LS3.deinit();
+        var LS4 = try Vector(T         ).init(C.rows, allocator); defer LS4.deinit();
+        var MS1 = try Vector(T         ).init(C.rows, allocator); defer MS1.deinit();
+        var MS2 = try Vector(T         ).init(C.rows, allocator); defer MS2.deinit();
+        var MS3 = try Vector(T         ).init(C.rows, allocator); defer MS3.deinit();
+        var MS4 = try Vector(T         ).init(C.rows, allocator); defer MS4.deinit();
 
         var U3  = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer  U3[0].deinit(); defer  U3[1].deinit(); defer U3[2].deinit();
         var UC2 = [2]Matrix(T){try U.clone(), try U.clone()               }; defer UC2[0].deinit(); defer UC2[1].deinit()                      ;
@@ -147,7 +155,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
                 if ((lzsh         ) and j > 1) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if ((fssh or kfssh) and j > 1) s = try fewestSwitches(T, &C, U, TDC, s, opt.time_step, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if ((mash or kmash) and j > 1) s = try mappingApproach(T, &S, U, TDC, s, opt.time_step, &KS1, &KS2, &KS3, &KS4);
+                if ((mash or kmash) and j > 1) s = try mappingApproach(T, &S, U, TDC, s, opt.time_step, &KS1, &KS2, &KS3, &KS4, &LS1, &LS2, &LS3, &LS4, &MS1, &MS2, &MS3, &MS4);
 
                 if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
 
@@ -250,12 +258,20 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), U: Matrix(T), TDC: M
     return ns;
 }
 
-fn mappingApproach(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, K1: @TypeOf(S), K2: @TypeOf(S), K3: @TypeOf(S), K4: @TypeOf(S)) !u32 {
+fn mappingApproach(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, K1: @TypeOf(S), K2: @TypeOf(S), K3: @TypeOf(S), K4: @TypeOf(S), L1: @TypeOf(S), L2: @TypeOf(S), L3: @TypeOf(S), L4: @TypeOf(S), M1: @TypeOf(S), M2: @TypeOf(S), M3: @TypeOf(S), M4: @TypeOf(S)) !u32 {
     const iters = 10;
 
     _ = K1; _ = K2; _ = K3; _ = K4;
+    _ = L1; _ = L2; _ = L3; _ = L4;
+    _ = M1; _ = M2; _ = M3; _ = M4;
     _ = U; _ = TDC; _ = time_step;
     _ = s;
+
+    const FunctionX = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
+        for (0..FC.rows) |i| {K.ptr(i).* = FC.at(i).mul(Complex(T).init(FU.at(i, i), 0)).mulbyi().neg();} for (0..FC.rows) |i| for (0..FC.rows) |j| {
+            K.ptr(i).* = K.at(i).sub(FC.at(j).mul(Complex(T).init(FTDC.at(i, j), 0)));
+        };
+    }};
 
     for (0..iters) |_| {
 
