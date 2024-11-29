@@ -1,39 +1,34 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl_fft = @cImport(@cInclude("gsl/gsl_fft_complex.h"));
+const std = @import("std"); const Complex = std.math.Complex;
 
 const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
+const bitrev  = @import("helper.zig").bitrev ;
 
-pub fn fft(comptime T: type, array: []Complex(T), factor: i32, GSLFT: *gsl_fft.gsl_fft_complex_wavetable, GSLFW: *gsl_fft.gsl_fft_complex_workspace) void {
-    if (factor == -1) _ = gsl_fft.gsl_fft_complex_forward (&array[0].re, 1, array.len, GSLFT, GSLFW);
-    if (factor ==  1) _ = gsl_fft.gsl_fft_complex_backward(&array[0].re, 1, array.len, GSLFT, GSLFW);
+pub fn fft(comptime T: type, out: []Complex(T), in: []Complex(T), factor: i32) void {
+    const n = in.len; const logn: u6 = @intCast(std.math.log2(n)); for (0..n) |i| out[bitrev(i, logn)] = in[i];
 
-    if (factor > 0) for (0..array.len) |i| {array[i] = array[i].div(Complex(T).init(asfloat(T, array.len), 0));};
-}
+    for (0..logn) |i| {
 
-pub fn myfft(comptime T: type, out: []Complex(T), in: []Complex(T), factor: i32) !void {
-    // const n = in.len;
+        const m = std.math.pow(usize, 2, i + 1); const mix = std.math.complex.exp(Complex(T).init(0, asfloat(T, factor) * 2 * std.math.pi / asfloat(T, m)));
 
-    if (in.len == 1) {out[0] = in[0]; return;}
+        for (0..n / m) |j| {
 
-    var even = try std.heap.page_allocator.alloc(Complex(T), in.len / 2); defer std.heap.page_allocator.free(even);
-    var odd  = try std.heap.page_allocator.alloc(Complex(T), in.len / 2); defer std.heap.page_allocator.free(odd );
+            var omega = Complex(T).init(1, 0);
 
-    for (0..in.len / 2) |i| {
-        even[i] = in[2 * i + 0];
-        odd[i]  = in[2 * i + 1];
+            for (0..m / 2) |k| {
+
+                const t = omega.mul(out[j * m + k + m / 2]); const u = out[j * m + k];
+
+                out[j * m + k        ] = u.add(t);
+                out[j * m + k + m / 2] = u.sub(t);
+
+                omega = omega.mul(mix);
+            }
+        }
     }
 
-    const fft_even = try std.heap.page_allocator.alloc(Complex(T), in.len / 2); defer std.heap.page_allocator.free(fft_even);
-    const fft_odd  = try std.heap.page_allocator.alloc(Complex(T), in.len / 2); defer std.heap.page_allocator.free(fft_odd );
-
-    try myfft(T, fft_even, even, factor);
-    try myfft(T, fft_odd,  odd,  factor);
-
-    for (0..in.len / 2) |k| {
-        out[k             ] = fft_even[k].add(std.math.complex.exp(Complex(T).init(0, asfloat(T, factor) * 2 * std.math.pi * asfloat(T, k) / asfloat(T, in.len))).mul(fft_odd[k]));
-        out[k + in.len / 2] = fft_even[k].sub(std.math.complex.exp(Complex(T).init(0, asfloat(T, factor) * 2 * std.math.pi * asfloat(T, k) / asfloat(T, in.len))).mul(fft_odd[k]));
-    }
+    if (factor > 0) for (0..out.len) |i| {out[i] = out[i].div(Complex(T).init(asfloat(T, out.len), 0));};
 }
 
 test "fft" {
@@ -45,14 +40,16 @@ test "fft" {
     A.ptr(2).* = Complex(f64).init(1, 0);
     A.ptr(3).* = Complex(f64).init(8, 0);
 
-    // const GSLFT = gsl_fft.gsl_fft_complex_wavetable_alloc(4);
-    // const GSLFW = gsl_fft.gsl_fft_complex_workspace_alloc(4);
-
-    // fft(f64, A.data, -1, GSLFT, GSLFW);
-    try myfft(f64, B.data, A.data, -1); @memcpy(A.data, B.data);
+    fft(f64, B.data, A.data, -1);
 
     for (0..A.data.len) |i| {
         std.debug.print("{d}: {d:12.6} {d:12.6}\n", .{i + 1, A.data[i].re, A.data[i].im});
+    }
+
+    std.debug.print("\n", .{});
+
+    for (0..B.data.len) |i| {
+        std.debug.print("{d}: {d:12.6} {d:12.6}\n", .{i + 1, B.data[i].re, B.data[i].im});
     }
 
     try std.testing.expect(true);

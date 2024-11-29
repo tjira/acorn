@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl_eigen = @cImport(@cInclude("gsl/gsl_eigen.h"));
+const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const mat = @import("matrix.zig");
 
@@ -149,7 +149,7 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
 }
 
 pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
-    const GSLEW = gsl_eigen.gsl_eigen_symmv_alloc(states(opt.potential)); defer gsl_eigen.gsl_eigen_symmv_free(GSLEW);
+    const GSLEW = gsl.gsl_eigen_symmv_alloc(states(opt.potential)); defer gsl.gsl_eigen_symmv_free(GSLEW);
 
     var U  = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UA.deinit();

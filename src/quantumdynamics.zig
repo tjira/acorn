@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl_eigen = @cImport(@cInclude("gsl/gsl_eigen.h")); const gsl_fft = @cImport(@cInclude("gsl/gsl_fft_complex.h"));
+const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const mat = @import("matrix.zig"          );
 const mpt = @import("modelpotential.zig"  );
@@ -48,8 +48,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
     var momentum = try Matrix(T).init(opt.iterations, mpt.dims(opt.potential)  , allocator); defer momentum.deinit(); momentum.fill(0);
 
     {
-        const GSLFT = gsl_fft.gsl_fft_complex_wavetable_alloc(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential))); defer gsl_fft.gsl_fft_complex_wavetable_free(GSLFT);
-        const GSLFW = gsl_fft.gsl_fft_complex_workspace_alloc(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential))); defer gsl_fft.gsl_fft_complex_workspace_free(GSLFW);
+        var T1 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential)), 1, allocator); defer T1.deinit();
+        var T2 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential)), 1, allocator); defer T2.deinit();
 
         var rvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential)), mpt.dims(opt.potential), allocator); defer rvec.deinit();
         var kvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, mpt.dims(opt.potential)), mpt.dims(opt.potential), allocator); defer kvec.deinit();
@@ -83,13 +83,13 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
         for (0..opt.iterations) |i| {
 
-            wfn.propagate(T, &W, R, K, &WS, GSLFT, GSLFW); if (opt.imaginary) W.normalize(dr);
+            wfn.propagate(T, &W, R, K, &T1, &T2); if (opt.imaginary) W.normalize(dr);
 
             if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
 
-            const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &WS, GSLFT, GSLFW); const Epot: T = wfn.epot(T, W, V, dr);
+            const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1, &T2); const Epot: T = wfn.epot(T, W, V, dr);
 
-            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); wfn.momentum(T, &p, W, kvec, dr, &WS, GSLFT, GSLFW);
+            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); wfn.momentum(T, &p, W, kvec, dr, &T1, &T2);
 
             if (opt.write.population       != null) for (0..W.nstate) |j| {pop.ptr(i, j).* = P.at(j, j);};
             if (opt.write.position         != null) for (0..W.ndim) |j| {position.ptr(i, j).* = r.at(j);};
@@ -134,7 +134,7 @@ fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T
 }
 
 fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(Complex(T))) {
-    const GSLEW = gsl_eigen.gsl_eigen_symmv_alloc(6 * mpt.states(potential)); defer gsl_eigen.gsl_eigen_symmv_free(GSLEW);
+    const GSLEW = gsl.gsl_eigen_symmv_alloc(mpt.states(potential)); defer gsl.gsl_eigen_symmv_free(GSLEW);
 
     var U  = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UA.deinit();

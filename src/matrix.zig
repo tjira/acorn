@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl_eigen = @cImport(@cInclude("gsl/gsl_eigen.h"));
+const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const Vector = @import("vector.zig").Vector;
 
@@ -79,19 +79,19 @@ pub fn mamt(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (!@hasField(T, "re")) {C.fill(0)           ; for (0..A.cols) |i| for (0..B.rows) |j| for (0..A.cols) |k| {C.ptr(j, i).* = C.at(j, i) +   A.at(k, i) *               B.at(j, k)  ;};}
 }
 
-pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), AT: *Matrix(T), GSLW: *gsl_eigen.gsl_eigen_symmv_workspace) void {
+pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), AT: *Matrix(T), GSLW: *gsl.gsl_eigen_symmv_workspace) void {
     var sumsq: T = 0; for (0..A.rows) |i| for (i + 1..A.cols) |j| {sumsq += 2 * A.at(i, j) * A.at(i, j); sumsq = std.math.sqrt(sumsq);};
 
     J.fill(0); C.fill(0); @memcpy(AT.data, A.data);
 
-    var GSLA = gsl_eigen.gsl_matrix_view_array(AT.data.ptr, A.rows, A.cols);
-    var GSLC = gsl_eigen.gsl_matrix_view_array( C.data.ptr, A.rows, A.cols);
-    var GSLJ = gsl_eigen.gsl_vector_view_array( J.data.ptr, A.rows        );
+    var GSLA = gsl.gsl_matrix_view_array(AT.data.ptr, A.rows, A.cols);
+    var GSLC = gsl.gsl_matrix_view_array( C.data.ptr, A.rows, A.cols);
+    var GSLJ = gsl.gsl_vector_view_array( J.data.ptr, A.rows        );
 
-    if (sumsq >  1e-14) _ = gsl_eigen.gsl_eigen_symmv(&GSLA.matrix, &GSLJ.vector, &GSLC.matrix, GSLW);
+    if (sumsq >  1e-14) _ = gsl.gsl_eigen_symmv(&GSLA.matrix, &GSLJ.vector, &GSLC.matrix, GSLW);
     if (sumsq <= 1e-14) {for (0..A.rows) |i| J.ptr(0, i).* = A.at(i, i); C.identity();}
 
-    _ = gsl_eigen.gsl_eigen_symmv_sort(&GSLJ.vector, &GSLC.matrix, gsl_eigen.GSL_EIGEN_SORT_VAL_ASC);
+    _ = gsl.gsl_eigen_symmv_sort(&GSLJ.vector, &GSLC.matrix, gsl.GSL_EIGEN_SORT_VAL_ASC);
 
     for (1..A.rows) |i| {J.ptr(i, i).* = J.at(0, i); J.ptr(0, i).* = 0;}
 }

@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl_eigen = @cImport(@cInclude("gsl/gsl_eigen.h"));
+const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
 
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
@@ -57,7 +57,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
     var coefs    = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator); defer    coefs.deinit();    coefs.fill(0);
 
     {
-        const GSLW = gsl_eigen.gsl_eigen_symmv_alloc(mpt.states(opt.potential)); defer gsl_eigen.gsl_eigen_symmv_free(GSLW);
+        const GSLW = gsl.gsl_eigen_symmv_alloc(mpt.states(opt.potential)); defer gsl.gsl_eigen_symmv_free(GSLW);
 
         var r  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  r.deinit();
         var p  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  p.deinit();
