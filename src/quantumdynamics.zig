@@ -40,7 +40,32 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
     };
 }
 
-pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !Vector(T) {
+pub fn QuantumDynamicsOutput(comptime T: type) type {
+    return struct {
+        P: Matrix(T),
+        r: Vector(T),
+        p: Vector(T),
+        Ekin: T,
+        Epot: T,
+
+        pub fn init(ndim: usize, nstate: usize, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
+            return QuantumDynamicsOutput(T){
+                .P = try Matrix(T).init(nstate, nstate, allocator),
+                .r = try Vector(T).init(ndim, allocator),
+                .p = try Vector(T).init(ndim, allocator),
+                .Ekin = undefined,
+                .Epot = undefined
+            };
+        }
+        pub fn deinit(self: QuantumDynamicsOutput(T)) void {
+            self.P.deinit(); self.r.deinit(); self.p.deinit();
+        }
+    };
+}
+
+pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
+    var output = try QuantumDynamicsOutput(T).init(mpt.dims(opt.potential), mpt.states(opt.potential), allocator);
+
     var pop      = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator);     defer  pop.deinit();      pop.fill(0);
     var ekin     = try Matrix(T).init(opt.iterations, 1                        , allocator);     defer ekin.deinit();     ekin.fill(0);
     var epot     = try Matrix(T).init(opt.iterations, 1                        , allocator);     defer epot.deinit();     epot.fill(0);
@@ -99,6 +124,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
             if (opt.write.potential_energy != null) epot.ptr(i, 0).* = Epot                              ;
             if (opt.write.total_energy     != null) etot.ptr(i, 0).* = Ekin + Epot                       ;
 
+            @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data); output.Ekin = Ekin; output.Epot = Epot;
+
             if (print and (i == 0 or (i + 1) % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(i), Ekin, Epot, r, p, P);
         }
 
@@ -109,7 +136,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
         if (print) {try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});}
     }
 
-    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, allocator); return try pop.rowptr(opt.iterations - 1).vectorptr().clone();
+    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, allocator); return output;
 }
 
 fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T, mass: T, imaginary: bool, allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
@@ -226,11 +253,13 @@ fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T)
     }
 }
 
-test "tully1D_1" {
-    var pop_result = try Vector(f64).init(2, std.testing.allocator); defer pop_result.deinit();
+// TESTS ===============================================================================================================================================================================================
 
-    pop_result.ptr(0).* = 0.4105063;
-    pop_result.ptr(1).* = 0.5894936;
+test "doubleState1D_1" {
+    var P = try Matrix(f64).init(2, 2, std.testing.allocator); defer P.deinit();
+
+    P.ptr(0, 0).* = 0.68939163804408; P.ptr(0, 1).* = 0.00018765157757;
+    P.ptr(1, 0).* = 0.00018765157757; P.ptr(1, 1).* = 0.31060836195428;
 
     const opt = QuantumDynamicsOptions(f64){
         .adiabatic = true,
@@ -251,27 +280,187 @@ test "tully1D_1" {
             .iteration = 50
         },
         .write = .{
-            .kinetic_energy = "KINETIC_ENERGY_EXACT.mat",
-            .momentum = "MOMENTUM_EXACT.mat",
-            .population = "POPULATION_EXACT.mat",
-            .position = "POSITION_EXACT.mat",
-            .potential_energy = "POTENTIAL_ENERGY_EXACT.mat",
-            .total_energy = "TOTAL_ENERGY_EXACT.mat"
+            .kinetic_energy = null,
+            .momentum = null,
+            .population = null,
+            .position = null,
+            .potential_energy = null,
+            .total_energy = null
+        },
+        .potential = "doubleState1D_1"
+    };
+
+    const output = try run(f64, opt, false, std.testing.allocator); defer output.deinit();
+
+    try std.testing.expect(mat.eq(f64, output.P, P, 1e-12));
+}
+
+test "doubleState1D_2" {
+    var P = try Matrix(f64).init(2, 2, std.testing.allocator); defer P.deinit();
+
+    P.ptr(0, 0).* = 0.96070275892968; P.ptr(0, 1).* = 0.01414658057574;
+    P.ptr(1, 0).* = 0.01414658057574; P.ptr(1, 1).* = 0.03929724106854;
+
+    const opt = QuantumDynamicsOptions(f64){
+        .adiabatic = true,
+        .imaginary = false,
+        .iterations = 300,
+        .time_step = 10,
+        .grid = .{
+            .limits = &[_]f64{-16, 32},
+            .points = 512
+        },
+        .initial_conditions = .{
+            .mass = 2000,
+            .momentum = &[_]f64{15},
+            .position = &[_]f64{-10},
+            .state = 1
+        },
+        .log_intervals = .{
+            .iteration = 50
+        },
+        .write = .{
+            .kinetic_energy = null,
+            .momentum = null,
+            .population = null,
+            .position = null,
+            .potential_energy = null,
+            .total_energy = null
+        },
+        .potential = "doubleState1D_2"
+    };
+
+    const output = try run(f64, opt, false, std.testing.allocator); defer output.deinit();
+
+    try std.testing.expect(mat.eq(f64, output.P, P, 1e-12));
+}
+
+test "tully1D_1" {
+    var P = try Matrix(f64).init(2, 2, std.testing.allocator); defer P.deinit();
+
+    P.ptr(0, 0).* = 0.41050635034636; P.ptr(0, 1).* = 0.03954870766906;
+    P.ptr(1, 0).* = 0.03954870766906; P.ptr(1, 1).* = 0.58949364965213;
+
+    const opt = QuantumDynamicsOptions(f64){
+        .adiabatic = true,
+        .imaginary = false,
+        .iterations = 300,
+        .time_step = 10,
+        .grid = .{
+            .limits = &[_]f64{-16, 32},
+            .points = 512
+        },
+        .initial_conditions = .{
+            .mass = 2000,
+            .momentum = &[_]f64{15},
+            .position = &[_]f64{-10},
+            .state = 1
+        },
+        .log_intervals = .{
+            .iteration = 50
+        },
+        .write = .{
+            .kinetic_energy = null,
+            .momentum = null,
+            .population = null,
+            .position = null,
+            .potential_energy = null,
+            .total_energy = null
         },
         .potential = "tully1D_1"
     };
 
-    const pop = try run(f64, opt, false, std.testing.allocator); defer pop.deinit();
+    const output = try run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
-    try std.testing.expect(vec.eq(f64, pop, pop_result, 1e-7));
+    try std.testing.expect(mat.eq(f64, output.P, P, 1e-12));
+}
+
+test "tully1D_2" {
+    var P = try Matrix(f64).init(2, 2, std.testing.allocator); defer P.deinit();
+
+    P.ptr(0, 0).* = 0.02483440861074; P.ptr(0, 1).* = 0.00092889832192;
+    P.ptr(1, 0).* = 0.00092889832192; P.ptr(1, 1).* = 0.97516559138780;
+
+    const opt = QuantumDynamicsOptions(f64){
+        .adiabatic = true,
+        .imaginary = false,
+        .iterations = 300,
+        .time_step = 10,
+        .grid = .{
+            .limits = &[_]f64{-16, 32},
+            .points = 512
+        },
+        .initial_conditions = .{
+            .mass = 2000,
+            .momentum = &[_]f64{15},
+            .position = &[_]f64{-10},
+            .state = 1
+        },
+        .log_intervals = .{
+            .iteration = 50
+        },
+        .write = .{
+            .kinetic_energy = null,
+            .momentum = null,
+            .population = null,
+            .position = null,
+            .potential_energy = null,
+            .total_energy = null
+        },
+        .potential = "tully1D_2"
+    };
+
+    const output = try run(f64, opt, false, std.testing.allocator); defer output.deinit();
+
+    try std.testing.expect(mat.eq(f64, output.P, P, 1e-12));
+}
+
+test "tully1D_3" {
+    var P = try Matrix(f64).init(2, 2, std.testing.allocator); defer P.deinit();
+
+    P.ptr(0, 0).* = 0.76438466406603; P.ptr(0, 1).* = 0.17171831933474;
+    P.ptr(1, 0).* = 0.17171831933474; P.ptr(1, 1).* = 0.23561533593184;
+
+    const opt = QuantumDynamicsOptions(f64){
+        .adiabatic = true,
+        .imaginary = false,
+        .iterations = 300,
+        .time_step = 10,
+        .grid = .{
+            .limits = &[_]f64{-16, 32},
+            .points = 512
+        },
+        .initial_conditions = .{
+            .mass = 2000,
+            .momentum = &[_]f64{15},
+            .position = &[_]f64{-10},
+            .state = 1
+        },
+        .log_intervals = .{
+            .iteration = 50
+        },
+        .write = .{
+            .kinetic_energy = null,
+            .momentum = null,
+            .population = null,
+            .position = null,
+            .potential_energy = null,
+            .total_energy = null
+        },
+        .potential = "tully1D_3"
+    };
+
+    const output = try run(f64, opt, false, std.testing.allocator); defer output.deinit();
+
+    try std.testing.expect(mat.eq(f64, output.P, P, 1e-12));
 }
 
 test "tripleState1D_1" {
-    var pop_result = try Vector(f64).init(3, std.testing.allocator); defer pop_result.deinit();
+    var P = try Matrix(f64).init(3, 3, std.testing.allocator); defer P.deinit();
 
-    pop_result.ptr(0).* = 0.0940613;
-    pop_result.ptr(1).* = 0.0996653;
-    pop_result.ptr(2).* = 0.8062732;
+    P.ptr(0, 0).* = 0.09406137151353; P.ptr(0, 1).* = 0.02243393031679; P.ptr(0, 2).* = 0.00177590480664;
+    P.ptr(1, 0).* = 0.02243393031679; P.ptr(1, 1).* = 0.09966537676404; P.ptr(1, 2).* = 0.03403002401355;
+    P.ptr(2, 0).* = 0.00177590480664; P.ptr(2, 1).* = 0.03403002401355; P.ptr(2, 2).* = 0.80627325172103;
 
     const opt = QuantumDynamicsOptions(f64){
         .adiabatic = true,
@@ -292,17 +481,99 @@ test "tripleState1D_1" {
             .iteration = 50
         },
         .write = .{
-            .kinetic_energy = "KINETIC_ENERGY_EXACT.mat",
-            .momentum = "MOMENTUM_EXACT.mat",
-            .population = "POPULATION_EXACT.mat",
-            .position = "POSITION_EXACT.mat",
-            .potential_energy = "POTENTIAL_ENERGY_EXACT.mat",
-            .total_energy = "TOTAL_ENERGY_EXACT.mat"
+            .kinetic_energy = null,
+            .momentum = null,
+            .population = null,
+            .position = null,
+            .potential_energy = null,
+            .total_energy = null
         },
         .potential = "tripleState1D_1"
     };
 
-    const pop = try run(f64, opt, false, std.testing.allocator); defer pop.deinit();
+    const output = try run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
-    try std.testing.expect(vec.eq(f64, pop, pop_result, 1e-7));
+    try std.testing.expect(mat.eq(f64, output.P, P, 1e-12));
+}
+
+test "tripleState1D_2" {
+    var P = try Matrix(f64).init(3, 3, std.testing.allocator); defer P.deinit();
+
+    P.ptr(0, 0).* = 0.80243373396786; P.ptr(0, 1).* = 0.09151956326301; P.ptr(0, 2).* = 0.02478818099951;
+    P.ptr(1, 0).* = 0.09151956326301; P.ptr(1, 1).* = 0.04418760360549; P.ptr(1, 2).* = 0.04060912220532;
+    P.ptr(2, 0).* = 0.02478818099951; P.ptr(2, 1).* = 0.04060912220532; P.ptr(2, 2).* = 0.15337866242496;
+
+    const opt = QuantumDynamicsOptions(f64){
+        .adiabatic = true,
+        .imaginary = false,
+        .iterations = 300,
+        .time_step = 10,
+        .grid = .{
+            .limits = &[_]f64{-16, 32},
+            .points = 512
+        },
+        .initial_conditions = .{
+            .mass = 2000,
+            .momentum = &[_]f64{15},
+            .position = &[_]f64{-10},
+            .state = 2
+        },
+        .log_intervals = .{
+            .iteration = 50
+        },
+        .write = .{
+            .kinetic_energy = null,
+            .momentum = null,
+            .population = null,
+            .position = null,
+            .potential_energy = null,
+            .total_energy = null
+        },
+        .potential = "tripleState1D_2"
+    };
+
+    const output = try run(f64, opt, false, std.testing.allocator); defer output.deinit();
+
+    try std.testing.expect(mat.eq(f64, output.P, P, 1e-12));
+}
+
+test "tripleState1D_3" {
+    var P = try Matrix(f64).init(3, 3, std.testing.allocator); defer P.deinit();
+
+    P.ptr(0, 0).* = 0.72007774176220; P.ptr(0, 1).* = 0.00000000137970; P.ptr(0, 2).* = 0.00000010527634;
+    P.ptr(1, 0).* = 0.00000000137970; P.ptr(1, 1).* = 0.11247117674074; P.ptr(1, 2).* = 0.00000000702129;
+    P.ptr(2, 0).* = 0.00000010527634; P.ptr(2, 1).* = 0.00000000702129; P.ptr(2, 2).* = 0.16745108149516;
+
+    const opt = QuantumDynamicsOptions(f64){
+        .adiabatic = true,
+        .imaginary = false,
+        .iterations = 300,
+        .time_step = 10,
+        .grid = .{
+            .limits = &[_]f64{-16, 32},
+            .points = 512
+        },
+        .initial_conditions = .{
+            .mass = 2000,
+            .momentum = &[_]f64{15},
+            .position = &[_]f64{-10},
+            .state = 1
+        },
+        .log_intervals = .{
+            .iteration = 50
+        },
+        .write = .{
+            .kinetic_energy = null,
+            .momentum = null,
+            .population = null,
+            .position = null,
+            .potential_energy = null,
+            .total_energy = null
+        },
+        .potential = "tripleState1D_3"
+    };
+
+    const output = try run(f64, opt, false, std.testing.allocator); defer output.deinit();
+
+    try std.testing.expect(mat.eq(f64, output.P, P, 1e-12));
 }

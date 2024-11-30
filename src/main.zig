@@ -32,14 +32,14 @@ pub fn main() !void {
 
             const obj = try std.json.parseFromValue(CDO(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
 
-            try cdn.run(f64, obj.value, allocator);
+            const output = try cdn.run(f64, obj.value, allocator); defer output.deinit();
         }
 
         if (inputjs.value.object.contains("quantum_dynamics")) {
 
             const obj = try std.json.parseFromValue(QDO(f64), allocator, inputjs.value.object.get("quantum_dynamics").?, .{}); defer obj.deinit();
 
-            const pop = try qdn.run(f64, obj.value, true, allocator); defer pop.deinit();
+            const output = try qdn.run(f64, obj.value, true, allocator); defer output.deinit();
         }
 
         if (inputjs.value.object.contains("model_potential")) {
@@ -51,4 +51,8 @@ pub fn main() !void {
     }
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+}
+
+test {
+    @import("std").testing.refAllDecls(@This());
 }
