@@ -1,8 +1,9 @@
 const std = @import("std"); const Complex = std.math.Complex;
 
-const mat = @import("matrix.zig"          );
-const mpt = @import("modelpotential.zig"  );
-const wfn = @import("wavefunction.zig"    );
+const mat = @import("matrix.zig"        );
+const mpt = @import("modelpotential.zig");
+const vec = @import("vector.zig"        );
+const wfn = @import("wavefunction.zig"  );
 
 const Matrix       = @import("matrix.zig"      ).Matrix      ;
 const Vector       = @import("vector.zig"      ).Vector      ;
@@ -136,7 +137,6 @@ fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T
 fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(Complex(T))) {
     var T1 = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer T2.deinit();
-    var T3 = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer T3.deinit();
 
     var U  = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UA.deinit();
@@ -148,7 +148,7 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
 
     for (0..rvec.rows) |i| {
 
-        mpt.eval(T, &U, potential, rvec.rowptr(i).vectorptr()); mat.eigh(T, &UA, &UC, U, &T1, &T2, &T3);
+        mpt.eval(T, &U, potential, rvec.rowptr(i).vectorptr()); mat.eigh(T, &UA, &UC, U, &T1, &T2);
 
         try V.append(try U.complex()); try VA.append(try UA.complex()); try VC.append(try UC.complex());
     }
@@ -170,7 +170,7 @@ fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))), VC:
             RI1.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        mat.cmm(Complex(T), &RI2, VC.items[i], RI1); mat.cmma(Complex(T), &RI1, RI2, VC.items[i]); try R.append(try RI1.clone());
+        mat.cmm(T, &RI2, VC.items[i], RI1); mat.cmma(T, &RI1, RI2, VC.items[i]); try R.append(try RI1.clone());
     }
 
     return R;
@@ -263,7 +263,7 @@ test "tully1D_1" {
 
     const pop = try run(f64, opt, false, std.testing.allocator); defer pop.deinit();
 
-    try std.testing.expect(pop.eq(pop_result, 1e-7));
+    try std.testing.expect(vec.eq(f64, pop, pop_result, 1e-7));
 }
 
 test "tripleState1D_1" {
@@ -304,5 +304,5 @@ test "tripleState1D_1" {
 
     const pop = try run(f64, opt, false, std.testing.allocator); defer pop.deinit();
 
-    try std.testing.expect(pop.eq(pop_result, 1e-7));
+    try std.testing.expect(vec.eq(f64, pop, pop_result, 1e-7));
 }

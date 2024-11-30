@@ -151,7 +151,6 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
 pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
     var T1 = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer T2.deinit();
-    var T3 = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer T3.deinit();
 
     var U  = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UA.deinit();
@@ -166,7 +165,7 @@ pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem
 
         eval(T, &U, opt.potential, R.rowptr(i).vectorptr());
 
-        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2, &T3); @memcpy(U.data, UA.data);}
+        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);}
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;
     }

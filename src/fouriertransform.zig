@@ -1,5 +1,7 @@
 const std = @import("std"); const Complex = std.math.Complex;
 
+const vec = @import("vector.zig");
+
 const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
@@ -31,6 +33,104 @@ pub fn fft(comptime T: type, out: []Complex(T), in: []Complex(T), factor: i32) v
     if (factor > 0) for (0..out.len) |i| {out[i] = out[i].div(Complex(T).init(asfloat(T, out.len), 0));};
 }
 
-test "fft" {
-    try std.testing.expect(true);
+// TESTS ===============================================================================================================================================================================================
+
+test "fft_1d_1" {
+    var A = try Vector(Complex(f64)).init(1, std.testing.allocator); defer A.deinit();
+    var B = try Vector(Complex(f64)).init(1, std.testing.allocator); defer B.deinit();
+    var R = try Vector(Complex(f64)).init(1, std.testing.allocator); defer R.deinit();
+
+    A.ptr(0).* = Complex(f64).init(7, 0);
+
+    R.ptr(0).* = Complex(f64).init(7, 0);
+
+    fft(f64, B.data, A.data, -1);
+
+    try std.testing.expect(vec.ceq(f64, B, R, 1e-12));
+}
+
+test "ifft_1d_1" {
+    var A = try Vector(Complex(f64)).init(1, std.testing.allocator); defer A.deinit();
+    var B = try Vector(Complex(f64)).init(1, std.testing.allocator); defer B.deinit();
+    var R = try Vector(Complex(f64)).init(1, std.testing.allocator); defer R.deinit();
+
+    A.ptr(0).* = Complex(f64).init(7, 0);
+
+    R.ptr(0).* = Complex(f64).init(7, 0);
+
+    fft(f64, B.data, A.data, 1);
+
+    try std.testing.expect(vec.ceq(f64, B, R, 1e-12));
+}
+
+test "fft_1d_2" {
+    var A = try Vector(Complex(f64)).init(2, std.testing.allocator); defer A.deinit();
+    var B = try Vector(Complex(f64)).init(2, std.testing.allocator); defer B.deinit();
+    var R = try Vector(Complex(f64)).init(2, std.testing.allocator); defer R.deinit();
+
+    A.ptr(0).* = Complex(f64).init(3, 0);
+    A.ptr(1).* = Complex(f64).init(1, 0);
+
+    R.ptr(0).* = Complex(f64).init(4, 0);
+    R.ptr(1).* = Complex(f64).init(2, 0);
+
+    fft(f64, B.data, A.data, -1);
+
+    try std.testing.expect(vec.ceq(f64, B, R, 1e-12));
+}
+
+test "ifft_1d_2" {
+    var A = try Vector(Complex(f64)).init(2, std.testing.allocator); defer A.deinit();
+    var B = try Vector(Complex(f64)).init(2, std.testing.allocator); defer B.deinit();
+    var R = try Vector(Complex(f64)).init(2, std.testing.allocator); defer R.deinit();
+
+    A.ptr(0).* = Complex(f64).init(4, 0);
+    A.ptr(1).* = Complex(f64).init(2, 0);
+
+    R.ptr(0).* = Complex(f64).init(3, 0);
+    R.ptr(1).* = Complex(f64).init(1, 0);
+
+    fft(f64, B.data, A.data, 1);
+
+    try std.testing.expect(vec.ceq(f64, B, R, 1e-12));
+}
+
+test "fft_1d_4" {
+    var A = try Vector(Complex(f64)).init(4, std.testing.allocator); defer A.deinit();
+    var B = try Vector(Complex(f64)).init(4, std.testing.allocator); defer B.deinit();
+    var R = try Vector(Complex(f64)).init(4, std.testing.allocator); defer R.deinit();
+
+    A.ptr(0).* = Complex(f64).init(4, 0);
+    A.ptr(1).* = Complex(f64).init(0, 0);
+    A.ptr(2).* = Complex(f64).init(1, 0);
+    A.ptr(3).* = Complex(f64).init(3, 0);
+
+    R.ptr(0).* = Complex(f64).init(8,  0);
+    R.ptr(1).* = Complex(f64).init(3,  3);
+    R.ptr(2).* = Complex(f64).init(2,  0);
+    R.ptr(3).* = Complex(f64).init(3, -3);
+
+    fft(f64, B.data, A.data, -1);
+
+    try std.testing.expect(vec.ceq(f64, B, R, 1e-12));
+}
+
+test "ifft_1d_4" {
+    var A = try Vector(Complex(f64)).init(4, std.testing.allocator); defer A.deinit();
+    var B = try Vector(Complex(f64)).init(4, std.testing.allocator); defer B.deinit();
+    var R = try Vector(Complex(f64)).init(4, std.testing.allocator); defer R.deinit();
+
+    A.ptr(0).* = Complex(f64).init(8,  0);
+    A.ptr(1).* = Complex(f64).init(3,  3);
+    A.ptr(2).* = Complex(f64).init(2,  0);
+    A.ptr(3).* = Complex(f64).init(3, -3);
+
+    R.ptr(0).* = Complex(f64).init(4, 0);
+    R.ptr(1).* = Complex(f64).init(0, 0);
+    R.ptr(2).* = Complex(f64).init(1, 0);
+    R.ptr(3).* = Complex(f64).init(3, 0);
+
+    fft(f64, B.data, A.data, 1);
+
+    try std.testing.expect(vec.ceq(f64, B, R, 1e-12));
 }

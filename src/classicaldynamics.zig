@@ -59,7 +59,6 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
     {
         var T1   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T1.deinit();
         var T2   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T2.deinit();
-        var T3   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T3.deinit();
 
         var r  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  r.deinit();
         var p  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  p.deinit();
@@ -124,8 +123,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
                 for (0..r.rows) |k| {
 
-                    r.ptr(k).* += 1 * opt.derivative_step; mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2, &T3); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
-                    r.ptr(k).* -= 2 * opt.derivative_step; mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2, &T3); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
+                    r.ptr(k).* += 1 * opt.derivative_step; mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+                    r.ptr(k).* -= 2 * opt.derivative_step; mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
                     a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
                     v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
@@ -134,7 +133,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
 
                 mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {
 
-                    mat.eigh(T, &UA, &UC, U, &T1, &T2, &T3); @memcpy(U.data, UA.data); @memcpy(UC2[j % 2].data, UC.data);
+                    mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data); @memcpy(UC2[j % 2].data, UC.data);
 
                     if (j > 0) for (0..UC.cols) |k| {
                         var overlap: T = 0; for (0..UC.rows) |l| {overlap += UC2[j % 2].at(l, k) * UC2[(j - 1) % 2].at(l, k);} if (overlap < 0) for (0..UC.rows) |l| {UC2[j % 2].ptr(l, k).* *= -1;};
