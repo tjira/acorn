@@ -4,11 +4,22 @@ PLOT_1D=./../../script/plot/plot-1d.py; MODELS=($(ls -l exact* | grep -oP "(?<=e
 
 for MODEL in ${MODELS[@]}; do
 
-    NSTATE=$(tail -n 1 POPULATION_${MODEL}_* | tail -n 1 | awk '{print NF - 1}'); LEGEND_POP=(); LEGEND_POT=(); INDICES_POT="";
+    NSTATE=$(tail -n 1 POPULATION_${MODEL}_* | tail -n 1 | awk '{print NF - 1}');
+
+    LEGEND_POP=(); LEGEND_FSSH=(); LEGEND_FSSH_COEF=(); LEGEND_KFSSH_COEF=(); LEGEND_POT=(); INDICES_POT="";
 
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} EXACT"); done
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} FSSH" ); done
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} LZSH" ); done
+
+    for (( i=0; i<$NSTATE; i++ )); do LEGEND_FSSH+=("S${i} FSSH"  ); done
+    for (( i=0; i<$NSTATE; i++ )); do LEGEND_FSSH+=("S${i} KFSSH" ); done
+
+    for (( i=0; i<$NSTATE; i++ )); do LEGEND_FSSH_COEF+=("S${i} FSSH"        ); done
+    for (( i=0; i<$NSTATE; i++ )); do LEGEND_FSSH_COEF+=("S${i} FSSH (COEF)" ); done
+
+    for (( i=0; i<$NSTATE; i++ )); do LEGEND_KFSSH_COEF+=("S${i} KFSSH"        ); done
+    for (( i=0; i<$NSTATE; i++ )); do LEGEND_KFSSH_COEF+=("S${i} KFSSH (COEF)" ); done
 
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POT+=("S${i}"); done; for (( i=0; i<$NSTATE; i++ )); do INDICES_POT+=$(echo "$i*$NSTATE+$i" | bc -l)","; done
 
@@ -38,9 +49,9 @@ for MODEL in ${MODELS[@]}; do
         $PLOT_1D "POSITION_${MODEL}_P=${MOMENTUM}_EXACT.mat"         "POSITION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"         "POSITION_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"         --title "POSITION: ${MODEL}"             --xlabel "Time (a.u.)" --ylabel "Coordinate (a.u.)" --legend "EXACT" "FSSH" "LZSH" --output "POSITION_${MODEL}_P=${MOMENTUM}"         --png
         $PLOT_1D "MOMENTUM_${MODEL}_P=${MOMENTUM}_EXACT.mat"         "MOMENTUM_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"         "MOMENTUM_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"         --title "MOMENTUM: ${MODEL}"             --xlabel "Time (a.u.)" --ylabel "Momentum (a.u.)"   --legend "EXACT" "FSSH" "LZSH" --output "MOMENTUM_${MODEL}_P=${MOMENTUM}"         --png
 
-        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat"       --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "FSSH"  "KFSSH"      --output "POPULATION_FSSH_BAECKAN_${MODEL}_P=${MOMENTUM}" --png
-        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "FSSH"  "FSSH COEF"  --output "COEFFICIENT_FSSH_${MODEL}_P=${MOMENTUM}"        --png
-        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "KFSSH" "KFSSH COEF" --output "COEFFICIENT_KFSSH_${MODEL}_P=${MOMENTUM}"       --png
+        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat"       --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_FSSH[@]}"       --output "POPULATION_FSSH_BAECKAN_${MODEL}_P=${MOMENTUM}" --png
+        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_FSSH_COEF[@]}"  --output "COEFFICIENT_FSSH_${MODEL}_P=${MOMENTUM}"        --png
+        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" --title "MOMENTUM: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_KFSSH_COEF[@]}" --output "COEFFICIENT_KFSSH_${MODEL}_P=${MOMENTUM}"       --png
 
         montage "POTENTIAL_ADIABATIC_${MODEL}.png" "POPULATION_${MODEL}_P=${MOMENTUM}.png"              "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"          -mode concatenate -tile x1 "TRAJECTORY_GENERAL_${MODEL}_P=${MOMENTUM}.png"
         montage "POTENTIAL_ADIABATIC_${MODEL}.png" "KINETIC_ENERGY_${MODEL}_P=${MOMENTUM}.png"          "POTENTIAL_ENERGY_${MODEL}_P=${MOMENTUM}.png" "TOTAL_ENERGY_${MODEL}_P=${MOMENTUM}.png"      -mode concatenate -tile x1 "TRAJECTORY_ENERGY_${MODEL}_P=${MOMENTUM}.png"

@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
+const std = @import("std"); const Complex = std.math.Complex;
 
 const mat = @import("matrix.zig");
 
@@ -149,12 +149,13 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
 }
 
 pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
-    const GSLEW = gsl.gsl_eigen_symmv_alloc(states(opt.potential)); defer gsl.gsl_eigen_symmv_free(GSLEW);
+    var T1 = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer T1.deinit();
+    var T2 = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer T2.deinit();
+    var T3 = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer T3.deinit();
 
     var U  = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UA.deinit();
     var UC = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UC.deinit();
-    var UT = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UT.deinit();
 
     var R = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential)), dims(opt.potential)                          , allocator); defer R.deinit();
     var V = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential)), states(opt.potential) * states(opt.potential), allocator); defer V.deinit();
@@ -165,7 +166,7 @@ pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem
 
         eval(T, &U, opt.potential, R.rowptr(i).vectorptr());
 
-        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &UT, GSLEW); @memcpy(U.data, UA.data);}
+        if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2, &T3); @memcpy(U.data, UA.data);}
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;
     }

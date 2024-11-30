@@ -13,7 +13,5 @@ pub fn build(builder: *std.Build) void {
         .target = target
     });
 
-    executable.linkSystemLibrary2("gsl", .{}); executable.linkLibC();
-
     builder.installArtifact(executable);
 }

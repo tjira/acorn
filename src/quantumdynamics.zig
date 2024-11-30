@@ -1,4 +1,4 @@
-const std = @import("std"); const Complex = std.math.Complex; const gsl = @cImport(@cInclude("gsl/gsl_eigen.h"));
+const std = @import("std"); const Complex = std.math.Complex;
 
 const mat = @import("matrix.zig"          );
 const mpt = @import("modelpotential.zig"  );
@@ -134,12 +134,13 @@ fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T
 }
 
 fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(Complex(T))) {
-    const GSLEW = gsl.gsl_eigen_symmv_alloc(mpt.states(potential)); defer gsl.gsl_eigen_symmv_free(GSLEW);
+    var T1 = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer T1.deinit();
+    var T2 = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer T2.deinit();
+    var T3 = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer T3.deinit();
 
     var U  = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer  U.deinit();
     var UA = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UA.deinit();
     var UC = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UC.deinit();
-    var UT = try Matrix(T).init(mpt.states(potential), mpt.states(potential), allocator); defer UT.deinit();
 
     var V  = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
     var VA = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, rvec.rows);
@@ -147,7 +148,7 @@ fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), all
 
     for (0..rvec.rows) |i| {
 
-        mpt.eval(T, &U, potential, rvec.rowptr(i).vectorptr()); mat.eigh(T, &UA, &UC, U, &UT, GSLEW);
+        mpt.eval(T, &U, potential, rvec.rowptr(i).vectorptr()); mat.eigh(T, &UA, &UC, U, &T1, &T2, &T3);
 
         try V.append(try U.complex()); try VA.append(try UA.complex()); try VC.append(try UC.complex());
     }
@@ -169,7 +170,7 @@ fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))), VC:
             RI1.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        mat.mm(Complex(T), &RI2, VC.items[i], RI1); mat.mma(Complex(T), &RI1, RI2, VC.items[i]); try R.append(try RI1.clone());
+        mat.cmm(Complex(T), &RI2, VC.items[i], RI1); mat.cmma(Complex(T), &RI1, RI2, VC.items[i]); try R.append(try RI1.clone());
     }
 
     return R;

@@ -32,25 +32,5 @@ pub fn fft(comptime T: type, out: []Complex(T), in: []Complex(T), factor: i32) v
 }
 
 test "fft" {
-    var A = try Vector(Complex(f64)).init(4, std.testing.allocator); defer A.deinit();
-    var B = try Vector(Complex(f64)).init(4, std.testing.allocator); defer B.deinit();
-
-    A.ptr(0).* = Complex(f64).init(3, 0);
-    A.ptr(1).* = Complex(f64).init(6, 0);
-    A.ptr(2).* = Complex(f64).init(1, 0);
-    A.ptr(3).* = Complex(f64).init(8, 0);
-
-    fft(f64, B.data, A.data, -1);
-
-    for (0..A.data.len) |i| {
-        std.debug.print("{d}: {d:12.6} {d:12.6}\n", .{i + 1, A.data[i].re, A.data[i].im});
-    }
-
-    std.debug.print("\n", .{});
-
-    for (0..B.data.len) |i| {
-        std.debug.print("{d}: {d:12.6} {d:12.6}\n", .{i + 1, B.data[i].re, B.data[i].im});
-    }
-
     try std.testing.expect(true);
 }
