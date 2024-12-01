@@ -14,29 +14,29 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn QuantumDynamicsOptions(comptime T: type) type {
     return struct {
         const Grid = struct {
-            limits: []const T, points: u32
+            limits: []const T = &[_]f64{-16, 32}, points: u32 = 512
         };
         const InitialConditions = struct {
-            position: []const T, momentum: []const T, state: u32, mass: T
+            position: []const T = &[_]f64{-10}, momentum: []const T = &[_]f64{15}, state: u32 = 1, mass: T = 2000
         };
         const LogIntervals = struct {
-            iteration: u32
+            iteration: u32 = 0
         };
         const Write = struct {
-            kinetic_energy: ?[]const u8,
-            momentum: ?[]const u8,
-            population: ?[]const u8,
-            position: ?[]const u8,
-            potential_energy: ?[]const u8,
-            total_energy: ?[]const u8
+            kinetic_energy: ?[]const u8 = null,
+            momentum: ?[]const u8 = null,
+            population: ?[]const u8 = null,
+            position: ?[]const u8 = null,
+            potential_energy: ?[]const u8 = null,
+            total_energy: ?[]const u8 = null
         };
 
-        adiabatic: bool,
-        imaginary: bool,
-        iterations: u32,
-        time_step: T,
+        adiabatic: bool = true,
+        imaginary: bool = false,
+        iterations: u32 = 300,
+        time_step: T = 10,
 
-        grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals, write: Write, potential: []const u8
+        grid: Grid = .{}, initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{}, potential: []const u8 = "tully1D_1"
     };
 }
 

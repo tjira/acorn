@@ -11,31 +11,29 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         const InitialConditions = struct {
-            position_mean: []const T, position_std: []const T, momentum_mean: []const T, momentum_std: []const T, state: u32, mass: T
+            position_mean: []const T = &[_]f64{-10}, position_std: []const T = &[_]f64{0.5}, momentum_mean: []const T = &[_]f64{15}, momentum_std: []const T = &[_]f64{1}, state: u32 = 1, mass: T = 2000
         };
         const LogIntervals = struct {
-            trajectory: u32, iteration: u32
+            trajectory: u32 = 0, iteration: u32 = 0
         };
         const Write = struct {
-            fssh_coefficient_mean: ?[]const u8,
-            kinetic_energy_mean: ?[]const u8,
-            momentum_mean: ?[]const u8,
-            population_mean: ?[]const u8,
-            position_mean: ?[]const u8,
-            potential_energy_mean: ?[]const u8,
-            total_energy_mean: ?[]const u8
+            fssh_coefficient_mean: ?[]const u8 = null,
+            kinetic_energy_mean: ?[]const u8 = null,
+            momentum_mean: ?[]const u8 = null,
+            population_mean: ?[]const u8 = null,
+            position_mean: ?[]const u8 = null,
+            potential_energy_mean: ?[]const u8 = null,
+            total_energy_mean: ?[]const u8 = null
         };
 
-        adiabatic: bool,
-        derivative_step: T,
-        iterations: u32,
-        potential: []const u8,
-        seed: u32,
-        time_step: T,
-        trajectories: u32,
-        type: []const u8,
+        adiabatic: bool = true,
+        derivative_step: T = 0.001,
+        iterations: u32 = 3000,
+        seed: u32 = 1,
+        time_step: T = 1,
+        trajectories: u32 = 100,
 
-        initial_conditions: InitialConditions, log_intervals: LogIntervals, write: Write, 
+        initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{}, potential: []const u8 = "tully1D_1", type: []const u8 = "fssh"
     };
 }
 
