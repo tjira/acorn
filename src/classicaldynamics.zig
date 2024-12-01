@@ -160,9 +160,9 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                 if (opt.adiabatic and  (fssh or  mash) and j > 0) derivativeCouplingNumeric(T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                opt.time_step);
                 if (opt.adiabatic and (kfssh or kmash) and j > 1) derivativeCouplingBaeckan(T, &TDC,       &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, opt.time_step);
 
-                if ((lzsh         ) and j > 1) s = try landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
-                if ((fssh or kfssh) and j > 1) s = try fewestSwitches(T, &C, U, TDC, s, opt.time_step, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if ((mash or kmash) and j > 1) s = try mappingApproach(T, &S, U, TDC, s, opt.time_step, &KS1, &KS2, &KS3, &KS4, &LS1, &LS2, &LS3, &LS4, &MS1, &MS2, &MS3, &MS4);
+                if ((lzsh         ) and j > 1) s = landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
+                if ((fssh or kfssh) and j > 1) s = fewestSwitches(T, &C, U, TDC, s, opt.time_step, rand_jump, &KC1, &KC2, &KC3, &KC4);
+                if ((mash or kmash) and j > 1) s = mappingApproach(T, &S, U, TDC, s, opt.time_step, &KS1, &KS2, &KS3, &KS4, &LS1, &LS2, &LS3, &LS4, &MS1, &MS2, &MS3, &MS4);
 
                 if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
 
@@ -226,7 +226,7 @@ fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
     };
 }
 
-fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
+fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) u32 {
     const iters = 10; var ns = s;
 
     const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
@@ -277,7 +277,7 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), U: Matrix(T), TDC: M
     return ns;
 }
 
-fn mappingApproach(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, K1: @TypeOf(S), K2: @TypeOf(S), K3: @TypeOf(S), K4: @TypeOf(S), L1: @TypeOf(S), L2: @TypeOf(S), L3: @TypeOf(S), L4: @TypeOf(S), M1: @TypeOf(S), M2: @TypeOf(S), M3: @TypeOf(S), M4: @TypeOf(S)) !u32 {
+fn mappingApproach(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, K1: @TypeOf(S), K2: @TypeOf(S), K3: @TypeOf(S), K4: @TypeOf(S), L1: @TypeOf(S), L2: @TypeOf(S), L3: @TypeOf(S), L4: @TypeOf(S), M1: @TypeOf(S), M2: @TypeOf(S), M3: @TypeOf(S), M4: @TypeOf(S)) u32 {
     const iters = 10;
 
     _ = K1; _ = K2; _ = K3; _ = K4;
@@ -293,7 +293,7 @@ fn mappingApproach(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
     return if (S.at(2) > 0) 1 else 0;
 }
 
-fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) !u32 {
+fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) u32 {
     var sn = s; var pm: T = 0; var rn: T = undefined; var sampled = false;
 
     if (!adiabatic) for (0..U3[0].rows) |i| if (i != s) {
