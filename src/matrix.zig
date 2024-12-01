@@ -28,10 +28,13 @@ pub fn Matrix(comptime T: type) type {
         pub fn ptr(self: Matrix(T), i: usize, j: usize) *T {
             return &self.data[i * self.cols + j];
         }
-        pub fn rowptr(self: Matrix(T), i: usize) Matrix(T) {
+        pub fn reshaped(self: Matrix(T), rows: usize, cols: usize) Matrix(T) {
+            return Matrix(T){.data = self.data, .rows = rows, .cols = cols, .allocator = self.allocator};
+        }
+        pub fn row(self: Matrix(T), i: usize) Matrix(T) {
             return Matrix(T){.data = self.data[i * self.cols..(i + 1) * self.cols], .rows = 1, .cols = self.cols, .allocator = self.allocator};
         }
-        pub fn vectorptr(self: Matrix(T)) Vector(T) {
+        pub fn vector(self: Matrix(T)) Vector(T) {
             return Vector(T){.data = self.data[0..], .rows = self.rows * self.cols, .allocator = self.allocator};
         }
 

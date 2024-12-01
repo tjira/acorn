@@ -26,9 +26,6 @@ pub fn Vector(comptime T: type) type {
         pub fn ptr(self: Vector(T), i: usize) *T {
             return &self.data[i];
         }
-        pub fn matrixptr(self: Vector(T)) Matrix(T) {
-            return Matrix(T){.data = self.data[0..], .rows = self.rows, .cols = 1, .allocator = self.allocator};
-        }
 
         pub fn fill(self: Vector(T), value: T) void {
             for (0..self.data.len) |i| self.data[i] = value;

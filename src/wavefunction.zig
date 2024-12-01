@@ -25,22 +25,15 @@ pub fn Wavefunction(comptime T: type) type {
 
 pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(Complex(T)))) void {
     for (0..W.data.rows) |i| {
-
-        var drow =  W.data.rowptr(i); std.mem.swap(usize, &drow.rows, &drow.cols);
-        var arow = WA.data.rowptr(i); std.mem.swap(usize, &arow.rows, &arow.cols);
-
-        mat.cmam(T, &arow, VC.items[i], drow);
+        var row = WA.data.row(i).reshaped(WA.nstate, 1); mat.cmam(T, &row, VC.items[i], W.data.row(i).reshaped(W.nstate, 1));
     }
 }
 
 pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void {
-    for (0..W.nstate) |i| for (0..W.nstate) |j| {
+    P.fill(0);
 
-        var pij = Complex(T).init(0, 0);
-
-        for (0..W.data.rows) |k| pij = pij.add(W.data.at(k, i).mul(W.data.at(k, j).conjugate()));
-
-        P.ptr(i, j).* = pij.magnitude() * dr;
+    for (0..W.nstate) |i| for (0..W.nstate) |j| for (0..W.data.rows) |k| {
+        P.ptr(i, j).* += W.data.at(k, i).mul(W.data.at(k, j).conjugate()).re * dr;
     };
 }
 
@@ -55,10 +48,10 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: 
 
         ftr.fft(T, T1.data, T2.data, 1);
 
-        for (0..W.data.rows) |j| Ekin += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re;
+        for (0..W.data.rows) |j| Ekin += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
 
-    return 0.5 * Ekin / mass * dr;
+    return 0.5 * Ekin / mass;
 }
 
 pub fn epot(comptime T: type, W: Wavefunction(T), V: std.ArrayList(Matrix(Complex(T))), dr: T) T {

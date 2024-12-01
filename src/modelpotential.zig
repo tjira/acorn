@@ -163,7 +163,7 @@ pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem
 
     for (0..R.rows) |i| {
 
-        eval(T, &U, opt.potential, R.rowptr(i).vectorptr());
+        eval(T, &U, opt.potential, R.row(i).vector());
 
         if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);}
 
