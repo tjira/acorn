@@ -1,8 +1,4 @@
-# files
-molecule.xyz
-
-# exts
-*.lock
+# extensions
 *.acn
 *.acr
 *.alg
@@ -30,20 +26,9 @@ molecule.xyz
 *.xml
 *.zip
 
-# nested exts
-/research/fssh_vs_lzsh/*.json
-/research/fssh_vs_lzsh/*.mat
-/research/fssh_vs_lzsh/*.png
+# nested extensions
+research/**/*.json
 
 # folders
-.zig-cache/
-.cache/
-_site/
-external/
-build/
-temp/
-bin/
-tex/
-
-# nested folders
-/docs/python/
+*tex*/
+*zig*/
