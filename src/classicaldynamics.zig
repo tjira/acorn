@@ -54,7 +54,7 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
     };
 }
 
-pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
+pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
     var output = try ClassicalDynamicsOutput(T).init(mpt.states(opt.potential), allocator);
 
     var prng_jump = std.Random.DefaultPrng.init(opt.seed); const rand_jump = prng_jump.random();
@@ -112,14 +112,14 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
         var U3  = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer  U3[0].deinit(); defer  U3[1].deinit(); defer U3[2].deinit();
         var UC2 = [2]Matrix(T){try U.clone(), try U.clone()               }; defer UC2[0].deinit(); defer UC2[1].deinit()                      ;
 
-        try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});
+        if (print) {try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});}
 
-        if (r.rows > 1   )  for (0..r.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"  });
-        if (v.rows > 1   )  for (0..v.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"  });
-        if (fssh or kfssh) {for (0..C.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}
-        if (mash or kmash) {for (0..S.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}
+        if (print) {if (r.rows > 1   )  for (0..r.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"  });}
+        if (print) {if (v.rows > 1   )  for (0..v.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"  });}
+        if (print) {if (fssh or kfssh) {for (0..C.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}}
+        if (print) {if (mash or kmash) {for (0..S.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}}
 
-        try std.io.getStdOut().writer().print("\n", .{});
+        if (print) {try std.io.getStdOut().writer().print("\n", .{});}
 
         for (0..opt.trajectories) |i| {
 
@@ -178,7 +178,9 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
                 if (opt.write.momentum_mean         != null) for (0..v.rows) |k| {momentum.ptr(j, k).* += v.at(k) * opt.initial_conditions.mass;} ;
                 if (opt.write.fssh_coefficient_mean != null) for (0..C.rows) |k| {coefs.ptr(j, k).* += C.at(k).magnitude() * C.at(k).magnitude();};
 
-                if ((i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) {
+                if (j == opt.iterations - 1) output.pop.ptr(s).* += 1;
+
+                if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) {
                     try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, C, S, opt.initial_conditions.mass, fssh or kfssh, mash or kmash);
                 }
             }
@@ -193,11 +195,11 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), allocator: std.me
     for (0..opt.iterations) |i| {for (0..momentum.cols) |j| momentum.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations) |i| {for (0..coefs.cols   ) |j|    coefs.ptr(i, j).* /= asfloat(T, opt.trajectories);}
 
-    for (0..mpt.states(opt.potential)) |i| {
-        try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, pop.at(opt.iterations - 1, i)});
-    }
+    for (0..output.pop.rows) |i| output.pop.ptr(i).* /= asfloat(T, opt.trajectories);
 
-    for (0..pop.cols) |i| output.pop.ptr(i).* = pop.at(opt.iterations - 1, i);
+    for (0..mpt.states(opt.potential)) |i| {
+        if (print) {try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.pop.at(i)});}
+    }
 
     try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, coefs, allocator); return output;
 }
