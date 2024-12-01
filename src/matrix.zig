@@ -108,14 +108,6 @@ pub fn cmma(comptime T: type, C: *Matrix(Complex(T)), A: Matrix(Complex(T)), B: 
     C.fill(Complex(T).init(0, 0)); for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k).conjugate()));};
 }
 
-pub fn tmamt(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(0); for (0..C.cols) |i| for (0..C.rows) |j| for (0..A.rows) |k| {C.ptr(j, i).* += A.at(k, i) * B.at(j, k);};
-}
-
-pub fn ctmamt(comptime T: type, C: *Matrix(Complex(T)), A: Matrix(Complex(T)), B: Matrix(Complex(T))) void {
-    C.fill(Complex(T).init(0, 0)); for (0..C.cols) |i| for (0..C.rows) |j| for (0..A.rows) |k| {C.ptr(j, i).* = C.at(j, i).add(A.at(k, i).conjugate().mul(B.at(j, k)));};
-}
-
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     for (0..A.rows) |i| {for (0..A.cols) |j| C.ptr(i, j).* = A.at(i, j); for (0..B.cols) |j| C.ptr(i, A.cols + j).* = B.at(i, j);}
 }

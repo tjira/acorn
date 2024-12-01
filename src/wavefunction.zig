@@ -24,12 +24,23 @@ pub fn Wavefunction(comptime T: type) type {
 }
 
 pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(Complex(T)))) void {
-    for (0..W.data.rows) |i| {var row = WA.data.rowptr(i); mat.ctmamt(T, &row, VC.items[i], W.data.rowptr(i));}
+    for (0..W.data.rows) |i| {
+
+        var drow =  W.data.rowptr(i); std.mem.swap(usize, &drow.rows, &drow.cols);
+        var arow = WA.data.rowptr(i); std.mem.swap(usize, &arow.rows, &arow.cols);
+
+        mat.cmam(T, &arow, VC.items[i], drow);
+    }
 }
 
 pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void {
     for (0..W.nstate) |i| for (0..W.nstate) |j| {
-        var pij = Complex(T).init(0, 0); for (0..W.data.rows) |k| {pij = pij.add(W.data.at(k, i).mul(W.data.at(k, j).conjugate()));} P.ptr(i, j).* = pij.magnitude() * dr;
+
+        var pij = Complex(T).init(0, 0);
+
+        for (0..W.data.rows) |k| pij = pij.add(W.data.at(k, i).mul(W.data.at(k, j).conjugate()));
+
+        P.ptr(i, j).* = pij.magnitude() * dr;
     };
 }
 
@@ -98,7 +109,9 @@ pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T
 }
 
 pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), dr: T) void {
-    r.fill(0); for (0..W.nstate) |i| for (0..W.data.rows) |j| {
+    r.fill(0);
+
+    for (0..W.nstate) |i| for (0..W.data.rows) |j| {
         r.ptr(0).* += W.data.at(j, i).conjugate().mul(Complex(T).init(rvec.at(j, 0), 0)).mul(W.data.at(j, i)).re * dr;
     };
 }
