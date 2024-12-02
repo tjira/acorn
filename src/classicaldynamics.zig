@@ -94,18 +94,6 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         var KC2 = try Vector(Complex(T)).init(C.rows, allocator); defer KC2.deinit();
         var KC3 = try Vector(Complex(T)).init(C.rows, allocator); defer KC3.deinit();
         var KC4 = try Vector(Complex(T)).init(C.rows, allocator); defer KC4.deinit();
-        var KS1 = try Vector(T         ).init(C.rows, allocator); defer KS1.deinit();
-        var KS2 = try Vector(T         ).init(C.rows, allocator); defer KS2.deinit();
-        var KS3 = try Vector(T         ).init(C.rows, allocator); defer KS3.deinit();
-        var KS4 = try Vector(T         ).init(C.rows, allocator); defer KS4.deinit();
-        var LS1 = try Vector(T         ).init(C.rows, allocator); defer LS1.deinit();
-        var LS2 = try Vector(T         ).init(C.rows, allocator); defer LS2.deinit();
-        var LS3 = try Vector(T         ).init(C.rows, allocator); defer LS3.deinit();
-        var LS4 = try Vector(T         ).init(C.rows, allocator); defer LS4.deinit();
-        var MS1 = try Vector(T         ).init(C.rows, allocator); defer MS1.deinit();
-        var MS2 = try Vector(T         ).init(C.rows, allocator); defer MS2.deinit();
-        var MS3 = try Vector(T         ).init(C.rows, allocator); defer MS3.deinit();
-        var MS4 = try Vector(T         ).init(C.rows, allocator); defer MS4.deinit();
 
         var U3  = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer  U3[0].deinit(); defer  U3[1].deinit(); defer U3[2].deinit();
         var UC2 = [2]Matrix(T){try U.clone(), try U.clone()               }; defer UC2[0].deinit(); defer UC2[1].deinit()                      ;
@@ -162,7 +150,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if ((lzsh         ) and j > 1) s = landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if ((fssh or kfssh) and j > 1) s = fewestSwitches(T, &C, U, TDC, s, opt.time_step, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if ((mash or kmash) and j > 1) s = mappingApproach(T, &S, U, TDC, s, opt.time_step, &KS1, &KS2, &KS3, &KS4, &LS1, &LS2, &LS3, &LS4, &MS1, &MS2, &MS3, &MS4);
+                if ((mash or kmash) and j > 1) s = mappingApproach(T, &S, U, TDC, s, opt.time_step);
 
                 if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
 
@@ -277,17 +265,58 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), U: Matrix(T), TDC: M
     return ns;
 }
 
-fn mappingApproach(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, K1: @TypeOf(S), K2: @TypeOf(S), K3: @TypeOf(S), K4: @TypeOf(S), L1: @TypeOf(S), L2: @TypeOf(S), L3: @TypeOf(S), L4: @TypeOf(S), M1: @TypeOf(S), M2: @TypeOf(S), M3: @TypeOf(S), M4: @TypeOf(S)) u32 {
-    const iters = 10;
+fn mappingApproach(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T) u32 {
+    const iters = 10; _ = s;
 
-    _ = K1; _ = K2; _ = K3; _ = K4;
-    _ = L1; _ = L2; _ = L3; _ = L4;
-    _ = M1; _ = M2; _ = M3; _ = M4;
-    _ = U; _ = TDC; _ = time_step;
-    _ = s;
+    const FunctionX = struct { fn get (FS: Vector(T), FU: Matrix(T), FTDC: Matrix(T)) T {
+        return (FU.at(1, 1) - FU.at(0, 0)) * FS.at(1) - 2 * FTDC.at(0, 1) * FS.at(2);
+    }};
+
+    const FunctionY = struct { fn get (FS: Vector(T), FU: Matrix(T)                 ) T {
+        return -(FU.at(1, 1) - FU.at(0, 0)) * FS.at(0);
+    }};
+
+    const FunctionZ = struct { fn get (FS: Vector(T),                FTDC: Matrix(T)) T {
+        return 2 * FTDC.at(0, 1) * FS.at(0);
+    }};
 
     for (0..iters) |_| {
 
+        const kx1 = FunctionX.get(S.*, U, TDC);
+        const ky1 = FunctionY.get(S.*, U,    );
+        const kz1 = FunctionZ.get(S.*,    TDC);
+
+        S.ptr(0).* += 0.5 * kx1 * time_step / iters;
+        S.ptr(1).* += 0.5 * ky1 * time_step / iters;
+        S.ptr(2).* += 0.5 * kz1 * time_step / iters;
+
+        const kx2 = FunctionX.get(S.*, U, TDC);
+        const ky2 = FunctionY.get(S.*, U     );
+        const kz2 = FunctionZ.get(S.*,    TDC);
+
+        S.ptr(0).* += 0.5 * (kx2 - kx1) * time_step / iters;
+        S.ptr(1).* += 0.5 * (ky2 - ky1) * time_step / iters;
+        S.ptr(2).* += 0.5 * (kz2 - kz1) * time_step / iters;
+
+        const kx3 = FunctionX.get(S.*, U, TDC);
+        const ky3 = FunctionY.get(S.*, U     );
+        const kz3 = FunctionZ.get(S.*,    TDC);
+
+        S.ptr(0).* += 0.5 * (2 * kx3 - kx2) * time_step / iters;
+        S.ptr(1).* += 0.5 * (2 * ky3 - ky2) * time_step / iters;
+        S.ptr(2).* += 0.5 * (2 * kz3 - kz2) * time_step / iters;
+
+        const kx4 = FunctionX.get(S.*, U, TDC);
+        const ky4 = FunctionY.get(S.*, U     );
+        const kz4 = FunctionZ.get(S.*,    TDC);
+
+        S.ptr(0).* -= kx3 * time_step / iters;
+        S.ptr(1).* -= ky3 * time_step / iters;
+        S.ptr(2).* -= kz3 * time_step / iters;
+
+        S.ptr(0).* += time_step / iters / 6 * (kx1 + 2 * kx2 + 2 * kx3 + kx4);
+        S.ptr(1).* += time_step / iters / 6 * (ky1 + 2 * ky2 + 2 * ky3 + ky4);
+        S.ptr(2).* += time_step / iters / 6 * (kz1 + 2 * kz2 + 2 * kz3 + kz4);
     }
 
     return if (S.at(2) > 0) 1 else 0;
