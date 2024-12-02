@@ -219,6 +219,12 @@ for MODEL in ${MODELS[@]}; do
         [[ -f  "lzsh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "MOMENTUM_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.momentum_mean |= $path'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
         [[ -f  "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "MOMENTUM_MEAN_${MODEL}_P=${MOMENTUM}_MASH.mat"  '.classical_dynamics.write.momentum_mean |= $path'  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "mash_${MODEL}_P=${MOMENTUM}.json"
 
+        # fill the json with the time derivative coupling output
+        [[ -f  "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "TDC_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.time_derivative_coupling_mean |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "fssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f "kfssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "TDC_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.time_derivative_coupling_mean |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f  "lzsh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "TDC_MEAN_${MODEL}_P=${MOMENTUM}_LZSH.mat"  '.classical_dynamics.write.time_derivative_coupling_mean |= null '  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "lzsh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f  "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "TDC_MEAN_${MODEL}_P=${MOMENTUM}_MASH.mat"  '.classical_dynamics.write.time_derivative_coupling_mean |= null '  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "mash_${MODEL}_P=${MOMENTUM}.json"
+
         # fill the json files with the FSSH coefficient output
         [[ -f  "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  '.classical_dynamics.write.fssh_coefficient_mean |= $path'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
         [[ -f "kfssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" '.classical_dynamics.write.fssh_coefficient_mean |= $path' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"

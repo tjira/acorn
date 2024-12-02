@@ -23,6 +23,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             population_mean: ?[]const u8 = null,
             position_mean: ?[]const u8 = null,
             potential_energy_mean: ?[]const u8 = null,
+            time_derivative_coupling_mean: ?[]const u8 = null,
             total_energy_mean: ?[]const u8 = null
         };
 
@@ -69,7 +70,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     var etot     = try Matrix(T).init(opt.iterations, 1                        , allocator); defer     etot.deinit();     etot.fill(0);
     var position = try Matrix(T).init(opt.iterations, mpt.dims(opt.potential)  , allocator); defer position.deinit(); position.fill(0);
     var momentum = try Matrix(T).init(opt.iterations, mpt.dims(opt.potential)  , allocator); defer momentum.deinit(); momentum.fill(0);
-    var coefs    = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator); defer    coefs.deinit();    coefs.fill(0);
+    var coef     = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator); defer     coef.deinit();     coef.fill(0);
+    var tdc      = try Matrix(T).init(opt.iterations, pop.cols * pop.cols      , allocator); defer     coef.deinit();     coef.fill(0);
 
     {
         var T1   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T1.deinit();
@@ -156,13 +158,14 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if (sp != s) {for (0..v.rows) |k| v.ptr(k).* *= std.math.sqrt((Ekin - U.at(s, s) + U.at(sp, sp)) / Ekin);}
 
-                if (opt.write.population_mean       != null) pop.ptr(j, s).* += 1;
-                if (opt.write.kinetic_energy_mean   != null) ekin.ptr(j, 0).* += Ekin                                                             ;
-                if (opt.write.potential_energy_mean != null) epot.ptr(j, 0).* += Epot                                                             ;
-                if (opt.write.total_energy_mean     != null) etot.ptr(j, 0).* += Ekin + Epot                                                      ;
-                if (opt.write.position_mean         != null) for (0..r.rows) |k| {position.ptr(j, k).* += r.at(k);}                               ;
-                if (opt.write.momentum_mean         != null) for (0..v.rows) |k| {momentum.ptr(j, k).* += v.at(k) * opt.initial_conditions.mass;} ;
-                if (opt.write.fssh_coefficient_mean != null) for (0..C.rows) |k| {coefs.ptr(j, k).* += C.at(k).magnitude() * C.at(k).magnitude();};
+                if (opt.write.population_mean               != null) pop.ptr(j, s).* += 1;
+                if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 0).* += Ekin                                                            ;
+                if (opt.write.potential_energy_mean         != null) epot.ptr(j, 0).* += Epot                                                            ;
+                if (opt.write.total_energy_mean             != null) etot.ptr(j, 0).* += Ekin + Epot                                                     ;
+                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position.ptr(j, k).* += r.at(k);}                              ;
+                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum.ptr(j, k).* += v.at(k) * opt.initial_conditions.mass;};
+                if (opt.write.time_derivative_coupling_mean != null) for (0..tdc.cols) |k| {tdc.ptr(j, k).* += TDC.data[k];}                             ;
+                if (opt.write.fssh_coefficient_mean         != null) for (0..C.rows) |k| {coef.ptr(j, k).* += C.at(k).magnitude() * C.at(k).magnitude();};
 
                 if (j == opt.iterations - 1) output.pop.ptr(s).* += 1;
 
@@ -179,7 +182,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     for (0..opt.iterations) |i| {for (0..etot.cols    ) |j|     etot.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations) |i| {for (0..position.cols) |j| position.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations) |i| {for (0..momentum.cols) |j| momentum.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations) |i| {for (0..coefs.cols   ) |j|    coefs.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations) |i| {for (0..tdc.cols     ) |j|      tdc.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations) |i| {for (0..coef.cols    ) |j|     coef.ptr(i, j).* /= asfloat(T, opt.trajectories);}
 
     for (0..output.pop.rows) |i| output.pop.ptr(i).* /= asfloat(T, opt.trajectories);
 
@@ -187,10 +191,12 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         if (print) {try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.pop.at(i)});}
     }
 
-    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, coefs, allocator); return output;
+    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, tdc, coef, allocator); return output;
 }
 
 fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), time_step: T) void {
+    TDC.fill(0);
+
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
 
         const di0 = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const dj0 = (U3[0].at(j, j) - U3[1].at(j, j)) / time_step;
@@ -379,7 +385,7 @@ fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s
     try std.io.getStdOut().writer().print("]\n", .{});
 }
 
-fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), coefs: Matrix(T), allocator: std.mem.Allocator) !void {
+fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), tdc: Matrix(T), coef: Matrix(T), allocator: std.mem.Allocator) !void {
     const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * asfloat(T, opt.iterations));
 
     if (opt.write.kinetic_energy_mean) |path| {
@@ -406,7 +412,11 @@ fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(
         var momentum_t = try Matrix(T).init(opt.iterations, momentum.cols + 1, allocator); mat.hjoin(T, &momentum_t, time, momentum); try momentum_t.write(path); momentum_t.deinit();
     }
 
+    if (opt.write.time_derivative_coupling_mean) |path| {
+        var tdc_t = try Matrix(T).init(opt.iterations, tdc.cols + 1, allocator); mat.hjoin(T, &tdc_t, time, tdc); try tdc_t.write(path); tdc_t.deinit();
+    }
+
     if (opt.write.fssh_coefficient_mean) |path| {
-        var coefs_t = try Matrix(T).init(opt.iterations, coefs.cols + 1, allocator); mat.hjoin(T, &coefs_t, time, coefs); try coefs_t.write(path); coefs_t.deinit();
+        var coef_t = try Matrix(T).init(opt.iterations, coef.cols + 1, allocator); mat.hjoin(T, &coef_t, time, coef); try coef_t.write(path); coef_t.deinit();
     }
 }

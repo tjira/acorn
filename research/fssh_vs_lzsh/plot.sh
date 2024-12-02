@@ -6,7 +6,7 @@ for MODEL in ${MODELS[@]}; do
 
     NSTATE=$(tail -n 1 POPULATION_${MODEL}_* | tail -n 1 | awk '{print NF - 1}');
 
-    LEGEND_POP=(); LEGEND_FSSH=(); LEGEND_FSSH_COEF=(); LEGEND_KFSSH_COEF=(); LEGEND_POT=(); INDICES_POT="";
+    LEGEND_POP=(); LEGEND_FSSH=(); LEGEND_FSSH_COEF=(); LEGEND_KFSSH_COEF=(); LEGEND_POT=(); LEGEND_TDC=(); INDICES_POT=""; INDICES_TDC="";
 
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} EXACT"); done
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_POP+=("S${i} FSSH" ); done
@@ -22,7 +22,14 @@ for MODEL in ${MODELS[@]}; do
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_KFSSH_COEF+=("S${i} KFSSH"        ); done
     for (( i=0; i<$NSTATE; i++ )); do LEGEND_KFSSH_COEF+=("S${i} KFSSH (COEF)" ); done
 
-    for (( i=0; i<$NSTATE; i++ )); do LEGEND_POT+=("S${i}"); done; for (( i=0; i<$NSTATE; i++ )); do INDICES_POT+=$(echo "$i*$NSTATE+$i" | bc -l)","; done
+    for (( i=0; i<$NSTATE; i++ )); do LEGEND_POT+=("S${i}"); done;
+
+    for (( i=0; i<$NSTATE; i++ )); do for (( j=((i+1)); j<$NSTATE; j++ )); do LEGEND_TDC+=("T\$_{$i,$j}\$ (NUMERIC)"); done; done;
+    for (( i=0; i<$NSTATE; i++ )); do for (( j=((i+1)); j<$NSTATE; j++ )); do LEGEND_TDC+=("T\$_{$i,$j}\$ (BAECKAN)"); done; done;
+
+    for (( i=0; i<$NSTATE; i++ )); do INDICES_POT+=$(echo "$i*$NSTATE+$i" | bc -l)","; done
+
+    for (( i=0; i<$NSTATE; i++ )); do for (( j=((i+1)); j<$NSTATE; j++ )); do INDICES_TDC+=$(echo "$i*$NSTATE+$j" | bc -l)","; done; done;
 
     $PLOT_1D  "POTENTIAL_DIABATIC_${MODEL}.mat:${INDICES_POT::-1}" --title  "DIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --legend "${LEGEND_POT[@]}" --output  "POTENTIAL_DIABATIC_${MODEL}" --png
     $PLOT_1D "POTENTIAL_ADIABATIC_${MODEL}.mat:${INDICES_POT::-1}" --title "ADIABATIC POTENTIAL: ${MODEL}" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --legend "${LEGEND_POT[@]}" --output "POTENTIAL_ADIABATIC_${MODEL}" --png
@@ -63,13 +70,14 @@ for MODEL in ${MODELS[@]}; do
             echo "${MOMENTUM} ${POP_EXACT} ${POP_FSSH} ${POP_KFSSH} ${POP_LZSH}" >> "FINAL_POPULATION_P_${MODEL}.mat"
         fi
 
-        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat"       --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_FSSH[@]}"       --output "POPULATION_FSSH_BAECKAN_${MODEL}_P=${MOMENTUM}" --png
-        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"  --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_FSSH_COEF[@]}"  --output "COEFFICIENT_FSSH_${MODEL}_P=${MOMENTUM}"        --png
-        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat" --title "ADIABATIC POPULATION: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_KFSSH_COEF[@]}" --output "COEFFICIENT_KFSSH_${MODEL}_P=${MOMENTUM}"       --png
+        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"             "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat"             --title "ADIABATIC POPULATION: ${MODEL}"     --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_FSSH[@]}"       --output "POPULATION_FSSH_BAECKAN_${MODEL}_P=${MOMENTUM}" --png
+        $PLOT_1D "TDC_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat:${INDICES_TDC::-1}" "TDC_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat:${INDICES_TDC::-1}" --title "TIME DERIVATIVE COUPLING: ${MODEL}" --xlabel "Time (a.u.)" --ylabel "TDC (??)"         --legend "${LEGEND_TDC[@]}"        --output "TDC_FSSH_BAECKAN_${MODEL}_P=${MOMENTUM}"        --png
+        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"             "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_FSSH.mat"        --title "ADIABATIC POPULATION: ${MODEL}"     --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_FSSH_COEF[@]}"  --output "COEFFICIENT_FSSH_${MODEL}_P=${MOMENTUM}"        --png
+        $PLOT_1D "POPULATION_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat"            "FSSH_COEFFICIENT_MEAN_${MODEL}_P=${MOMENTUM}_KFSSH.mat"       --title "ADIABATIC POPULATION: ${MODEL}"     --xlabel "Time (a.u.)" --ylabel "State Population" --legend "${LEGEND_KFSSH_COEF[@]}" --output "COEFFICIENT_KFSSH_${MODEL}_P=${MOMENTUM}"       --png
 
-        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "POPULATION_${MODEL}_P=${MOMENTUM}.png"              "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"          -mode concatenate -tile x1 "TRAJECTORY_GENERAL_${MODEL}_P=${MOMENTUM}.png"
-        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "KINETIC_ENERGY_${MODEL}_P=${MOMENTUM}.png"          "POTENTIAL_ENERGY_${MODEL}_P=${MOMENTUM}.png" "TOTAL_ENERGY_${MODEL}_P=${MOMENTUM}.png"      -mode concatenate -tile x1 "TRAJECTORY_ENERGY_${MODEL}_P=${MOMENTUM}.png"
-        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "POPULATION_FSSH_BAECKAN_${MODEL}_P=${MOMENTUM}.png" "COEFFICIENT_FSSH_${MODEL}_P=${MOMENTUM}.png" "COEFFICIENT_KFSSH_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORY_COEFFICIENT_${MODEL}_P=${MOMENTUM}.png"
+        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "POPULATION_${MODEL}_P=${MOMENTUM}.png"              "POSITION_${MODEL}_P=${MOMENTUM}.png"         "MOMENTUM_${MODEL}_P=${MOMENTUM}.png"                                                        -mode concatenate -tile x1 "TRAJECTORY_GENERAL_${MODEL}_P=${MOMENTUM}.png"
+        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "KINETIC_ENERGY_${MODEL}_P=${MOMENTUM}.png"          "POTENTIAL_ENERGY_${MODEL}_P=${MOMENTUM}.png" "TOTAL_ENERGY_${MODEL}_P=${MOMENTUM}.png"                                                    -mode concatenate -tile x1 "TRAJECTORY_ENERGY_${MODEL}_P=${MOMENTUM}.png"
+        montage "POTENTIAL_ADIABATIC_${MODEL}.png" "POPULATION_FSSH_BAECKAN_${MODEL}_P=${MOMENTUM}.png" "TDC_FSSH_BAECKAN_${MODEL}_P=${MOMENTUM}.png" "COEFFICIENT_FSSH_${MODEL}_P=${MOMENTUM}.png" "COEFFICIENT_KFSSH_${MODEL}_P=${MOMENTUM}.png" -mode concatenate -tile x1 "TRAJECTORY_COEFFICIENT_${MODEL}_P=${MOMENTUM}.png"
     done
 
     $PLOT_1D "FINAL_POPULATION_P_${MODEL}.mat" --title "MOMENTUM DEPENDENT IS POPULATION: ${MODEL}" --xlabel "Momentum (a.u.)" --ylabel "Initial State Population" --legend "EXACT" "FSSH" "KFSSH" "LZSH" "MASH" --output "FINAL_POPULATION_P_${MODEL}" --png
