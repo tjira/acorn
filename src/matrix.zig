@@ -80,37 +80,72 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *M
 }
 
 pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), epsilon: T) bool {
-    if (A.rows != B.rows or A.cols != B.cols) return false; for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > epsilon) return false; return true;
+    if (A.rows != B.rows or A.cols != B.cols) return false;
+
+    for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > epsilon) return false;
+
+    return true;
 }
 
 pub fn ceq(comptime T: type, A: Matrix(Complex(T)), B: Matrix(Complex(T)), epsilon: T) bool {
-    if (A.rows != B.rows or A.cols != B.cols) return false; for (0..A.data.len) |i| if (@abs(A.data[i].re - B.data[i].re) > epsilon or @abs(A.data[i].im - B.data[i].im) > epsilon) return false; return true;
+    if (A.rows != B.rows or A.cols != B.cols) return false;
+
+    for (0..A.data.len) |i| if (@abs(A.data[i].re - B.data[i].re) > epsilon or @abs(A.data[i].im - B.data[i].im) > epsilon) return false;
+
+    return true;
 }
 
 pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(0); for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(k, j);};
+    C.fill(0);
+
+    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+        C.ptr(i, j).* += A.at(i, k) * B.at(k, j);
+    };
 }
 
 pub fn cmm(comptime T: type, C: *Matrix(Complex(T)), A: Matrix(Complex(T)), B: Matrix(Complex(T))) void {
-    C.fill(Complex(T).init(0, 0)); for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));};
+    C.fill(Complex(T).init(0, 0));
+
+    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+        C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));
+    };
 }
 
 pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(0); for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {C.ptr(i, j).* += A.at(k, i) * B.at(k, j);};
+    C.fill(0);
+
+    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
+        C.ptr(i, j).* += A.at(k, i) * B.at(k, j);
+    };
 }
 
 pub fn cmam(comptime T: type, C: *Matrix(Complex(T)), A: Matrix(Complex(T)), B: Matrix(Complex(T))) void {
-    C.fill(Complex(T).init(0, 0)); for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(k, i).conjugate().mul(B.at(k, j)));};
+    C.fill(Complex(T).init(0, 0));
+
+    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
+        C.ptr(i, j).* = C.at(i, j).add(A.at(k, i).conjugate().mul(B.at(k, j)));
+    };
 }
 
 pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(0); for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* += A.at(i, k) * B.at(j, k);};
+    C.fill(0);
+
+    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+        C.ptr(i, j).* += A.at(i, k) * B.at(j, k);
+    };
 }
 
 pub fn cmma(comptime T: type, C: *Matrix(Complex(T)), A: Matrix(Complex(T)), B: Matrix(Complex(T))) void {
-    C.fill(Complex(T).init(0, 0)); for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k).conjugate()));};
+    C.fill(Complex(T).init(0, 0));
+
+    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+        C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k).conjugate()));
+    };
 }
 
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    for (0..A.rows) |i| {for (0..A.cols) |j| C.ptr(i, j).* = A.at(i, j); for (0..B.cols) |j| C.ptr(i, A.cols + j).* = B.at(i, j);}
+    for (0..A.rows) |i| {
+        for (0..A.cols) |j| C.ptr(i, j).*          = A.at(i, j);
+        for (0..B.cols) |j| C.ptr(i, A.cols + j).* = B.at(i, j);
+    }
 }

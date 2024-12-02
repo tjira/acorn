@@ -16,10 +16,6 @@ pub fn Wavefunction(comptime T: type) type {
         pub fn deinit(self: Wavefunction(T)) void {
             self.data.deinit();
         }
-
-        pub fn normalize(self: Wavefunction(T), dr: T) void {
-            const norm = std.math.sqrt(overlap(T, self, self, dr).magnitude()); for (self.data.data) |*e| e.* = e.*.div(Complex(T).init(norm, 0));
-        }
     };
 }
 
@@ -42,7 +38,9 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: 
 
     for (0..W.nstate) |i| {
 
-        for (0..W.data.rows) |j| {T1.ptr(j, 0).* = W.data.at(j, i);} ftr.fft(T, T2.data, T1.data, -1);
+        for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
+
+        ftr.fft(T, T2.data, T1.data, -1);
 
         for (0..W.data.rows) |j| T2.ptr(j, 0).* = T2.at(j, 0).mul(Complex(T).init(kvec.at(j, 0) * kvec.at(j, 0), 0));
 
@@ -81,7 +79,9 @@ pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matri
 
     for (0..W.nstate) |i| {
 
-        for (0..W.data.rows) |j| {T1.ptr(j, 0).* = W.data.at(j, i);} ftr.fft(T, T2.data, T1.data, -1);
+        for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
+
+        ftr.fft(T, T2.data, T1.data, -1);
 
         for (0..W.data.rows) |j| T2.ptr(j, 0).* = T2.at(j, 0).mul(Complex(T).init(kvec.at(j, 0), 0));
 
@@ -89,6 +89,12 @@ pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matri
 
         for (0..W.data.rows) |j| p.ptr(0).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
+}
+
+pub fn normalize(comptime T: type, W: *Wavefunction(T), dr: T) void {
+    const norm = std.math.sqrt(overlap(T, W.*, W.*, dr).magnitude());
+
+    for (W.data.data) |*e| e.* = e.*.div(Complex(T).init(norm, 0));
 }
 
 pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T) Complex(T) {
@@ -112,27 +118,37 @@ pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matri
 pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), T2: *Matrix(Complex(T))) void {
     for (0..W.data.rows) |i| {
         for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
-        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {T1.data[j] = T1.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));};
+        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {
+            T1.data[j] = T1.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));
+        };
         for (0..W.data.cols) |j| W.data.ptr(i, j).* = T1.data[j];
     }
 
     for (0..W.data.cols) |j| {
-        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T2.data, T1.data, -1); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T2.at(i, 0);}
+        for (0..W.data.rows) |i| T1.data[i] = W.data.at(i, j);
+        ftr.fft(T, T2.data, T1.data, -1);
+        for (0..W.data.rows) |i| W.data.ptr(i, j).* = T2.at(i, 0);
     }
 
     for (0..W.data.rows) |i| {
         for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
-        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {T1.data[j] = T1.data[j].add(K.items[i].at(j, k).mul(W.data.at(i, k)));};
+        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {
+            T1.data[j] = T1.data[j].add(K.items[i].at(j, k).mul(W.data.at(i, k)));
+        };
         for (0..W.data.cols) |j| W.data.ptr(i, j).* = T1.data[j];
     }
 
     for (0..W.data.cols) |j| {
-        for (0..W.data.rows) |i| {T1.data[i] = W.data.at(i, j);} ftr.fft(T, T2.data, T1.data, 1); for (0..W.data.rows) |i| {W.data.ptr(i, j).* = T2.at(i, 0);}
+        for (0..W.data.rows) |i| T1.data[i] = W.data.at(i, j);
+        ftr.fft(T, T2.data, T1.data, 1);
+        for (0..W.data.rows) |i| W.data.ptr(i, j).* = T2.at(i, 0);
     }
 
     for (0..W.data.rows) |i| {
         for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
-        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {T1.data[j] = T1.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));};
+        for (0..W.data.cols) |j| for (0..W.data.cols) |k| {
+            T1.data[j] = T1.data[j].add(R.items[i].at(j, k).mul(W.data.at(i, k)));
+        };
         for (0..W.data.cols) |j| W.data.ptr(i, j).* = T1.data[j];
     }
 }

@@ -30,5 +30,7 @@ pub fn fft(comptime T: type, out: []Complex(T), in: []Complex(T), factor: i32) v
         }
     }
 
-    if (factor > 0) for (0..out.len) |i| {out[i] = out[i].div(Complex(T).init(asfloat(T, out.len), 0));};
+    if (factor > 0) for (0..out.len) |i| {
+        out[i] = out[i].div(Complex(T).init(asfloat(T, out.len), 0));
+    };
 }

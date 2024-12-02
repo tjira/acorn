@@ -156,7 +156,9 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
 
-                if (sp != s) {for (0..v.rows) |k| v.ptr(k).* *= std.math.sqrt((Ekin - U.at(s, s) + U.at(sp, sp)) / Ekin);}
+                if (sp != s) for (0..v.rows) |k| {
+                    v.ptr(k).* *= std.math.sqrt((Ekin - U.at(s, s) + U.at(sp, sp)) / Ekin);
+                };
 
                 if (opt.write.population_mean               != null) pop.ptr(j, s).* += 1;
                 if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 0).* += Ekin                                                            ;
