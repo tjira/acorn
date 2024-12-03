@@ -20,7 +20,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             position: []const T = &[_]f64{-10}, momentum: []const T = &[_]f64{15}, state: u32 = 1, mass: T = 2000
         };
         const LogIntervals = struct {
-            iteration: u32 = 0
+            iteration: u32 = 1
         };
         const Write = struct {
             kinetic_energy: ?[]const u8 = null,

@@ -14,7 +14,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             position_mean: []const T = &[_]f64{-10}, position_std: []const T = &[_]f64{0.5}, momentum_mean: []const T = &[_]f64{15}, momentum_std: []const T = &[_]f64{1}, state: u32 = 1, mass: T = 2000
         };
         const LogIntervals = struct {
-            trajectory: u32 = 0, iteration: u32 = 0
+            trajectory: u32 = 1, iteration: u32 = 1
         };
         const Write = struct {
             fssh_coefficient_mean: ?[]const u8 = null,
@@ -71,7 +71,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     var position = try Matrix(T).init(opt.iterations, mpt.dims(opt.potential)  , allocator); defer position.deinit(); position.fill(0);
     var momentum = try Matrix(T).init(opt.iterations, mpt.dims(opt.potential)  , allocator); defer momentum.deinit(); momentum.fill(0);
     var coef     = try Matrix(T).init(opt.iterations, mpt.states(opt.potential), allocator); defer     coef.deinit();     coef.fill(0);
-    var tdc      = try Matrix(T).init(opt.iterations, pop.cols * pop.cols      , allocator); defer     coef.deinit();     coef.fill(0);
+    var tdc      = try Matrix(T).init(opt.iterations, pop.cols * pop.cols      , allocator); defer     tdc.deinit();       tdc.fill(0);
 
     {
         var T1   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T1.deinit();
@@ -223,7 +223,7 @@ fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 }
 
 fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) u32 {
-    const iters = 10; var ns = s;
+    const iters = 10; const alpha = 0.1; var ns = s;
 
     const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
         for (0..FC.rows) |i| {K.ptr(i).* = FC.at(i).mul(Complex(T).init(FU.at(i, i), 0)).mulbyi().neg();} for (0..FC.rows) |i| for (0..FC.rows) |j| {
@@ -264,6 +264,8 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), U: Matrix(T), TDC: M
         for (0..C.rows) |j| {
             C.ptr(j).* = C.at(j).add(K1.at(j).add(K2.at(j).mul(Complex(T).init(2, 0))).add(K3.at(j).mul(Complex(T).init(2, 0))).add(K4.at(j)).mul(Complex(T).init(time_step / 6 / iters, 0)));
         }
+
+        _ = alpha;
 
         const rn = rand.float(T); var pm: T = 0; for (0..C.rows) |j| if (j != ns) {
             const p = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / std.math.pow(T, C.at(ns).magnitude(), 2) * time_step / iters; if (rn < p and p > pm) {ns = @intCast(j); pm = p;}
