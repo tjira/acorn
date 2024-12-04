@@ -13,6 +13,15 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         const InitialConditions = struct {
             position_mean: []const T = &[_]f64{-10}, position_std: []const T = &[_]f64{0.5}, momentum_mean: []const T = &[_]f64{15}, momentum_std: []const T = &[_]f64{1}, state: u32 = 1, mass: T = 2000
         };
+        const FewestSwitches = struct {
+
+        };
+        const LandauZener = struct {
+
+        };
+        const MappingApproach = struct {
+
+        };
         const LogIntervals = struct {
             trajectory: u32 = 1, iteration: u32 = 1
         };
@@ -33,8 +42,13 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         seed: u32 = 1,
         time_step: T = 1,
         trajectories: u32 = 100,
+        type: []const u8 = "fssh",
 
-        initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{}, potential: []const u8 = "tully1D_1", type: []const u8 = "fssh"
+        fewest_switches: FewestSwitches = .{},
+        landau_zener: LandauZener = .{},
+        mapping_approach: MappingApproach = .{},
+
+        initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{}, potential: []const u8 = "tully1D_1",
     };
 }
 
