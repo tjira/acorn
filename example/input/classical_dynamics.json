@@ -29,6 +29,10 @@
             "total_energy_mean" : "TOTAL_ENERGY_MEAN_FSSH.mat"
         },
         "potential" : "tully1D_1",
-        "type" : "fssh"
+        "fewest_switches" : {
+            "quantum_substep" : 10,
+            "decoherence_alpha" : null
+        },
+        "time_derivative_coupling" : "numeric"
     }
 }
