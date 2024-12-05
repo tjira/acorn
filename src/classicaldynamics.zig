@@ -24,7 +24,8 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         const LandauZener = struct {
         };
         const MappingApproach = struct {
-            quantum_substep: u32 = 10
+            quantum_substep: u32 = 10,
+            map: bool = true
         };
         const LogIntervals = struct {
             trajectory: u32 = 1, iteration: u32 = 1
@@ -138,6 +139,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
             if (mash) {S.ptr(0).* = std.math.cos(theta) * std.math.sin(phi); S.ptr(1).* = std.math.sin(theta) * std.math.sin(phi); S.ptr(2).* = std.math.cos(phi);}
 
+            if (mash and !opt.mapping_approach.?.map) {S.ptr(0).* = 0; S.ptr(1).* = 0; S.ptr(2).* = 1;}
+
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);}
 
             @memcpy(v.data, p.data); v.ptr(0).* /= opt.initial_conditions.mass; a.fill(0); var s = opt.initial_conditions.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
@@ -172,7 +175,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if (lzsh and j > 1) s = landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) s = fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if (mash and j > 1) s = mappingApproach(T, &S, opt.mapping_approach.?, U, TDC, s, opt.time_step);
+                if (mash and j > 1) s = mappingApproach(T, &S, opt.mapping_approach.?, U, TDC, s, opt.time_step, rand_jump);
 
                 if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
 
@@ -303,8 +306,8 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDynami
     return ns;
 }
 
-fn mappingApproach(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).MappingApproach, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T) u32 {
-    const iters = asfloat(T, opt.quantum_substep); _ = s;
+fn mappingApproach(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).MappingApproach, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random) u32 {
+    const iters = asfloat(T, opt.quantum_substep); var sn = s;
 
     const FunctionX = struct { fn get (FS: Vector(T), FU: Matrix(T), FTDC: Matrix(T)) T {
         return (FU.at(1, 1) - FU.at(0, 0)) * FS.at(1) - 2 * FTDC.at(0, 1) * FS.at(2);
@@ -355,9 +358,14 @@ fn mappingApproach(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOption
         S.ptr(0).* += time_step / iters / 6 * (kx1 + 2 * kx2 + 2 * kx3 + kx4);
         S.ptr(1).* += time_step / iters / 6 * (ky1 + 2 * ky2 + 2 * ky3 + ky4);
         S.ptr(2).* += time_step / iters / 6 * (kz1 + 2 * kz2 + 2 * kz3 + kz4);
+
+        const rn = rand.float(T); if (!opt.map) {
+            if (s == sn and s == 0 and rn <  FunctionZ.get(S.*, TDC) / (1 - S.at(2)) * time_step / iters) sn = 1;
+            if (s == sn and s == 1 and rn < -FunctionZ.get(S.*, TDC) / (1 + S.at(2)) * time_step / iters) sn = 0;
+        }
     }
 
-    return if (S.at(2) > 0) 1 else 0;
+    if (opt.map) {return if (S.at(2) > 0) 1 else 0;} else return sn;
 }
 
 fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) u32 {

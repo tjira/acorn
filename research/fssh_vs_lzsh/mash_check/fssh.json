@@ -23,15 +23,14 @@
             "time_derivative_coupling_mean" : null,
             "kinetic_energy_mean" : null,
             "momentum_mean" : null,
-            "population_mean" : "POPULATION_MEAN_MASH.mat",
+            "population_mean" : "POPULATION_MEAN_FSSH.mat",
             "position_mean" : null,
             "potential_energy_mean" : null,
             "total_energy_mean" : null
         },
         "potential" : "tully1D_3",
-        "mapping_approach" : {
-            "quantum_substep" : 10,
-            "map" : false
+        "fewest_switches" : {
+            "quantum_substep" : 10
         },
         "time_derivative_coupling" : "numeric"
     }
