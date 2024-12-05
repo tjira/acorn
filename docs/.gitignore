@@ -1,0 +1,6 @@
+*.loc*
+*.pdf*
+
+*pyt*/
+*sit*/
+*tex*/

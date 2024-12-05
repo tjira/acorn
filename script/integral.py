@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import pyscf
 
 molecule = pyscf.M(atom="".join(open("example/molecule/water.xyz").readlines()[2:]), basis="sto-3g")

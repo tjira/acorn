@@ -62,11 +62,11 @@ pub fn epot(comptime T: type, W: Wavefunction(T), V: std.ArrayList(Matrix(Comple
     return Epot * dr;
 }
 
-pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const T, p: []const T, state: u32) void {
+pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const T, p: []const T, gamma: T, state: u32) void {
     W.data.fill(Complex(T).init(0, 0));
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| if (j == state) {
-        W.data.ptr(i, j).* = Complex(T).init(std.math.exp(-(rvec.at(i, 0) - r[0]) * (rvec.at(i, 0) - r[0])), 0);
+        W.data.ptr(i, j).* = Complex(T).init(std.math.exp(-0.5 * gamma * (rvec.at(i, 0) - r[0]) * (rvec.at(i, 0) - r[0])), 0);
     };
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| {

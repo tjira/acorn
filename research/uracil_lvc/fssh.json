@@ -1,0 +1,38 @@
+{
+    "classical_dynamics" : {
+        "adiabatic" : true,
+        "derivative_step" : 0.001,
+        "iterations" : 3500,
+        "seed" : 1,
+        "time_step" : 0.012,
+        "trajectories" : 1000,
+        "initial_conditions" : {
+            "mass" : 1,
+            "momentum_mean" : [0, 0, 0, 0, 0, 0, 0, 0],
+            "momentum_std" : [0.0400449, 0.0411942, 0.0520359, 0.0560927, 0.0565616, 0.0617271, 0.0633333, 0.0639249],
+            "position_mean" : [0, 0, 0, 0, 0, 0, 0, 0],
+            "position_std" : [11.9739, 11.7264, 9.57297, 8.90160, 8.82918, 8.09775, 7.89327, 7.82045],
+            "state" : 2
+        },
+        "log_intervals" : {
+            "iteration" : 500,
+            "trajectory" : 100
+        },
+        "write" : {
+            "fssh_coefficient_mean" : "FSSH_COEFFICIENT_MEAN.mat",
+            "time_derivative_coupling_mean" : "FSSH_TDC_MEAN.mat",
+            "kinetic_energy_mean" : "KINETIC_ENERGY_MEAN_FSSH.mat",
+            "momentum_mean" : "MOMENTUM_MEAN_FSSH.mat",
+            "population_mean" : "POPULATION_MEAN_FSSH.mat",
+            "position_mean" : "POSITION_MEAN_FSSH.mat",
+            "potential_energy_mean" : "POTENTIAL_ENERGY_MEAN_FSSH.mat",
+            "total_energy_mean" : "TOTAL_ENERGY_MEAN_FSSH.mat"
+        },
+        "potential" : "uracil1D_1",
+        "fewest_switches" : {
+            "quantum_substep" : 10,
+            "decoherence_alpha" : null
+        },
+        "time_derivative_coupling" : "numeric"
+    }
+}

@@ -52,3 +52,7 @@ pub fn main() !void {
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
 }
+
+test {
+    std.testing.refAllDecls(@This());
+}

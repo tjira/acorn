@@ -12,7 +12,8 @@
             "mass" : 2000,
             "momentum" : [15],
             "position" : [-10],
-            "state" : 1
+            "state" : 1,
+            "gamma" : 2
         },
         "log_intervals" : {
             "iteration" : 50

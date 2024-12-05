@@ -17,7 +17,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             limits: []const T = &[_]f64{-16, 32}, points: u32 = 512
         };
         const InitialConditions = struct {
-            position: []const T = &[_]f64{-10}, momentum: []const T = &[_]f64{15}, state: u32 = 1, mass: T = 2000
+            position: []const T = &[_]f64{-10}, momentum: []const T = &[_]f64{15}, gamma: T = 2, state: u32 = 1, mass: T = 2000
         };
         const LogIntervals = struct {
             iteration: u32 = 1
@@ -98,7 +98,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
         const R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              opt.imaginary, allocator); defer R.deinit();
         const K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.imaginary, allocator); defer K.deinit();
 
-        wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.state); wfn.normalize(T, &W, dr);
+        wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); wfn.normalize(T, &W, dr);
 
         if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "ET1N", "EPOT", "ETOT"});
 

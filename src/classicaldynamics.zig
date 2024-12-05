@@ -94,8 +94,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     const tdc_baeckan = std.mem.eql(u8, opt.time_derivative_coupling.?, "baeckan");
 
     {
-        var T1   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T1.deinit();
-        var T2   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T2.deinit();
+        var T1 = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T1.deinit();
+        var T2 = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer T2.deinit();
 
         var r  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  r.deinit();
         var p  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  p.deinit();
@@ -103,11 +103,11 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         var a  = try Vector(T).init(mpt.dims(opt.potential), allocator); defer  a.deinit();
         var ap = try Vector(T).init(mpt.dims(opt.potential), allocator); defer ap.deinit();
 
-        var U    = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer   U.deinit();
-        var UA   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer  UA.deinit();
-        var UC   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer  UC.deinit();
-        var UCS  = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer UCS.deinit();
-        var TDC  = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer TDC.deinit();
+        var U   = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer   U.deinit();
+        var UA  = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer  UA.deinit();
+        var UC  = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer  UC.deinit();
+        var UCS = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer UCS.deinit();
+        var TDC = try Matrix(T).init(mpt.states(opt.potential), mpt.states(opt.potential), allocator); defer TDC.deinit();
 
         var C = try Vector(Complex(T)).init(mpt.states(opt.potential), allocator); defer C.deinit(); 
         var S = try Vector(T         ).init(3                        , allocator); defer S.deinit(); 
@@ -131,12 +131,12 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
         for (0..opt.trajectories) |i| {
 
-            const theta = 2 * std.math.pi * rand_bloc.float(T); const phi = if (opt.initial_conditions.state == 1) std.math.acos(1 - rand_bloc.float(T)) else std.math.acos(0 - rand_bloc.float(T));
+            const theta = 2 * std.math.pi * rand_bloc.float(T); const phi = if (opt.initial_conditions.state == 1) std.math.acos(rand_bloc.float(T)) else std.math.acos(0 - rand_bloc.float(T));
 
             for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
             for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
 
-            if (mash) {S.ptr(0).* = std.math.sin(phi) * std.math.cos(theta); S.ptr(1).* = std.math.sin(phi) * std.math.sin(theta); S.ptr(2).* = std.math.cos(phi);}
+            if (mash) {S.ptr(0).* = std.math.cos(theta) * std.math.sin(phi); S.ptr(1).* = std.math.sin(theta) * std.math.sin(phi); S.ptr(2).* = std.math.cos(phi);}
 
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);}
 

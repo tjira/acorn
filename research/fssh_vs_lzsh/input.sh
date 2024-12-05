@@ -4,7 +4,7 @@
 # DEFAULT VARIABLES
 # ======================================================================================================================================================================================================
 
-CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; CLEAN=1
+CORES=1; PSTART=10.0; PSTEP=10.0; PEND=50.0; TRAJS=1000; DCOH=1e12; CLEAN=1
 
 MODELS=("tully1D_1" "tully1D_2" "tully1D_3" "doubleState1D_1" "doubleState1D_2" "tripleState1D_1" "tripleState1D_2" "tripleState1D_3")
 
@@ -27,18 +27,19 @@ DIS_tripleState1D_3=1; AIS_tripleState1D_3=2
 # PROVIDED ARGUMENTS PARSING
 # ======================================================================================================================================================================================================
 
-while getopts "c:p:s:e:t:r:l:m:h" ARG; do
+while getopts "c:d:p:s:e:t:r:l:m:h" ARG; do
     case $ARG in
         c) CORES=$OPTARG;;
+        d) DCOH=$OPTARG;;
         s) PSTEP=$OPTARG;;
         t) TRAJS=$OPTARG;;
         m) MODELS=($OPTARG);;
-        h) echo "USAGE: $0 [-c CORES] [-s PSTEP] [-t TRAJS] [-m MODELS] [-h]"; exit 0;;
+        h) echo "USAGE: $0 [-c CORES] [-d DCOH] [-s PSTEP] [-t TRAJS] [-m MODELS] [-h]"; exit 0;;
         *) echo "INVALID OPTION: $ARG"; exit 1;;
     esac
 done
 
-echo "CORES: $CORES, PSTEP: $PSTEP, TRAJS: $TRAJS, MODELS: ${MODELS[@]}"
+echo "CORES: $CORES, DCOH: $DCOH, PSTEP: $PSTEP, TRAJS: $TRAJS, MODELS: ${MODELS[@]}"
 
 # ======================================================================================================================================================================================================
 # START TEMPLATES
@@ -172,10 +173,20 @@ for MODEL in ${MODELS[@]}; do
         [[ -f  "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg momentum "${MOMENTUM}" '.classical_dynamics.initial_conditions.momentum_mean |= [($momentum | tonumber)]'  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "mash_${MODEL}_P=${MOMENTUM}.json"
 
         # fill the json with classical dynamics type
-        [[ -f  "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.type |=  "fssh"'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
-        [[ -f "kfssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.type |= "kfssh"' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
-        [[ -f  "lzsh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.type |=  "lzsh"'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
-        [[ -f  "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.type |=  "mash"'  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "mash_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f   "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.fewest_switches  |= {}'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "fssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f  "kfssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.fewest_switches  |= {}' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f   "lzsh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.landau_zener     |= {}'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "lzsh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f   "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.mapping_approach |= {}'  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "mash_${MODEL}_P=${MOMENTUM}.json"
+
+        # fill the json with surface hopping options
+        [[ -f   "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg dcoh $DCOH '.classical_dynamics.fewest_switches.decoherence_alpha |= ($dcoh | tonumber)'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "fssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f  "kfssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg dcoh $DCOH '.classical_dynamics.fewest_switches.decoherence_alpha |= ($dcoh | tonumber)' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "kfssh_${MODEL}_P=${MOMENTUM}.json"
+
+        # fil the json with coupling type
+        [[ -f  "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.time_derivative_coupling |= "numeric"'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "fssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f "kfssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.time_derivative_coupling |= "baeckan"' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f  "lzsh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.time_derivative_coupling |= null     '  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "lzsh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f  "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.time_derivative_coupling |= "numeric"'  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "mash_${MODEL}_P=${MOMENTUM}.json"
 
         # fill the json files with the population output
         [[ -f "exact_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg path "POPULATION_${MODEL}_P=${MOMENTUM}_EXACT.mat"      '.quantum_dynamics  .write.population      |= $path' "exact_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json "exact_${MODEL}_P=${MOMENTUM}.json"

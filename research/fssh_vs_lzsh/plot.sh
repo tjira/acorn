@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PLOT_1D=./../../script/plot/plot-1d.py; MODELS=($(ls -l exact* | grep -oP "(?<=exact_)[^_]+_[^_]+" | sort | uniq)); MOMENTA=($(ls -l exact* | grep -oP "P=\K[0-9.]+" | sed 's/.$//' | sort | uniq))
+PLOT_1D=./../../script/plot-1d.py; MODELS=($(ls -l exact* | grep -oP "(?<=exact_)[^_]+_[^_]+" | sort | uniq)); MOMENTA=($(ls -l exact* | grep -oP "P=\K[0-9.]+" | sed 's/.$//' | sort | uniq))
 
 for MODEL in ${MODELS[@]}; do
 
