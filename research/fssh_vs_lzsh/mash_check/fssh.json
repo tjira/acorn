@@ -5,7 +5,7 @@
         "iterations" : 3500,
         "seed" : 1,
         "time_step" : 1,
-        "trajectories" : 1000,
+        "trajectories" : 10000,
         "initial_conditions" : {
             "mass" : 2000,
             "momentum_mean" : [25],

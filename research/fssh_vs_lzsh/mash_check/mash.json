@@ -5,7 +5,7 @@
         "iterations" : 3500,
         "seed" : 1,
         "time_step" : 1,
-        "trajectories" : 1000,
+        "trajectories" : 10000,
         "initial_conditions" : {
             "mass" : 2000,
             "momentum_mean" : [25],
@@ -29,9 +29,9 @@
             "total_energy_mean" : null
         },
         "potential" : "tully1D_3",
-        "mapping_approach" : {
+        "spin_mapping" : {
             "quantum_substep" : 10,
-            "map" : false
+            "sample_bloch_vector" : true
         },
         "time_derivative_coupling" : "numeric"
     }

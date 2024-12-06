@@ -23,9 +23,9 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         };
         const LandauZener = struct {
         };
-        const MappingApproach = struct {
+        const SpinMapping = struct {
             quantum_substep: u32 = 10,
-            map: bool = true
+            sample_bloch_vector: bool = true
         };
         const LogIntervals = struct {
             trajectory: u32 = 1, iteration: u32 = 1
@@ -50,7 +50,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
 
         potential: []const u8 = "tully1D_1", time_derivative_coupling: ?[]const u8 = "numeric",
 
-        fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, mapping_approach: ?MappingApproach = null,
+        fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
 
         initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{},
     };
@@ -89,7 +89,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
     const fssh = opt.fewest_switches  != null;
     const lzsh = opt.landau_zener     != null;
-    const mash = opt.mapping_approach != null;
+    const mash = opt.spin_mapping != null;
 
     const tdc_numeric = std.mem.eql(u8, opt.time_derivative_coupling.?, "numeric");
     const tdc_baeckan = std.mem.eql(u8, opt.time_derivative_coupling.?, "baeckan");
@@ -132,16 +132,32 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
         for (0..opt.trajectories) |i| {
 
-            const theta = 2 * std.math.pi * rand_bloc.float(T); const phi = if (opt.initial_conditions.state == 1) std.math.acos(rand_bloc.float(T)) else std.math.acos(0 - rand_bloc.float(T));
-
             for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
             for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
 
-            if (mash) {S.ptr(0).* = std.math.cos(theta) * std.math.sin(phi); S.ptr(1).* = std.math.sin(theta) * std.math.sin(phi); S.ptr(2).* = std.math.cos(phi);}
+            if (fssh) {
+                C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);
+            }
 
-            if (mash and !opt.mapping_approach.?.map) {S.ptr(0).* = 0; S.ptr(1).* = 0; S.ptr(2).* = 1;}
+            if (mash) {
 
-            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);}
+                const theta: T = if (opt.initial_conditions.state == 1) 0 else std.math.pi; const phi: T = 0; const xi = 2 * std.math.pi * rand_bloc.float(T);
+
+                S.ptr(0).* = std.math.sin(theta) * std.math.cos(phi); S.ptr(1).* = std.math.sin(theta) * std.math.sin(phi); S.ptr(2).* = std.math.cos(theta);
+
+                if (opt.spin_mapping.?.sample_bloch_vector) {
+
+                    const x = try Vector(T).init(3, allocator); defer x.deinit();
+                    const y = try Vector(T).init(3, allocator); defer y.deinit();
+
+                    x.ptr(0).* = std.math.cos(theta) * std.math.cos(phi); x.ptr(1).* = std.math.cos(theta) * std.math.sin(phi); x.ptr(2).* = -std.math.sin(theta);
+                    y.ptr(0).* = -std.math.sin(phi);                      y.ptr(1).* = std.math.cos(phi);                       y.ptr(2).* = 0;
+
+                    for (0..S.rows) |j| {
+                        S.ptr(j).* = S.at(j) / std.math.sqrt(asfloat(T, 3)) + (x.at(j) * std.math.cos(xi) + y.at(j) * std.math.sin(xi)) * std.math.sqrt2 / std.math.sqrt(asfloat(T, 3));
+                    }
+                }
+            }
 
             @memcpy(v.data, p.data); v.ptr(0).* /= opt.initial_conditions.mass; a.fill(0); var s = opt.initial_conditions.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
 
@@ -175,7 +191,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if (lzsh and j > 1) s = landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) s = fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if (mash and j > 1) s = mappingApproach(T, &S, opt.mapping_approach.?, U, TDC, s, opt.time_step, rand_jump);
+                if (mash and j > 1) s = spinMapping(T, &S, opt.spin_mapping.?, U, TDC, s, opt.time_step, rand_jump);
 
                 if (s != sp and Ekin < U.at(s, s) - U.at(sp, sp)) s = sp;
 
@@ -306,7 +322,7 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDynami
     return ns;
 }
 
-fn mappingApproach(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).MappingApproach, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random) u32 {
+fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random) u32 {
     const iters = asfloat(T, opt.quantum_substep); var sn = s;
 
     const FunctionX = struct { fn get (FS: Vector(T), FU: Matrix(T), FTDC: Matrix(T)) T {
@@ -359,13 +375,13 @@ fn mappingApproach(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOption
         S.ptr(1).* += time_step / iters / 6 * (ky1 + 2 * ky2 + 2 * ky3 + ky4);
         S.ptr(2).* += time_step / iters / 6 * (kz1 + 2 * kz2 + 2 * kz3 + kz4);
 
-        const rn = rand.float(T); if (!opt.map) {
+        const rn = rand.float(T); if (!opt.sample_bloch_vector) {
             if (s == sn and s == 0 and rn <  FunctionZ.get(S.*, TDC) / (1 - S.at(2)) * time_step / iters) sn = 1;
             if (s == sn and s == 1 and rn < -FunctionZ.get(S.*, TDC) / (1 + S.at(2)) * time_step / iters) sn = 0;
         }
     }
 
-    if (opt.map) {return if (S.at(2) > 0) 1 else 0;} else return sn;
+    if (opt.sample_bloch_vector) {return if (S.at(2) > 0) 1 else 0;} else return sn;
 }
 
 fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) u32 {
