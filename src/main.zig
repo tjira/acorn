@@ -4,6 +4,7 @@ const allocator = std.heap.page_allocator; const fsize = 2048;
 
 const cdn = @import("classicaldynamics.zig");
 const ftr = @import("fouriertransform.zig" );
+const hfm = @import("hartreefock.zig"      );
 const mat = @import("matrix.zig"           );
 const mpt = @import("modelpotential.zig"   );
 const qdn = @import("quantumdynamics.zig"  );
@@ -12,8 +13,9 @@ const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
 const CDO = @import("classicaldynamics.zig").ClassicalDynamicsOptions;
-const QDO = @import("quantumdynamics.zig"  ).QuantumDynamicsOptions  ;
+const HFO = @import("hartreefock.zig"      ).HartreeFockOptions      ;
 const MPO = @import("modelpotential.zig"   ).ModelPotentialOptions   ;
+const QDO = @import("quantumdynamics.zig"  ).QuantumDynamicsOptions  ;
 
 pub fn main() !void {
     var timer = try std.time.Timer.start(); var args = try std.process.argsWithAllocator(allocator); defer args.deinit();
@@ -27,6 +29,13 @@ pub fn main() !void {
         const inputjs = try std.json.parseFromSlice(std.json.Value, allocator, filebuf, .{}); defer inputjs.deinit();
 
         try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{arg});
+
+        if (inputjs.value.object.contains("restricted_hartree_fock")) {
+
+            const obj = try std.json.parseFromValue(HFO(f64), allocator, inputjs.value.object.get("restricted_hartree_fock").?, .{}); defer obj.deinit();
+
+            const output = try hfm.run(f64, obj.value, true, allocator); defer output.deinit();
+        }
 
         if (inputjs.value.object.contains("classical_dynamics")) {
 

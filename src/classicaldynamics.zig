@@ -89,7 +89,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
     const fssh = opt.fewest_switches  != null;
     const lzsh = opt.landau_zener     != null;
-    const mash = opt.spin_mapping != null;
+    const mash = opt.spin_mapping     != null;
 
     const tdc_numeric = std.mem.eql(u8, opt.time_derivative_coupling.?, "numeric");
     const tdc_baeckan = std.mem.eql(u8, opt.time_derivative_coupling.?, "baeckan");
@@ -123,10 +123,10 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
         if (print) {try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});}
 
-        if (print) {if (r.rows > 1   )  for (0..r.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"  });}
-        if (print) {if (v.rows > 1   )  for (0..v.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"  });}
-        if (print) {if (fssh         ) {for (0..C.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}}
-        if (print) {if (mash         ) {for (0..S.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}}
+        if (print) {if (r.rows > 1)  for (0..r.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"  });}
+        if (print) {if (v.rows > 1)  for (0..v.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"  });}
+        if (print) {if (fssh      ) {for (0..C.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}}
+        if (print) {if (mash      ) {for (0..S.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}}
 
         if (print) {try std.io.getStdOut().writer().print("\n", .{});}
 
@@ -135,31 +135,10 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
             for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
             for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
 
-            if (fssh) {
-                C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);
-            }
+            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);         }
+            if (mash) {try initialBlochVector(T, &S, opt.spin_mapping.?, opt.initial_conditions.state, rand_bloc, allocator);}
 
-            if (mash) {
-
-                const theta: T = if (opt.initial_conditions.state == 1) 0 else std.math.pi; const phi: T = 0; const xi = 2 * std.math.pi * rand_bloc.float(T);
-
-                S.ptr(0).* = std.math.sin(theta) * std.math.cos(phi); S.ptr(1).* = std.math.sin(theta) * std.math.sin(phi); S.ptr(2).* = std.math.cos(theta);
-
-                if (opt.spin_mapping.?.sample_bloch_vector) {
-
-                    const x = try Vector(T).init(3, allocator); defer x.deinit();
-                    const y = try Vector(T).init(3, allocator); defer y.deinit();
-
-                    x.ptr(0).* = std.math.cos(theta) * std.math.cos(phi); x.ptr(1).* = std.math.cos(theta) * std.math.sin(phi); x.ptr(2).* = -std.math.sin(theta);
-                    y.ptr(0).* = -std.math.sin(phi);                      y.ptr(1).* = std.math.cos(phi);                       y.ptr(2).* = 0;
-
-                    for (0..S.rows) |j| {
-                        S.ptr(j).* = S.at(j) / std.math.sqrt(asfloat(T, 3)) + (x.at(j) * std.math.cos(xi) + y.at(j) * std.math.sin(xi)) * std.math.sqrt2 / std.math.sqrt(asfloat(T, 3));
-                    }
-                }
-            }
-
-            @memcpy(v.data, p.data); v.ptr(0).* /= opt.initial_conditions.mass; a.fill(0); var s = opt.initial_conditions.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
+            @memcpy(v.data, p.data); for (v.data) |*e| e.* /= opt.initial_conditions.mass; a.fill(0); var s = opt.initial_conditions.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
 
             for (0..opt.iterations) |j| {
 
@@ -184,7 +163,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                     };
                 }
 
-                @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (v.data) |e| {Ekin += e * e;} Ekin *= 0.5 * opt.initial_conditions.mass; Epot = U.at(s, s);
+                @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (v.data) |e| Ekin += e * e; Ekin *= 0.5 * opt.initial_conditions.mass; Epot = U.at(s, s);
 
                 if (opt.adiabatic and tdc_numeric and j > 0) derivativeCouplingNumeric(T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                opt.time_step);
                 if (opt.adiabatic and tdc_baeckan and j > 1) derivativeCouplingBaeckan(T, &TDC,       &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, opt.time_step);
@@ -320,6 +299,25 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDynami
     }
 
     return ns;
+}
+
+fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random, allocator: std.mem.Allocator) !void {
+    const theta: T = if (s == 1) 0 else std.math.pi; const phi: T = 0; const xi = 2 * std.math.pi * rand.float(T);
+
+    S.ptr(0).* = std.math.sin(theta) * std.math.cos(phi); S.ptr(1).* = std.math.sin(theta) * std.math.sin(phi); S.ptr(2).* = std.math.cos(theta);
+
+    if (opt.sample_bloch_vector) {
+
+        const x = try Vector(T).init(3, allocator); defer x.deinit();
+        const y = try Vector(T).init(3, allocator); defer y.deinit();
+
+        x.ptr(0).* = std.math.cos(theta) * std.math.cos(phi); x.ptr(1).* = std.math.cos(theta) * std.math.sin(phi); x.ptr(2).* = -std.math.sin(theta);
+        y.ptr(0).* = -std.math.sin(phi);                      y.ptr(1).* = std.math.cos(phi);                       y.ptr(2).* = 0;
+
+        for (0..S.rows) |j| {
+            S.ptr(j).* = S.at(j) / std.math.sqrt(3) + (x.at(j) * std.math.cos(xi) + y.at(j) * std.math.sin(xi)) * std.math.sqrt2 / std.math.sqrt(3);
+        }
+    }
 }
 
 fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random) u32 {

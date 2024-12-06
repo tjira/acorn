@@ -173,10 +173,10 @@ for MODEL in ${MODELS[@]}; do
         [[ -f  "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg momentum "${MOMENTUM}" '.classical_dynamics.initial_conditions.momentum_mean |= [($momentum | tonumber)]'  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "mash_${MODEL}_P=${MOMENTUM}.json"
 
         # fill the json with classical dynamics type
-        [[ -f   "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.fewest_switches  |= {}'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "fssh_${MODEL}_P=${MOMENTUM}.json"
-        [[ -f  "kfssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.fewest_switches  |= {}' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "kfssh_${MODEL}_P=${MOMENTUM}.json"
-        [[ -f   "lzsh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.landau_zener     |= {}'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "lzsh_${MODEL}_P=${MOMENTUM}.json"
-        [[ -f   "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.mapping_approach |= {}'  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "mash_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f   "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.fewest_switches |= {}'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "fssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f  "kfssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.fewest_switches |= {}' "kfssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json  "kfssh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f   "lzsh_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.landau_zener    |= {}'  "lzsh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "lzsh_${MODEL}_P=${MOMENTUM}.json"
+        [[ -f   "mash_${MODEL}_P=${MOMENTUM}.json" ]] && jq '.classical_dynamics.spin_mapping    |= {}'  "mash_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "mash_${MODEL}_P=${MOMENTUM}.json"
 
         # fill the json with surface hopping options
         [[ -f   "fssh_${MODEL}_P=${MOMENTUM}.json" ]] && jq --arg dcoh $DCOH '.classical_dynamics.fewest_switches.decoherence_alpha |= ($dcoh | tonumber)'  "fssh_${MODEL}_P=${MOMENTUM}.json" > temp.json && mv temp.json   "fssh_${MODEL}_P=${MOMENTUM}.json"

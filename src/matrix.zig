@@ -149,3 +149,29 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
         for (0..B.cols) |j| C.ptr(i, A.cols + j).* = B.at(i, j);
     }
 }
+
+pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !Matrix(T) {
+    const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
+
+    var breader = std.io.bufferedReader(file.reader()); var reader = breader.reader();
+    var buffer: [32]u8 = undefined; var bstream = std.io.fixedBufferStream(&buffer);
+
+    _ = try reader.streamUntilDelimiter(bstream.writer(), '\n',  32); var it = std.mem.splitScalar(u8, &buffer, ' ');
+    // bstream.reset(); _ = try reader.streamUntilDelimiter(bstream.writer(), ' ', 8);
+
+    const rows = try std.fmt.parseInt(usize, it.next().?, 10);
+    // const cols = try std.fmt.parseInt(usize, it.next().?, 10);
+
+    const cols = 2;
+
+    const data = try allocator.alloc(T, rows * cols);
+
+    std.debug.print("{s}\n", .{buffer});
+    std.debug.print("{} {}\n", .{rows, cols});
+
+    // for (0..rows) |i| for (0..cols) |j| {
+    //     var value: T = undefined; try file.readAllAlloc(allocator, &value); data[i * cols + j] = value;
+    // };
+
+    return Matrix(T){.data = data, .rows = rows, .cols = cols, .allocator = allocator};
+}
