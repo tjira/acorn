@@ -44,6 +44,8 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
 
     const nbf = S_AO.cols; const output = try HartreeFockOutput(T).init(nbf, allocator);
 
+    try S_AO.print(std.io.getStdOut().writer());
+
     // _ = T_AO;
     // _ = V_AO;
     _ = print;

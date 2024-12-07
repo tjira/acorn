@@ -153,25 +153,22 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
 pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !Matrix(T) {
     const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
 
-    var breader = std.io.bufferedReader(file.reader()); var reader = breader.reader();
-    var buffer: [32]u8 = undefined; var bstream = std.io.fixedBufferStream(&buffer);
+    var freader = std.io.bufferedReader(file.reader()); var reader = freader.reader();
+    var hbuffer: [16]u8 = undefined; var hstream = std.io.fixedBufferStream(&hbuffer);
 
-    _ = try reader.streamUntilDelimiter(bstream.writer(), '\n',  32); var it = std.mem.splitScalar(u8, &buffer, ' ');
-    // bstream.reset(); _ = try reader.streamUntilDelimiter(bstream.writer(), ' ', 8);
+    hstream.reset(); try reader.streamUntilDelimiter(hstream.writer(), ' ',  4); const rows = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
+    hstream.reset(); try reader.streamUntilDelimiter(hstream.writer(), '\n', 4); const cols = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
 
-    const rows = try std.fmt.parseInt(usize, it.next().?, 10);
-    // const cols = try std.fmt.parseInt(usize, it.next().?, 10);
+    var mat = try Matrix(T).init(rows, cols, allocator);
 
-    const cols = 2;
+    for (0..rows) |i| for (0..cols) |j| {
 
-    const data = try allocator.alloc(T, rows * cols);
+        const bytes = try reader.readBytesNoEof(20); try reader.skipBytes(1, .{});
 
-    std.debug.print("{s}\n", .{buffer});
-    std.debug.print("{} {}\n", .{rows, cols});
+        var k: u32 = 0; while (bytes[k] == ' ') : (k += 1) {}
 
-    // for (0..rows) |i| for (0..cols) |j| {
-    //     var value: T = undefined; try file.readAllAlloc(allocator, &value); data[i * cols + j] = value;
-    // };
+        mat.ptr(i, j).* = try std.fmt.parseFloat(T, bytes[k..bytes.len]);
+    };
 
-    return Matrix(T){.data = data, .rows = rows, .cols = cols, .allocator = allocator};
+    return mat;
 }
