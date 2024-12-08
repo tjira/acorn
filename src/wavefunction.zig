@@ -21,7 +21,11 @@ pub fn Wavefunction(comptime T: type) type {
 
 pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(Complex(T)))) void {
     for (0..W.data.rows) |i| {
-        var row = WA.data.row(i).reshaped(WA.nstate, 1); mat.cmam(T, &row, VC.items[i], W.data.row(i).reshaped(W.nstate, 1));
+
+        var rowi =  W.data.row(i); rowi.rows = W.nstate; rowi.cols = 1;
+        var rowo = WA.data.row(i); rowo.rows = W.nstate; rowo.cols = 1;
+
+        mat.mam(Complex(T), &rowo, VC.items[i], rowi);
     }
 }
 

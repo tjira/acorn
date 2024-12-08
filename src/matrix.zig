@@ -16,20 +16,25 @@ pub fn Matrix(comptime T: type) type {
         }
 
         pub fn clone(self: Matrix(T)) !Matrix(T) {
-            const other = try Matrix(T).init(self.rows, self.cols, self.allocator); @memcpy(other.data, self.data); return other;
+            const other = try Matrix(T).init(self.rows, self.cols, self.allocator);
+
+            @memcpy(other.data, self.data);
+
+            return other;
         }
         pub fn complex(self: Matrix(T)) !Matrix(Complex(T)) {
-            var other = try Matrix(Complex(T)).init(self.rows, self.cols, self.allocator); for (0..self.data.len) |i| other.data[i] = Complex(T).init(self.data[i], 0); return other;
+            var other = try Matrix(Complex(T)).init(self.rows, self.cols, self.allocator);
+
+            for (0..self.data.len) |i| other.data[i] = Complex(T).init(self.data[i], 0);
+
+            return other;
         }
 
         pub fn at(self: Matrix(T), i: usize, j: usize) T {
-            return self.data[i * self.cols + j];
+            return self.ptr(i, j).*;
         }
         pub fn ptr(self: Matrix(T), i: usize, j: usize) *T {
             return &self.data[i * self.cols + j];
-        }
-        pub fn reshaped(self: Matrix(T), rows: usize, cols: usize) Matrix(T) {
-            return Matrix(T){.data = self.data, .rows = rows, .cols = cols, .allocator = self.allocator};
         }
         pub fn row(self: Matrix(T), i: usize) Matrix(T) {
             return Matrix(T){.data = self.data[i * self.cols..(i + 1) * self.cols], .rows = 1, .cols = self.cols, .allocator = self.allocator};
@@ -42,25 +47,53 @@ pub fn Matrix(comptime T: type) type {
             for (0..self.data.len) |i| self.data[i] = value;
         }
         pub fn identity(self: Matrix(T)) void {
-            self.fill(0); for (0..self.rows) |i| self.ptr(i, i).* = 1;
+            self.fill(0);
+
+            for (0..self.rows) |i| self.ptr(i, i).* = 1;
         }
         pub fn linspace(self: Matrix(T), start: T, end: T) void {
             for (0..self.data.len) |i| self.data[i] = start + asfloat(T, i) * (end - start) / asfloat(T, self.rows * self.cols - 1);
         }
 
         pub fn print(self: Matrix(T), device: anytype) !void {
-            try device.print("{d} {d}\n", .{self.rows, self.cols}); for (self.data, 1..) |e, i| try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
+            try device.print("{d} {d}\n", .{self.rows, self.cols});
+
+            for (self.data, 1..) |e, i| try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
         }
         pub fn write(self: Matrix(T), path: []const u8) !void {
-            const file = try std.fs.cwd().createFile(path, .{}); defer file.close(); try self.print(file.writer());
+            const file = try std.fs.cwd().createFile(path, .{}); defer file.close();
+
+            try self.print(file.writer());
         }
+    };
+}
+
+pub fn add(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i] + B.data[i];
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i].add(B.data[i]);
+    };
+}
+
+pub fn adds(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
+    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i] + s;
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i].add(s);
     };
 }
 
 pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *Matrix(T), T2: *Matrix(T)) void {
     var maxi: usize = 0; var maxj: usize = 1; var maxv: T = 0; var phi: T = undefined; @memcpy(J.data, A.data); C.identity();
 
-    for (0..A.rows) |i| for (i + 1..A.cols) |j| if (@abs(J.at(i, j)) > @abs(maxv)) {maxi = i; maxj = j; maxv = J.at(i, j);};
+    for (0..A.rows) |i| for (i + 1..A.cols) |j| if (@abs(J.at(i, j)) > @abs(maxv)) {
+        maxi = i; maxj = j; maxv = J.at(i, j);
+    };
 
     while (@abs(maxv) > 1e-14) {
 
@@ -71,83 +104,96 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *M
 
         mm(T, T2, J.*, T1.*); mam(T, J, T1.*, T2.*); mm(T, T2, C.*, T1.*); @memcpy(C.data, T2.data);
 
-        maxv = 0; for (0..A.rows) |i| for (i + 1..A.cols) |j| if (@abs(J.at(i, j)) > @abs(maxv)) {maxi = i; maxj = j; maxv = J.at(i, j);};
+        maxv = 0; for (0..A.rows) |i| for (i + 1..A.cols) |j| if (@abs(J.at(i, j)) > @abs(maxv)) {
+            maxi = i; maxj = j; maxv = J.at(i, j);
+        };
     }
 
     for (0..A.rows) |i| for (i + 1..A.cols) |j| if (J.at(i, i) > J.at(j, j)) {
-        std.mem.swap(T, J.ptr(i, i), J.ptr(j, j)); for (0..A.rows) |k| std.mem.swap(T, C.ptr(k, i), C.ptr(k, j));
+
+        std.mem.swap(T, J.ptr(i, i), J.ptr(j, j));
+
+        for (0..A.rows) |k| std.mem.swap(T, C.ptr(k, i), C.ptr(k, j));
     };
 }
 
 pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), epsilon: T) bool {
     if (A.rows != B.rows or A.cols != B.cols) return false;
 
-    for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > epsilon) return false;
+    if (@typeInfo(T) != .Struct) for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > epsilon) {
+        return false;
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..A.data.len) |i| if (@abs(A.data[i].re - B.data[i].re) > epsilon or @abs(A.data[i].im - B.data[i].im) > epsilon) {
+        return false;
+    };
 
     return true;
-}
-
-pub fn ceq(comptime T: type, A: Matrix(Complex(T)), B: Matrix(Complex(T)), epsilon: T) bool {
-    if (A.rows != B.rows or A.cols != B.cols) return false;
-
-    for (0..A.data.len) |i| if (@abs(A.data[i].re - B.data[i].re) > epsilon or @abs(A.data[i].im - B.data[i].im) > epsilon) return false;
-
-    return true;
-}
-
-pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(0);
-
-    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
-        C.ptr(i, j).* += A.at(i, k) * B.at(k, j);
-    };
-}
-
-pub fn cmm(comptime T: type, C: *Matrix(Complex(T)), A: Matrix(Complex(T)), B: Matrix(Complex(T))) void {
-    C.fill(Complex(T).init(0, 0));
-
-    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
-        C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));
-    };
-}
-
-pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(0);
-
-    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
-        C.ptr(i, j).* += A.at(k, i) * B.at(k, j);
-    };
-}
-
-pub fn cmam(comptime T: type, C: *Matrix(Complex(T)), A: Matrix(Complex(T)), B: Matrix(Complex(T))) void {
-    C.fill(Complex(T).init(0, 0));
-
-    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
-        C.ptr(i, j).* = C.at(i, j).add(A.at(k, i).conjugate().mul(B.at(k, j)));
-    };
-}
-
-pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    C.fill(0);
-
-    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
-        C.ptr(i, j).* += A.at(i, k) * B.at(j, k);
-    };
-}
-
-pub fn cmma(comptime T: type, C: *Matrix(Complex(T)), A: Matrix(Complex(T)), B: Matrix(Complex(T))) void {
-    C.fill(Complex(T).init(0, 0));
-
-    for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
-        C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k).conjugate()));
-    };
 }
 
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     for (0..A.rows) |i| {
+
         for (0..A.cols) |j| C.ptr(i, j).*          = A.at(i, j);
+
         for (0..B.cols) |j| C.ptr(i, A.cols + j).* = B.at(i, j);
     }
+}
+
+pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
+
+    if (@typeInfo(T) != .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
+        C.ptr(i, j).* += A.at(k, i) * B.at(k, j);
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
+        C.ptr(i, j).* = C.at(i, j).add(A.at(k, i).conjugate().mul(B.at(k, j)));
+    };
+}
+
+pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
+
+    if (@typeInfo(T) != .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+        C.ptr(i, j).* += A.at(i, k) * B.at(k, j);
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+        C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));
+    };
+}
+
+pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
+
+    if (@typeInfo(T) != .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+        C.ptr(i, j).* += A.at(i, k) * B.at(j, k);
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+        C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k)));
+    };
+}
+
+pub fn mul(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i] * B.data[i];
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i].mul(B.data[i]);
+    };
+}
+
+pub fn muls(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
+    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i] * s;
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i].mul(s);
+    };
 }
 
 pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !Matrix(T) {
@@ -159,16 +205,32 @@ pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !M
     hstream.reset(); try reader.streamUntilDelimiter(hstream.writer(), ' ',  4); const rows = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
     hstream.reset(); try reader.streamUntilDelimiter(hstream.writer(), '\n', 4); const cols = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
 
-    var mat = try Matrix(T).init(rows, cols, allocator);
+    const mat = try Matrix(T).init(rows, cols, allocator);
 
-    for (0..rows) |i| for (0..cols) |j| {
+    for (0..rows * cols) |i| {
 
         const bytes = try reader.readBytesNoEof(20); try reader.skipBytes(1, .{});
 
-        var k: u32 = 0; while (bytes[k] == ' ') : (k += 1) {}
+        var j: u32 = 0; while (bytes[j] == ' ') : (j += 1) {}
 
-        mat.ptr(i, j).* = try std.fmt.parseFloat(T, bytes[k..bytes.len]);
-    };
+        mat.data[i] = try std.fmt.parseFloat(T, bytes[j..bytes.len]);
+    }
 
     return mat;
+}
+
+pub fn sub(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
+    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i] - B.data[i];
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i].sub(B.data[i]);
+    };
+}
+
+pub fn transpose(comptime T: type, C: *Matrix(T), A: Matrix(T)) void {
+    for (0..A.rows) |i| for (0..A.cols) |j| {
+        C.ptr(j, i).* = A.at(i, j);
+    };
 }

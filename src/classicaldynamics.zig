@@ -187,7 +187,9 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                 if (opt.write.time_derivative_coupling_mean != null) for (0..tdc.cols) |k| {tdc.ptr(j, k).* += TDC.data[k];}                             ;
                 if (opt.write.fssh_coefficient_mean         != null) for (0..C.rows) |k| {coef.ptr(j, k).* += C.at(k).magnitude() * C.at(k).magnitude();};
 
-                if (j == opt.iterations - 1) output.pop.ptr(s).* += 1;
+                if (j == opt.iterations - 1) {
+                    output.pop.ptr(s).* += 1;
+                }
 
                 if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) {
                     try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, C, S, opt.initial_conditions.mass, fssh, mash);
@@ -196,7 +198,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         }
     }
 
-    for (0..opt.iterations) |i| {for (0..pop.cols     ) |j|     pop.ptr(i, j).*  /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations) |i| {for (0..pop.cols     ) |j|      pop.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations) |i| {for (0..ekin.cols    ) |j|     ekin.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations) |i| {for (0..epot.cols    ) |j|     epot.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations) |i| {for (0..etot.cols    ) |j|     etot.ptr(i, j).* /= asfloat(T, opt.trajectories);}

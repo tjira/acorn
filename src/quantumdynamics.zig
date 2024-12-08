@@ -123,7 +123,9 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
             if (opt.write.potential_energy != null) epot.ptr(i, 0).* = Epot                              ;
             if (opt.write.total_energy     != null) etot.ptr(i, 0).* = Ekin + Epot                       ;
 
-            @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data); output.Ekin = Ekin; output.Epot = Epot;
+            if (i == opt.iterations - 1) {
+                @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data); output.Ekin = Ekin; output.Epot = Epot;
+            }
 
             if (print and (i == 0 or (i + 1) % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(i), Ekin, Epot, r, p, P);
         }
@@ -194,7 +196,7 @@ fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))), VC:
             T1.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        mat.cmm(T, &T2, VC.items[i], T1); mat.cmma(T, &T1, T2, VC.items[i]); try R.append(try T1.clone());
+        mat.mm(Complex(T), &T2, VC.items[i], T1); mat.mma(Complex(T), &T1, T2, VC.items[i]); try R.append(try T1.clone());
     }
 
     return R;

@@ -14,14 +14,22 @@ pub fn Vector(comptime T: type) type {
         }
 
         pub fn clone(self: Vector(T)) !Vector(T) {
-            const other = try Vector(T).init(self.rows, self.allocator); @memcpy(other.data, self.data); return other;
+            const other = try Vector(T).init(self.rows, self.allocator);
+
+            @memcpy(other.data, self.data);
+
+            return other;
         }
         pub fn complex(self: Vector(T)) !Vector(Complex(T)) {
-            var other = try Vector(Complex(T)).init(self.rows, self.allocator); for (0..self.data.len) |i| other.data[i] = Complex(T).init(self.data[i], 0); return other;
+            var other = try Vector(Complex(T)).init(self.rows, self.allocator);
+
+            for (0..self.data.len) |i| other.data[i] = Complex(T).init(self.data[i], 0);
+
+            return other;
         }
 
         pub fn at(self: Vector(T), i: usize) T {
-            return self.data[i];
+            return self.ptr(i).*;
         }
         pub fn ptr(self: Vector(T), i: usize) *T {
             return &self.data[i];

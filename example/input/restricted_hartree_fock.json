@@ -6,6 +6,8 @@
             "kinetic" : "T_AO.mat",
             "nuclear" : "V_AO.mat",
             "coulomb" : "J_AO.mat"
-        }
+        },
+        "threshold" : 1e-8,
+        "maxiter" : 100
     }
 }
