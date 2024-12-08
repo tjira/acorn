@@ -2,15 +2,16 @@ const std = @import("std"); const builtin = @import("builtin");
 
 const allocator = std.heap.page_allocator; const fsize = 2048;
 
-const cdn = @import("classicaldynamics.zig");
-const ftr = @import("fouriertransform.zig" );
-const hfm = @import("hartreefock.zig"      );
-const mat = @import("matrix.zig"           );
-const mpt = @import("modelpotential.zig"   );
-const qdn = @import("quantumdynamics.zig"  );
+pub const cdn = @import("classicaldynamics.zig");
+pub const ftr = @import("fouriertransform.zig" );
+pub const hfm = @import("hartreefock.zig"      );
+pub const mat = @import("matrix.zig"           );
+pub const mpt = @import("modelpotential.zig"   );
+pub const qdn = @import("quantumdynamics.zig"  );
+pub const vec = @import("vector.zig"           );
 
-const Matrix = @import("matrix.zig").Matrix;
-const Vector = @import("vector.zig").Vector;
+pub const Matrix = @import("matrix.zig").Matrix;
+pub const Vector = @import("vector.zig").Vector;
 
 const CDO = @import("classicaldynamics.zig").ClassicalDynamicsOptions;
 const HFO = @import("hartreefock.zig"      ).HartreeFockOptions      ;
@@ -60,8 +61,4 @@ pub fn main() !void {
     }
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
-}
-
-test {
-    std.testing.refAllDecls(@This());
 }

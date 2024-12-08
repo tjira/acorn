@@ -41,18 +41,16 @@ pub fn Vector(comptime T: type) type {
     };
 }
 
-pub fn eq(comptime T: type, u: Vector(T), v: Vector(T), epsilon: T) bool {
+pub fn eq(comptime T: type, u: Vector(T), v: Vector(T), epsilon: f64) bool {
     if (u.rows != v.rows) return false;
 
-    for (0..u.data.len) |i| if (@abs(u.data[i] - v.data[i]) > epsilon) return false;
+    if (@typeInfo(T) != .Struct) for (0..u.data.len) |i| if (@abs(u.data[i] - v.data[i]) > epsilon) {
+        return false;
+    };
 
-    return true;
-}
-
-pub fn ceq(comptime T: type, u: Vector(Complex(T)), v: Vector(Complex(T)), epsilon: T) bool {
-    if (u.rows != v.rows) return false;
-
-    for (0..u.data.len) |i| if (@abs(u.data[i].re - v.data[i].re) > epsilon or @abs(u.data[i].im - v.data[i].im) > epsilon) return false;
+    if (@typeInfo(T) == .Struct) for (0..u.data.len) |i| if (@abs(u.data[i].re - v.data[i].re) > epsilon or @abs(u.data[i].im - v.data[i].im) > epsilon) {
+        return false;
+    };
 
     return true;
 }

@@ -15,6 +15,10 @@ const asfloat = @import("helper.zig").asfloat;
 
 pub fn HartreeFockOptions(comptime T: type) type {
     return struct {
+        const DirectInversion = struct {
+            size: u32 = 5,
+            start: u32 = 2
+        };
         const Integral = struct {
             overlap: []const u8 = "S_AO.mat",
             kinetic: []const u8 = "T_AO.mat",
@@ -22,10 +26,11 @@ pub fn HartreeFockOptions(comptime T: type) type {
             coulomb: []const u8 = "J_AO.mat"
         };
 
+        molecule: []const u8 = "molecule.xyz",
         threshold: T = 1e-12,
         maxiter: u32 = 100,
 
-        molecule: []const u8 = "molecule.xyz", integral: Integral = .{}
+        diis: DirectInversion = .{}, integral: Integral = .{}
     };
 }
 
@@ -85,17 +90,37 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
     var D_MO = try Matrix(T).init(nbf, nbf, allocator); D_MO.fill(0);
     var E_MO = try Matrix(T).init(nbf, nbf, allocator); E_MO.fill(0);
 
+    var DIIS_E = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_E.deinit();
+    var DIIS_F = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_F.deinit();
+
+    var DIIS_B = try Matrix(T).init(opt.diis.size, opt.diis.size, allocator); defer DIIS_B.deinit();
+    var DIIS_b = try Matrix(T).init(opt.diis.size, 1,             allocator); defer DIIS_b.deinit();
+
+    for (0..opt.diis.size) |_| {
+        try DIIS_E.append(try Matrix(T).init(nbf, nbf, allocator));
+        try DIIS_F.append(try Matrix(T).init(nbf, nbf, allocator));
+    }
+
     var iter: u32 = 0; var E: T = 0; var EP: T = 1;
 
     if (print) try std.io.getStdOut().writer().print("\n{s:4} {s:20} {s:8}\n", .{"ITER", "ENERGY", "|DELTA E|"});
 
     while (@abs(EP - E) > opt.threshold) : (iter += 1) {
 
+        if (iter == opt.maxiter) return error.MaxIterationsExceeded;
+
         @memcpy(F_MO.data, H_AO.data);
 
         for (0..nbf) |i| for (0..nbf) |j| for (0..nbf) |k| for (0..nbf) |l| {
             F_MO.ptr(k, l).* += D_MO.at(i, j) * J_AO_A.at(&[_]usize{i, j, k, l});
         };
+
+        if (iter + 1 >= opt.diis.start) {
+
+            mat.mm(T, &T1, S_AO, D_MO); mat.mm(T, &T2, T1, F_MO); mat.mm(T, &T1, F_MO, D_MO); mat.mm(T, &T3, T1, S_AO); mat.sub(T, &T1, T2, T3);
+
+            @memcpy(DIIS_F.items[iter % opt.diis.size].data, F_MO.data); @memcpy(DIIS_E.items[iter % opt.diis.size].data, T1.data);
+        }
 
         mat.mm(T, &T2, X, F_MO); mat.mm(T, &T1, T2, X); mat.eigh(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
 
@@ -109,9 +134,11 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
             E += 0.5 * D_MO.at(i, j) * (H_AO.at(i, j) + F_MO.at(i, j));
         };
 
-        if (iter == opt.maxiter) return error.SelfConsistentFieldMaxIterExceeded;
-
         if (print) try std.io.getStdOut().writer().print("{d:4} {d:20.14} {e:9.3}\n", .{iter + 1, E + VNN, @abs(EP - E)});
+    }
+
+    for (0..opt.diis.size) |i| {
+        DIIS_E.items[i].deinit(); DIIS_F.items[i].deinit();
     }
 
     return HartreeFockOutput(T){

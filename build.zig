@@ -29,4 +29,18 @@ pub fn build(builder: *std.Build) !void {
 
         builder.getInstallStep().dependOn(&output.step);
     }
+
+    const test_filters = builder.option([]const []const u8, "test", "Select only specific tests") orelse &[0][]const u8{};
+
+    const test_executable = builder.addTest(.{
+        .filters = test_filters,
+        .optimize = optimize,
+        .root_source_file = builder.path("test/main.zig"),
+        .single_threaded = true,
+        .strip = if (optimize != .Debug) true else false
+    });
+
+    test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
+
+    builder.step("test", "Run unit tests").dependOn(&builder.addRunArtifact(test_executable).step);
 }
