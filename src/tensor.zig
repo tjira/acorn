@@ -29,6 +29,10 @@ pub fn Tensor(comptime T: type) type {
 
             return &self.data[index];
         }
+
+        pub fn fill(self: *Tensor(T), value: T) void {
+            for (0..self.data.len) |i| self.data[i] = value;
+        }
     };
 }
 

@@ -36,7 +36,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
 
 pub fn HartreeFockOutput(comptime T: type) type {
     return struct {
-        C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T), E: T,
+        C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T), E: T, VNN: T, nbf: usize, nocc: usize,
 
         pub fn deinit(self: HartreeFockOutput(T)) void {
             self.C_MO.deinit(); self.D_MO.deinit(); self.E_MO.deinit(); self.F_AO.deinit();
@@ -136,8 +136,10 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
         DIIS_E.items[i].deinit(); DIIS_F.items[i].deinit();
     }
 
+    if (print) try std.io.getStdOut().writer().print("\nHF ENERGY: {d:.14}\n", .{E + VNN});
+
     return HartreeFockOutput(T){
-        .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN
+        .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .VNN = VNN, .nbf = nbf, .nocc = nocc
     };
 }
 
