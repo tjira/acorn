@@ -36,15 +36,10 @@ pub fn HartreeFockOptions(comptime T: type) type {
 
 pub fn HartreeFockOutput(comptime T: type) type {
     return struct {
-        C_MO: Matrix(T), F_MO: Matrix(T),
+        C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T), E: T,
 
-        pub fn init(nbf: usize, allocator: std.mem.Allocator) !HartreeFockOutput(T) {
-            return HartreeFockOutput(T){
-                .C_MO = try Matrix(T).init(nbf, nbf, allocator), .F_MO = try Matrix(T).init(nbf, nbf, allocator)
-            };
-        }
         pub fn deinit(self: HartreeFockOutput(T)) void {
-            self.C_MO.deinit(); self.F_MO.deinit();
+            self.C_MO.deinit(); self.D_MO.deinit(); self.E_MO.deinit(); self.F_AO.deinit();
         }
     };
 }
@@ -85,7 +80,7 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
         mat.add(T, &H_AO, T_AO, V_AO);
     }
 
-    var F_MO = try Matrix(T).init(nbf, nbf, allocator); F_MO.fill(0);
+    var F_AO = try Matrix(T).init(nbf, nbf, allocator); F_AO.fill(0);
     var C_MO = try Matrix(T).init(nbf, nbf, allocator); C_MO.fill(0);
     var D_MO = try Matrix(T).init(nbf, nbf, allocator); D_MO.fill(0);
     var E_MO = try Matrix(T).init(nbf, nbf, allocator); E_MO.fill(0);
@@ -109,20 +104,20 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
 
         if (iter == opt.maxiter) return error.MaxIterationsExceeded;
 
-        @memcpy(F_MO.data, H_AO.data);
+        @memcpy(F_AO.data, H_AO.data);
 
         for (0..nbf) |i| for (0..nbf) |j| for (0..nbf) |k| for (0..nbf) |l| {
-            F_MO.ptr(k, l).* += D_MO.at(i, j) * J_AO_A.at(&[_]usize{i, j, k, l});
+            F_AO.ptr(k, l).* += D_MO.at(i, j) * J_AO_A.at(&[_]usize{i, j, k, l});
         };
 
         if (iter + 1 >= opt.diis.start) {
 
-            mat.mm(T, &T1, S_AO, D_MO); mat.mm(T, &T2, T1, F_MO); mat.mm(T, &T1, F_MO, D_MO); mat.mm(T, &T3, T1, S_AO); mat.sub(T, &T1, T2, T3);
+            mat.mm(T, &T1, S_AO, D_MO); mat.mm(T, &T2, T1, F_AO); mat.mm(T, &T1, F_AO, D_MO); mat.mm(T, &T3, T1, S_AO); mat.sub(T, &T1, T2, T3);
 
-            @memcpy(DIIS_F.items[iter % opt.diis.size].data, F_MO.data); @memcpy(DIIS_E.items[iter % opt.diis.size].data, T1.data);
+            @memcpy(DIIS_F.items[iter % opt.diis.size].data, F_AO.data); @memcpy(DIIS_E.items[iter % opt.diis.size].data, T1.data);
         }
 
-        mat.mm(T, &T2, X, F_MO); mat.mm(T, &T1, T2, X); mat.eigh(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
+        mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); mat.eigh(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
 
         D_MO.fill(0); EP = E; E = 0;
 
@@ -131,7 +126,7 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
         };
 
         for (0..nbf) |i| for (0..nbf) |j| {
-            E += 0.5 * D_MO.at(i, j) * (H_AO.at(i, j) + F_MO.at(i, j));
+            E += 0.5 * D_MO.at(i, j) * (H_AO.at(i, j) + F_AO.at(i, j));
         };
 
         if (print) try std.io.getStdOut().writer().print("{d:4} {d:20.14} {e:9.3}\n", .{iter + 1, E + VNN, @abs(EP - E)});
@@ -142,7 +137,7 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
     }
 
     return HartreeFockOutput(T){
-        .C_MO = C_MO, .F_MO = F_MO
+        .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN
     };
 }
 
