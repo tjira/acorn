@@ -47,7 +47,7 @@ pub fn HartreeFockOutput(comptime T: type) type {
 pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !HartreeFockOutput(T) {
     const S_AO = try mat.read(T, opt.integral.overlap, allocator); defer S_AO.deinit();
 
-    const system = try parseSystem(T, opt.molecule, allocator);
+    const system = try parseSystem(T, opt.molecule, print, allocator);
 
     const nbf = S_AO.cols; const nocc = system.nocc; const VNN = system.VNN;
 
@@ -143,7 +143,7 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
     };
 }
 
-pub fn parseSystem(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !struct {natom: u32, nocc: u32, VNN: T} {
+pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: std.mem.Allocator) !struct {natom: u32, nocc: u32, VNN: T} {
     const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
 
     var freader = std.io.bufferedReader(file.reader()); var reader = freader.reader();
@@ -151,7 +151,7 @@ pub fn parseSystem(comptime T: type, path: []const u8, allocator: std.mem.Alloca
 
     lstream.reset(); try reader.streamUntilDelimiter(lstream.writer(), '\n', 64);
 
-    const natom = try std.fmt.parseInt(u32, lbuffer[0..try lstream.getPos() - 1], 10);
+    const natom = try std.fmt.parseInt(u32, lbuffer[0..try lstream.getPos()], 10);
 
     lstream.reset(); try reader.streamUntilDelimiter(lstream.writer(), '\n', 64);
 
@@ -166,7 +166,7 @@ pub fn parseSystem(comptime T: type, path: []const u8, allocator: std.mem.Alloca
 
         while (it.next()) |token| if (!std.mem.eql(u8, token, "")) {
 
-            if (j > -1) coords.ptr(i, @as(usize, @intCast(j))).* = try std.fmt.parseFloat(T, token[0..if (j == 2) token.len - 1 else token.len]);
+            if (j > -1) coords.ptr(i, @as(usize, @intCast(j))).* = try std.fmt.parseFloat(T, token[0..token.len]);
 
             if (j == -1) atoms.ptr(i).* = asfloat(T, SM2AN.get(token).?);
 
@@ -184,6 +184,12 @@ pub fn parseSystem(comptime T: type, path: []const u8, allocator: std.mem.Alloca
         const r = std.math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2)) * A2AU;
 
         VNN += 0.5 * atoms.at(i) * atoms.at(j) / r;
+    };
+
+    if (print) try std.io.getStdOut().writer().print("\nMOLECULE: {s}\n", .{path});
+
+    if (print) for (0..natom) |i| {
+        try std.io.getStdOut().writer().print("{d:2} {d:14.8} {d:14.8} {d:14.8}\n", .{@as(u32, @intFromFloat(atoms.at(i))), coords.at(i, 0), coords.at(i, 1), coords.at(i, 2)});
     };
 
     return .{.natom = natom, .nocc = nocc / 2, .VNN = VNN};
