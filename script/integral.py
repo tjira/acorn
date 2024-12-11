@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-import pyscf
+import pyscf, sys
 
-molecule = pyscf.M(atom="".join(open("example/molecule/water.xyz").readlines()[2:]), basis="sto-3g")
+if len(sys.argv) != 3: print("USAGE: integral.py [MOLECULE] [BASIS]")
+
+molecule = pyscf.M(atom="".join(open(sys.argv[1]).readlines()[2:]), basis=sys.argv[2])
 
 S, T, V, J = molecule.intor("int1e_ovlp"), molecule.intor("int1e_kin"), molecule.intor("int1e_nuc"), molecule.intor("int2e")
 

@@ -120,7 +120,7 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *M
 pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), epsilon: T) bool {
     if (A.rows != B.rows or A.cols != B.cols) return false;
 
-    if (@typeInfo(T) != .Struct) for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > epsilon) {
+    if (@typeInfo(T) != .Struct) for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > epsilon or std.math.isNan(@abs(A.data[i] - B.data[i]))) {
         return false;
     };
 
@@ -137,6 +137,28 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
         for (0..A.cols) |j| C.ptr(i, j).*          = A.at(i, j);
 
         for (0..B.cols) |j| C.ptr(i, A.cols + j).* = B.at(i, j);
+    }
+}
+
+pub fn linsolve(comptime T: type, x: *Vector(T), A: Matrix(T), b: Vector(T)) void {
+    var dx = std.math.inf(T);
+
+    while (dx > 1e-14) {
+
+        dx = 0;
+
+        for (0..x.rows) |i| {
+
+            const xp = x.at(i); var xn = b.at(i);
+
+            for (0..x.rows) |j| if (i != j) {
+                xn -= A.at(i, j) * x.at(j);
+            };
+
+            x.ptr(i).* = xn / A.at(i, i);
+
+            dx += @abs(x.at(i) - xp);
+        }
     }
 }
 
@@ -197,13 +219,13 @@ pub fn muls(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
 }
 
 pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !Matrix(T) {
-    const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
+    const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [16]u8 = undefined;
 
-    var freader = std.io.bufferedReader(file.reader()); var reader = freader.reader();
-    var hbuffer: [16]u8 = undefined; var hstream = std.io.fixedBufferStream(&hbuffer);
+    var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
+    var stream   = std.io.fixedBufferStream(&buffer);  const writer =   stream.writer();
 
-    hstream.reset(); try reader.streamUntilDelimiter(hstream.writer(), ' ',  4); const rows = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
-    hstream.reset(); try reader.streamUntilDelimiter(hstream.writer(), '\n', 4); const cols = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
+    stream.reset(); try reader.streamUntilDelimiter(writer, ' ',  4); const rows = try std.fmt.parseInt(usize, stream.getWritten(), 10);
+    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 4); const cols = try std.fmt.parseInt(usize, stream.getWritten(), 10);
 
     const mat = try Matrix(T).init(rows, cols, allocator);
 

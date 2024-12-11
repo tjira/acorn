@@ -34,6 +34,9 @@ pub fn Vector(comptime T: type) type {
         pub fn ptr(self: Vector(T), i: usize) *T {
             return &self.data[i];
         }
+        pub fn matrix(self: Vector(T)) Matrix(T) {
+            return Matrix(T){.data = self.data, .rows = self.rows, .cols = 1, .allocator = self.allocator};
+        }
 
         pub fn fill(self: Vector(T), value: T) void {
             for (0..self.data.len) |i| self.data[i] = value;
@@ -44,7 +47,7 @@ pub fn Vector(comptime T: type) type {
 pub fn eq(comptime T: type, u: Vector(T), v: Vector(T), epsilon: f64) bool {
     if (u.rows != v.rows) return false;
 
-    if (@typeInfo(T) != .Struct) for (0..u.data.len) |i| if (@abs(u.data[i] - v.data[i]) > epsilon) {
+    if (@typeInfo(T) != .Struct) for (0..u.data.len) |i| if (@abs(u.data[i] - v.data[i]) > epsilon or std.math.isNan(@abs(u.data[i] - v.data[i]))) {
         return false;
     };
 

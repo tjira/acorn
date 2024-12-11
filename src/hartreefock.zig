@@ -144,33 +144,34 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
 }
 
 pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: std.mem.Allocator) !struct {natom: u32, nocc: u32, VNN: T} {
-    const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
+    const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [64]u8 = undefined;
 
-    var freader = std.io.bufferedReader(file.reader()); var reader = freader.reader();
-    var lbuffer: [64]u8 = undefined; var lstream = std.io.fixedBufferStream(&lbuffer);
+    var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
+    var stream   = std.io.fixedBufferStream(&buffer);  const writer =   stream.writer();
 
-    lstream.reset(); try reader.streamUntilDelimiter(lstream.writer(), '\n', 64);
+    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
 
-    const natom = try std.fmt.parseInt(u32, lbuffer[0..try lstream.getPos()], 10);
+    const natom = try std.fmt.parseInt(u32, stream.getWritten(), 10);
 
-    lstream.reset(); try reader.streamUntilDelimiter(lstream.writer(), '\n', 64);
+    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
 
-    var coords = try Matrix(T).init(natom, 3, allocator); defer coords.deinit();
-    var atoms  = try Vector(T).init(natom,    allocator); defer  atoms.deinit();
+    var coords = try Matrix(T).init(natom, 3, allocator); defer coords.deinit(); coords.fill(0);
+    var atoms  = try Vector(T).init(natom,    allocator); defer  atoms.deinit();  atoms.fill(0);
 
     for (0..natom) |i| {
 
-        lstream.reset(); try reader.streamUntilDelimiter(lstream.writer(), '\n', 64);
+        stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
 
-        var it = std.mem.splitScalar(u8, lbuffer[0..try lstream.getPos()], ' '); var j: i32 = -1;
+        var it = std.mem.splitScalar(u8, stream.getWritten(), ' '); 
 
-        while (it.next()) |token| if (!std.mem.eql(u8, token, "")) {
+        while (it.next()) |token| if (token.len > 0 and atoms.at(i) == 0) {
+            atoms.ptr(i).* = asfloat(T, SM2AN.get(token).?); break;
+        };
 
-            if (j > -1) coords.ptr(i, @as(usize, @intCast(j))).* = try std.fmt.parseFloat(T, token[0..token.len]);
+        var j: i32 = 0;
 
-            if (j == -1) atoms.ptr(i).* = asfloat(T, SM2AN.get(token).?);
-
-            j += 1;
+        while (it.next()) |token| : (j += if (token.len > 0) 1 else 0) if (token.len > 0) {
+            coords.ptr(i, @as(usize, @intCast(j))).* = try std.fmt.parseFloat(T, token);
         };
     }
 
