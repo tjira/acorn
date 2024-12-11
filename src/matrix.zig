@@ -3,6 +3,7 @@ const std = @import("std"); const Complex = std.math.Complex;
 const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
+const uncr    = @import("helper.zig").uncr   ;
 
 pub fn Matrix(comptime T: type) type {
     return struct {
@@ -224,8 +225,8 @@ pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !M
     var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
     var stream   = std.io.fixedBufferStream(&buffer);  const writer =   stream.writer();
 
-    stream.reset(); try reader.streamUntilDelimiter(writer, ' ',  4); const rows = try std.fmt.parseInt(usize, stream.getWritten(), 10);
-    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 4); const cols = try std.fmt.parseInt(usize, stream.getWritten(), 10);
+    stream.reset(); try reader.streamUntilDelimiter(writer, ' ',  4); const rows = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
+    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 4); const cols = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
 
     const mat = try Matrix(T).init(rows, cols, allocator);
 

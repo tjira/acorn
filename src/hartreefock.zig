@@ -12,12 +12,13 @@ const Vector = @import("vector.zig").Vector;
 const Tensor = @import("tensor.zig").Tensor;
 
 const asfloat = @import("helper.zig").asfloat;
+const uncr    = @import("helper.zig").uncr   ;
 
 pub fn HartreeFockOptions(comptime T: type) type {
     return struct {
         const DirectInversion = struct {
             size: u32 = 5,
-            start: u32 = 2
+            start: u32 = 100
         };
         const Integral = struct {
             overlap: []const u8 = "S_AO.mat",
@@ -88,8 +89,9 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
     var DIIS_E = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_E.deinit();
     var DIIS_F = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_F.deinit();
 
-    var DIIS_B = try Matrix(T).init(opt.diis.size, opt.diis.size, allocator); defer DIIS_B.deinit();
-    var DIIS_b = try Matrix(T).init(opt.diis.size, 1,             allocator); defer DIIS_b.deinit();
+    var DIIS_B = try Matrix(T).init(opt.diis.size + 1, opt.diis.size + 1, allocator); defer DIIS_B.deinit();
+    var DIIS_b = try Vector(T).init(opt.diis.size + 1,                    allocator); defer DIIS_b.deinit();
+    var DIIS_c = try Vector(T).init(opt.diis.size + 1,                    allocator); defer DIIS_c.deinit();
 
     for (0..opt.diis.size) |_| {
         try DIIS_E.append(try Matrix(T).init(nbf, nbf, allocator));
@@ -115,6 +117,14 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
             mat.mm(T, &T1, S_AO, D_MO); mat.mm(T, &T2, T1, F_AO); mat.mm(T, &T1, F_AO, D_MO); mat.mm(T, &T3, T1, S_AO); mat.sub(T, &T1, T2, T3);
 
             @memcpy(DIIS_F.items[iter % opt.diis.size].data, F_AO.data); @memcpy(DIIS_E.items[iter % opt.diis.size].data, T1.data);
+
+            DIIS_B.fill(1); DIIS_b.fill(0); DIIS_B.ptr(opt.diis.size, opt.diis.size).* = 0; DIIS_b.ptr(opt.diis.size).* = 1;
+
+            for (0..opt.diis.size) |i| for (0..opt.diis.size) |j| for (0.. DIIS_E.items[i].data.len) |k| {
+                DIIS_B.ptr(i, j).* += DIIS_E.items[(iter - opt.diis.size + i + 1) % opt.diis.size].data[k] * DIIS_E.items[(iter - opt.diis.size + j + 1) % opt.diis.size].data[k];
+            };
+
+            mat.linsolve(T, &DIIS_c, DIIS_B, DIIS_b);
         }
 
         mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); mat.eigh(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
@@ -151,7 +161,7 @@ pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: s
 
     stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
 
-    const natom = try std.fmt.parseInt(u32, stream.getWritten(), 10);
+    const natom = try std.fmt.parseInt(u32, uncr(stream.getWritten()), 10);
 
     stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
 
@@ -162,7 +172,7 @@ pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: s
 
         stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
 
-        var it = std.mem.splitScalar(u8, stream.getWritten(), ' '); 
+        var it = std.mem.splitScalar(u8, uncr(stream.getWritten()), ' '); 
 
         while (it.next()) |token| if (token.len > 0 and atoms.at(i) == 0) {
             atoms.ptr(i).* = asfloat(T, SM2AN.get(token).?); break;

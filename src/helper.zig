@@ -11,3 +11,7 @@ pub fn bitrev(value: anytype, count: u6) @TypeOf(value) {
 pub fn prod(comptime T: type, v: []const T) T {
     var result: T = 1; for (v) |value| result *= value; return result;
 }
+
+pub fn uncr(string: []const u8) []const u8 {
+    return if (string[string.len - 1] == 13) string[0..string.len - 1] else string;
+}
