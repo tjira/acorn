@@ -318,6 +318,10 @@ if __name__ == "__main__":
         # generate the determiants
         dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]
 
+        print(2 * nbf, 2 * nocc)
+        print(dets[0])
+        print(dets[1])
+
         # define the CI Hamiltonian
         Hci = np.zeros([len(dets), len(dets)])
 

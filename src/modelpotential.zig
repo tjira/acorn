@@ -9,11 +9,18 @@ const asfloat = @import("helper.zig").asfloat;
 
 pub fn ModelPotentialOptions(comptime T: type) type {
     return struct {
+        const ValuePair = struct {
+            index: u32,
+            value: T
+        };
+
         adiabatic: bool,
         limits: []const T,
         output: []const u8,
         points: u32,
-        potential: []const u8
+        potential: []const u8,
+
+        constant: []const ValuePair = &[_]ValuePair{}
     };
 }
 
@@ -231,14 +238,29 @@ pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem
     var UA = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UA.deinit();
     var UC = try Matrix(T).init(states(opt.potential), states(opt.potential), allocator); defer UC.deinit();
 
-    var R = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential)), dims(opt.potential)                          , allocator); defer R.deinit();
-    var V = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential)), states(opt.potential) * states(opt.potential), allocator); defer V.deinit();
+    var R = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential) - @as(u32, @intCast(opt.constant.len))), dims(opt.potential) - opt.constant.len       , allocator); defer R.deinit();
+    var V = try Matrix(T).init(std.math.pow(u32, opt.points, dims(opt.potential) - @as(u32, @intCast(opt.constant.len))), states(opt.potential) * states(opt.potential), allocator); defer V.deinit();
 
-    rgrid(T, &R, opt.limits[0], opt.limits[1], opt.points);
+    rgrid(T, &R, opt.limits[0], opt.limits[1], opt.points); var r = try Vector(T).init(dims(opt.potential), allocator); defer r.deinit(); 
 
     for (0..R.rows) |i| {
 
-        eval(T, &U, opt.potential, R.row(i).vector());
+        var l: u32 = 0;
+
+        for (0..dims(opt.potential)) |j| {
+
+            var constant = false;
+
+            for (0..opt.constant.len) |k| if (opt.constant[k].index == j) {
+                r.ptr(j).* = opt.constant[k].value; constant = true;
+            };
+
+            if (!constant) {
+                r.ptr(j).* = R.at(i, l); l += 1;
+            }
+        }
+
+        eval(T, &U, opt.potential, r);
 
         if (opt.adiabatic) {
             mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);

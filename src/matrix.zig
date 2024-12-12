@@ -141,28 +141,6 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     }
 }
 
-pub fn linsolve(comptime T: type, x: *Vector(T), A: Matrix(T), b: Vector(T)) void {
-    var dx = std.math.inf(T);
-
-    while (dx > 1e-14) {
-
-        dx = 0;
-
-        for (0..x.rows) |i| {
-
-            const xp = x.at(i); var xn = b.at(i);
-
-            for (0..x.rows) |j| if (i != j) {
-                xn -= A.at(i, j) * x.at(j);
-            };
-
-            x.ptr(i).* = xn / A.at(i, i);
-
-            dx += @abs(x.at(i) - xp);
-        }
-    }
-}
-
 pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
 
