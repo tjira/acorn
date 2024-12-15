@@ -318,10 +318,6 @@ if __name__ == "__main__":
         # generate the determiants
         dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]
 
-        print(2 * nbf, 2 * nocc)
-        print(dets[0])
-        print(dets[1])
-
         # define the CI Hamiltonian
         Hci = np.zeros([len(dets), len(dets)])
 
@@ -360,8 +356,22 @@ if __name__ == "__main__":
                 if ((aligned - dets[i]) != 0).sum() == 1: Hci[i, j] = slater1(so) * sign
                 if ((aligned - dets[i]) != 0).sum() == 2: Hci[i, j] = slater2(so) * sign
 
+                # if i==0 and j == 35:
+                #     print(np.array(dets[i]))
+                #     print(dets[j])
+                #     print(aligned)
+                #     print(Hci[i, j], sign, so[:4])
+                #
+                # if i==2 and j == 18:
+                #     print(np.array(dets[i]))
+                #     print(dets[j])
+                #     print(aligned)
+                #     print(Hci[i, j], sign, so[:4])
+
                 # fill the lower triangle
                 Hci[j, i] = Hci[i, j]
+
+        # np.savetxt("HCI_P.mat", Hci, fmt='%20.14f')
 
         # solve the eigensystem and assign energy
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF

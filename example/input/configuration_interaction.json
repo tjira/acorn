@@ -1,14 +1,14 @@
 {
     "configuration_interaction" : {
         "hartree_fock" : {
-            "molecule" : "example/molecule/water.xyz",
+            "molecule" : "example/molecule/HF.xyz",
             "integral" : {
                 "overlap" : "S_AO.mat",
                 "kinetic" : "T_AO.mat",
                 "nuclear" : "V_AO.mat",
                 "coulomb" : "J_AO.mat"
             },
-            "threshold" : 1e-8,
+            "threshold" : 1e-12,
             "maxiter" : 100
         },
         "excitation" : null
