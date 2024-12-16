@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const Matrix = @import("matrix.zig").Matrix;
+
 const prod = @import("helper.zig").prod;
 
 pub fn Tensor(comptime T: type) type {
@@ -28,6 +30,9 @@ pub fn Tensor(comptime T: type) type {
             }
 
             return &self.data[index];
+        }
+        pub fn matrix(self: Tensor(T)) Matrix(T) {
+            return Matrix(T){.data = self.data, .rows = self.shape[0] * self.shape[1], .cols = self.shape[2] * self.shape[3], .allocator = self.allocator};
         }
 
         pub fn fill(self: *Tensor(T), value: T) void {

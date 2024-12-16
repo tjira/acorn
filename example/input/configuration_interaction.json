@@ -8,7 +8,7 @@
                 "nuclear" : "V_AO.mat",
                 "coulomb" : "J_AO.mat"
             },
-            "threshold" : 1e-12,
+            "threshold" : 1e-8,
             "maxiter" : 100
         },
         "excitation" : null
