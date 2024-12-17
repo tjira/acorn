@@ -8,6 +8,10 @@ pub fn bitrev(value: anytype, count: u6) @TypeOf(value) {
     var result: @TypeOf(value) = 0; var i: u6 = 0; while (i < count) : (i += 1) {result |= ((value >> i) & 1) << (count - 1 - i);} return result;
 }
 
+pub fn c(n: anytype, k: @TypeOf(n)) @TypeOf(n) {
+    var nck: @TypeOf(n) = 1; for (k + 1..n + 1) |i| {nck *= i;} for (2..n - k + 1) |i| {nck /= i;} return nck;
+}
+
 pub fn prod(comptime T: type, v: []const T) T {
     var result: T = 1; for (v) |value| result *= value; return result;
 }

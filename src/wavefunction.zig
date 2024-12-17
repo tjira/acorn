@@ -78,7 +78,7 @@ pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const 
     };
 }
 
-pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matrix(T), dr: T, T1: *Matrix(Complex(T)), T2: *Matrix(Complex(T))) void {
+pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matrix(T), dr: T, T1: *Matrix(Complex(T)), T2: *Matrix(Complex(T))) !void {
     p.fill(0);
 
     for (0..W.nstate) |i| {
@@ -91,7 +91,7 @@ pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matri
 
         ftr.fft(T, T1.data, T2.data, 1);
 
-        for (0..W.data.rows) |j| p.ptr(0).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
+        for (0..W.data.rows) |j| (try p.ptr(0)).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
 }
 
@@ -111,11 +111,11 @@ pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T
     return s.mul(Complex(T).init(dr, 0));
 }
 
-pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), dr: T) void {
+pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), dr: T) !void {
     r.fill(0);
 
     for (0..W.nstate) |i| for (0..W.data.rows) |j| {
-        r.ptr(0).* += W.data.at(j, i).conjugate().mul(Complex(T).init(rvec.at(j, 0), 0)).mul(W.data.at(j, i)).re * dr;
+        (try r.ptr(0)).* += W.data.at(j, i).conjugate().mul(Complex(T).init(rvec.at(j, 0), 0)).mul(W.data.at(j, i)).re * dr;
     };
 }
 

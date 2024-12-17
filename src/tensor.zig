@@ -6,12 +6,16 @@ const prod = @import("helper.zig").prod;
 
 pub fn Tensor(comptime T: type) type {
     return struct {
-        data: []T, shape: []usize, allocator: std.mem.Allocator,
+        data: []T, shape: []usize, stride: []usize, allocator: std.mem.Allocator,
 
         pub fn init(shape: []const usize, allocator: std.mem.Allocator) !Tensor(T) {
-            const ten = Tensor(T){.data = try allocator.alloc(T, prod(usize, shape)), .shape = try allocator.alloc(usize, shape.len), .allocator = allocator};
+            const ten = Tensor(T){.data = try allocator.alloc(T, prod(usize, shape)), .shape = try allocator.alloc(usize, shape.len), .stride = try allocator.alloc(usize, shape.len), .allocator = allocator};
 
             @memcpy(ten.shape, shape);
+
+            for (0..shape.len) |i| {
+                ten.stride[i] = prod(usize, shape[i + 1..shape.len]);
+            }
 
             return ten;
         }
@@ -26,7 +30,7 @@ pub fn Tensor(comptime T: type) type {
             var index: usize = 0;
 
             for (0..indices.len) |i| {
-                index += indices[i] * prod(usize, self.shape[i + 1..self.shape.len]);
+                index += indices[i] * self.stride[i];
             }
 
             return &self.data[index];

@@ -139,8 +139,8 @@ pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: s
 
         var it = std.mem.splitScalar(u8, uncr(stream.getWritten()), ' '); 
 
-        while (it.next()) |token| if (token.len > 0 and atoms.at(i) == 0) {
-            atoms.ptr(i).* = asfloat(T, SM2AN.get(token).?); break;
+        while (it.next()) |token| if (token.len > 0 and try atoms.at(i) == 0) {
+            (try atoms.ptr(i)).* = asfloat(T, SM2AN.get(token).?); break;
         };
 
         var j: i32 = 0;
@@ -150,7 +150,7 @@ pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: s
         };
     }
 
-    var VNN: T = 0; var nocc: u32 = 0; for (0..natom) |i| nocc +=  @intFromFloat(atoms.at(i));
+    var VNN: T = 0; var nocc: u32 = 0; for (0..natom) |i| nocc +=  @intFromFloat(try atoms.at(i));
 
     for (0..natom) |i| for (0..natom) |j| if (i != j) {
 
@@ -159,13 +159,13 @@ pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: s
 
         const r = std.math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2)) * A2AU;
 
-        VNN += 0.5 * atoms.at(i) * atoms.at(j) / r;
+        VNN += 0.5 * try atoms.at(i) * try atoms.at(j) / r;
     };
 
     if (print) try std.io.getStdOut().writer().print("\nMOLECULE: {s}\n", .{path});
 
     if (print) for (0..natom) |i| {
-        try std.io.getStdOut().writer().print("{d:2} {d:14.8} {d:14.8} {d:14.8}\n", .{@as(u32, @intFromFloat(atoms.at(i))), coords.at(i, 0), coords.at(i, 1), coords.at(i, 2)});
+        try std.io.getStdOut().writer().print("{d:2} {d:14.8} {d:14.8} {d:14.8}\n", .{@as(u32, @intFromFloat(try atoms.at(i))), coords.at(i, 0), coords.at(i, 1), coords.at(i, 2)});
     };
 
     return .{.natom = natom, .nocc = nocc / 2, .VNN = VNN};

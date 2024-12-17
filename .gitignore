@@ -1,4 +1,7 @@
+/*.dot*
 /*.mat*
+/*.out*
+/*.pdf*
 /*.xyz*
 
 *zig*/

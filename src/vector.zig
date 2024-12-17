@@ -28,10 +28,14 @@ pub fn Vector(comptime T: type) type {
             return other;
         }
 
-        pub fn at(self: Vector(T), i: usize) T {
-            return self.ptr(i).*;
+        pub fn at(self: Vector(T), i: usize) !T {
+            if (i < 0 or i >= self.rows) return error.IndexOutOfBounds;
+
+            return (try self.ptr(i)).*;
         }
-        pub fn ptr(self: Vector(T), i: usize) *T {
+        pub fn ptr(self: Vector(T), i: usize) !*T {
+            if (i < 0 or i >= self.rows) return error.IndexOutOfBounds;
+
             return &self.data[i];
         }
         pub fn matrix(self: Vector(T)) Matrix(T) {
