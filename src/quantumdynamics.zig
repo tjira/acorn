@@ -116,14 +116,14 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
             const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1, &T2); const Epot: T = wfn.epot(T, W, V, dr);
 
-            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); try wfn.position(T, &r, W, rvec, dr); try wfn.momentum(T, &p, W, kvec, dr, &T1, &T2);
+            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); wfn.momentum(T, &p, W, kvec, dr, &T1, &T2);
 
-            if (opt.write.population       != null) for (0..W.nstate) |j| {pop.ptr(i, j).* = P.at(j, j);}    ;
-            if (opt.write.position         != null) for (0..W.ndim) |j| {position.ptr(i, j).* = try r.at(j);};
-            if (opt.write.momentum         != null) for (0..W.ndim) |j| {momentum.ptr(i, j).* = try p.at(j);};
-            if (opt.write.kinetic_energy   != null) ekin.ptr(i, 0).* = Ekin                                  ;
-            if (opt.write.potential_energy != null) epot.ptr(i, 0).* = Epot                                  ;
-            if (opt.write.total_energy     != null) etot.ptr(i, 0).* = Ekin + Epot                           ;
+            if (opt.write.population       != null) for (0..W.nstate) |j| {pop.ptr(i, j).* = P.at(j, j);};
+            if (opt.write.position         != null) for (0..W.ndim) |j| {position.ptr(i, j).* = r.at(j);};
+            if (opt.write.momentum         != null) for (0..W.ndim) |j| {momentum.ptr(i, j).* = p.at(j);};
+            if (opt.write.kinetic_energy   != null) ekin.ptr(i, 0).* = Ekin                              ;
+            if (opt.write.potential_energy != null) epot.ptr(i, 0).* = Epot                              ;
+            if (opt.write.total_energy     != null) etot.ptr(i, 0).* = Ekin + Epot                       ;
 
             if (i == opt.iterations - 1) {
                 @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data); output.Ekin = Ekin; output.Epot = Epot;
@@ -210,13 +210,13 @@ fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), p: V
         try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6} [", .{i + 1, Ekin, Epot, Ekin + Epot});
 
         for (0..r.rows) |j| {
-            try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", try r.at(j)});
+            try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", r.at(j)});
         }
 
         try std.io.getStdOut().writer().print("] [", .{});
 
         for (0..p.rows) |j| {
-            try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", try p.at(j)});
+            try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", p.at(j)});
         }
 
         try std.io.getStdOut().writer().print("] [", .{});

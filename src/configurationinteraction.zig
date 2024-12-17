@@ -66,16 +66,16 @@ pub fn run(comptime T: type, opt: ConfigurationInteractionOptions(T), print: boo
 
         const sign = try alignDeterminant(&A, D.row(i).vector(), D.row(j).vector());
 
-        for (0..nocc) |l| if (try A.at(l) != D.at(i, l)) {diff += 1;};
+        for (0..nocc) |l| if (A.at(l) != D.at(i, l)) {diff += 1;};
 
         if (diff > 2) continue;
 
-        if (diff == 1) for (0..nocc) |l| if (try A.at(l) != D.at(i, l)) {
-            so[0] = try A.at(l); so[1] = D.at(i, l);
+        if (diff == 1) for (0..nocc) |l| if (A.at(l) != D.at(i, l)) {
+            so[0] = A.at(l); so[1] = D.at(i, l);
         };
 
-        if (diff == 2) for (0..nocc) |l| if (try A.at(l) != D.at(i, l)) {
-            so[if (k == 0) 0 else 1] = try A.at(l); so[if (k == 0) 2 else 3] = D.at(i, l); k += 1;
+        if (diff == 2) for (0..nocc) |l| if (A.at(l) != D.at(i, l)) {
+            so[if (k == 0) 0 else 1] = A.at(l); so[if (k == 0) 2 else 3] = D.at(i, l); k += 1;
         };
 
         H.ptr(i, j).* = asfloat(T, sign) * try slater(T, A, so[0..diff * 2], H_MS, J_MS_A); H.ptr(j, i).* = H.at(i, j);
@@ -94,8 +94,8 @@ fn alignDeterminant(A: *Vector(usize), B: Vector(usize), C: Vector(usize)) !i32 
     @memcpy(A.data, C.data); var k: i32 = 0; var sign: i32 = 1;
 
     while (k < A.rows) : (k += 1) {
-        if (try A.at(@intCast(k)) != try B.at(@intCast(k))) for (@as(usize, @intCast(k)) + 1..A.rows) |l| if (try A.at(@intCast(k)) == try B.at(l) or try A.at(l) == try B.at(@intCast(k))) {
-            std.mem.swap(usize, try A.ptr(@intCast(k)), try A.ptr(l)); sign *= -1; k -= 1; break;
+        if (A.at(@intCast(k)) != B.at(@intCast(k))) for (@as(usize, @intCast(k)) + 1..A.rows) |l| if (A.at(@intCast(k)) == B.at(l) or A.at(l) == B.at(@intCast(k))) {
+            std.mem.swap(usize, A.ptr(@intCast(k)), A.ptr(l)); sign *= -1; k -= 1; break;
         };
     }
 
@@ -123,11 +123,11 @@ fn slater(comptime T: type, A: Vector(usize), so: []const usize, H_MS: Matrix(T)
     if (so.len / 2 == 0) {
 
         for (0..A.rows) |l| {
-            hij += H_MS.at(try A.at(l), try A.at(l));
+            hij += H_MS.at(A.at(l), A.at(l));
         }
 
         for (0..A.rows) |l| for (0..A.rows) |m| {
-            hij += 0.5 * J_MS_A.at(&[_]usize{try A.at(l), try A.at(m), try A.at(l), try A.at(m)});
+            hij += 0.5 * J_MS_A.at(&[_]usize{A.at(l), A.at(m), A.at(l), A.at(m)});
         };
     }
 
@@ -135,8 +135,8 @@ fn slater(comptime T: type, A: Vector(usize), so: []const usize, H_MS: Matrix(T)
 
         hij += H_MS.at(so[0], so[1]);
 
-        for (0..A.rows) |m| if (try A.at(m) != so[0]) {
-            hij += J_MS_A.at(&[_]usize{so[0], try A.at(m), so[1], try A.at(m)});
+        for (0..A.rows) |m| if (A.at(m) != so[0]) {
+            hij += J_MS_A.at(&[_]usize{so[0], A.at(m), so[1], A.at(m)});
         };
     }
 
