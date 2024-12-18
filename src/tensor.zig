@@ -9,7 +9,12 @@ pub fn Tensor(comptime T: type) type {
         data: []T, shape: []usize, stride: []usize, allocator: std.mem.Allocator,
 
         pub fn init(shape: []const usize, allocator: std.mem.Allocator) !Tensor(T) {
-            const ten = Tensor(T){.data = try allocator.alloc(T, prod(usize, shape)), .shape = try allocator.alloc(usize, shape.len), .stride = try allocator.alloc(usize, shape.len), .allocator = allocator};
+            const ten = Tensor(T){
+                .data = try allocator.alloc(T, prod(usize, shape)),
+                .shape = try allocator.alloc(usize, shape.len),
+                .stride = try allocator.alloc(usize, shape.len),
+                .allocator = allocator
+            };
 
             @memcpy(ten.shape, shape);
 
@@ -20,7 +25,8 @@ pub fn Tensor(comptime T: type) type {
             return ten;
         }
         pub fn deinit(self: Tensor(T)) void {
-            self.allocator.free(self.data); self.allocator.free(self.shape);
+            self.allocator.free(self.data );
+            self.allocator.free(self.shape);
         }
 
         pub fn at(self: Tensor(T), indices: []const usize) T {
@@ -36,11 +42,18 @@ pub fn Tensor(comptime T: type) type {
             return &self.data[index];
         }
         pub fn matrix(self: Tensor(T)) Matrix(T) {
-            return Matrix(T){.data = self.data, .rows = self.shape[0] * self.shape[1], .cols = self.shape[2] * self.shape[3], .allocator = self.allocator};
+            return Matrix(T){
+                .data = self.data,
+                .rows = self.shape[0] * self.shape[1],
+                .cols = self.shape[2] * self.shape[3],
+                .allocator = self.allocator
+            };
         }
 
         pub fn fill(self: *Tensor(T), value: T) void {
-            for (0..self.data.len) |i| self.data[i] = value;
+            for (0..self.data.len) |i| {
+                self.data[i] = value;
+            }
         }
     };
 }
@@ -84,7 +97,12 @@ pub fn read(comptime T: type, path: []const u8, dim: usize, allocator: std.mem.A
     var hbuffer: [16]u8 = undefined; var hstream = std.io.fixedBufferStream(&hbuffer);
 
     for (0..dim) |i| {
-        hstream.reset(); try reader.streamUntilDelimiter(hstream.writer(), if (i < dim - 1) ' ' else '\n',  4); shape[i] = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
+
+        hstream.reset();
+
+        try reader.streamUntilDelimiter(hstream.writer(), if (i < dim - 1) ' ' else '\n',  4);
+
+        shape[i] = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
     }
 
     const ten = try Tensor(T).init(shape, allocator);

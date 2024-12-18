@@ -7,7 +7,11 @@ pub fn Vector(comptime T: type) type {
         data: []T, rows: usize, allocator: std.mem.Allocator,
 
         pub fn init(rows: usize, allocator: std.mem.Allocator) !Vector(T) {
-            return Vector(T){.data = try allocator.alloc(T, rows), .rows = rows, .allocator = allocator};
+            return Vector(T){
+                .data = try allocator.alloc(T, rows),
+                .rows = rows,
+                .allocator = allocator
+            };
         }
         pub fn deinit(self: Vector(T)) void {
             self.allocator.free(self.data);
@@ -23,7 +27,9 @@ pub fn Vector(comptime T: type) type {
         pub fn complex(self: Vector(T)) !Vector(Complex(T)) {
             var other = try Vector(Complex(T)).init(self.rows, self.allocator);
 
-            for (0..self.data.len) |i| other.data[i] = Complex(T).init(self.data[i], 0);
+            for (0..self.data.len) |i| {
+                other.data[i] = Complex(T).init(self.data[i], 0);
+            }
 
             return other;
         }
@@ -35,11 +41,18 @@ pub fn Vector(comptime T: type) type {
             return &self.data[i];
         }
         pub fn matrix(self: Vector(T)) Matrix(T) {
-            return Matrix(T){.data = self.data, .rows = self.rows, .cols = 1, .allocator = self.allocator};
+            return Matrix(T){
+                .data = self.data,
+                .rows = self.rows,
+                .cols = 1,
+                .allocator = self.allocator
+            };
         }
 
         pub fn fill(self: Vector(T), value: T) void {
-            for (0..self.data.len) |i| self.data[i] = value;
+            for (0..self.data.len) |i| {
+                self.data[i] = value;
+            }
         }
     };
 }

@@ -10,7 +10,12 @@ pub fn Matrix(comptime T: type) type {
         data: []T, rows: usize, cols: usize, allocator: std.mem.Allocator,
 
         pub fn init(rows: usize, cols: usize, allocator: std.mem.Allocator) !Matrix(T) {
-            return Matrix(T){.data = try allocator.alloc(T, rows * cols), .rows = rows, .cols = cols, .allocator = allocator};
+            return Matrix(T){
+                .data = try allocator.alloc(T, rows * cols),
+                .rows = rows,
+                .cols = cols,
+                .allocator = allocator
+            };
         }
         pub fn deinit(self: Matrix(T)) void {
             self.allocator.free(self.data);
@@ -26,7 +31,9 @@ pub fn Matrix(comptime T: type) type {
         pub fn complex(self: Matrix(T)) !Matrix(Complex(T)) {
             var other = try Matrix(Complex(T)).init(self.rows, self.cols, self.allocator);
 
-            for (0..self.data.len) |i| other.data[i] = Complex(T).init(self.data[i], 0);
+            for (0..self.data.len) |i| {
+                other.data[i] = Complex(T).init(self.data[i], 0);
+            }
 
             return other;
         }
@@ -38,10 +45,19 @@ pub fn Matrix(comptime T: type) type {
             return &self.data[i * self.cols + j];
         }
         pub fn row(self: Matrix(T), i: usize) Matrix(T) {
-            return Matrix(T){.data = self.data[i * self.cols..(i + 1) * self.cols], .rows = 1, .cols = self.cols, .allocator = self.allocator};
+            return Matrix(T){
+                .data = self.data[i * self.cols..(i + 1) * self.cols],
+                .rows = 1,
+                .cols = self.cols,
+                .allocator = self.allocator
+            };
         }
         pub fn vector(self: Matrix(T)) Vector(T) {
-            return Vector(T){.data = self.data[0..], .rows = self.rows * self.cols, .allocator = self.allocator};
+            return Vector(T){
+                .data = self.data[0..],
+                .rows = self.rows * self.cols,
+                .allocator = self.allocator
+            };
         }
 
         pub fn fill(self: Matrix(T), value: T) void {
@@ -50,16 +66,22 @@ pub fn Matrix(comptime T: type) type {
         pub fn identity(self: Matrix(T)) void {
             self.fill(0);
 
-            for (0..self.rows) |i| self.ptr(i, i).* = 1;
+            for (0..self.rows) |i| {
+                self.ptr(i, i).* = 1;
+            }
         }
         pub fn linspace(self: Matrix(T), start: T, end: T) void {
-            for (0..self.data.len) |i| self.data[i] = start + asfloat(T, i) * (end - start) / asfloat(T, self.rows * self.cols - 1);
+            for (0..self.data.len) |i| {
+                self.data[i] = start + asfloat(T, i) * (end - start) / asfloat(T, self.rows * self.cols - 1);
+            }
         }
 
         pub fn print(self: Matrix(T), device: anytype) !void {
             try device.print("{d} {d}\n", .{self.rows, self.cols});
 
-            for (self.data, 1..) |e, i| try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
+            for (self.data, 1..) |e, i| {
+                try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
+            }
         }
         pub fn write(self: Matrix(T), path: []const u8) !void {
             const file = try std.fs.cwd().createFile(path, .{}); defer file.close();
@@ -105,7 +127,9 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *M
 
         mm(T, T2, J.*, T1.*); mam(T, J, T1.*, T2.*); mm(T, T2, C.*, T1.*); @memcpy(C.data, T2.data);
 
-        maxv = 0; for (0..A.rows) |i| for (i + 1..A.cols) |j| if (@abs(J.at(i, j)) > @abs(maxv)) {
+        maxv = 0;
+
+        for (0..A.rows) |i| for (i + 1..A.cols) |j| if (@abs(J.at(i, j)) > @abs(maxv)) {
             maxi = i; maxj = j; maxv = J.at(i, j);
         };
     }
@@ -114,7 +138,9 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *M
 
         std.mem.swap(T, J.ptr(i, i), J.ptr(j, j));
 
-        for (0..A.rows) |k| std.mem.swap(T, C.ptr(k, i), C.ptr(k, j));
+        for (0..A.rows) |k| {
+            std.mem.swap(T, C.ptr(k, i), C.ptr(k, j));
+        }
     };
 }
 
@@ -135,9 +161,13 @@ pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), epsilon: T) bool {
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     for (0..A.rows) |i| {
 
-        for (0..A.cols) |j| C.ptr(i, j).*          = A.at(i, j);
+        for (0..A.cols) |j| {
+            C.ptr(i, j).* = A.at(i, j);
+        }
 
-        for (0..B.cols) |j| C.ptr(i, A.cols + j).* = B.at(i, j);
+        for (0..B.cols) |j| {
+            C.ptr(i, A.cols + j).* = B.at(i, j);
+        }
     }
 }
 

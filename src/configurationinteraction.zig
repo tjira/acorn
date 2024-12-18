@@ -50,7 +50,7 @@ pub fn run(comptime T: type, opt: ConfigurationInteractionOptions(T), print: boo
     try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{ndet});
 
     var T1 = try Matrix(T).init(ndet, ndet, allocator); defer T1.deinit();
-    var T2 = try Matrix(T).init(ndet, ndet, allocator); defer T1.deinit();
+    var T2 = try Matrix(T).init(ndet, ndet, allocator); defer T2.deinit();
 
     var A = try Vector(usize).init(nocc,       allocator); defer A.deinit();
     var D = try Matrix(usize).init(ndet, nocc, allocator); defer D.deinit();
