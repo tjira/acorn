@@ -1,7 +1,7 @@
 {
     "moller_plesset" : {
         "hartree_fock" : {
-            "molecule" : "example/molecule/HF.xyz",
+            "molecule" : "molecule.xyz",
             "integral" : {
                 "overlap" : "S_AO.mat",
                 "kinetic" : "T_AO.mat",

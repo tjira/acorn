@@ -8,13 +8,26 @@ const Vector = @import("vector.zig").Vector;
 
 pub fn Wavefunction(comptime T: type) type {
     return struct {
-        data: Matrix(Complex(T)), ndim: u32, nstate: u32, points: u32, allocator: std.mem.Allocator,
+        data: Matrix(Complex(T)), shape: []usize, ndim: u32, nstate: u32, points: u32, allocator: std.mem.Allocator,
 
         pub fn init(ndim: u32, nstate: u32, points: u32, allocator: std.mem.Allocator) !Wavefunction(T) {
-            return Wavefunction(T){.data = try Matrix(Complex(T)).init(std.math.pow(u32, points, ndim), nstate, allocator), .ndim = ndim, .nstate = nstate, .points = points, .allocator = allocator};
+            const W = Wavefunction(T){
+                .data = try Matrix(Complex(T)).init(std.math.pow(u32, points, ndim), nstate, allocator),
+                .shape = try allocator.alloc(usize, ndim),
+                .ndim = ndim,
+                .nstate = nstate,
+                .points = points,
+                .allocator = allocator
+            };
+
+            for (0..ndim) |i| {
+                W.shape[i] = points;
+            }
+
+            return W;
         }
         pub fn deinit(self: Wavefunction(T)) void {
-            self.data.deinit();
+            self.data.deinit(); self.allocator.free(self.shape);
         }
     };
 }
@@ -44,11 +57,18 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: 
 
         for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
 
-        ftr.fft(T, T2.data, T1.data, -1);
+        ftr.fftn(T, T2.data, T1.data, W.shape, -1);
 
-        for (0..W.data.rows) |j| T2.ptr(j, 0).* = T2.at(j, 0).mul(Complex(T).init(kvec.at(j, 0) * kvec.at(j, 0), 0));
+        for (0..W.data.rows) |j| {
+            
+            var ksqsum: T = 0;
 
-        ftr.fft(T, T1.data, T2.data, 1);
+            for (0..W.ndim) |k| ksqsum += kvec.at(j, k) * kvec.at(j, k);
+
+            T2.ptr(j, 0).* = T2.at(j, 0).mul(Complex(T).init(ksqsum, 0));
+        }
+
+        ftr.fftn(T, T1.data, T2.data, W.shape, 1);
 
         for (0..W.data.rows) |j| Ekin += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
@@ -70,7 +90,12 @@ pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const 
     W.data.fill(Complex(T).init(0, 0));
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| if (j == state) {
-        W.data.ptr(i, j).* = Complex(T).init(std.math.exp(-0.5 * gamma * (rvec.at(i, 0) - r[0]) * (rvec.at(i, 0) - r[0])), 0);
+
+        var exp: T = 0;
+
+        for (0..W.ndim) |k| exp -= 0.5 * gamma * (rvec.at(i, k) - r[k]) * (rvec.at(i, k) - r[k]);
+
+        W.data.ptr(i, j).* = Complex(T).init(std.math.exp(exp), 0);
     };
 
     for (0..W.data.rows) |i| for (0..W.data.cols) |j| {
@@ -85,11 +110,11 @@ pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matri
 
         for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
 
-        ftr.fft(T, T2.data, T1.data, -1);
+        ftr.fftn(T, T2.data, T1.data, W.shape, -1);
 
         for (0..W.data.rows) |j| T2.ptr(j, 0).* = T2.at(j, 0).mul(Complex(T).init(kvec.at(j, 0), 0));
 
-        ftr.fft(T, T1.data, T2.data, 1);
+        ftr.fftn(T, T1.data, T2.data, W.shape, 1);
 
         for (0..W.data.rows) |j| p.ptr(0).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
@@ -114,8 +139,8 @@ pub fn overlap(comptime T: type, W1: Wavefunction(T), W2: Wavefunction(T), dr: T
 pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), dr: T) void {
     r.fill(0);
 
-    for (0..W.nstate) |i| for (0..W.data.rows) |j| {
-        r.ptr(0).* += W.data.at(j, i).conjugate().mul(Complex(T).init(rvec.at(j, 0), 0)).mul(W.data.at(j, i)).re * dr;
+    for (0..W.nstate) |i| for (0..W.data.rows) |j| for (0..rvec.cols) |k| {
+        r.ptr(k).* += W.data.at(j, i).conjugate().mul(Complex(T).init(rvec.at(j, k), 0)).mul(W.data.at(j, i)).re * dr;
     };
 }
 
@@ -130,7 +155,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
 
     for (0..W.data.cols) |j| {
         for (0..W.data.rows) |i| T1.data[i] = W.data.at(i, j);
-        ftr.fft(T, T2.data, T1.data, -1);
+        ftr.fftn(T, T2.data, T1.data, W.shape, -1);
         for (0..W.data.rows) |i| W.data.ptr(i, j).* = T2.at(i, 0);
     }
 
@@ -144,7 +169,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
 
     for (0..W.data.cols) |j| {
         for (0..W.data.rows) |i| T1.data[i] = W.data.at(i, j);
-        ftr.fft(T, T2.data, T1.data, 1);
+        ftr.fftn(T, T2.data, T1.data, W.shape, 1);
         for (0..W.data.rows) |i| W.data.ptr(i, j).* = T2.at(i, 0);
     }
 

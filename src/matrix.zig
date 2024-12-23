@@ -1,6 +1,7 @@
 const std = @import("std"); const Complex = std.math.Complex;
 
-const Vector = @import("vector.zig").Vector;
+const StridedArray = @import("stridedarray.zig").StridedArray;
+const Vector       = @import("vector.zig"      ).Vector      ;
 
 const asfloat = @import("helper.zig").asfloat;
 const uncr    = @import("helper.zig").uncr   ;
@@ -51,6 +52,9 @@ pub fn Matrix(comptime T: type) type {
                 .cols = self.cols,
                 .allocator = self.allocator
             };
+        }
+        pub fn sa(self: Matrix(T)) StridedArray(T) {
+            return StridedArray(T){.data = self.data, .len = self.rows * self.cols, .stride = 1, .zero = 0};
         }
         pub fn vector(self: Matrix(T)) Vector(T) {
             return Vector(T){

@@ -27,6 +27,7 @@ pub fn ModelPotentialOptions(comptime T: type) type {
 pub fn dims(potential: []const u8) !u32 {
     if (std.mem.eql(u8, potential,    "harmonic1D_1")) return 1;
     if (std.mem.eql(u8, potential,    "harmonic2D_1")) return 2;
+    if (std.mem.eql(u8, potential,    "harmonic3D_1")) return 3;
     if (std.mem.eql(u8, potential, "doubleState1D_1")) return 1;
     if (std.mem.eql(u8, potential, "doubleState1D_2")) return 1;
     if (std.mem.eql(u8, potential, "tripleState1D_1")) return 1;
@@ -44,6 +45,7 @@ pub fn dims(potential: []const u8) !u32 {
 pub fn eval(comptime T: type, U: *Matrix(T), potential: []const u8, r: Vector(T)) !void {
     if (std.mem.eql(u8, potential,    "harmonic1D_1"))    return harmonic1D_1(T, U, r);
     if (std.mem.eql(u8, potential,    "harmonic2D_1"))    return harmonic2D_1(T, U, r);
+    if (std.mem.eql(u8, potential,    "harmonic3D_1"))    return harmonic3D_1(T, U, r);
     if (std.mem.eql(u8, potential, "doubleState1D_1")) return doubleState1D_1(T, U, r);
     if (std.mem.eql(u8, potential, "doubleState1D_2")) return doubleState1D_2(T, U, r);
     if (std.mem.eql(u8, potential, "tripleState1D_1")) return tripleState1D_1(T, U, r);
@@ -61,6 +63,7 @@ pub fn eval(comptime T: type, U: *Matrix(T), potential: []const u8, r: Vector(T)
 pub fn states(potential: []const u8) !u32 {
     if (std.mem.eql(u8, potential,    "harmonic1D_1")) return 1;
     if (std.mem.eql(u8, potential,    "harmonic2D_1")) return 1;
+    if (std.mem.eql(u8, potential,    "harmonic3D_1")) return 1;
     if (std.mem.eql(u8, potential, "doubleState1D_1")) return 2;
     if (std.mem.eql(u8, potential, "doubleState1D_2")) return 2;
     if (std.mem.eql(u8, potential, "tripleState1D_1")) return 3;
@@ -81,6 +84,10 @@ pub fn harmonic1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
 
 pub fn harmonic2D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1));
+}
+
+pub fn harmonic3D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
+    U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1) + r.at(2) * r.at(2));
 }
 
 pub fn doubleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {

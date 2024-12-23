@@ -125,6 +125,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
             if (opt.write.potential_energy != null) epot.ptr(i, 0).* = Epot                              ;
             if (opt.write.total_energy     != null) etot.ptr(i, 0).* = Ekin + Epot                       ;
 
+            if (i == opt.iterations - 1) for (0..W.nstate) |j| {pop.ptr(i, j).* = P.at(j, j);};
+
             if (i == opt.iterations - 1) {
                 @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data); output.Ekin = Ekin; output.Epot = Epot;
             }

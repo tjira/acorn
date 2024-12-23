@@ -1,6 +1,7 @@
 const std = @import("std"); const Complex = std.math.Complex;
 
-const Matrix = @import("matrix.zig").Matrix;
+const StridedArray = @import("stridedarray.zig").StridedArray;
+const Matrix       = @import("matrix.zig").Matrix            ;
 
 pub fn Vector(comptime T: type) type {
     return struct {
@@ -37,9 +38,6 @@ pub fn Vector(comptime T: type) type {
         pub fn at(self: Vector(T), i: usize) T {
             return self.ptr(i).*;
         }
-        pub fn ptr(self: Vector(T), i: usize) *T {
-            return &self.data[i];
-        }
         pub fn matrix(self: Vector(T)) Matrix(T) {
             return Matrix(T){
                 .data = self.data,
@@ -47,6 +45,12 @@ pub fn Vector(comptime T: type) type {
                 .cols = 1,
                 .allocator = self.allocator
             };
+        }
+        pub fn ptr(self: Vector(T), i: usize) *T {
+            return &self.data[i];
+        }
+        pub fn sa(self: Vector(T)) StridedArray(T) {
+            return StridedArray(T){.data = self.data, .len = self.rows, .stride = 1, .zero = 0};
         }
 
         pub fn fill(self: Vector(T), value: T) void {
