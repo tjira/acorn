@@ -10,8 +10,8 @@
         },
         "initial_conditions" : {
             "mass" : 1,
-            "momentum" : [0, 0],
-            "position" : [1, 1],
+            "momentum" : [0],
+            "position" : [1],
             "state" : 0
         },
         "log_intervals" : {
@@ -25,6 +25,6 @@
             "potential_energy" : null,
             "total_energy" : null
         },
-        "potential" : "harmonic2D_1"
+        "potential" : "harmonic1D_1"
     }
 }
