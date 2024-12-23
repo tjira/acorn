@@ -73,7 +73,4 @@ pub fn main() !void {
     }
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
-
-    var A = try Tensor(Complex(f64)).init(&[_]usize{2, 2, 2}, allocator); defer A.deinit();
-    var B = try Tensor(Complex(f64)).init(&[_]usize{2, 2, 2}, allocator); defer B.deinit();
 }

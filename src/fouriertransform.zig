@@ -46,8 +46,14 @@ pub fn fftn(comptime T: type, out: []Complex(T), in: []Complex(T), shape: []cons
 
         for (0..sprod / shape[shape.len - i - 1]) |j| {
 
-            const in_sa  = StridedArray(Complex(T)){.data = in,  .len = shape[shape.len - i - 1], .stride = stride, .zero = j * sprod / stride / shape[shape.len - i - 1]};
-            const out_sa = StridedArray(Complex(T)){.data = out, .len = shape[shape.len - i - 1], .stride = stride, .zero = j * sprod / stride / shape[shape.len - i - 1]};
+            var offset: usize = 0; var index: usize = 0;
+
+            for (0..shape.len) |k| if (k != i) {
+                offset += (j / std.math.pow(usize, shape[k], shape.len - index - 2) % shape[k]) * std.math.pow(usize, shape[k], k); index += 1;
+            };
+
+            const in_sa  = StridedArray(Complex(T)){.data = in,  .len = shape[shape.len - i - 1], .stride = stride, .zero = offset};
+            const out_sa = StridedArray(Complex(T)){.data = out, .len = shape[shape.len - i - 1], .stride = stride, .zero = offset};
 
             fft(T, out_sa, in_sa, factor);
         }

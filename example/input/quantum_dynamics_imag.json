@@ -6,12 +6,12 @@
         "time_step" : 0.1,
         "grid" : {
             "limits" : [-8, 8],
-            "points" : 64
+            "points" : 32
         },
         "initial_conditions" : {
             "mass" : 1,
-            "momentum" : [0],
-            "position" : [1],
+            "momentum" : [0, 0],
+            "position" : [1, 1],
             "state" : 0
         },
         "log_intervals" : {
@@ -25,6 +25,6 @@
             "potential_energy" : null,
             "total_energy" : null
         },
-        "potential" : "harmonic1D_1"
+        "potential" : "harmonic2D_1"
     }
 }
