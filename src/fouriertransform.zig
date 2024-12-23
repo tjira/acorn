@@ -9,8 +9,17 @@ const asfloat = @import("helper.zig").asfloat;
 const bitrev  = @import("helper.zig").bitrev ;
 const prod    = @import("helper.zig").prod   ;
 
-pub fn fft(comptime T: type, out: StridedArray(Complex(T)), in: StridedArray(Complex(T)), factor: i32) void {
-    const n = in.len; const logn: u6 = @intCast(std.math.log2(n)); for (0..n) |i| out.ptr(bitrev(i, logn)).* = in.at(i);
+pub fn fft(comptime T: type, arr: StridedArray(Complex(T)), factor: i32) void {
+    const n = arr.len; const logn: u6 = @intCast(std.math.log2(n));
+
+    for (0..n) |i| {
+
+        const j = bitrev(i, logn);
+
+        if (i < j) {
+            std.mem.swap(Complex(T), arr.ptr(j), arr.ptr(i));
+        }
+    }
 
     for (0..logn) |i| {
 
@@ -22,27 +31,25 @@ pub fn fft(comptime T: type, out: StridedArray(Complex(T)), in: StridedArray(Com
 
             for (0..m / 2) |k| {
 
-                const t = omega.mul(out.at(j * m + k + m / 2)); const u = out.at(j * m + k);
+                const t = omega.mul(arr.at(j * m + k + m / 2)); const u = arr.at(j * m + k);
 
-                out.ptr(j * m + k        ).* = u.add(t);
-                out.ptr(j * m + k + m / 2).* = u.sub(t);
+                arr.ptr(j * m + k        ).* = u.add(t);
+                arr.ptr(j * m + k + m / 2).* = u.sub(t);
 
                 omega = omega.mul(mix);
             }
         }
     }
 
-    if (factor > 0) for (0..out.len) |i| {
-        out.ptr(i).* = out.at(i).div(Complex(T).init(asfloat(T, out.len), 0));
+    if (factor > 0) for (0..n) |i| {
+        arr.ptr(i).* = arr.at(i).div(Complex(T).init(asfloat(T, n), 0));
     };
 }
 
-pub fn fftn(comptime T: type, out: []Complex(T), in: []Complex(T), shape: []const usize, factor: i32) void {
-    @memcpy(out, in); const sprod = prod(usize, shape); var stride: usize = 1;
+pub fn fftn(comptime T: type, arr: []Complex(T), shape: []const usize, factor: i32) void {
+    const sprod = prod(usize, shape); var stride: usize = 1;
 
     for (0..shape.len) |i| {
-
-        @memcpy(in, out);
 
         for (0..sprod / shape[shape.len - i - 1]) |j| {
 
@@ -52,10 +59,7 @@ pub fn fftn(comptime T: type, out: []Complex(T), in: []Complex(T), shape: []cons
                 offset += (j / std.math.pow(usize, shape[k], shape.len - index - 2) % shape[k]) * std.math.pow(usize, shape[k], k); index += 1;
             };
 
-            const in_sa  = StridedArray(Complex(T)){.data = in,  .len = shape[shape.len - i - 1], .stride = stride, .zero = offset};
-            const out_sa = StridedArray(Complex(T)){.data = out, .len = shape[shape.len - i - 1], .stride = stride, .zero = offset};
-
-            fft(T, out_sa, in_sa, factor);
+            fft(T, StridedArray(Complex(T)){.data = arr, .len = shape[shape.len - i - 1], .stride = stride, .zero = offset}, factor);
         }
 
         stride *= shape[shape.len - i - 1];

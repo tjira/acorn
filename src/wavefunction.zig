@@ -53,11 +53,13 @@ pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void 
 pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: T, T1: *Matrix(Complex(T)), T2: *Matrix(Complex(T))) T {
     var Ekin: T = 0;
 
+    _ = T2;
+
     for (0..W.nstate) |i| {
 
         for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
 
-        ftr.fftn(T, T2.data, T1.data, W.shape, -1);
+        ftr.fftn(T, T1.data, W.shape, -1);
 
         for (0..W.data.rows) |j| {
             
@@ -65,10 +67,10 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: 
 
             for (0..W.ndim) |k| ksqsum += kvec.at(j, k) * kvec.at(j, k);
 
-            T2.ptr(j, 0).* = T2.at(j, 0).mul(Complex(T).init(ksqsum, 0));
+            T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(ksqsum, 0));
         }
 
-        ftr.fftn(T, T1.data, T2.data, W.shape, 1);
+        ftr.fftn(T, T1.data, W.shape, 1);
 
         for (0..W.data.rows) |j| Ekin += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
@@ -106,15 +108,17 @@ pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const 
 pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matrix(T), dr: T, T1: *Matrix(Complex(T)), T2: *Matrix(Complex(T))) void {
     p.fill(0);
 
+    _ = T2;
+
     for (0..W.nstate) |i| {
 
         for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
 
-        ftr.fftn(T, T2.data, T1.data, W.shape, -1);
+        ftr.fftn(T, T1.data, W.shape, -1);
 
-        for (0..W.data.rows) |j| T2.ptr(j, 0).* = T2.at(j, 0).mul(Complex(T).init(kvec.at(j, 0), 0));
+        for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(kvec.at(j, 0), 0));
 
-        ftr.fftn(T, T1.data, T2.data, W.shape, 1);
+        ftr.fftn(T, T1.data, W.shape, 1);
 
         for (0..W.data.rows) |j| p.ptr(0).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
@@ -145,6 +149,8 @@ pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matri
 }
 
 pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(Complex(T))), K: @TypeOf(R), T1: *Matrix(Complex(T)), T2: *Matrix(Complex(T))) void {
+    _ = T2;
+
     for (0..W.data.rows) |i| {
         for (0..W.data.cols) |j| T1.data[j] = Complex(T).init(0, 0);
         for (0..W.data.cols) |j| for (0..W.data.cols) |k| {
@@ -155,8 +161,8 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
 
     for (0..W.data.cols) |j| {
         for (0..W.data.rows) |i| T1.data[i] = W.data.at(i, j);
-        ftr.fftn(T, T2.data, T1.data, W.shape, -1);
-        for (0..W.data.rows) |i| W.data.ptr(i, j).* = T2.at(i, 0);
+        ftr.fftn(T, T1.data, W.shape, -1);
+        for (0..W.data.rows) |i| W.data.ptr(i, j).* = T1.at(i, 0);
     }
 
     for (0..W.data.rows) |i| {
@@ -169,8 +175,8 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
 
     for (0..W.data.cols) |j| {
         for (0..W.data.rows) |i| T1.data[i] = W.data.at(i, j);
-        ftr.fftn(T, T2.data, T1.data, W.shape, 1);
-        for (0..W.data.rows) |i| W.data.ptr(i, j).* = T2.at(i, 0);
+        ftr.fftn(T, T1.data, W.shape, 1);
+        for (0..W.data.rows) |i| W.data.ptr(i, j).* = T1.at(i, 0);
     }
 
     for (0..W.data.rows) |i| {
