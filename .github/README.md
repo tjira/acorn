@@ -61,7 +61,7 @@ Since the software is coded in zig, you need to have the zig compiler installed 
 zig build --release=fast --summary all
 ```
 
-This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os/acorn` folder, where `arch` is the architecture of your system and `os` is the operating system you are using. You can also perform tests on the project by running the following command.
+This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os` folder, where `arch` is the architecture of your system and `os` is the operating system you are using. You can also perform tests on the project by running the following command.
 
 ```bash
 zig build --release=fast --summary all test

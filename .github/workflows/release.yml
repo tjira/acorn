@@ -81,23 +81,23 @@ jobs:
           file: bin/acorn-riscv64-linux
           tag: ${{github.ref}}
 
-      - name: Release x86-64-linux Version of Acorn
+      - name: Release x86_64-linux Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: bin/acorn-x86-64-linux
+          file: bin/acorn-x86_64-linux
           tag: ${{github.ref}}
 
-      - name: Release x86-64-macos Version of Acorn
+      - name: Release x86_64-macos Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: bin/acorn-x86-64-macos
+          file: bin/acorn-x86_64-macos
           tag: ${{github.ref}}
 
-      - name: Release x86-64-windows Version of Acorn
+      - name: Release x86_64-windows Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: bin/acorn-x86-64-windows.exe
+          file: bin/acorn-x86_64-windows.exe
           tag: ${{github.ref}}
