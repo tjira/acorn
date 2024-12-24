@@ -24,7 +24,7 @@ jobs:
         run: wget https://github.com/jgm/pandoc/releases/download/3.4/pandoc-3.4-1-amd64.deb -O pandoc.deb && sudo dpkg -i pandoc.deb
 
       - name: Compile Document
-        run: ./script/general/docstopdf.sh
+        run: ./script/docstopdf.sh
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
