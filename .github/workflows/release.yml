@@ -8,12 +8,9 @@ on:
 permissions:
   contents: write
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +22,10 @@ jobs:
         run: ./bin/zig build --release=fast --summary all
 
       - name: Rename Binaries
-        run: cd zig-out && for FOLDER in *; do mv $FOLDER/acorn $FOLDER/acorn-$FOLDER; done
+        run: |
+          cd zig-out && for FOLDER in *linux;   do mv $FOLDER/acorn     $FOLDER/acorn-$FOLDER;     done
+          cd zig-out && for FOLDER in *macos;   do mv $FOLDER/acorn     $FOLDER/acorn-$FOLDER;     done
+          cd zig-out && for FOLDER in *windows; do mv $FOLDER/acorn.exe $FOLDER/acorn-$FOLDER.exe; done
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
