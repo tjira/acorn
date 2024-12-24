@@ -23,9 +23,9 @@ jobs:
 
       - name: Rename Binaries
         run: |
-          cd zig-out && for FOLDER in *linux;   do mv $FOLDER/acorn     $FOLDER/acorn-$FOLDER;     done
-          cd zig-out && for FOLDER in *macos;   do mv $FOLDER/acorn     $FOLDER/acorn-$FOLDER;     done
-          cd zig-out && for FOLDER in *windows; do mv $FOLDER/acorn.exe $FOLDER/acorn-$FOLDER.exe; done
+          cd zig-out && for FOLDER in *linux;   do mv $FOLDER/acorn     $FOLDER/acorn-$FOLDER;     done && cd -
+          cd zig-out && for FOLDER in *macos;   do mv $FOLDER/acorn     $FOLDER/acorn-$FOLDER;     done && cd -
+          cd zig-out && for FOLDER in *windows; do mv $FOLDER/acorn.exe $FOLDER/acorn-$FOLDER.exe; done && cd -
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
