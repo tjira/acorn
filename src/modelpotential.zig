@@ -10,15 +10,14 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn ModelPotentialOptions(comptime T: type) type {
     return struct {
         const ValuePair = struct {
-            index: u32,
-            value: T
+            index: u32 = 0, value: T = 0
         };
 
-        adiabatic: bool,
-        limits: []const T,
-        output: []const u8,
-        points: u32,
-        potential: []const u8,
+        adiabatic: bool = false,
+        limits: []const T = &[_]T{-16, 16},
+        output: []const u8 = "POTENTIAL.mat",
+        points: u32 = 1024,
+        potential: []const u8 = "tully1D_1",
 
         constant: []const ValuePair = &[_]ValuePair{}
     };

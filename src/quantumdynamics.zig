@@ -34,9 +34,10 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         adiabatic: bool = true,
         imaginary: bool = false,
         iterations: u32 = 300,
+        potential: []const u8 = "tully1D_1",
         time_step: T = 10,
 
-        grid: Grid = .{}, initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{}, potential: []const u8 = "tully1D_1"
+        grid: Grid = .{}, initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{}
     };
 }
 
@@ -77,7 +78,6 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
     {
         var T1 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), 1, allocator); defer T1.deinit();
-        var T2 = try Matrix(Complex(T)).init(std.math.pow(u32, opt.grid.points, ndim), 1, allocator); defer T2.deinit();
 
         var rvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, ndim), ndim, allocator); defer rvec.deinit();
         var kvec = try Matrix(T).init(std.math.pow(u32, opt.grid.points, ndim), ndim, allocator); defer kvec.deinit();
@@ -102,7 +102,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
         wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); wfn.normalize(T, &W, dr);
 
-        if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "ET1N", "EPOT", "ETOT"});
+        if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
 
         if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });}
         if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"MOMENTUM"  });}
@@ -110,13 +110,13 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
         for (0..opt.iterations) |i| {
 
-            wfn.propagate(T, &W, R, K, &T1, &T2); if (opt.imaginary) wfn.normalize(T, &W, dr);
+            try wfn.propagate(T, &W, R, K, &T1); if (opt.imaginary) wfn.normalize(T, &W, dr);
 
             if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
 
-            const Ekin = wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1, &T2); const Epot: T = wfn.epot(T, W, V, dr);
+            const Ekin = try wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1); const Epot: T = wfn.epot(T, W, V, dr);
 
-            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); wfn.momentum(T, &p, W, kvec, dr, &T1, &T2);
+            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); try wfn.momentum(T, &p, W, kvec, dr, &T1);
 
             if (opt.write.population       != null) for (0..W.nstate) |j| {pop.ptr(i, j).* = P.at(j, j);};
             if (opt.write.position         != null) for (0..W.ndim) |j| {position.ptr(i, j).* = r.at(j);};

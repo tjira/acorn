@@ -102,7 +102,7 @@ pub fn read(comptime T: type, path: []const u8, dim: usize, allocator: std.mem.A
 
         try reader.streamUntilDelimiter(hstream.writer(), if (i < dim - 1) ' ' else '\n',  4);
 
-        shape[i] = try std.fmt.parseInt(usize, hbuffer[0..try hstream.getPos()], 10);
+        shape[i] = try std.fmt.parseInt(usize, hbuffer[0..@intCast(try hstream.getPos())], 10);
     }
 
     const ten = try Tensor(T).init(shape, allocator);

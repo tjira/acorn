@@ -51,47 +51,26 @@ Below are all the important features of Acorn divided into categories.
 ### Quantum Mechanical Methods
 
 * Numerically Exact Adiabatic & Nonadiabatic Quantum Dynamics with Arbitrary Number of States & Dimensions
-* Restricted Hartree–Fock for Closed Shell & Generalized Hartree–Fock for Open Shell Systems
-* Møller–Plesset Perturbation Theory, Configuration Interaction & Coupled Cluster Methods
+* Restricted Hartree–Fock, Møller–Plesset Perturbation Theory & Configuration Interaction Methods
 
 ## Compilation
 
-All the libraries the program needs are included in the installation script. To install all the libraries, navigate to the project root directory and execute the following command.
+Since the software is coded in zig, you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download). After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
 
 ```bash
-./script/general/library.sh SHARED 1
+zig build --release=fast --summary all
 ```
 
-You can also perform a static compilation. The number at the end is number of cores the compilation process uses. The program needs some heavy libraries so it takes some time. After the library compilation finishes, all the header files and compiled libraries can be found in the *external* directory. If you don't want to wait for the compilation process, you can also download libraries used in the latest release by running the following command.
+This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os/acorn` folder, where `arch` is the architecture of your system and `os` is the operating system you are using. You can also perform tests on the project by running the following command.
 
 ```bash
-./script/general/libdown.sh SHARED
+zig build --release=fast --summary all test
 ```
 
-This command also creates the *external* directory with libraries. After you have obtained the compiled libraries, configure the project by the following command.
+If some tests fail, let me know by creating an issue. If all the tests pass, you can run the binary file using the following command.
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DSTATIC=OFF
+./zig-out/arch-os/acorn
 ```
 
-And build with the following command.
-
-```bash
-cmake --build build
-```
-
-After the compilation, the bin folder will be created along with the executable.
-
-## Examples
-
-All the examples are located in `example/input` folder. To run an example Hartree-Fock calculation, execute the corresponding example file using the `acorn -i example/input/hf.json` command from the project root. Feel free to explore all the examples.
-
-## Credits
-
-* [argparse](https://github.com/p-ranav/argparse) - Argument Parser for Modern C++.
-* [eigen](https://gitlab.com/libeigen/eigen) - C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms.
-* [exprtk](https://github.com/ArashPartow/exprtk) - C++ Mathematical Expression Parsing and Evaluation Library.
-* [fftw](https://www.fftw.org) - C Subroutine Library for Computing the Discrete Fourier Transform.
-* [json](https://github.com/nlohmann/json) - JSON for Modern C++.
-* [libint](https://github.com/evaleev/libint) - High-Performance Library for Computing Gaussian Integrals in Quantum Mechanics.
-* [pytorch](https://github.com/pytorch/pytorch) - Tensors and Dynamic neural networks in Python with strong GPU acceleration.
+You should see the version of the compiler and execution time of the program. If you see this, the program is working correctly.

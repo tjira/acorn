@@ -8,59 +8,18 @@ on:
 permissions:
   contents: write
 
-env:
-  BUILD_TYPE: Debug
-
 jobs:
-  build-libs_linux-shared_x86-64:
+  test_linux:
     runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install System Packages
-        run: sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
-
-      - name: Install Python Packages
-        run: pip install typing-extensions
-
-      - name: Download and Compile Libraries
-        run: ./script/general/library.sh SHARED 2
-
-      - name: Remove Redundant Files
-        run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
-
-      - name: Package the Libraries
-        run: cd external && tar -czf acorn-libs_linux-shared_x86-64.tar.gz * && cd -
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: libs_linux-shared
-          path: external/acorn-libs_linux-shared_x86-64.tar.gz
-
-  test_linux-shared_x86-64:
-    runs-on: ubuntu-22.04
-    needs: [build-libs_linux-shared_x86-64]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Extract the Libraries
-        run: mkdir external && mv libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-shared_x86-64.tar.gz && cd -
-
-      - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DGRAPHIC=OFF -DSTATIC=OFF
-
-      - name: Build Acorn
-        run: cmake --build build --parallel 2 --verbose
+      - name: Download Zig Compiler
+        run: mkdir bin && wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz && tar -xvf zig.tar.xz && mv zig-linux*/lib zig-linux*/zig bin && rm -rf zig*
 
       - name: Run Tests
-        working-directory: build
-        run: ctest --verbose
+        run: ./bin/zig build --release=fast --summary all test
 
       - name: Upload Coverage Reports
         uses: codecov/codecov-action@v4.0.1

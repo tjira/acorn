@@ -1,0 +1,31 @@
+{
+    "quantum_dynamics" : {
+        "adiabatic" : false,
+        "imaginary" : false,
+        "iterations" : 1000,
+        "time_step" : 0.1,
+        "grid" : {
+            "limits" : [-8, 8],
+            "points" : 32
+        },
+        "initial_conditions" : {
+            "mass" : 1,
+            "momentum" : [0],
+            "position" : [1],
+            "state" : 0,
+            "gamma" : 2
+        },
+        "log_intervals" : {
+            "iteration" : 100
+        },
+        "write" : {
+            "kinetic_energy" : "KINETIC_ENERGY_EXACT.mat",
+            "momentum" : "MOMENTUM_EXACT.mat",
+            "population" : "POPULATION_EXACT.mat",
+            "position" : "POSITION_EXACT.mat",
+            "potential_energy" : "POTENTIAL_ENERGY_EXACT.mat",
+            "total_energy" : "TOTAL_ENERGY_EXACT.mat"
+        },
+        "potential" : "harmonic1D_1"
+    }
+}

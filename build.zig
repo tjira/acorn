@@ -2,6 +2,8 @@ const std = @import("std");
 
 const targets: []const std.Target.Query = &.{
     .{.os_tag = .linux  , .cpu_arch = .aarch64},
+    .{.os_tag = .linux  , .cpu_arch = .arm    },
+    .{.os_tag = .linux  , .cpu_arch = .riscv64},
     .{.os_tag = .linux  , .cpu_arch = .x86_64 },
     .{.os_tag = .windows, .cpu_arch = .aarch64},
     .{.os_tag = .windows, .cpu_arch = .x86_64 },
@@ -14,7 +16,7 @@ pub fn build(builder: *std.Build) !void {
 
     for (targets) |target| {
 
-        const executable = builder.addExecutable(.{
+        const main_executable = builder.addExecutable(.{
             .name = "acorn",
             .optimize = optimize,
             .root_source_file = builder.path("src/main.zig"),
@@ -23,17 +25,14 @@ pub fn build(builder: *std.Build) !void {
             .target = builder.resolveTargetQuery(target)
         });
 
-        const output = builder.addInstallArtifact(executable, .{
+        const output = builder.addInstallArtifact(main_executable, .{
             .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
         });
 
         builder.getInstallStep().dependOn(&output.step);
     }
 
-    const test_filters = builder.option([]const []const u8, "test", "Select only specific tests") orelse &[0][]const u8{};
-
     const test_executable = builder.addTest(.{
-        .filters = test_filters,
         .optimize = optimize,
         .root_source_file = builder.path("test/main.zig"),
         .single_threaded = true,

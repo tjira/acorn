@@ -44,11 +44,11 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         adiabatic: bool = true,
         derivative_step: T = 0.001,
         iterations: u32 = 3000,
+        potential: []const u8 = "tully1D_1",
         seed: u32 = 1,
+        time_derivative_coupling: ?[]const u8 = "numeric",
         time_step: T = 1,
         trajectories: u32 = 100,
-
-        potential: []const u8 = "tully1D_1", time_derivative_coupling: ?[]const u8 = "numeric",
 
         fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
 
@@ -80,21 +80,29 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
     var prng_bloc = std.Random.DefaultPrng.init(opt.seed); const rand_bloc = prng_bloc.random();
 
-    var pop      = try Matrix(T).init(opt.iterations, nstate          , allocator); defer      pop.deinit();      pop.fill(0);
-    var ekin     = try Matrix(T).init(opt.iterations, 1               , allocator); defer     ekin.deinit();     ekin.fill(0);
-    var epot     = try Matrix(T).init(opt.iterations, 1               , allocator); defer     epot.deinit();     epot.fill(0);
-    var etot     = try Matrix(T).init(opt.iterations, 1               , allocator); defer     etot.deinit();     etot.fill(0);
-    var position = try Matrix(T).init(opt.iterations, ndim            , allocator); defer position.deinit(); position.fill(0);
-    var momentum = try Matrix(T).init(opt.iterations, ndim            , allocator); defer momentum.deinit(); momentum.fill(0);
-    var coef     = try Matrix(T).init(opt.iterations, nstate          , allocator); defer     coef.deinit();     coef.fill(0);
-    var tdc      = try Matrix(T).init(opt.iterations, nstate * nstate , allocator); defer      tdc.deinit();      tdc.fill(0);
+    var pop      = try Matrix(T).init(opt.iterations, nstate         , allocator); defer      pop.deinit();      pop.fill(0);
+    var ekin     = try Matrix(T).init(opt.iterations, 1              , allocator); defer     ekin.deinit();     ekin.fill(0);
+    var epot     = try Matrix(T).init(opt.iterations, 1              , allocator); defer     epot.deinit();     epot.fill(0);
+    var etot     = try Matrix(T).init(opt.iterations, 1              , allocator); defer     etot.deinit();     etot.fill(0);
+    var position = try Matrix(T).init(opt.iterations, ndim           , allocator); defer position.deinit(); position.fill(0);
+    var momentum = try Matrix(T).init(opt.iterations, ndim           , allocator); defer momentum.deinit(); momentum.fill(0);
+    var coef     = try Matrix(T).init(opt.iterations, nstate         , allocator); defer     coef.deinit();     coef.fill(0);
+    var tdc      = try Matrix(T).init(opt.iterations, nstate * nstate, allocator); defer      tdc.deinit();      tdc.fill(0);
 
     const fssh = opt.fewest_switches != null;
     const lzsh = opt.landau_zener    != null;
     const mash = opt.spin_mapping    != null;
 
+    if ((fssh and lzsh and mash) or (fssh and lzsh) or (fssh and mash) or (lzsh and mash)) {
+        return error.MultipleHoppingMechanisms;
+    }
+
     const tdc_numeric = std.mem.eql(u8, opt.time_derivative_coupling.?, "numeric");
     const tdc_baeckan = std.mem.eql(u8, opt.time_derivative_coupling.?, "baeckan");
+
+    if (opt.time_derivative_coupling != null and !tdc_numeric and !tdc_baeckan) {
+        return error.UnknownTimeDerivativeCoupling;
+    }
 
     {
         var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();

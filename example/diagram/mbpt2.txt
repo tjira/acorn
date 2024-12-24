@@ -1,3 +1,0 @@
-TOSTRING(
-ABab+abAB+ABab;1-0/abAB+ABab->abAB:1-0/abAB+ABab->;0.25
-)

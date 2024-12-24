@@ -9,8 +9,12 @@ const asfloat = @import("helper.zig").asfloat;
 const bitrev  = @import("helper.zig").bitrev ;
 const prod    = @import("helper.zig").prod   ;
 
-pub fn fft(comptime T: type, arr: StridedArray(Complex(T)), factor: i32) void {
+pub fn fft(comptime T: type, arr: StridedArray(Complex(T)), factor: i32) !void {
     const n = arr.len; const logn: u6 = @intCast(std.math.log2(n));
+
+    if (std.math.pow(usize, 2, @intCast(logn)) != n) {
+        return error.InvalidFourierTransformLength;
+    }
 
     for (0..n) |i| {
 
@@ -46,8 +50,12 @@ pub fn fft(comptime T: type, arr: StridedArray(Complex(T)), factor: i32) void {
     };
 }
 
-pub fn fftn(comptime T: type, arr: []Complex(T), shape: []const usize, factor: i32) void {
+pub fn fftn(comptime T: type, arr: []Complex(T), shape: []const usize, factor: i32) !void {
     const sprod = prod(usize, shape); var stride: usize = 1;
+
+    if (std.math.pow(usize, shape[0], shape.len) != sprod) {
+        return error.InvalidFourierTransformShape;
+    }
 
     for (0..shape.len) |i| {
 
@@ -59,7 +67,7 @@ pub fn fftn(comptime T: type, arr: []Complex(T), shape: []const usize, factor: i
                 offset += (j / std.math.pow(usize, shape[k], shape.len - index - 2) % shape[k]) * std.math.pow(usize, shape[k], k); index += 1;
             };
 
-            fft(T, StridedArray(Complex(T)){.data = arr, .len = shape[shape.len - i - 1], .stride = stride, .zero = offset}, factor);
+            try fft(T, StridedArray(Complex(T)){.data = arr, .len = shape[shape.len - i - 1], .stride = stride, .zero = offset}, factor);
         }
 
         stride *= shape[shape.len - i - 1];

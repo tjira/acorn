@@ -12,113 +12,38 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build-libs_linux-shared_x86-64:
+  build:
     runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install System Packages
-        run: sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
-
-      - name: Install Python Packages
-        run: pip install typing-extensions
-
-      - name: Download and Compile Libraries
-        run: ./script/general/library.sh SHARED 2
-
-      - name: Remove Redundant Files
-        run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
-
-      - name: Package the Libraries
-        run: cd external && tar -czf acorn-libs_linux-shared_x86-64.tar.gz * && cd -
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: libs_linux-shared
-          path: external/acorn-libs_linux-shared_x86-64.tar.gz
-
-  build-libs_linux-static_x86-64:
-    runs-on: ubuntu-22.04
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install System Packages
-        run: sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
-
-      - name: Install Python Packages
-        run: pip install typing-extensions
-
-      - name: Download and Compile Libraries
-        run: ./script/general/library.sh STATIC 2
-
-      - name: Remove Redundant Files
-        run: rm -rf external/lib/cmake external/lib/pkgconfig external/lib/*.la external/include/*.f03
-
-      - name: Package the Libraries
-        run: cd external && tar -czf acorn-libs_linux-static_x86-64.tar.gz * && cd -
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: libs_linux-static
-          path: external/acorn-libs_linux-static_x86-64.tar.gz
-
-  build-acorn_linux-shared_x86-64:
-    runs-on: ubuntu-22.04
-    needs: [build-libs_linux-shared_x86-64]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Extract the Libraries
-        run: mkdir external && mv libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-shared_x86-64.tar.gz && cd -
-
-      - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DGRAPHIC=OFF -DSTATIC=OFF
+      - name: Download Zig Compiler
+        run: mkdir bin && wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz && tar -xvf zig.tar.xz && mv zig-linux*/lib zig-linux*/zig bin && rm -rf zig*
 
       - name: Build Acorn
-        run: cmake --build build --parallel 2 --verbose
+        run: ./bin/zig build --release=fast --summary all
+
+      - name: Rename Binaries
+        run: cd zig-out && for FOLDER in *; do mv $FOLDER/acorn $FOLDER/acorn-$FOLDER; done
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-shared
-          path: bin/acorn
-
-  build-acorn_linux-static_x86-64:
-    runs-on: ubuntu-22.04
-    needs: [build-libs_linux-static_x86-64]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Extract the Libraries
-        run: mkdir external && mv libs_linux-static/acorn-libs_linux-static_x86-64.tar.gz external/ && cd external && tar -xzf acorn-libs_linux-static_x86-64.tar.gz && cd -
-
-      - name: Configure Acorn
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DGRAPHIC=OFF -DSTATIC=ON
-
-      - name: Build Acorn
-        run: cmake --build build --parallel 2 --verbose
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-static
-          path: bin/acorn
+          name: acorn
+          path: |
+            zig-out/aarch64-linux/acorn-aarch64-linux
+            zig-out/aarch64-macos/acorn-aarch64-macos
+            zig-out/aarch64-windows/acorn-aarch64-windows.exe
+            zig-out/arm-linux/acorn-arm-linux
+            zig-out/riscv64-linux/acorn-riscv64-linux
+            zig-out/x86-64-linux/acorn-x86-64-linux
+            zig-out/x86-64-macos/acorn-x86-64-macos
+            zig-out/x86-64-windows/acorn-x86-64-windows.exe
 
   release:
     runs-on: ubuntu-latest
-    needs: [build-acorn_linux-shared_x86-64, build-acorn_linux-static_x86-64]
+    needs: [build]
 
     steps:
       - uses: actions/checkout@v4
@@ -126,39 +51,58 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
 
-      - name: Remove Redundant Scripts
-        run: rm basis/update.sh example/molecule/generate.sh
-
-      - name: Create x86-64 Linux Shared Packages
-        run: cp linux-shared/acorn . && tar -czf acorn_linux-shared_x86-64.tar.gz acorn basis example script/plot LICENSE.md
-
-      - name: Create x86-64 Linux Static Packages
-        run: cp linux-static/acorn . && tar -czf acorn_linux-static_x86-64.tar.gz acorn basis example script/plot LICENSE.md
-
-      - name: Release linux-shared_x86-64 Version of Acorn
+      - name: Release aarch64-linux Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn_linux-shared_x86-64.tar.gz
+          file: acorn/acorn-aarch64-linux
           tag: ${{github.ref}}
 
-      - name: Release linux-static_x86-64 Version of Acorn
+      - name: Release aarch64-macos Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn_linux-static_x86-64.tar.gz
+          file: acorn/acorn-aarch64-macos
           tag: ${{github.ref}}
 
-      - name: Release linux-shared_x86-64 Version of Acorn Libraries
+      - name: Release aarch64-windows Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: libs_linux-shared/acorn-libs_linux-shared_x86-64.tar.gz
+          file: acorn/acorn-aarch64-windows.exe
           tag: ${{github.ref}}
 
-      - name: Release linux-static_x86-64 Version of Acorn Libraries
+      - name: Release arm-linux Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: libs_linux-static/acorn-libs_linux-static_x86-64.tar.gz
+          file: acorn/acorn-arm-linux
+          tag: ${{github.ref}}
+
+      - name: Release riscv64-linux Version of Acorn
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn/acorn-riscv64-linux
+          tag: ${{github.ref}}
+
+      - name: Release x86-64-linux Version of Acorn
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn/acorn-x86-64-linux
+          tag: ${{github.ref}}
+
+      - name: Release x86-64-macos Version of Acorn
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn/acorn-x86-64-macos
+          tag: ${{github.ref}}
+
+      - name: Release x86-64-windows Version of Acorn
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: acorn/acorn-x86-64-windows.exe
           tag: ${{github.ref}}
