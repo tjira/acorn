@@ -21,25 +21,20 @@ jobs:
       - name: Build Acorn
         run: ./bin/zig build --release=fast --summary all
 
-      - name: Rename Binaries
+      - name: Make the Binary Folder
+        run: mkdir bin
+
+      - name: Rename and Move Binaries
         run: |
-          cd zig-out && for FOLDER in *linux;   do mv $FOLDER/acorn     $FOLDER/acorn-$FOLDER;     done && cd -
-          cd zig-out && for FOLDER in *macos;   do mv $FOLDER/acorn     $FOLDER/acorn-$FOLDER;     done && cd -
-          cd zig-out && for FOLDER in *windows; do mv $FOLDER/acorn.exe $FOLDER/acorn-$FOLDER.exe; done && cd -
+          cd zig-out && for FOLDER in *linux;   do mv $FOLDER/acorn     ../bin/acorn-$FOLDER;     done && cd -
+          cd zig-out && for FOLDER in *macos;   do mv $FOLDER/acorn     ../bin/acorn-$FOLDER;     done && cd -
+          cd zig-out && for FOLDER in *windows; do mv $FOLDER/acorn.exe ../bin/acorn-$FOLDER.exe; done && cd -
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: acorn
-          path: |
-            zig-out/aarch64-linux/acorn-aarch64-linux
-            zig-out/aarch64-macos/acorn-aarch64-macos
-            zig-out/aarch64-windows/acorn-aarch64-windows.exe
-            zig-out/arm-linux/acorn-arm-linux
-            zig-out/riscv64-linux/acorn-riscv64-linux
-            zig-out/x86-64-linux/acorn-x86-64-linux
-            zig-out/x86-64-macos/acorn-x86-64-macos
-            zig-out/x86-64-windows/acorn-x86-64-windows.exe
+          name: bin
+          path: bin
 
   release:
     runs-on: ubuntu-latest
@@ -50,6 +45,9 @@ jobs:
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
+
+      - name: Show the Tree structure
+        run: tree
 
       - name: Release aarch64-linux Version of Acorn
         uses: svenstaro/upload-release-action@v2
