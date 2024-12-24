@@ -46,61 +46,58 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
 
-      - name: Show the Tree structure
-        run: tree
-
       - name: Release aarch64-linux Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn/acorn-aarch64-linux
+          file: bin/acorn-aarch64-linux
           tag: ${{github.ref}}
 
       - name: Release aarch64-macos Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn/acorn-aarch64-macos
+          file: bin/acorn-aarch64-macos
           tag: ${{github.ref}}
 
       - name: Release aarch64-windows Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn/acorn-aarch64-windows.exe
+          file: bin/acorn-aarch64-windows.exe
           tag: ${{github.ref}}
 
       - name: Release arm-linux Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn/acorn-arm-linux
+          file: bin/acorn-arm-linux
           tag: ${{github.ref}}
 
       - name: Release riscv64-linux Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn/acorn-riscv64-linux
+          file: bin/acorn-riscv64-linux
           tag: ${{github.ref}}
 
       - name: Release x86-64-linux Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn/acorn-x86-64-linux
+          file: bin/acorn-x86-64-linux
           tag: ${{github.ref}}
 
       - name: Release x86-64-macos Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn/acorn-x86-64-macos
+          file: bin/acorn-x86-64-macos
           tag: ${{github.ref}}
 
       - name: Release x86-64-windows Version of Acorn
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file: acorn/acorn-x86-64-windows.exe
+          file: bin/acorn-x86-64-windows.exe
           tag: ${{github.ref}}
