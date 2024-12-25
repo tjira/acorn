@@ -2,7 +2,7 @@
     "quantum_dynamics" : {
         "adiabatic" : false,
         "imaginary" : false,
-        "iterations" : 1000,
+        "iterations" : 350,
         "time_step" : 0.1,
         "grid" : {
             "limits" : [-8, 8],
@@ -24,7 +24,8 @@
             "population" : "POPULATION_EXACT.mat",
             "position" : "POSITION_EXACT.mat",
             "potential_energy" : "POTENTIAL_ENERGY_EXACT.mat",
-            "total_energy" : "TOTAL_ENERGY_EXACT.mat"
+            "total_energy" : "TOTAL_ENERGY_EXACT.mat",
+            "wavefunction" : "WAVEFUNCTION.mat"
         },
         "potential" : "harmonic2D_1"
     }

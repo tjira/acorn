@@ -3,6 +3,7 @@
 /*.mat*
 /*.out*
 /*.pdf*
+/*.png*
 /*.xyz*
 
 docs/**/*.loc*
@@ -16,6 +17,5 @@ research/uracil_lvc/*.mat*
 research/uracil_lvc/*.png*
 
 *zig*/
-*pyt*/
 *sit*/
 *tex*/

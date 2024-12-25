@@ -397,4 +397,4 @@ cat >> docs/tex/main.tex << EOL
 EOL
 
 # compile the main LaTeX file to PDF
-cd docs/tex && pdflatex -shell-escape main && biber main && pdflatex -shell-escape main && pdflatex -shell-escape main && cd ../..
+cd docs/tex && pdflatex -shell-escape main && biber main && pdflatex -shell-escape main && pdflatex -shell-escape main && cd .. && rm -rf python && cd ..

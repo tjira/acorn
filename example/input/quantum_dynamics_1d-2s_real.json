@@ -2,11 +2,11 @@
     "quantum_dynamics" : {
         "adiabatic" : true,
         "imaginary" : false,
-        "iterations" : 300,
+        "iterations" : 350,
         "time_step" : 10,
         "grid" : {
             "limits" : [-16, 32],
-            "points" : 512
+            "points" : 2048
         },
         "initial_conditions" : {
             "mass" : 2000,
@@ -24,8 +24,16 @@
             "population" : "POPULATION_EXACT.mat",
             "position" : "POSITION_EXACT.mat",
             "potential_energy" : "POTENTIAL_ENERGY_EXACT.mat",
-            "total_energy" : "TOTAL_ENERGY_EXACT.mat"
+            "total_energy" : "TOTAL_ENERGY_EXACT.mat",
+            "wavefunction" : "WAVEFUNCTION.mat"
         },
+        "potential" : "tully1D_1"
+    },
+    "model_potential" : {
+        "adiabatic" : true,
+        "limits" : [-16, 32],
+        "output" : "POTENTIAL.mat",
+        "points" : 2048,
         "potential" : "tully1D_1"
     }
 }
