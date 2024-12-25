@@ -1,11 +1,13 @@
-const std = @import("std");
+const std = @import("std"); const builtin = @import("builtin");
 
 const targets: []const std.Target.Query = &.{
     .{.os_tag = .linux  , .cpu_arch = .aarch64},
     .{.os_tag = .linux  , .cpu_arch = .arm    },
     .{.os_tag = .linux  , .cpu_arch = .riscv64},
+    .{.os_tag = .linux  , .cpu_arch = .x86    },
     .{.os_tag = .linux  , .cpu_arch = .x86_64 },
     .{.os_tag = .windows, .cpu_arch = .aarch64},
+    .{.os_tag = .windows, .cpu_arch = .x86    },
     .{.os_tag = .windows, .cpu_arch = .x86_64 },
     .{.os_tag = .macos  , .cpu_arch = .aarch64},
     .{.os_tag = .macos  , .cpu_arch = .x86_64 },
@@ -30,6 +32,13 @@ pub fn build(builder: *std.Build) !void {
         });
 
         builder.getInstallStep().dependOn(&output.step);
+
+        if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag) {
+
+            const run_executable = builder.addRunArtifact(main_executable);
+
+            builder.step("run", "Run the executable").dependOn(&run_executable.step);
+        }
     }
 
     const test_executable = builder.addTest(.{

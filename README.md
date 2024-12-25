@@ -7,8 +7,6 @@
   ·
   <a href="https://github.com/tjira/acorn#examples">Examples</a>
   ·
-  <a href="https://github.com/tjira/acorn#credits">Credits</a>
-  ·
   <a href="https://tjira.github.io/acorn/">Docs</a>
 </h4>
 
@@ -22,13 +20,10 @@
     <a href="https://github.com/tjira/acorn/actions/workflows/test.yml">
         <img src="https://img.shields.io/github/actions/workflow/status/tjira/acorn/test.yml?style=for-the-badge&label=test"/>
     </a>
-    <a href="https://app.codecov.io/gh/tjira/acorn">
-        <img src="https://img.shields.io/codecov/c/github/tjira/acorn?style=for-the-badge"/>
-    </a>
-    <br>
     <a href="https://github.com/tjira/acorn/stargazers">
         <img src="https://img.shields.io/github/stars/tjira/acorn?style=for-the-badge"/>
     </a>
+    <br>
     <a href="https://github.com/tjira/acorn">
         <img src="https://img.shields.io/github/languages/code-size/tjira/acorn?style=for-the-badge"/>
     </a>
@@ -51,7 +46,7 @@ Below are all the important features of Acorn divided into categories.
 ### Quantum Mechanical Methods
 
 * Numerically Exact Adiabatic & Nonadiabatic Quantum Dynamics with Arbitrary Number of States & Dimensions
-* Restricted Hartree–Fock, Møller–Plesset Perturbation Theory & Configuration Interaction Methods
+* Restricted Hartree–Fock Method, Møller–Plesset Perturbation Theory & Configuration Interaction Methods
 
 ## Compilation
 
