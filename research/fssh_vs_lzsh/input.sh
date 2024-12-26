@@ -64,8 +64,8 @@ EOM
 read -r -d '' TEMPLATE_EXACT_DYN <<- EOM
 {
     "adiabatic" : true,
-    "imaginary" : false,
     "iterations" : 500,
+    "mode" : [0, 1],
     "time_step" : 10,
     "grid" : {
         "limits" : [-48, 144],

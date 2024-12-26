@@ -1,8 +1,8 @@
 {
     "quantum_dynamics" : {
         "adiabatic" : false,
-        "imaginary" : false,
         "iterations" : 350,
+        "mode" : [0, 1],
         "time_step" : 0.1,
         "grid" : {
             "limits" : [-8, 8],

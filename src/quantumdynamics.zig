@@ -33,8 +33,8 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         };
 
         adiabatic: bool = true,
-        imaginary: bool = false,
         iterations: u32 = 300,
+        mode: []const u32 = &[_]u32{0, 1},
         potential: []const u8 = "tully1D_1",
         time_step: T = 10,
 
@@ -108,6 +108,12 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
         var W  = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer  W.deinit();
         var WA = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer WA.deinit();
 
+        var WOPT = try std.ArrayList(Wavefunction(T)).initCapacity(allocator, if (opt.mode[0] > 0) opt.mode[0] - 1 else 0); defer WOPT.deinit();
+
+        for (0..WOPT.capacity) |_| {
+            try WOPT.append(try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator));
+        }
+
         var P  = try Matrix(T).init(nstate, nstate, allocator); defer  P.deinit();
 
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
@@ -115,55 +121,87 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
         const VS = try rgridPotentials(T, opt.potential, rvec, allocator); var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
 
-        const R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              opt.imaginary, allocator); defer R.deinit();
-        const K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.imaginary, allocator); defer K.deinit();
+        var R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              opt.mode[0] > 0, allocator); defer R.deinit();
+        var K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.mode[0] > 0, allocator); defer K.deinit();
 
         if (opt.write.wavefunction != null) for (0..rdim) |i| for (0..ndim) |j| {
             wavefunction.ptr(i, j).* = rvec.at(i, j);
         };
 
-        wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); wfn.normalize(T, &W, dr);
+        for (0..opt.mode[0] + opt.mode[1]) |i| {
 
-        if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
+            if (print) try std.io.getStdOut().writer().print("\n{s} TIME DYNAMICS #{d}", .{if (i < opt.mode[0]) "IMAGINARY" else "REAL", if (i < opt.mode[0]) i + 1 else i - opt.mode[0] + 1});
 
-        if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });}
-        if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"MOMENTUM"  });}
-        if (print) {if (W.nstate > 1) for (0..W.nstate - 1) |_| {try std.io.getStdOut().writer().print(" " ** 10, .{});}; try std.io.getStdOut().writer().print(" {s:10}\n", .{"POPULATION"});}
+            if (i == opt.mode[0]) {
 
-        for (0..opt.iterations) |i| {
+                for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} R.deinit(); K.deinit();
 
-            try wfn.propagate(T, &W, R, K, &T1); if (opt.imaginary) wfn.normalize(T, &W, dr);
-
-            if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
-
-            const Ekin = try wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1); const Epot: T = wfn.epot(T, W, V, dr);
-
-            wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); try wfn.momentum(T, &p, W, kvec, dr, &T1);
-
-            if (opt.write.population       != null) for (0..nstate) |j| {pop.ptr(i, 1 + j).* = P.at(j, j);};
-            if (opt.write.position         != null) for (0..ndim) |j| {position.ptr(i, 1 + j).* = r.at(j);};
-            if (opt.write.momentum         != null) for (0..ndim) |j| {momentum.ptr(i, 1 + j).* = p.at(j);};
-            if (opt.write.kinetic_energy   != null) ekin.ptr(i, 1 + 0).* = Ekin                            ;
-            if (opt.write.potential_energy != null) epot.ptr(i, 1 + 0).* = Epot                            ;
-            if (opt.write.total_energy     != null) etot.ptr(i, 1 + 0).* = Ekin + Epot                     ;
-
-            if (opt.write.wavefunction != null) for (0..rdim) |j| for (0..nstate) |k| {
-                wavefunction.ptr(j, ndim + 2 * i * nstate + 2 * k + 0).* = (if (opt.adiabatic) WA else W).data.at(j, k).re;
-                wavefunction.ptr(j, ndim + 2 * i * nstate + 2 * k + 1).* = (if (opt.adiabatic) WA else W).data.at(j, k).im;
-            };
-
-            if (i == opt.iterations - 1) {
-                @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data); output.Ekin = Ekin; output.Epot = Epot;
+                R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              false, allocator);
+                K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, false, allocator);
             }
 
-            if (print and (i == 0 or (i + 1) % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(i), Ekin, Epot, r, p, P);
+            if (i < opt.mode[0] or (opt.mode[0] == 0)) {
+                wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); wfn.normalize(T, &W, dr);
+            }
+
+            if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
+
+            if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });}
+            if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"MOMENTUM"  });}
+            if (print) {if (W.nstate > 1) for (0..W.nstate - 1) |_| {try std.io.getStdOut().writer().print(" " ** 10, .{});}; try std.io.getStdOut().writer().print(" {s:10}\n", .{"POPULATION"});}
+
+            for (0..opt.iterations) |j| {
+
+                try wfn.propagate(T, &W, R, K, &T1);
+
+                if (i < opt.mode[0]) {
+                    
+                    for (0..i) |k| {
+
+                        const overlap = wfn.overlap(T, WOPT.items[k], W, dr);
+
+                        for (0..rdim) |l| for (0..nstate) |m| {
+                            W.data.ptr(l, m).* = W.data.at(l, m).sub(WOPT.items[k].data.at(l, m).conjugate().mul(overlap));
+                        };
+                    }
+
+                    wfn.normalize(T, &W, dr);
+                }
+
+                if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
+
+                const Ekin = try wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1); const Epot: T = wfn.epot(T, W, V, dr);
+
+                wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); try wfn.momentum(T, &p, W, kvec, dr, &T1);
+
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.population       != null) for (0..nstate) |k| {pop.ptr(j, 1 + k).* = P.at(k, k);};
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.position         != null) for (0..ndim) |k| {position.ptr(j, 1 + k).* = r.at(k);};
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.momentum         != null) for (0..ndim) |k| {momentum.ptr(j, 1 + k).* = p.at(k);};
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.kinetic_energy   != null) ekin.ptr(j, 1 + 0).* = Ekin                            ;
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.potential_energy != null) epot.ptr(j, 1 + 0).* = Epot                            ;
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.total_energy     != null) etot.ptr(j, 1 + 0).* = Ekin + Epot                     ;
+
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.wavefunction != null) for (0..rdim) |k| for (0..nstate) |l| {
+                    wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 0).* = (if (opt.adiabatic) WA else W).data.at(k, l).re;
+                    wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 1).* = (if (opt.adiabatic) WA else W).data.at(k, l).im;
+                };
+
+                if (print and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(j), Ekin, Epot, r, p, P);
+
+                if (j == opt.iterations - 1) {
+
+                    if (opt.mode[0] > 0 and i < opt.mode[0] - 1) @memcpy(WOPT.items[i].data.data, W.data.data);
+
+                    @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data); output.Ekin = Ekin; output.Epot = Epot;
+
+                    for (0..nstate) |k| if (print) {
+                        try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P.at(k, k)});
+                    };
+                }
+            }
         }
 
-        for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();} for (VA.items) |*e| {e.deinit();} for (VC.items) |*e| {e.deinit();}
-    }
-
-    for (0..nstate) |i| {
-        if (print) {try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.P.at(i, i)});}
+        for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();} for (VA.items) |*e| {e.deinit();} for (VC.items) |*e| {e.deinit();} for (WOPT.items) |*e| {e.deinit();}
     }
 
     try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, wavefunction); return output;

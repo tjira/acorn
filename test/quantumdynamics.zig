@@ -12,7 +12,7 @@ test "qdyn_imag_harmonic1D_1" {
 
     opt.initial_conditions.state = 0; opt.initial_conditions.position = &[_]f64{1}; opt.initial_conditions.momentum = &[_]f64{0}; opt.initial_conditions.mass = 1;
 
-    opt.adiabatic = false; opt.imaginary = true; opt.iterations = 300; opt.time_step = 0.1;
+    opt.adiabatic = false; opt.iterations = 300; opt.mode = &[_]u32{1, 0}; opt.time_step = 0.1;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -26,7 +26,7 @@ test "qdyn_imag_harmonic2D_1" {
 
     opt.initial_conditions.state = 0; opt.initial_conditions.position = &[_]f64{1, 1}; opt.initial_conditions.momentum = &[_]f64{0, 0}; opt.initial_conditions.mass = 1;
 
-    opt.adiabatic = false; opt.imaginary = true; opt.iterations = 300; opt.time_step = 0.1;
+    opt.adiabatic = false; opt.iterations = 300; opt.mode = &[_]u32{1, 0}; opt.time_step = 0.1;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -40,7 +40,7 @@ test "qdyn_imag_harmonic3D_1" {
 
     opt.initial_conditions.state = 0; opt.initial_conditions.position = &[_]f64{1, 1, 1}; opt.initial_conditions.momentum = &[_]f64{0, 0, 0}; opt.initial_conditions.mass = 1;
 
-    opt.adiabatic = false; opt.imaginary = true; opt.iterations = 300; opt.time_step = 0.1;
+    opt.adiabatic = false; opt.iterations = 300; opt.mode = &[_]u32{1, 0}; opt.time_step = 0.1;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -59,7 +59,7 @@ test "qdyn_real_doubleState1D_1" {
 
     opt.initial_conditions.state = 1; opt.initial_conditions.position = &[_]f64{-10}; opt.initial_conditions.momentum = &[_]f64{15}; opt.initial_conditions.mass = 2000;
 
-    opt.adiabatic = true; opt.imaginary = false; opt.iterations = 300; opt.time_step = 10;
+    opt.adiabatic = true; opt.iterations = 300; opt.mode = &[_]u32{0, 1}; opt.time_step = 10;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -78,7 +78,7 @@ test "qdyn_real_doubleState1D_2" {
 
     opt.initial_conditions.state = 1; opt.initial_conditions.position = &[_]f64{-10}; opt.initial_conditions.momentum = &[_]f64{15}; opt.initial_conditions.mass = 2000;
 
-    opt.adiabatic = true; opt.imaginary = false; opt.iterations = 300; opt.time_step = 10;
+    opt.adiabatic = true; opt.iterations = 300; opt.mode = &[_]u32{0, 1}; opt.time_step = 10;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -98,7 +98,7 @@ test "qdyn_real_tripleState1D_1" {
 
     opt.initial_conditions.state = 2; opt.initial_conditions.position = &[_]f64{-10}; opt.initial_conditions.momentum = &[_]f64{15}; opt.initial_conditions.mass = 2000;
 
-    opt.adiabatic = true; opt.imaginary = false; opt.iterations = 300; opt.time_step = 10;
+    opt.adiabatic = true; opt.iterations = 300; opt.mode = &[_]u32{0, 1}; opt.time_step = 10;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -118,7 +118,7 @@ test "qdyn_real_tripleState1D_2" {
 
     opt.initial_conditions.state = 2; opt.initial_conditions.position = &[_]f64{-10}; opt.initial_conditions.momentum = &[_]f64{15}; opt.initial_conditions.mass = 2000;
 
-    opt.adiabatic = true; opt.imaginary = false; opt.iterations = 300; opt.time_step = 10;
+    opt.adiabatic = true; opt.iterations = 300; opt.mode = &[_]u32{0, 1}; opt.time_step = 10;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -138,7 +138,7 @@ test "qdyn_real_tripleState1D_3" {
 
     opt.initial_conditions.state = 1; opt.initial_conditions.position = &[_]f64{-10}; opt.initial_conditions.momentum = &[_]f64{15}; opt.initial_conditions.mass = 2000;
 
-    opt.adiabatic = true; opt.imaginary = false; opt.iterations = 300; opt.time_step = 10;
+    opt.adiabatic = true; opt.iterations = 300; opt.mode = &[_]u32{0, 1}; opt.time_step = 10;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -157,7 +157,7 @@ test "qdyn_real_tully1D_1" {
 
     opt.initial_conditions.state = 1; opt.initial_conditions.position = &[_]f64{-10}; opt.initial_conditions.momentum = &[_]f64{15}; opt.initial_conditions.mass = 2000;
 
-    opt.adiabatic = true; opt.imaginary = false; opt.iterations = 300; opt.time_step = 10;
+    opt.adiabatic = true; opt.iterations = 300; opt.mode = &[_]u32{0, 1}; opt.time_step = 10;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -176,7 +176,7 @@ test "qdyn_real_tully1D_2" {
 
     opt.initial_conditions.state = 1; opt.initial_conditions.position = &[_]f64{-10}; opt.initial_conditions.momentum = &[_]f64{15}; opt.initial_conditions.mass = 2000;
 
-    opt.adiabatic = true; opt.imaginary = false; opt.iterations = 300; opt.time_step = 10;
+    opt.adiabatic = true; opt.iterations = 300; opt.mode = &[_]u32{0, 1}; opt.time_step = 10;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 
@@ -195,7 +195,7 @@ test "qdyn_real_tully1D_3" {
 
     opt.initial_conditions.state = 1; opt.initial_conditions.position = &[_]f64{-10}; opt.initial_conditions.momentum = &[_]f64{15}; opt.initial_conditions.mass = 2000;
 
-    opt.adiabatic = true; opt.imaginary = false; opt.iterations = 300; opt.time_step = 10;
+    opt.adiabatic = true; opt.iterations = 300; opt.mode = &[_]u32{0, 1}; opt.time_step = 10;
 
     const output = try qdn.run(f64, opt, false, std.testing.allocator); defer output.deinit();
 

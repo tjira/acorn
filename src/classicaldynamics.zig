@@ -11,10 +11,10 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         const InitialConditions = struct {
-            position_mean: []const T = &[_]f64{-10.0},
-            position_std:  []const T = &[_]f64{  0.5},
-            momentum_mean: []const T = &[_]f64{ 15.0},
-            momentum_std:  []const T = &[_]f64{  1.0},
+            position_mean: []const T = &[_]T{-10.0},
+            position_std:  []const T = &[_]T{  0.5},
+            momentum_mean: []const T = &[_]T{ 15.0},
+            momentum_std:  []const T = &[_]T{  1.0},
             state: u32 = 1, mass: T = 2000
         };
         const FewestSwitches = struct {
