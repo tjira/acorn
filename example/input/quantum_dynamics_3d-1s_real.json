@@ -19,6 +19,7 @@
             "iteration" : 100
         },
         "write" : {
+            "autocorrelation_function" : "ACF.mat",
             "kinetic_energy" : "KINETIC_ENERGY_EXACT.mat",
             "momentum" : "MOMENTUM_EXACT.mat",
             "population" : "POPULATION_EXACT.mat",
