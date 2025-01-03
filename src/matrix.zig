@@ -6,10 +6,12 @@ const Vector       = @import("vector.zig"      ).Vector      ;
 const asfloat = @import("helper.zig").asfloat;
 const uncr    = @import("helper.zig").uncr   ;
 
+/// Matrix class.
 pub fn Matrix(comptime T: type) type {
     return struct {
         data: []T, rows: usize, cols: usize, allocator: std.mem.Allocator,
 
+        /// Initialize a matrix with a given number of rows and columns and specify an allocator. The function returns an error if the allocation fails.
         pub fn init(rows: usize, cols: usize, allocator: std.mem.Allocator) !Matrix(T) {
             return Matrix(T){
                 .data = try allocator.alloc(T, rows * cols),

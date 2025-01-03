@@ -67,6 +67,8 @@ pub fn QuantumDynamicsOutput(comptime T: type) type {
 }
 
 pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
+    if (opt.initial_conditions.state > try mpt.states(opt.potential) - 1) return error.InvalidInitialState;
+
     const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential); const rdim = std.math.pow(u32, opt.grid.points, ndim);
 
     var output = try QuantumDynamicsOutput(T).init(ndim, nstate, allocator);

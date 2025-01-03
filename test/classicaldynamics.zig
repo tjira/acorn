@@ -56,7 +56,7 @@ test "cdyn_lzsh_doubleState1D_2" {
 test "cdyn_fssh_tripleState1D_1" {
     var pop = try Vector(f64).init(3, std.testing.allocator); defer pop.deinit();
 
-    pop.ptr(0).* = 0.1; pop.ptr(1).* = 0.11; pop.ptr(2).* = 0.79;
+    pop.ptr(0).* = 0.47; pop.ptr(1).* = 0.47; pop.ptr(2).* = 0.06;
 
     var opt = cdn.ClassicalDynamicsOptions(f64){}; opt.potential = "tripleState1D_1"; opt.fewest_switches = .{}; opt.initial_conditions.state = 2;
 
@@ -68,7 +68,7 @@ test "cdyn_fssh_tripleState1D_1" {
 test "cdyn_lzsh_tripleState1D_1" {
     var pop = try Vector(f64).init(3, std.testing.allocator); defer pop.deinit();
 
-    pop.ptr(0).* = 0.08; pop.ptr(1).* = 0.03; pop.ptr(2).* = 0.89;
+    pop.ptr(0).* = 0.41; pop.ptr(1).* = 0.59; pop.ptr(2).* = 0.00;
 
     var opt = cdn.ClassicalDynamicsOptions(f64){}; opt.potential = "tripleState1D_1"; opt.landau_zener = .{}; opt.initial_conditions.state = 2;
 
@@ -80,7 +80,7 @@ test "cdyn_lzsh_tripleState1D_1" {
 test "cdyn_fssh_tripleState1D_2" {
     var pop = try Vector(f64).init(3, std.testing.allocator); defer pop.deinit();
 
-    pop.ptr(0).* = 0.74; pop.ptr(1).* = 0.06; pop.ptr(2).* = 0.2;
+    pop.ptr(0).* = 0.95; pop.ptr(1).* = 0.05; pop.ptr(2).* = 0.00;
 
     var opt = cdn.ClassicalDynamicsOptions(f64){}; opt.potential = "tripleState1D_2"; opt.fewest_switches = .{}; opt.initial_conditions.state = 2;
 
@@ -92,7 +92,7 @@ test "cdyn_fssh_tripleState1D_2" {
 test "cdyn_lzsh_tripleState1D_2" {
     var pop = try Vector(f64).init(3, std.testing.allocator); defer pop.deinit();
 
-    pop.ptr(0).* = 0.79; pop.ptr(1).* = 0.13; pop.ptr(2).* = 0.08;
+    pop.ptr(0).* = 0.47; pop.ptr(1).* = 0.53; pop.ptr(2).* = 0.00;
 
     var opt = cdn.ClassicalDynamicsOptions(f64){}; opt.potential = "tripleState1D_2"; opt.landau_zener = .{}; opt.initial_conditions.state = 2;
 
@@ -116,7 +116,7 @@ test "cdyn_fssh_tripleState1D_3" {
 test "cdyn_lzsh_tripleState1D_3" {
     var pop = try Vector(f64).init(3, std.testing.allocator); defer pop.deinit();
 
-    pop.ptr(0).* = 0.12; pop.ptr(1).* = 0.83; pop.ptr(2).* = 0.05;
+    pop.ptr(0).* = 0.19; pop.ptr(1).* = 0.75; pop.ptr(2).* = 0.06;
 
     var opt = cdn.ClassicalDynamicsOptions(f64){}; opt.potential = "tripleState1D_3"; opt.landau_zener = .{}; opt.initial_conditions.state = 1;
 
@@ -164,7 +164,7 @@ test "cdyn_fssh_tully1D_2" {
 test "cdyn_lzsh_tully1D_2" {
     var pop = try Vector(f64).init(2, std.testing.allocator); defer pop.deinit();
 
-    pop.ptr(0).* = 0.13; pop.ptr(1).* = 0.87;
+    pop.ptr(0).* = 0.07; pop.ptr(1).* = 0.93;
 
     var opt = cdn.ClassicalDynamicsOptions(f64){}; opt.potential = "tully1D_2"; opt.landau_zener = .{}; opt.initial_conditions.state = 1;
 

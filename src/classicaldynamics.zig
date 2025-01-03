@@ -72,6 +72,8 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
 }
 
 pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
+    if (opt.initial_conditions.state > try mpt.states(opt.potential) - 1) return error.InvalidInitialState;
+
     const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential);
 
     var output = try ClassicalDynamicsOutput(T).init(nstate, allocator);
@@ -120,6 +122,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         var UCS = try Matrix(T).init(nstate, nstate, allocator); defer UCS.deinit();
         var TDC = try Matrix(T).init(nstate, nstate, allocator); defer TDC.deinit();
 
+        var P = try Vector(T         ).init(nstate, allocator); defer P.deinit();
         var C = try Vector(Complex(T)).init(nstate, allocator); defer C.deinit(); 
         var S = try Vector(T         ).init(3     , allocator); defer S.deinit(); 
 
@@ -178,7 +181,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                 if (opt.adiabatic and tdc_numeric and j > 0) derivativeCouplingNumeric(T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                opt.time_step);
                 if (opt.adiabatic and tdc_baeckan and j > 1) derivativeCouplingBaeckan(T, &TDC,       &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, opt.time_step);
 
-                if (lzsh and j > 1) s = landauZener(T, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
+                if (lzsh and j > 1) s = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) s = try fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
                 if (mash and j > 1) s = try spinMapping(T, &S, opt.spin_mapping.?, U, TDC, s, opt.time_step, rand_jump);
 
@@ -189,12 +192,12 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                 };
 
                 if (opt.write.population_mean               != null) pop.ptr(j, s).* += 1;
-                if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 0).* += Ekin                                                                        ;
-                if (opt.write.potential_energy_mean         != null) epot.ptr(j, 0).* += Epot                                                                        ;
-                if (opt.write.total_energy_mean             != null) etot.ptr(j, 0).* += Ekin + Epot                                                                 ;
-                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position.ptr(j, k).* += r.at(k);}                                      ;
-                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum.ptr(j, k).* += v.at(k) * opt.initial_conditions.mass;}        ;
-                if (opt.write.time_derivative_coupling_mean != null) for (0..tdc.cols) |k| {tdc.ptr(j, k).* += TDC.data[k];}                                         ;
+                if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 0).* += Ekin                                                            ;
+                if (opt.write.potential_energy_mean         != null) epot.ptr(j, 0).* += Epot                                                            ;
+                if (opt.write.total_energy_mean             != null) etot.ptr(j, 0).* += Ekin + Epot                                                     ;
+                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position.ptr(j, k).* += r.at(k);}                              ;
+                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum.ptr(j, k).* += v.at(k) * opt.initial_conditions.mass;};
+                if (opt.write.time_derivative_coupling_mean != null) for (0..tdc.cols) |k| {tdc.ptr(j, k).* += TDC.data[k];}                             ;
                 if (opt.write.fssh_coefficient_mean         != null) for (0..C.rows) |k| {coef.ptr(j, k).* += C.at(k).magnitude() * C.at(k).magnitude();};
 
                 if (j == opt.iterations - 1) {
@@ -295,8 +298,8 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDynami
             C.ptr(j).* = C.at(j).add(K1.at(j).add(K2.at(j).mul(Complex(T).init(2, 0))).add(K3.at(j).mul(Complex(T).init(2, 0))).add(K4.at(j)).mul(Complex(T).init(time_step / 6 / iters, 0)));
         }
 
-        const rn = rand.float(T); var pm: T = 0; for (0..C.rows) |j| if (j != ns) {
-            const p = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / std.math.pow(T, C.at(ns).magnitude(), 2) * time_step / iters; if (rn < p and p > pm) {ns = @intCast(j); pm = p;}
+        const rn = rand.float(T); var p: T = 0; for (0..C.rows) |j| if (j != ns) {
+            p += 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / std.math.pow(T, C.at(ns).magnitude(), 2) * time_step / iters; if (rn < p) {ns = @intCast(j); break;}
         };
 
         for (0..C.rows) |j| if (j != ns) {
@@ -394,8 +397,8 @@ fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T)
     if (opt.sample_bloch_vector) {return if (S.at(2) > 0) 1 else 0;} else return sn;
 }
 
-fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) u32 {
-    var sn = s; var pm: T = 0; var rn: T = undefined; var sampled = false;
+fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) u32 {
+    var sn = s; var rn: T = 0; P.fill(0);
 
     if (!adiabatic) for (0..U3[0].rows) |i| if (i != s) {
 
@@ -403,9 +406,9 @@ fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, ad
 
         const di = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const ds = (U3[0].at(s, s) - U3[1].at(s, s)) / time_step;
 
-        const p = 1 - std.math.exp(-2 * std.math.pi * std.math.pow(T, U3[0].at(i, s), 2) / @abs(di - ds));
+        P.ptr(i).* = 1 - std.math.exp(-2 * std.math.pi * std.math.pow(T, U3[0].at(i, s), 2) / @abs(di - ds));
 
-        if (!sampled) {rn = rand.float(T); sampled = true;} if (rn < p and p > pm) {sn = @intCast(i); pm = p;}
+        if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
     };
 
     if (adiabatic) for (0..U3[0].rows) |i| if (i != s) {
@@ -417,10 +420,27 @@ fn landauZener(comptime T: type, U3: []const Matrix(T), s: u32, time_step: T, ad
 
         const ddi = (di0 - di1) / time_step; const dds = (ds0 - ds1) / time_step;
 
-        const p = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, U3[0].at(i, i) - U3[0].at(s, s), 3) / (ddi - dds)));
+        P.ptr(i).* = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, U3[0].at(i, i) - U3[0].at(s, s), 3) / (ddi - dds)));
 
-        if (!sampled) {rn = rand.float(T); sampled = true;} if (rn < p and p > pm) {sn = @intCast(i); pm = p;}
+        if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
     };
+
+    var ps: T = 0; for (0..P.rows) |i| ps += P.at(i);
+
+    if (ps > 0) {
+
+        if (ps > 1) {
+            for (0..P.rows) |i| P.ptr(i).* /= ps;
+        }
+
+        for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
+
+        rn = rand.float(T);
+
+        for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+            sn = @intCast(i); break;
+        };
+    }
 
     return sn;
 }

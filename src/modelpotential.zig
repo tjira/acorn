@@ -115,7 +115,7 @@ pub fn doubleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
 pub fn tripleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(0, 0).* = 0.001 * r.at(0);
     U.ptr(0, 1).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
-    U.ptr(0, 2).* = 0.002 * std.math.exp(-0.01 * r.at(0) * r.at(0));
+    U.ptr(0, 2).* = 0;
 
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = 0;
@@ -129,7 +129,7 @@ pub fn tripleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
 pub fn tripleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(0, 0).* = 0.01 * std.math.tanh(0.5 * r.at(0));
     U.ptr(0, 1).* = 0.001 * std.math.exp(-r.at(0) * r.at(0));
-    U.ptr(0, 2).* = 0.002 * std.math.exp(-r.at(0) * r.at(0));
+    U.ptr(0, 2).* = 0;
 
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = 0;

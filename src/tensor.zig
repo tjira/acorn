@@ -4,6 +4,7 @@ const Matrix = @import("matrix.zig").Matrix;
 
 const prod = @import("helper.zig").prod;
 
+/// Tensor class.
 pub fn Tensor(comptime T: type) type {
     return struct {
         data: []T, shape: []usize, stride: []usize, allocator: std.mem.Allocator,

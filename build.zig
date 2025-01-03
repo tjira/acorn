@@ -37,9 +37,19 @@ pub fn build(builder: *std.Build) !void {
 
             const run_executable = builder.addRunArtifact(main_executable);
 
-            builder.step("run", "Run the executable").dependOn(&run_executable.step);
+            builder.step("run",  "Run the executable").dependOn(&run_executable.step);
         }
     }
+
+    const docs = builder.addInstallDirectory(.{
+        .install_dir = .prefix,
+        .install_subdir = "code",
+        .source_dir = builder.addExecutable(.{
+            .name = "main",
+            .root_source_file = builder.path("src/main.zig"),
+            .target = builder.host
+        }).getEmittedDocs(),
+    });
 
     const test_executable = builder.addTest(.{
         .optimize = optimize,
@@ -50,5 +60,6 @@ pub fn build(builder: *std.Build) !void {
 
     test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
 
-    builder.step("test", "Run unit tests").dependOn(&builder.addRunArtifact(test_executable).step);
+    builder.step("docs", "Compile documentation").dependOn(&docs                                   .step);
+    builder.step("test", "Run unit tests"       ).dependOn(&builder.addRunArtifact(test_executable).step);
 }
