@@ -1,3 +1,5 @@
+//! Fourier transform module.
+
 const std = @import("std"); const Complex = std.math.Complex;
 
 const vec = @import("vector.zig");
@@ -9,6 +11,7 @@ const asfloat = @import("helper.zig").asfloat;
 const bitrev  = @import("helper.zig").bitrev ;
 const prod    = @import("helper.zig").prod   ;
 
+/// Fast Fourier transform for a one-dimensional array. The factor argument is the value in the exponent of the Fourier transform. Factor -1 corresponds to the forward Fourier transform, while factor 1 corresponds to the inverse Fourier transform.
 pub fn fft(comptime T: type, arr: StridedArray(Complex(T)), factor: i32) !void {
     const n = arr.len; const logn: u6 = @intCast(std.math.log2(n));
 
@@ -50,6 +53,7 @@ pub fn fft(comptime T: type, arr: StridedArray(Complex(T)), factor: i32) !void {
     };
 }
 
+/// Fast Fourier transform for an n-dimensional array. The factor argument is the value in the exponent of the Fourier transform. Factor -1 corresponds to the forward Fourier transform, while factor 1 corresponds to the inverse Fourier transform.
 pub fn fftn(comptime T: type, arr: []Complex(T), shape: []const usize, factor: i32) !void {
     const sprod = prod(usize, shape); var stride: usize = 1;
 

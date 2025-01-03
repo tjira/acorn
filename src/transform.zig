@@ -1,8 +1,11 @@
+//! Module for the integral transformation.
+
 const std = @import("std");
 
 const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;
 
+/// Transforms coefficients obtained from the HF calculation from the MO basis to the MS basis.
 pub fn cfsMO2MS(comptime T: type, C_MS: *Matrix(T), C_MO: Matrix(T)) void {
     C_MS.fill(0);
 
@@ -12,6 +15,7 @@ pub fn cfsMO2MS(comptime T: type, C_MS: *Matrix(T), C_MO: Matrix(T)) void {
     };
 }
 
+/// Transforms the one-electron integrals from the AO basis to the AS basis.
 pub fn oneAO2AS(comptime T: type, A_AS: *Matrix(T), A_AO: Matrix(T)) void {
     A_AS.fill(0);
 
@@ -21,6 +25,7 @@ pub fn oneAO2AS(comptime T: type, A_AS: *Matrix(T), A_AO: Matrix(T)) void {
     };
 }
 
+/// Transforms the one-electron integrals from the AO basis to the MO basis or from the AS basis to the MS basis.
 pub fn oneAO2MO(comptime T: type, A_MO: *Matrix(T), A_AO: Matrix(T), C_MO: Matrix(T)) void {
     A_MO.fill(0);
 
@@ -29,6 +34,7 @@ pub fn oneAO2MO(comptime T: type, A_MO: *Matrix(T), A_AO: Matrix(T), C_MO: Matri
     };
 }
 
+/// Transforms the two-electron integrals from the AO basis to the AS basis.
 pub fn twoAO2AS(comptime T: type, A_AS: *Tensor(T), A_AO: Tensor(T)) void {
     A_AS.fill(0);
 
@@ -40,6 +46,7 @@ pub fn twoAO2AS(comptime T: type, A_AS: *Tensor(T), A_AO: Tensor(T)) void {
     };
 }
 
+/// Transforms the two-electron integrals from the AO basis to the MO basis or from the AS basis to the MS basis.
 pub fn twoAO2MO(comptime T: type, A_MO: *Tensor(T), A_AO: *Tensor(T), C_MO: Matrix(T)) void {
     @memcpy(A_MO.data, A_AO.data); A_AO.fill(0);
 

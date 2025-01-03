@@ -1,3 +1,5 @@
+//! Module for Configuration Interaction (CI) calculations.
+
 const std = @import("std");
 
 const hfm = @import("hartreefock.zig");
@@ -12,6 +14,7 @@ const Vector = @import("vector.zig").Vector;
 const asfloat = @import("helper.zig").asfloat;
 const c       = @import("helper.zig").c      ;
 
+/// The CI options.
 pub fn ConfigurationInteractionOptions(comptime T: type) type {
     return struct {
         excitation: ?[]const u32 = null,
@@ -20,16 +23,19 @@ pub fn ConfigurationInteractionOptions(comptime T: type) type {
     };
 }
 
+/// The CI output.
 pub fn ConfigurationInteractionOutput(comptime T: type) type {
     return struct {
         E: T,
 
+        /// Free the memory allocated for the CI output.
         pub fn deinit(self: ConfigurationInteractionOutput(T)) void {
             _ = self;
         }
     };
 }
 
+/// The main function to run the CI calculations.
 pub fn run(comptime T: type, opt: ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !ConfigurationInteractionOutput(T) {
     const hf = try hfm.run(T, opt.hartree_fock, print, allocator);
 
@@ -90,6 +96,7 @@ pub fn run(comptime T: type, opt: ConfigurationInteractionOptions(T), print: boo
     };
 }
 
+/// Aligns the vector C to the vector B. The result is stored in the vector A and the sign of the permutation is returned.
 fn alignDeterminant(A: *Vector(usize), B: Vector(usize), C: Vector(usize)) !i32 {
     @memcpy(A.data, C.data); var k: i32 = 0; var sign: i32 = 1;
 
@@ -102,6 +109,7 @@ fn alignDeterminant(A: *Vector(usize), B: Vector(usize), C: Vector(usize)) !i32 
     return sign;
 }
 
+/// Generates the determinants for the CI calculations.
 fn generateDeterminants(D: *Matrix(usize), nbf: usize) void {
     for (0..D.cols) |i| D.ptr(0, i).* = i;
 
@@ -117,6 +125,7 @@ fn generateDeterminants(D: *Matrix(usize), nbf: usize) void {
     }
 }
 
+/// Slater-Condon rules for the CI calculations.
 fn slater(comptime T: type, A: Vector(usize), so: []const usize, H_MS: Matrix(T), J_MS_A: Tensor(T)) !T {
     var hij: T = 0;
 
@@ -147,6 +156,7 @@ fn slater(comptime T: type, A: Vector(usize), so: []const usize, H_MS: Matrix(T)
     return hij;
 }
 
+/// Function to perform all integrals transformations used in the CI calculations.
 fn transform(comptime T: type, H_MS: *Matrix(T), J_MS_A: *Tensor(T), T_AO: Matrix(T), V_AO: Matrix(T), J_AO: Tensor(T), C_MO: Matrix(T), allocator: std.mem.Allocator) !void {
     var H_AO = try Matrix(T).init(T_AO.rows, T_AO.cols, allocator); defer H_AO.deinit(); mat.add(T, &H_AO, T_AO, V_AO);
 

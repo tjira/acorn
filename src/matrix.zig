@@ -1,3 +1,5 @@
+//! This module provides a matrix class and functions to manipulate matrices.
+
 const std = @import("std"); const Complex = std.math.Complex;
 
 const StridedArray = @import("stridedarray.zig").StridedArray;
@@ -20,10 +22,12 @@ pub fn Matrix(comptime T: type) type {
                 .allocator = allocator
             };
         }
+        /// Free the memory allocated for the matrix.
         pub fn deinit(self: Matrix(T)) void {
             self.allocator.free(self.data);
         }
 
+        /// Clone the matrix. The function returns an error if the allocation of the new matrix fails.
         pub fn clone(self: Matrix(T)) !Matrix(T) {
             const other = try Matrix(T).init(self.rows, self.cols, self.allocator);
 
@@ -31,6 +35,7 @@ pub fn Matrix(comptime T: type) type {
 
             return other;
         }
+        /// Convert the matrix to a complex matrix. The function returns an error if the allocation of the new matrix fails.
         pub fn complex(self: Matrix(T)) !Matrix(Complex(T)) {
             var other = try Matrix(Complex(T)).init(self.rows, self.cols, self.allocator);
 
@@ -41,12 +46,15 @@ pub fn Matrix(comptime T: type) type {
             return other;
         }
 
+        /// Access the element at the given row and column as a value.
         pub fn at(self: Matrix(T), i: usize, j: usize) T {
             return self.ptr(i, j).*;
         }
+        /// Access the element at the given row and column as a mutable reference.
         pub fn ptr(self: Matrix(T), i: usize, j: usize) *T {
             return &self.data[i * self.cols + j];
         }
+        /// Returns a reference to the row at the given index. The row is returned as a new matrix. No memory is allocated.
         pub fn row(self: Matrix(T), i: usize) Matrix(T) {
             return Matrix(T){
                 .data = self.data[i * self.cols..(i + 1) * self.cols],
@@ -55,9 +63,11 @@ pub fn Matrix(comptime T: type) type {
                 .allocator = self.allocator
             };
         }
+        /// Returns the matrix in the form of a strided array. No memory is allocated.
         pub fn sa(self: Matrix(T)) StridedArray(T) {
             return StridedArray(T){.data = self.data, .len = self.rows * self.cols, .stride = 1, .zero = 0};
         }
+        /// Returns the matrix in the form of a vector. No memory is allocated.
         pub fn vector(self: Matrix(T)) Vector(T) {
             return Vector(T){
                 .data = self.data[0..],
@@ -66,9 +76,11 @@ pub fn Matrix(comptime T: type) type {
             };
         }
 
+        /// Fill the matrix with a given value.
         pub fn fill(self: Matrix(T), value: T) void {
             for (0..self.data.len) |i| self.data[i] = value;
         }
+        /// Fill the diagonal of the matrix with ones.
         pub fn identity(self: Matrix(T)) void {
             self.fill(0);
 
@@ -76,12 +88,14 @@ pub fn Matrix(comptime T: type) type {
                 self.ptr(i, i).* = 1;
             }
         }
+        /// Fill the data of the matrix with a linearly spaced vector from start to end. Both start and end are included.
         pub fn linspace(self: Matrix(T), start: T, end: T) void {
             for (0..self.data.len) |i| {
                 self.data[i] = start + asfloat(T, i) * (end - start) / asfloat(T, self.rows * self.cols - 1);
             }
         }
 
+        /// Print the matrix to the given device.
         pub fn print(self: Matrix(T), device: anytype) !void {
             try device.print("{d} {d}\n", .{self.rows, self.cols});
 
@@ -89,6 +103,7 @@ pub fn Matrix(comptime T: type) type {
                 try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
             }
         }
+        /// Write the matrix to a file.
         pub fn write(self: Matrix(T), path: []const u8) !void {
             const file = try std.fs.cwd().createFile(path, .{}); defer file.close();
 
@@ -97,6 +112,7 @@ pub fn Matrix(comptime T: type) type {
     };
 }
 
+/// Add two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn add(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] + B.data[i];
@@ -107,6 +123,7 @@ pub fn add(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     };
 }
 
+/// Add a scalar to a matrix element-wise. The output matrix is stored in the matrix C.
 pub fn adds(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] + s;
@@ -117,6 +134,7 @@ pub fn adds(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
     };
 }
 
+/// Find the eigenvalues and eigenvectors of a real symmetric matrix A. The eigenvalues are stored in the diagonal of the matrix J, and the eigenvectors are stored in the columns of the matrix C. The matrices T1 and T2 are temporary matrices used in the computation.
 pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *Matrix(T), T2: *Matrix(T)) void {
     var maxi: usize = 0; var maxj: usize = 1; var maxv: T = 0; var phi: T = undefined; @memcpy(J.data, A.data); C.identity();
 
@@ -150,6 +168,7 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *M
     };
 }
 
+/// Check if two matrices are equal within a given tolerance. The function returns true if the matrices are equal and false otherwise.
 pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), epsilon: T) bool {
     if (A.rows != B.rows or A.cols != B.cols) return false;
 
@@ -164,6 +183,7 @@ pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), epsilon: T) bool {
     return true;
 }
 
+/// Horizontally concatenate two matrices. The output matrix is stored in the matrix C.
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     for (0..A.rows) |i| {
 
@@ -177,6 +197,7 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     }
 }
 
+/// Matrix multiplication of the adjoint of matrix A and matrix B. The output matrix is stored in the matrix C.
 pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
 
@@ -189,6 +210,7 @@ pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     };
 }
 
+/// Matrix multiplication of matrix A and matrix B. The output matrix is stored in the matrix C.
 pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
 
@@ -201,6 +223,7 @@ pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     };
 }
 
+/// Matrix multiplication of matrix A and the adjoint of matrix B. The output matrix is stored in the matrix C.
 pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
 
@@ -213,6 +236,7 @@ pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     };
 }
 
+/// Multiply two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn mul(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] * B.data[i];
@@ -223,6 +247,7 @@ pub fn mul(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     };
 }
 
+/// Multiply a matrix by a scalar element-wise. The output matrix is stored in the matrix C.
 pub fn muls(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] * s;
@@ -233,6 +258,7 @@ pub fn muls(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
     };
 }
 
+/// Read a matrix from a file. The function returns an error if the file cannot be opened or if the matrix cannot be read.
 pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !Matrix(T) {
     const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [16]u8 = undefined;
 
@@ -256,6 +282,7 @@ pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !M
     return mat;
 }
 
+/// Subtract two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn sub(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] - B.data[i];
@@ -266,6 +293,7 @@ pub fn sub(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     };
 }
 
+/// Transpose the matrix A. The output matrix is stored in the matrix C.
 pub fn transpose(comptime T: type, C: *Matrix(T), A: Matrix(T)) void {
     for (0..A.rows) |i| for (0..A.cols) |j| {
         C.ptr(j, i).* = A.at(i, j);

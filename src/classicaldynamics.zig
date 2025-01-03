@@ -1,3 +1,5 @@
+//! Module for classical dynamics simulations.
+
 const std = @import("std"); const Complex = std.math.Complex;
 
 const mat = @import("matrix.zig"        );
@@ -8,6 +10,7 @@ const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
 
+/// The classical dynamics options.
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         const InitialConditions = struct {
@@ -56,21 +59,25 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
     };
 }
 
+/// The classical dynamics output.
 pub fn ClassicalDynamicsOutput(comptime T: type) type {
     return struct {
         pop: Vector(T),
 
+        /// Initialize the classical dynamics output.
         pub fn init(nstate: usize, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
             return ClassicalDynamicsOutput(T){
                 .pop = try Vector(T).init(nstate, allocator)
             };
         }
+        /// Free the memory allocated for the classical dynamics output.
         pub fn deinit(self: ClassicalDynamicsOutput(T)) void {
             self.pop.deinit();
         }
     };
 }
 
+/// Main function for running classical dynamics simulations.
 pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
     if (opt.initial_conditions.state > try mpt.states(opt.potential) - 1) return error.InvalidInitialState;
 
@@ -82,14 +89,29 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
     var prng_bloc = std.Random.DefaultPrng.init(opt.seed); const rand_bloc = prng_bloc.random();
 
-    var pop      = try Matrix(T).init(opt.iterations, nstate         , allocator); defer      pop.deinit();      pop.fill(0);
-    var ekin     = try Matrix(T).init(opt.iterations, 1              , allocator); defer     ekin.deinit();     ekin.fill(0);
-    var epot     = try Matrix(T).init(opt.iterations, 1              , allocator); defer     epot.deinit();     epot.fill(0);
-    var etot     = try Matrix(T).init(opt.iterations, 1              , allocator); defer     etot.deinit();     etot.fill(0);
-    var position = try Matrix(T).init(opt.iterations, ndim           , allocator); defer position.deinit(); position.fill(0);
-    var momentum = try Matrix(T).init(opt.iterations, ndim           , allocator); defer momentum.deinit(); momentum.fill(0);
-    var coef     = try Matrix(T).init(opt.iterations, nstate         , allocator); defer     coef.deinit();     coef.fill(0);
-    var tdc      = try Matrix(T).init(opt.iterations, nstate * nstate, allocator); defer      tdc.deinit();      tdc.fill(0);
+    var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer      pop.deinit();      pop.fill(0);
+    var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     ekin.deinit();     ekin.fill(0);
+    var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     epot.deinit();     epot.fill(0);
+    var etot     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     etot.deinit();     etot.fill(0);
+    var position = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer position.deinit(); position.fill(0);
+    var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer momentum.deinit(); momentum.fill(0);
+    var coef     = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer     coef.deinit();     coef.fill(0);
+    var tdc      = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer      tdc.deinit();      tdc.fill(0);
+
+    {
+        const time = try Matrix(T).init(opt.iterations + 1, 1, allocator); defer time.deinit(); time.linspace(0, opt.time_step * asfloat(T, opt.iterations));
+
+        for (0..opt.iterations + 1) |i| {
+            pop.ptr(i, 0).*      = time.at(i, 0);
+            ekin.ptr(i, 0).*     = time.at(i, 0);
+            epot.ptr(i, 0).*     = time.at(i, 0);
+            etot.ptr(i, 0).*     = time.at(i, 0);
+            position.ptr(i, 0).* = time.at(i, 0);
+            momentum.ptr(i, 0).* = time.at(i, 0);
+            coef.ptr(i, 0).*     = time.at(i, 0);
+            tdc.ptr(i, 0).*      = time.at(i, 0);
+        }
+    }
 
     const fssh = opt.fewest_switches != null;
     const lzsh = opt.landau_zener    != null;
@@ -148,16 +170,16 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
             for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
             for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
 
-            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);   }
+            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);         }
             if (mash) {try initialBlochVector(T, &S, opt.spin_mapping.?, opt.initial_conditions.state, rand_bloc, allocator);}
 
             @memcpy(v.data, p.data); for (v.data) |*e| e.* /= opt.initial_conditions.mass; a.fill(0); var s = opt.initial_conditions.state; var sp = s; var Ekin: T = 0; var Epot: T = 0;
 
-            for (0..opt.iterations) |j| {
+            for (0..opt.iterations + 1) |j| {
 
                 @memcpy(ap.data, a.data); sp = s; 
 
-                for (0..r.rows) |k| {
+                if (j > 0) for (0..r.rows) |k| {
 
                     r.ptr(k).* += 1 * opt.derivative_step; try mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
                     r.ptr(k).* -= 2 * opt.derivative_step; try mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
@@ -165,7 +187,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                     a.ptr(k).* = -0.5 * (Up - Um) / opt.derivative_step / opt.initial_conditions.mass;
                     v.ptr(k).* += 0.5 * (a.at(k) + ap.at(k)) * opt.time_step;
                     r.ptr(k).* += (v.at(k) + 0.5 * a.at(k) * opt.time_step) * opt.time_step + opt.derivative_step;
-                }
+                };
 
                 try mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) {
 
@@ -191,34 +213,34 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                     v.ptr(k).* *= std.math.sqrt((Ekin - U.at(s, s) + U.at(sp, sp)) / Ekin);
                 };
 
-                if (opt.write.population_mean               != null) pop.ptr(j, s).* += 1;
-                if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 0).* += Ekin                                                            ;
-                if (opt.write.potential_energy_mean         != null) epot.ptr(j, 0).* += Epot                                                            ;
-                if (opt.write.total_energy_mean             != null) etot.ptr(j, 0).* += Ekin + Epot                                                     ;
-                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position.ptr(j, k).* += r.at(k);}                              ;
-                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum.ptr(j, k).* += v.at(k) * opt.initial_conditions.mass;};
-                if (opt.write.time_derivative_coupling_mean != null) for (0..tdc.cols) |k| {tdc.ptr(j, k).* += TDC.data[k];}                             ;
-                if (opt.write.fssh_coefficient_mean         != null) for (0..C.rows) |k| {coef.ptr(j, k).* += C.at(k).magnitude() * C.at(k).magnitude();};
+                if (opt.write.population_mean               != null) pop.ptr(j, 1 + s).* += 1;
+                if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 1 + 0).* += Ekin                                                            ;
+                if (opt.write.potential_energy_mean         != null) epot.ptr(j, 1 + 0).* += Epot                                                            ;
+                if (opt.write.total_energy_mean             != null) etot.ptr(j, 1 + 0).* += Ekin + Epot                                                     ;
+                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position.ptr(j, 1 + k).* += r.at(k);}                              ;
+                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum.ptr(j, 1 + k).* += v.at(k) * opt.initial_conditions.mass;};
+                if (opt.write.time_derivative_coupling_mean != null) for (0..tdc.cols) |k| {tdc.ptr(j, 1 + k).* += TDC.data[k];}                             ;
+                if (opt.write.fssh_coefficient_mean         != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();};
 
                 if (j == opt.iterations - 1) {
                     output.pop.ptr(s).* += 1;
                 }
 
-                if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j == 0 or (j + 1) % opt.log_intervals.iteration == 0)) {
+                if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j % opt.log_intervals.iteration == 0)) {
                     try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, C, S, opt.initial_conditions.mass, fssh, mash);
                 }
             }
         }
     }
 
-    for (0..opt.iterations) |i| {for (0..pop.cols     ) |j|      pop.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations) |i| {for (0..ekin.cols    ) |j|     ekin.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations) |i| {for (0..epot.cols    ) |j|     epot.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations) |i| {for (0..etot.cols    ) |j|     etot.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations) |i| {for (0..position.cols) |j| position.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations) |i| {for (0..momentum.cols) |j| momentum.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations) |i| {for (0..tdc.cols     ) |j|      tdc.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations) |i| {for (0..coef.cols    ) |j|     coef.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..pop.cols     ) |j|      pop.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..ekin.cols    ) |j|     ekin.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..epot.cols    ) |j|     epot.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..etot.cols    ) |j|     etot.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..position.cols) |j| position.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..momentum.cols) |j| momentum.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..tdc.cols     ) |j|      tdc.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..coef.cols    ) |j|     coef.ptr(i, j).* /= asfloat(T, opt.trajectories);}
 
     for (0..output.pop.rows) |i| output.pop.ptr(i).* /= asfloat(T, opt.trajectories);
 
@@ -226,10 +248,11 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         if (print) {try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.pop.at(i)});}
     }
 
-    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, tdc, coef, allocator); return output;
+    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, tdc, coef); return output;
 }
 
-fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), time_step: T) void {
+/// Calculate the nonadiabatic coupling between two states using the Baeck-An method.
+pub fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), time_step: T) void {
     TDC.fill(0);
 
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
@@ -243,7 +266,8 @@ fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matr
     };
 }
 
-fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2: []const Matrix(T), time_step: T) void {
+/// Calculate the nonadiabatic coupling between two states numerically.
+pub fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2: []const Matrix(T), time_step: T) void {
     UCS.fill(0);
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
@@ -255,7 +279,8 @@ fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
     };
 }
 
-fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
+/// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.
+pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
     const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s;
 
     const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
@@ -316,7 +341,8 @@ fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDynami
     return ns;
 }
 
-fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random, allocator: std.mem.Allocator) !void {
+/// Function to initialize the initial vector on the Bloch sphere for the spin mapping methods.
+pub fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random, allocator: std.mem.Allocator) !void {
     const theta: T = if (s == 1) 0 else std.math.pi; const phi: T = 0; const xi = 2 * std.math.pi * rand.float(T);
 
     S.ptr(0).* = std.math.sin(theta) * std.math.cos(phi); S.ptr(1).* = std.math.sin(theta) * std.math.sin(phi); S.ptr(2).* = std.math.cos(theta);
@@ -335,7 +361,8 @@ fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOpt
     }
 }
 
-fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random) !u32 {
+/// Function to propagate the vector on the Bloch sphere for the spin mapping methods. The function returns the new state, if a switch occurs.
+pub fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random) !u32 {
     const iters = asfloat(T, opt.quantum_substep); var sn = s;
 
     const FunctionX = struct { fn get (FS: Vector(T), FU: Matrix(T), FTDC: Matrix(T)) T {
@@ -397,7 +424,8 @@ fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T)
     if (opt.sample_bloch_vector) {return if (S.at(2) > 0) 1 else 0;} else return sn;
 }
 
-fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) u32 {
+/// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.
+pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) u32 {
     var sn = s; var rn: T = 0; P.fill(0);
 
     if (!adiabatic) for (0..U3[0].rows) |i| if (i != s) {
@@ -445,8 +473,9 @@ fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u32, t
     return sn;
 }
 
-fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Vector(T), mass: T, fssh: bool, mash: bool) !void {
-    try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j + 1, Ekin, Epot, Etot, s});
+/// Function to print the results of a single iteration.
+pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Vector(T), mass: T, fssh: bool, mash: bool) !void {
+    try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, s});
 
     for (0..r.rows) |k| {
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", r.at(k)});
@@ -471,38 +500,14 @@ fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s
     try std.io.getStdOut().writer().print("]\n", .{});
 }
 
-fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), tdc: Matrix(T), coef: Matrix(T), allocator: std.mem.Allocator) !void {
-    const time = try Matrix(T).init(opt.iterations, 1, allocator); defer time.deinit(); time.linspace(opt.time_step, opt.time_step * asfloat(T, opt.iterations));
-
-    if (opt.write.kinetic_energy_mean) |path| {
-        var ekin_t = try Matrix(T).init(opt.iterations, ekin.cols + 1, allocator); mat.hjoin(T, &ekin_t, time, ekin); try ekin_t.write(path); ekin_t.deinit();
-    }
-
-    if (opt.write.population_mean) |path| {
-        var pop_t = try Matrix(T).init(opt.iterations, pop.cols + 1, allocator); mat.hjoin(T, &pop_t, time, pop); try pop_t.write(path); pop_t.deinit();
-    }
-
-    if (opt.write.potential_energy_mean) |path| {
-        var epot_t = try Matrix(T).init(opt.iterations, epot.cols + 1, allocator); mat.hjoin(T, &epot_t, time, epot); try epot_t.write(path); epot_t.deinit();
-    }
-
-    if (opt.write.total_energy_mean) |path| {
-        var etot_t = try Matrix(T).init(opt.iterations, etot.cols + 1, allocator); mat.hjoin(T, &etot_t, time, etot); try etot_t.write(path); etot_t.deinit();
-    }
-
-    if (opt.write.position_mean) |path| {
-        var position_t = try Matrix(T).init(opt.iterations, position.cols + 1, allocator); mat.hjoin(T, &position_t, time, position); try position_t.write(path); position_t.deinit();
-    }
-
-    if (opt.write.momentum_mean) |path| {
-        var momentum_t = try Matrix(T).init(opt.iterations, momentum.cols + 1, allocator); mat.hjoin(T, &momentum_t, time, momentum); try momentum_t.write(path); momentum_t.deinit();
-    }
-
-    if (opt.write.time_derivative_coupling_mean) |path| {
-        var tdc_t = try Matrix(T).init(opt.iterations, tdc.cols + 1, allocator); mat.hjoin(T, &tdc_t, time, tdc); try tdc_t.write(path); tdc_t.deinit();
-    }
-
-    if (opt.write.fssh_coefficient_mean) |path| {
-        var coef_t = try Matrix(T).init(opt.iterations, coef.cols + 1, allocator); mat.hjoin(T, &coef_t, time, coef); try coef_t.write(path); coef_t.deinit();
-    }
+/// Function to write the results to disk.
+pub fn writeResults(comptime T: type, opt: ClassicalDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), tdc: Matrix(T), coef: Matrix(T)) !void {
+    if (opt.write.kinetic_energy_mean          ) |path| try     ekin.write(path);
+    if (opt.write.population_mean              ) |path| try      pop.write(path);
+    if (opt.write.potential_energy_mean        ) |path| try     epot.write(path);
+    if (opt.write.total_energy_mean            ) |path| try     etot.write(path);
+    if (opt.write.position_mean                ) |path| try position.write(path);
+    if (opt.write.momentum_mean                ) |path| try momentum.write(path);
+    if (opt.write.time_derivative_coupling_mean) |path| try      tdc.write(path);
+    if (opt.write.fssh_coefficient_mean        ) |path| try      coef.write(path);
 }

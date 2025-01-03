@@ -1,3 +1,5 @@
+//! Module to perform the Hartree-Fock calculation.
+
 const std = @import("std");
 
 const A2AU  = @import("constant.zig").A2AU ;
@@ -14,6 +16,7 @@ const Tensor = @import("tensor.zig").Tensor;
 const asfloat = @import("helper.zig").asfloat;
 const uncr    = @import("helper.zig").uncr   ;
 
+/// The Hartree-Fock options.
 pub fn HartreeFockOptions(comptime T: type) type {
     return struct {
         const Integral = struct {
@@ -31,16 +34,19 @@ pub fn HartreeFockOptions(comptime T: type) type {
     };
 }
 
+/// The Hartree-Fock output.
 pub fn HartreeFockOutput(comptime T: type) type {
     return struct {
         C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T), E: T, VNN: T, nbf: usize, nocc: usize,
 
+        /// Free the memory allocated for the Hartree-Fock output.
         pub fn deinit(self: HartreeFockOutput(T)) void {
             self.C_MO.deinit(); self.D_MO.deinit(); self.E_MO.deinit(); self.F_AO.deinit();
         }
     };
 }
 
+/// Run the Hartree-Fock calculation with the given options.
 pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !HartreeFockOutput(T) {
     const S_AO = try mat.read(T, opt.integral.overlap, allocator); defer S_AO.deinit();
 
@@ -118,6 +124,7 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
     };
 }
 
+/// Parse the .xyz system from the given path.
 pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: std.mem.Allocator) !struct {natom: u32, nocc: u32, VNN: T} {
     const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [64]u8 = undefined;
 

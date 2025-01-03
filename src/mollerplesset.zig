@@ -1,3 +1,5 @@
+//! Module to perform the Moller-Plesset calculations.
+
 const std = @import("std");
 
 const hfm = @import("hartreefock.zig");
@@ -7,6 +9,7 @@ const tns = @import("transform.zig"  );
 const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;
 
+/// The Moller-Plesset options.
 pub fn MollerPlessetOptions(comptime T: type) type {
     return struct {
         order: u32 = 2,
@@ -15,16 +18,19 @@ pub fn MollerPlessetOptions(comptime T: type) type {
     };
 }
 
+/// The Moller-Plesset output.
 pub fn MollerPlessetOutput(comptime T: type) type {
     return struct {
         E: T,
 
+        /// Free the memory allocated for the Moller-Plesset output.
         pub fn deinit(self: MollerPlessetOutput(T)) void {
             _ = self;
         }
     };
 }
 
+/// Main function to run the Moller-Plesset calculations.
 pub fn run(comptime T: type, opt: MollerPlessetOptions(T), print: bool, allocator: std.mem.Allocator) !MollerPlessetOutput(T) {
     if (opt.order != 2) return error.PerturbationOrderNotImplemented;
 
@@ -49,6 +55,7 @@ pub fn run(comptime T: type, opt: MollerPlessetOptions(T), print: bool, allocato
     };
 }
 
+/// Returns the second-order Moller-Plesset energy.
 fn mp2(comptime T: type, E_MO: Matrix(T), J_MS_A: Tensor(T), nocc: usize) T {
     var E: T = 0;
 
@@ -59,6 +66,7 @@ fn mp2(comptime T: type, E_MO: Matrix(T), J_MS_A: Tensor(T), nocc: usize) T {
     return E;
 }
 
+/// Function to perform all integrals transformations used in the Moller-Plesset calculations.
 fn transform(comptime T: type, J_MS_A: *Tensor(T), J_AO: Tensor(T), C_MO: Matrix(T), allocator: std.mem.Allocator) !void {
     var J_AS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_AS.deinit();
     var J_MS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_MS.deinit();

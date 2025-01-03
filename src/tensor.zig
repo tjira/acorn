@@ -1,3 +1,5 @@
+//! This module provides a tensor class and functions to manipulate tensors.
+
 const std = @import("std");
 
 const Matrix = @import("matrix.zig").Matrix;
@@ -9,6 +11,7 @@ pub fn Tensor(comptime T: type) type {
     return struct {
         data: []T, shape: []usize, stride: []usize, allocator: std.mem.Allocator,
 
+        /// Initialize a new tensor with the specified shape. Returns an error if the allocation fails.
         pub fn init(shape: []const usize, allocator: std.mem.Allocator) !Tensor(T) {
             const ten = Tensor(T){
                 .data = try allocator.alloc(T, prod(usize, shape)),
@@ -25,14 +28,17 @@ pub fn Tensor(comptime T: type) type {
 
             return ten;
         }
+        /// Free the memory allocated for the tensor.
         pub fn deinit(self: Tensor(T)) void {
             self.allocator.free(self.data );
             self.allocator.free(self.shape);
         }
 
+        /// Returns the element at the specified indices as a value.
         pub fn at(self: Tensor(T), indices: []const usize) T {
             return self.ptr(indices).*;
         }
+        /// Returns the element at the specified indices as a mutable reference.
         pub fn ptr(self: Tensor(T), indices: []const usize) *T {
             var index: usize = 0;
 
@@ -42,6 +48,7 @@ pub fn Tensor(comptime T: type) type {
 
             return &self.data[index];
         }
+        /// Returns the tensor as a matrix. No memory is allocated. Currently only works for 4D tensors.
         pub fn matrix(self: Tensor(T)) Matrix(T) {
             return Matrix(T){
                 .data = self.data,
@@ -51,6 +58,7 @@ pub fn Tensor(comptime T: type) type {
             };
         }
 
+        /// Fill the tensor with the specified value.
         pub fn fill(self: *Tensor(T), value: T) void {
             for (0..self.data.len) |i| {
                 self.data[i] = value;
@@ -59,6 +67,7 @@ pub fn Tensor(comptime T: type) type {
     };
 }
 
+/// Add two tensors element-wise. The result is stored in the tensor C.
 pub fn add(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] + B.data[i];
@@ -69,6 +78,7 @@ pub fn add(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
     };
 }
 
+/// Multiply two tensors element-wise. The result is stored in the tensor C.
 pub fn mul(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] * B.data[i];
@@ -79,6 +89,7 @@ pub fn mul(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
     };
 }
 
+/// Multiply a tensor by a scalar. The result is stored in the tensor C.
 pub fn muls(comptime T: type, C: *Tensor(T), A: Tensor(T), s: T) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] * s;
@@ -89,6 +100,7 @@ pub fn muls(comptime T: type, C: *Tensor(T), A: Tensor(T), s: T) void {
     };
 }
 
+/// Read a tensor from a file. The tensor is stored in row-major order.
 pub fn read(comptime T: type, path: []const u8, dim: usize, allocator: std.mem.Allocator) !Tensor(T) {
     const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
 
@@ -120,6 +132,7 @@ pub fn read(comptime T: type, path: []const u8, dim: usize, allocator: std.mem.A
     return ten;
 }
 
+/// Subtract two tensors element-wise. The result is stored in the tensor C.
 pub fn sub(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
     if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] - B.data[i];
@@ -130,6 +143,7 @@ pub fn sub(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
     };
 }
 
+/// Transpose a tensor. The result is stored in the tensor B. The axes argument specifies the permutation of the axes. Currently only works for 4D tensors.
 pub fn transpose(comptime T: type, B: *Tensor(T), A: Tensor(T), axes: []const usize) void {
     if (axes.len == 4) for (0..A.shape[0]) |i| for (0..A.shape[1]) |j| for (0..A.shape[2]) |k| for (0..A.shape[3]) |l| {
 

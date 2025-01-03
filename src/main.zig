@@ -19,6 +19,7 @@ pub const Matrix = @import("matrix.zig").Matrix;
 pub const Tensor = @import("tensor.zig").Tensor;
 pub const Vector = @import("vector.zig").Vector;
 
+/// Parse the input JSON file and run the corresponding target.
 pub fn parse(filebuf: []const u8) !void {
     const inputjs = try std.json.parseFromSlice(std.json.Value, allocator, filebuf, .{}); defer inputjs.deinit();
 
@@ -90,8 +91,4 @@ pub fn main() !void {
     }}
 
     std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
-}
-
-test {
-    std.testing.refAllDecls(@This());
 }

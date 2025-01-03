@@ -1,7 +1,11 @@
+//! Constants used in the project.
+
 const std = @import("std");
 
+/// Angstrom to atomic units factor.
 pub const A2AU = 1.8897261254578281;
 
+/// Atomic symbol to atomic number map.
 pub const SM2AN = std.StaticStringMap(u32).initComptime(.{
     .{ "H",   1},                                                                                                                                                                                                                                 .{"He",   2},
     .{"Li",   3},                                                                                                                                             .{"Be",   4}, .{ "B",   5}, .{ "C",   6}, .{ "N",   7}, .{ "O",   8}, .{ "F",   9}, .{"Ne",  10},
