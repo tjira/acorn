@@ -15,6 +15,10 @@ pub const qdn = @import("quantumdynamics.zig"         );
 pub const ten = @import("tensor.zig"                  );
 pub const vec = @import("vector.zig"                  );
 
+pub const Matrix = @import("matrix.zig").Matrix;
+pub const Tensor = @import("tensor.zig").Tensor;
+pub const Vector = @import("vector.zig").Vector;
+
 pub fn parse(filebuf: []const u8) !void {
     const inputjs = try std.json.parseFromSlice(std.json.Value, allocator, filebuf, .{}); defer inputjs.deinit();
 

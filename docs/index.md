@@ -19,3 +19,7 @@ You can also download this documentation along with complementary files in vario
 
 [Exercise](/acorn/python/exercise/resmet_exercise.py){: .btn .btn-purple }
 [Solution](/acorn/python/resmet.py){: .btn .btn-purple }
+
+### Other Tools
+
+[Code Documentation](/acorn/code){: .btn .btn-purple }
