@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse, os, shutil; from manim import *
+import argparse as ap, os, shutil as sh; from manim import *
 
 Q2P = {
     "example" : "480p30",
@@ -13,13 +13,24 @@ Q2P = {
 
 class Animation(Scene):
     def construct(self):
-        circle = Circle()
-        circle.set_fill(PINK, opacity=0.5)
-        self.play(Create(circle))
+        axes = Axes(
+            x_range=[-8, 8], y_range=[-1, 1, 10], axis_config={"include_tip": False}
+        )
+        labels = axes.get_axis_labels(x_label="t", y_label="\\psi(x)")
+
+        sin_plot = axes.plot(lambda x: np.sin(x), color=BLUE)
+        cos_plot = axes.plot(lambda x: np.cos(x), color=RED)
+
+        self.play(Create(axes))
+        self.play(Create(labels))
+        self.play(Create(sin_plot))
+        self.play(Transform(sin_plot, cos_plot))
+        self.play(FadeOut(sin_plot))
+        self.wait()
 
 if __name__ == "__main__":
     # create the parser
-    parser = argparse.ArgumentParser(prog="Acorn Movie Renderer", description="Rendering script for the Quantum Acorn package.", add_help=False)
+    parser = ap.ArgumentParser(prog="Acorn Movie Renderer", description="Rendering script for the Quantum Acorn package.", add_help=False)
 
     # add the optional arguments
     parser.add_argument("-q", "--quality", type=str, default="production", help="The quality of the rendered image.")
@@ -34,6 +45,7 @@ if __name__ == "__main__":
     # set the manim options
     options = {
         "quality": args.quality + "_quality",
+        "output_file" : "movie.mp4",
         "preview": False,
         "verbosity" : "ERROR"
     }
@@ -43,4 +55,4 @@ if __name__ == "__main__":
         Animation().render()
 
     # move the animation and remove the media directory
-    shutil.move("media/videos/{}/Animation.mp4".format(Q2P[args.quality]), "movie.mp4"); shutil.rmtree("media")
+    sh.move("media/videos/{}/movie.mp4".format(Q2P[args.quality]), "movie.mp4"); sh.rmtree("media")
