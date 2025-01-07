@@ -9,7 +9,8 @@
                 "coulomb" : "J_AO.mat"
             },
             "threshold" : 1e-8,
-            "maxiter" : 100
+            "maxiter" : 100,
+            "dsize" : 5
         },
         "excitation" : null
     }

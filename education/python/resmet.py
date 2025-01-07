@@ -35,6 +35,9 @@ if __name__ == "__main__":
     # add integral options
     parser.add_argument("--int", help="Filenames of the integral files. (default: %(default)s)", nargs=4, type=str, default=["T_AO.mat", "V_AO.mat", "S_AO.mat", "J_AO.mat"])
 
+    # optional flags
+    parser.add_argument("--diis", help="Enable the DIIS convergence accelerator.", action=ap.BooleanOptionalAction)
+
     # method switches
     parser.add_argument("--fci", help="Perform the full configuration interaction calculation.", action=ap.BooleanOptionalAction)
     parser.add_argument("--ccd", help="Perform the doubles coupled clusters calculation.", action=ap.BooleanOptionalAction)
@@ -54,8 +57,8 @@ if __name__ == "__main__":
     # OBTAIN THE MOLECULE AND ATOMIC INTEGRALS =========================================================================================================================================================
 
     # get the atomic numbers and coordinates of all atoms
-    atoms = np.array([ATOM[line.split()[0]] for line in open(args.molecule).readlines()[2:]], dtype=int)
-    coords = np.array([line.split()[1:] for line in open(args.molecule).readlines()[2:]], dtype=float)
+    atoms  = np.array([ATOM[line.split()[0]] for line in open(args.molecule).readlines()[2:]], dtype=int  )
+    coords = np.array([line.split()[1:]      for line in open(args.molecule).readlines()[2:]], dtype=float)
 
     # convert coordinates to bohrs and forward declare orbital slices and atom count
     coords *= 1.8897261254578281; o, v = slice(0, 0), slice(0, 0); natoms = len(atoms)
@@ -65,8 +68,8 @@ if __name__ == "__main__":
 
     # HARTREE-FOCK METHOD ==============================================================================================================================================================================
 
-    # energies, number of occupied and virtual orbitals and the number of basis functions
-    E_HF, E_HF_P, VNN, nbf, nocc = 0, 1, 0, S.shape[0], sum(atoms) // 2; nvirt = nbf - nocc
+    # energies, iteration counter, number of basis functions and number of occupied/virtual orbitals
+    E_HF, E_HF_P, VNN, iter, nbf, nocc = 0, 1, 0, 0, S.shape[0], sum(atoms) // 2; nvirt = nbf - nocc
 
     # exchange integrals and the guess density matrix
     K, D = J.transpose(0, 3, 2, 1), np.zeros((nbf, nbf))
@@ -74,14 +77,37 @@ if __name__ == "__main__":
     # Fock matrix, coefficient matrix and orbital energies initialized to zero
     F, C, eps = np.zeros((nbf, nbf)), np.zeros((nbf, nbf)), np.zeros((nbf))
 
+    # DIIS containers
+    DIIS_F, DIIS_E = [], []
+
     # the X matrix which is the inverse of the square root of the overlap matrix
     SEP = np.linalg.eigh(S); X = SEP[1] @ np.diag(1 / np.sqrt(SEP[0])) @ SEP[1].T
 
     # the scf loop
     while abs(E_HF - E_HF_P) > args.threshold:
 
-        # build the Fock matrix
-        F = H + np.einsum("ijkl,ij->kl", J - 0.5 * K, D, optimize=True)
+        # build the Fock matrix and increment the iteration counter
+        F = H + np.einsum("ijkl,ij->kl", J - 0.5 * K, D, optimize=True); iter += 1
+
+        # DIIS extrapolation
+        if args.diis and iter > 1:
+
+            # append the DIIS matrices
+            DIIS_F.append(F); DIIS_E.append(S @ D @ F - F @ D @ S);
+
+            # truncate the DIIS subspace
+            if len(DIIS_F) > 5: DIIS_F.pop(0), DIIS_E.pop(0)
+
+            # build the DIIS system
+            A = np.ones ((len(DIIS_F) + 1, len(DIIS_F) + 1)); A[-1, -1] = 0
+            b = np.zeros((len(DIIS_F) + 1                 )); b[-1]     = 1
+
+            # fill the DIIS matrix
+            for i, j in it.product(range(len(DIIS_F)), range(len(DIIS_F))):
+                A[i, j] = A[j, i] = np.einsum("ij,ij", DIIS_E[i], DIIS_E[j])
+
+            # solve the DIIS equations and extrapolate the Fock matrix
+            c = np.linalg.solve(A, b); F = np.einsum("i,ijk->jk", c[:-1], DIIS_F)
 
         # solve the Fock equations
         eps, C = np.linalg.eigh(X @ F @ X); C = X @ C
@@ -90,14 +116,14 @@ if __name__ == "__main__":
         D = 2 * np.einsum("ij,kj->ik", C[:, :nocc], C[:, :nocc])
 
         # save the previous energy and calculate the current electron energy
-        E_HF_P, E_HF = E_HF, 0.5 * np.einsum("ij,ij->", D, H + F, optimize=True)
+        E_HF_P, E_HF = E_HF, 0.5 * np.einsum("ij,ij", D, H + F, optimize=True)
 
     # calculate nuclear-nuclear repulsion
     for i, j in ((i, j) for i, j in it.product(range(natoms), range(natoms)) if i != j):
         VNN += 0.5 * atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :])
 
     # print the results
-    print("    RHF ENERGY: {:.8f}".format(E_HF + VNN))
+    print("    RHF ENERGY: {:.8f} ({} ITERATIONS)".format(E_HF + VNN, iter))
 
     # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
     if args.mp2 or args.mp3 or args.ccd or args.ccsd or args.fci:
@@ -352,12 +378,9 @@ if __name__ == "__main__":
                 ]))).astype(int)
 
                 # apply the Slater-Condon rules and multiply by the sign
-                if ((aligned - dets[i]) != 0).sum() == 0: Hci[i, j] = slater0(so) * sign
-                if ((aligned - dets[i]) != 0).sum() == 1: Hci[i, j] = slater1(so) * sign
-                if ((aligned - dets[i]) != 0).sum() == 2: Hci[i, j] = slater2(so) * sign
-
-                # fill the lower triangle
-                Hci[j, i] = Hci[i, j]
+                if ((aligned - dets[i]) != 0).sum() == 0: Hci[i, j] = Hci[j, i] = slater0(so) * sign
+                if ((aligned - dets[i]) != 0).sum() == 1: Hci[i, j] = Hci[j, i] = slater1(so) * sign
+                if ((aligned - dets[i]) != 0).sum() == 2: Hci[i, j] = Hci[j, i] = slater2(so) * sign
 
         # solve the eigensystem and assign energy
         eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF

@@ -42,7 +42,7 @@ where $\mathbf{C}^{\mathrm{CI}}$ is a matrix of coefficients and $\mathbf{\varep
 \mathbf{H}_{ij}^{\mathrm{CI}}=
 \begin{cases} 
 \displaystyle \sum_kH\_{kk}^{\mathrm{core},\mathrm{MS}}+\frac{1}{2}\sum_k\sum_l\braket{kl||kl}&D_i=D_j \\\\\
-\displaystyle H\_{pr}^{\mathrm{core},\mathrm{MS}}+\sum_k\braket{pk||lk}&D_i=\left\lbrace\dotsi p\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi\right\rbrace \\\\\
+\displaystyle H\_{pr}^{\mathrm{core},\mathrm{MS}}+\sum_k\braket{pk||rk}&D_i=\left\lbrace\dotsi p\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi\right\rbrace \\\\\
 \displaystyle \vphantom{\sum_k}\braket{pq||rs}&D_i=\left\lbrace\dotsi p\dotsi q\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi s\dotsi\right\rbrace \\\\\
 \displaystyle \vphantom{\sum_k}0&\text{otherwise}
 \end{cases}

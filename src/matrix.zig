@@ -197,6 +197,29 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     }
 }
 
+/// Solve the linear system Ax = b. The output vector is stored in the vector x. The matrix A is converted to a row-echelon form. Vector b is also modified.
+pub fn linsolve(comptime T: type, x: *Vector(T), A: *Matrix(T), b: *Vector(T)) void {
+    for (0..A.cols - 1) |j| for (j + 1..A.rows) |i| {
+
+        const factor = A.at(i, j) / A.at(j, j);
+
+        for (j..A.cols) |k| {
+            A.ptr(i, k).* -= factor * A.at(j, k);
+        }
+
+        b.ptr(i).* -= factor * b.at(j);
+    };
+
+    for (0..x.rows) |i| {
+
+        for (0..i) |j| {
+            b.ptr(b.rows - i - 1).* -= A.at(A.rows - i - 1, A.cols - j - 1) * x.at(x.rows - j - 1);
+        }
+
+        x.ptr(x.rows - i - 1).* = b.at(x.rows - i - 1) / A.at(x.rows - i - 1, x.rows - i - 1);
+    }
+}
+
 /// Matrix multiplication of the adjoint of matrix A and matrix B. The output matrix is stored in the matrix C.
 pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);

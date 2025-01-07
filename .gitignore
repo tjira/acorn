@@ -10,6 +10,8 @@
 docs/**/*.loc*
 docs/**/*.pdf*
 
+education/**/*.mat*
+
 research/fssh_vs_lzsh/*.jso*
 research/fssh_vs_lzsh/*.mat*
 research/fssh_vs_lzsh/*.png*

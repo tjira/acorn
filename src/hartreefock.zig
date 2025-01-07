@@ -29,6 +29,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
         molecule: []const u8 = "molecule.xyz",
         threshold: T = 1e-12,
         maxiter: u32 = 100,
+        dsize: ?u32 = 5,
 
         integral: Integral = .{}
     };
@@ -63,6 +64,15 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
 
     var H_AO = try Matrix(T).init(nbf, nbf, allocator); defer H_AO.deinit();
     var X    = try Matrix(T).init(nbf, nbf, allocator); defer    X.deinit();
+    var ERR  = try Matrix(T).init(nbf, nbf, allocator); defer  ERR.deinit();
+
+    var DIIS_E = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_E.deinit();
+    var DIIS_F = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_F.deinit();
+
+    if (opt.dsize != null) for (0..opt.dsize.?) |_| {
+        try DIIS_E.append(try Matrix(T).init(H_AO.rows, H_AO.cols, allocator));
+        try DIIS_F.append(try Matrix(T).init(H_AO.rows, H_AO.cols, allocator));
+    };
 
     {
         const T_AO = try mat.read(T, opt.integral.kinetic,    allocator); defer T_AO.deinit();
@@ -102,6 +112,15 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
             F_AO.ptr(k, l).* += D_MO.at(i, j) * J_AO_A.at(&[_]usize{i, j, k, l});
         };
 
+        if (opt.dsize != null) {
+            mat.mm(T, &T1, S_AO, D_MO); mat.mm(T, &T2, T1, F_AO); mat.mm(T, &T1, F_AO, D_MO); mat.mm(T, &T3, T1, S_AO); mat.sub(T, &ERR, T2, T3);
+
+            @memcpy(DIIS_F.items[(iter - 1) % DIIS_F.items.len].data, F_AO.data);
+            @memcpy(DIIS_E.items[(iter - 1) % DIIS_E.items.len].data,  ERR.data);
+
+            try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
+        }
+
         mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); mat.eigh(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
 
         D_MO.fill(0); EP = E; E = 0;
@@ -119,9 +138,48 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
 
     if (print) try std.io.getStdOut().writer().print("\nHF ENERGY: {d:.14}\n", .{E + VNN});
 
+    for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
+    for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
+
     return HartreeFockOutput(T){
         .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .VNN = VNN, .nbf = nbf, .nocc = nocc
     };
+}
+
+pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayList(Matrix(T)), DIIS_E: *std.ArrayList(Matrix(T)), iter: u32, allocator: std.mem.Allocator) !void {
+    if (iter > 0) {
+
+        const size = if (iter < DIIS_F.items.len) iter else DIIS_F.items.len;
+
+        var A = try Matrix(T).init(size + 1, size + 1, allocator); defer A.deinit();
+        var b = try Vector(T).init(size + 1,           allocator); defer b.deinit();
+        var c = try Vector(T).init(size + 1,           allocator); defer b.deinit();
+
+        A.fill(1); b.fill(0); A.ptr(A.rows - 1, A.cols - 1).* = 0; b.ptr(b.rows - 1).* = 1;
+
+        for (0..size) |i| for (0..size) |j| {
+
+            A.ptr(i, j).* = 0;
+
+            const ii = @mod(@as(i32, @intCast(iter)) - @as(i32, @intCast(size)) + @as(i32, @intCast(i)), @as(i32, @intCast(DIIS_E.items.len)));
+            const jj = @mod(@as(i32, @intCast(iter)) - @as(i32, @intCast(size)) + @as(i32, @intCast(j)), @as(i32, @intCast(DIIS_E.items.len)));
+
+            for (0..DIIS_E.items[0].rows) |k| for (0..DIIS_E.items[0].cols) |l| {
+                A.ptr(i, j).* += DIIS_E.items[@intCast(ii)].at(k, l) * DIIS_E.items[@intCast(jj)].at(k, l);
+            };
+        };
+
+        mat.linsolve(T, &c, &A, &b); F_AO.fill(0);
+
+        for (0..size) |i| {
+
+            const ii = @mod(@as(i32, @intCast(iter)) - @as(i32, @intCast(size)) + @as(i32, @intCast(i)), @as(i32, @intCast(DIIS_F.items.len)));
+
+            for (0..F_AO.rows) |j| for (0..F_AO.cols) |k| {
+                F_AO.ptr(j, k).* += c.at(i) * DIIS_F.items[@intCast(ii)].at(j, k);
+            };
+        }
+    }
 }
 
 /// Parse the .xyz system from the given path.
