@@ -113,10 +113,11 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
         };
 
         if (opt.dsize != null) {
+
             mat.mm(T, &T1, S_AO, D_MO); mat.mm(T, &T2, T1, F_AO); mat.mm(T, &T1, F_AO, D_MO); mat.mm(T, &T3, T1, S_AO); mat.sub(T, &ERR, T2, T3);
 
-            @memcpy(DIIS_F.items[(iter - 1) % DIIS_F.items.len].data, F_AO.data);
-            @memcpy(DIIS_E.items[(iter - 1) % DIIS_E.items.len].data,  ERR.data);
+            @memcpy(DIIS_F.items[@intCast(@mod(@as(i32, @intCast(iter)) - 1, @as(i32, @intCast(DIIS_F.items.len))))].data, F_AO.data);
+            @memcpy(DIIS_E.items[@intCast(@mod(@as(i32, @intCast(iter)) - 1, @as(i32, @intCast(DIIS_E.items.len))))].data,  ERR.data);
 
             try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
         }
@@ -153,7 +154,7 @@ pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayLis
 
         var A = try Matrix(T).init(size + 1, size + 1, allocator); defer A.deinit();
         var b = try Vector(T).init(size + 1,           allocator); defer b.deinit();
-        var c = try Vector(T).init(size + 1,           allocator); defer b.deinit();
+        var c = try Vector(T).init(size + 1,           allocator); defer c.deinit();
 
         A.fill(1); b.fill(0); A.ptr(A.rows - 1, A.cols - 1).* = 0; b.ptr(b.rows - 1).* = 1;
 
