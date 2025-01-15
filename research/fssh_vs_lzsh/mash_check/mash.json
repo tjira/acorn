@@ -31,7 +31,7 @@
         "potential" : "tully1D_3",
         "spin_mapping" : {
             "quantum_substep" : 10,
-            "sample_bloch_vector" : true
+            "sample_bloch_vector" : false
         },
         "time_derivative_coupling" : "numeric"
     }

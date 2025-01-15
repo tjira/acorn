@@ -14,11 +14,11 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         const InitialConditions = struct {
-            position_mean: []const T = &[_]T{-10.0},
-            position_std:  []const T = &[_]T{  0.5},
-            momentum_mean: []const T = &[_]T{ 15.0},
-            momentum_std:  []const T = &[_]T{  1.0},
-            state: u32 = 1, mass: T = 2000
+            position_mean: []const T = &[_]T{1.0},
+            position_std:  []const T = &[_]T{0.5},
+            momentum_mean: []const T = &[_]T{0.0},
+            momentum_std:  []const T = &[_]T{1.0},
+            state: u32 = 0, mass: T = 1
         };
         const FewestSwitches = struct {
             quantum_substep: u32 = 10,
@@ -46,12 +46,12 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
 
         adiabatic: bool = true,
         derivative_step: T = 0.001,
-        iterations: u32 = 3000,
-        potential: []const u8 = "tully1D_1",
+        iterations: u32 = 100,
+        potential: []const u8 = "harmonic1D_1",
         seed: u32 = 1,
         time_derivative_coupling: ?[]const u8 = "numeric",
-        time_step: T = 1,
-        trajectories: u32 = 100,
+        time_step: T = 0.1,
+        trajectories: u32 = 1000,
 
         fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
 
@@ -64,15 +64,27 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
     return struct {
         pop: Vector(T),
 
+        r: Vector(T),
+        p: Vector(T),
+
+        Ekin: T,
+        Epot: T,
+
         /// Initialize the classical dynamics output.
-        pub fn init(nstate: usize, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
+        pub fn init(ndim: usize, nstate: usize, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
             return ClassicalDynamicsOutput(T){
-                .pop = try Vector(T).init(nstate, allocator)
+                .pop = try Vector(T).init(nstate, allocator),
+
+                .r = try Vector(T).init(ndim, allocator),
+                .p = try Vector(T).init(ndim, allocator),
+
+                .Ekin = 0,
+                .Epot = 0
             };
         }
         /// Free the memory allocated for the classical dynamics output.
         pub fn deinit(self: ClassicalDynamicsOutput(T)) void {
-            self.pop.deinit();
+            self.pop.deinit(); self.r.deinit(); self.p.deinit();
         }
     };
 }
@@ -83,7 +95,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
     const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential);
 
-    var output = try ClassicalDynamicsOutput(T).init(nstate, allocator);
+    var output = try ClassicalDynamicsOutput(T).init(ndim, nstate, allocator);
 
     var prng_jump = std.Random.DefaultPrng.init(opt.seed); const rand_jump = prng_jump.random();
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
@@ -219,11 +231,19 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                 if (opt.write.total_energy_mean             != null) etot.ptr(j, 1 + 0).* += Ekin + Epot                                                     ;
                 if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position.ptr(j, 1 + k).* += r.at(k);}                              ;
                 if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum.ptr(j, 1 + k).* += v.at(k) * opt.initial_conditions.mass;};
-                if (opt.write.time_derivative_coupling_mean != null) for (0..tdc.cols) |k| {tdc.ptr(j, 1 + k).* += TDC.data[k];}                             ;
+                if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k).* += TDC.data[k];}                  ;
                 if (opt.write.fssh_coefficient_mean         != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();};
 
                 if (j == opt.iterations - 1) {
+
                     output.pop.ptr(s).* += 1;
+
+                    for (0..ndim) |k| {
+                        output.r.ptr(k).* += r.at(k);  output.p.ptr(k).* += v.at(k) * opt.initial_conditions.mass;
+                    }
+
+                    output.Ekin += Ekin;
+                    output.Epot += Epot;
                 }
 
                 if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j % opt.log_intervals.iteration == 0)) {
@@ -243,6 +263,11 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     for (0..opt.iterations + 1) |i| {for (1..coef.cols    ) |j|     coef.ptr(i, j).* /= asfloat(T, opt.trajectories);}
 
     for (0..output.pop.rows) |i| output.pop.ptr(i).* /= asfloat(T, opt.trajectories);
+    for (0..output.r.rows  ) |i|   output.r.ptr(i).* /= asfloat(T, opt.trajectories);
+    for (0..output.p.rows  ) |i|   output.p.ptr(i).* /= asfloat(T, opt.trajectories);
+
+    output.Ekin /= asfloat(T, opt.trajectories);
+    output.Epot /= asfloat(T, opt.trajectories);
 
     for (0..nstate) |i| {
         if (print) {try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.pop.at(i)});}

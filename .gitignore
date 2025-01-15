@@ -12,9 +12,9 @@ docs/**/*.pdf*
 
 education/**/*.mat*
 
-research/fssh_vs_lzsh/*.jso*
-research/fssh_vs_lzsh/*.mat*
-research/fssh_vs_lzsh/*.png*
+research/fssh_vs_lzsh/**/*.jso*
+research/fssh_vs_lzsh/**/*.mat*
+research/fssh_vs_lzsh/**/*.png*
 
 research/uracil_lvc/*.mat*
 research/uracil_lvc/*.png*

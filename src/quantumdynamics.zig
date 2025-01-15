@@ -17,10 +17,10 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn QuantumDynamicsOptions(comptime T: type) type {
     return struct {
         const Grid = struct {
-            limits: []const T = &[_]f64{-16, 32}, points: u32 = 512
+            limits: []const T = &[_]f64{-8, 8}, points: u32 = 32
         };
         const InitialConditions = struct {
-            position: []const T = &[_]f64{-10}, momentum: []const T = &[_]f64{15}, gamma: T = 2, state: u32 = 1, mass: T = 2000
+            position: []const T = &[_]f64{1}, momentum: []const T = &[_]f64{0}, gamma: T = 2, state: u32 = 0, mass: T = 1
         };
         const LogIntervals = struct {
             iteration: u32 = 1
@@ -36,11 +36,11 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             wavefunction: ?[]const u8 = null
         };
 
-        adiabatic: bool = true,
-        iterations: u32 = 300,
+        adiabatic: bool = false,
+        iterations: u32 = 100,
         mode: []const u32 = &[_]u32{0, 1},
-        potential: []const u8 = "tully1D_1",
-        time_step: T = 10,
+        potential: []const u8 = "harmonic1D_1",
+        time_step: T = 0.1,
 
         grid: Grid = .{}, initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{}
     };
@@ -52,6 +52,7 @@ pub fn QuantumDynamicsOutput(comptime T: type) type {
         P: Matrix(T),
         r: Vector(T),
         p: Vector(T),
+
         Ekin: T,
         Epot: T,
 
@@ -59,10 +60,12 @@ pub fn QuantumDynamicsOutput(comptime T: type) type {
         pub fn init(ndim: usize, nstate: usize, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
             return QuantumDynamicsOutput(T){
                 .P = try Matrix(T).init(nstate, nstate, allocator),
+
                 .r = try Vector(T).init(ndim, allocator),
                 .p = try Vector(T).init(ndim, allocator),
-                .Ekin = undefined,
-                .Epot = undefined
+
+                .Ekin = 0,
+                .Epot = 0
             };
         }
         /// Free the memory allocated for the quantum dynamics output struct.
