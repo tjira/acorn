@@ -222,7 +222,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
                     output.Ekin = Ekin; output.Epot = Epot; try energies.append(Ekin + Epot);
 
-                    if (opt.mode[0] + opt.mode[1] == 1) try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{output.Ekin + output.Epot});
+                    if (opt.mode[0] + opt.mode[1] == 1 and print) try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{output.Ekin + output.Epot});
 
                     if (nstate > 1) for (0..nstate) |k| if (print) {
                         try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P.at(k, k)});
@@ -231,7 +231,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
             }
         }
 
-        if (opt.mode[0] + opt.mode[1] > 1) for (0..opt.mode[0] + opt.mode[1]) |i| {
+        if (opt.mode[0] + opt.mode[1] > 1 and print) for (0..opt.mode[0] + opt.mode[1]) |i| {
             try std.io.getStdOut().writer().print("{s}FINAL ENERGY OF PROPAGATION #{d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i + 1, energies.items[i]});
         };
 
