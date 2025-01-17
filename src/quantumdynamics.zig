@@ -91,6 +91,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
     var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer momentum.deinit(); momentum.fill(0);
     var acf      = try Matrix(T).init(opt.iterations + 1, 1 + 2     , allocator); defer      acf.deinit();      acf.fill(0);
 
+    var energies = try std.ArrayList(T).initCapacity(allocator, opt.mode[0] + opt.mode[1]); defer energies.deinit();
+
     {
         const time = try Matrix(T).init(opt.iterations + 1, 1, allocator); defer time.deinit(); time.linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
@@ -216,14 +218,22 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
                     if (opt.mode[0] > 0 and i < opt.mode[0] - 1) @memcpy(WOPT.items[i].data.data, W.data.data);
 
-                    @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data); output.Ekin = Ekin; output.Epot = Epot;
+                    @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data);
 
-                    for (0..nstate) |k| if (print) {
+                    output.Ekin = Ekin; output.Epot = Epot; try energies.append(Ekin + Epot);
+
+                    if (opt.mode[0] + opt.mode[1] == 1) try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{output.Ekin + output.Epot});
+
+                    if (nstate > 1) for (0..nstate) |k| if (print) {
                         try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P.at(k, k)});
                     };
                 }
             }
         }
+
+        if (opt.mode[0] + opt.mode[1] > 1) for (0..opt.mode[0] + opt.mode[1]) |i| {
+            try std.io.getStdOut().writer().print("{s}FINAL ENERGY OF PROPAGATION #{d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i + 1, energies.items[i]});
+        };
 
         for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();} for (VA.items) |*e| {e.deinit();} for (VC.items) |*e| {e.deinit();} for (WOPT.items) |*e| {e.deinit();}
     }

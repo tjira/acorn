@@ -1,5 +1,9 @@
 const std = @import("std"); const builtin = @import("builtin");
 
+const examples: [1][]const u8 = [_][]const u8{
+    "example/compiled/qdyn_ho_excited_states.zig"
+};
+
 const targets: []const std.Target.Query = &.{
     .{.os_tag = .linux  , .cpu_arch = .aarch64},
     .{.os_tag = .linux  , .cpu_arch = .arm    },
@@ -18,6 +22,8 @@ pub fn build(builder: *std.Build) !void {
 
     for (targets) |target| {
 
+        const target_name = try target.zigTriple(builder.allocator);
+
         const main_executable = builder.addExecutable(.{
             .name = "acorn",
             .optimize = optimize,
@@ -27,11 +33,36 @@ pub fn build(builder: *std.Build) !void {
             .target = builder.resolveTargetQuery(target)
         });
 
-        const output = builder.addInstallArtifact(main_executable, .{
-            .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
+        const main_output = builder.addInstallArtifact(main_executable, .{
+            .dest_dir = .{.override = .{.custom = target_name}}
         });
 
-        builder.getInstallStep().dependOn(&output.step);
+        builder.getInstallStep().dependOn(&main_output.step);
+
+        for (examples) |example| {
+
+            var bin_folder = try builder.allocator.alloc(u8, target_name.len + 8); bin_folder[target_name.len] = '/';
+
+            @memcpy(bin_folder[0                  ..target_name.len    ], target_name      );
+            @memcpy(bin_folder[target_name.len + 1..target_name.len + 8], example    [0..7]);
+
+            const example_executable = builder.addExecutable(.{
+                .name = example[17..example.len - 4],
+                .optimize = optimize,
+                .root_source_file = builder.path(example),
+                .single_threaded = true,
+                .strip = if (optimize != .Debug) true else false,
+                .target = builder.resolveTargetQuery(target)
+            });
+
+            example_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
+
+            const example_output = builder.addInstallArtifact(example_executable, .{
+                .dest_dir = .{.override = .{.custom = bin_folder}}
+            });
+
+            builder.getInstallStep().dependOn(&example_output.step);
+        }
 
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag) {
 

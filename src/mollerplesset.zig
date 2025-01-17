@@ -56,7 +56,7 @@ pub fn run(comptime T: type, opt: MollerPlessetOptions(T), print: bool, allocato
 }
 
 /// Returns the second-order Moller-Plesset energy.
-fn mp2(comptime T: type, E_MO: Matrix(T), J_MS_A: Tensor(T), nocc: usize) T {
+pub fn mp2(comptime T: type, E_MO: Matrix(T), J_MS_A: Tensor(T), nocc: usize) T {
     var E: T = 0;
 
     for (0..nocc) |i| for (0..nocc) |j| for (nocc..J_MS_A.shape[0]) |a| for (nocc..J_MS_A.shape[0]) |b| {
@@ -67,7 +67,7 @@ fn mp2(comptime T: type, E_MO: Matrix(T), J_MS_A: Tensor(T), nocc: usize) T {
 }
 
 /// Function to perform all integrals transformations used in the Moller-Plesset calculations.
-fn transform(comptime T: type, J_MS_A: *Tensor(T), J_AO: Tensor(T), C_MO: Matrix(T), allocator: std.mem.Allocator) !void {
+pub fn transform(comptime T: type, J_MS_A: *Tensor(T), J_AO: Tensor(T), C_MO: Matrix(T), allocator: std.mem.Allocator) !void {
     var J_AS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_AS.deinit();
     var J_MS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_MS.deinit();
 

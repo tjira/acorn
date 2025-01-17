@@ -32,6 +32,7 @@ pub fn Tensor(comptime T: type) type {
         pub fn deinit(self: Tensor(T)) void {
             self.allocator.free(self.data );
             self.allocator.free(self.shape);
+            self.allocator.free(self.stride);
         }
 
         /// Returns the element at the specified indices as a value.
