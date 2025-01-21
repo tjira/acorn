@@ -227,25 +227,41 @@ pub fn uracil1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     const d_26_2 =  9.46894; const a_26_2 =  0.08653; const q_26_2 =  0.37635; const e_26_2 = -0.01037;
     const d_26_3 = 65.09678; const a_26_3 =  0.03660; const q_26_3 =  1.66312; const e_26_3 = -0.25639;
 
-    U.ptr(0, 0).* = E_0 / au2ev + 0.5 * (omg_10 * r.at(0) * r.at(0) + omg_12 * r.at(1) * r.at(1) + omg_18 * r.at(2) * r.at(2) + omg_20 * r.at(3) * r.at(3) + omg_21 * r.at(4) * r.at(4)) / au2cm + ((d_24_0 * (std.math.exp(a_24_0 * (r.at(5) - q_24_0)) - 1) * (std.math.exp(a_24_0 * (r.at(5) - q_24_0)) - 1) + e_24_0) + (d_25_0 * (std.math.exp(a_25_0 * (r.at(6) - q_25_0)) - 1) * (std.math.exp(a_25_0 * (r.at(6) - q_25_0)) - 1) + e_25_0) + (d_26_0 * (std.math.exp(a_26_0 * (r.at(7) - q_26_0)) - 1) * (std.math.exp(a_26_0 * (r.at(7) - q_26_0)) - 1) + e_26_0)) / au2ev + (k_18_0 * r.at(2) + k_20_0 * r.at(3) + k_21_0 * r.at(4)) / au2ev + 0.5 * (g_18_0 * r.at(2) * r.at(2) + g_20_0 * r.at(3) * r.at(3) + g_21_0 * r.at(4) * r.at(4)) / au2ev;
+    U.ptr(0, 0).* = E_0 / au2ev +
+                    0.5 * (omg_10 * r.at(0) * r.at(0) + omg_12 * r.at(1) * r.at(1) + omg_18 * r.at(2) * r.at(2) + omg_20 * r.at(3) * r.at(3) + omg_21 * r.at(4) * r.at(4)) / au2cm +
+                    ((d_24_0 * std.math.pow(T, std.math.exp(a_24_0 * (r.at(5) - q_24_0)) - 1, 2) + e_24_0) + (d_25_0 * std.math.pow(T, std.math.exp(a_25_0 * (r.at(6) - q_25_0)) - 1, 2) + e_25_0) + (d_26_0 * std.math.pow(T, std.math.exp(a_26_0 * (r.at(7) - q_26_0)) - 1, 2) + e_26_0)) / au2ev +
+                    (k_18_0 * r.at(2) + k_20_0 * r.at(3) + k_21_0 * r.at(4)) / au2ev +
+                    0.5 * (g_18_0 * r.at(2) * r.at(2) + g_20_0 * r.at(3) * r.at(3) + g_21_0 * r.at(4) * r.at(4)) / au2ev;
     U.ptr(0, 1).* = (l_10_01 * r.at(0) + l_12_01 * r.at(1)) / au2ev;
     U.ptr(0, 2).* = (l_18_02 * r.at(2) + l_20_02 * r.at(3) + l_21_02 * r.at(4) + l_24_02 * r.at(5) + l_25_02 * r.at(6) + l_26_02 * r.at(7)) / au2ev;
     U.ptr(0, 3).* = 0;
 
     U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = E_1 / au2ev + 0.5 * (omg_10 * r.at(0) * r.at(0) + omg_12 * r.at(1) * r.at(1) + omg_18 * r.at(2) * r.at(2) + omg_20 * r.at(3) * r.at(3) + omg_21 * r.at(4) * r.at(4)) / au2cm + ((d_24_1 * (std.math.exp(a_24_1 * (r.at(5) - q_24_1)) - 1) * (std.math.exp(a_24_1 * (r.at(5) - q_24_1)) - 1) + e_24_1) + (d_25_1 * (std.math.exp(a_25_1 * (r.at(6) - q_25_1)) - 1) * (std.math.exp(a_25_1 * (r.at(6) - q_25_1)) - 1) + e_25_1) + (d_26_1 * (std.math.exp(a_26_1 * (r.at(7) - q_26_1)) - 1) * (std.math.exp(a_26_1 * (r.at(7) - q_26_1)) - 1) + e_26_1)) / au2ev + (k_18_1 * r.at(2) + k_20_1 * r.at(3) + k_21_1 * r.at(4)) / au2ev + 0.5 * (g_18_1 * r.at(2) * r.at(2) + g_20_1 * r.at(3) * r.at(3) + g_21_1 * r.at(4) * r.at(4)) / au2ev;
+    U.ptr(1, 1).* = E_1 / au2ev +
+                    0.5 * (omg_10 * r.at(0) * r.at(0) + omg_12 * r.at(1) * r.at(1) + omg_18 * r.at(2) * r.at(2) + omg_20 * r.at(3) * r.at(3) + omg_21 * r.at(4) * r.at(4)) / au2cm +
+                    ((d_24_1 * std.math.pow(T, std.math.exp(a_24_1 * (r.at(5) - q_24_1)) - 1, 2) + e_24_1) + (d_25_1 * std.math.pow(T, std.math.exp(a_25_1 * (r.at(6) - q_25_1)) - 1, 2) + e_25_1) + (d_26_1 * std.math.pow(T, std.math.exp(a_26_1 * (r.at(7) - q_26_1)) - 1, 2) + e_26_1)) / au2ev +
+                    (k_18_1 * r.at(2) + k_20_1 * r.at(3) + k_21_1 * r.at(4)) / au2ev +
+                    0.5 * (g_18_1 * r.at(2) * r.at(2) + g_20_1 * r.at(3) * r.at(3) + g_21_1 * r.at(4) * r.at(4)) / au2ev;
     U.ptr(1, 2).* = (l_10_12 * r.at(0) + l_12_12 * r.at(1)) / au2ev;
     U.ptr(1, 3).* = (l_18_13 * r.at(2) + l_20_13 * r.at(3) + l_21_13 * r.at(4) + l_24_13 * r.at(5) + l_25_13 * r.at(6) + l_26_13 * r.at(7)) / au2ev;
 
     U.ptr(2, 0).* = U.at(0, 2);
     U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = E_2 / au2ev + 0.5 * (omg_10 * r.at(0) * r.at(0) + omg_12 * r.at(1) * r.at(1) + omg_18 * r.at(2) * r.at(2) + omg_20 * r.at(3) * r.at(3) + omg_21 * r.at(4) * r.at(4)) / au2cm + ((d_24_2 * (std.math.exp(a_24_2 * (r.at(5) - q_24_2)) - 1) * (std.math.exp(a_24_2 * (r.at(5) - q_24_2)) - 1) + e_24_2) + (d_25_2 * (std.math.exp(a_25_2 * (r.at(6) - q_25_2)) - 1) * (std.math.exp(a_25_2 * (r.at(6) - q_25_2)) - 1) + e_25_2) + (d_26_2 * (std.math.exp(a_26_2 * (r.at(7) - q_26_2)) - 1) * (std.math.exp(a_26_2 * (r.at(7) - q_26_2)) - 1) + e_26_2)) / au2ev + (k_18_2 * r.at(2) + k_20_2 * r.at(3) + k_21_2 * r.at(4)) / au2ev + 0.5 * (g_18_2 * r.at(2) * r.at(2) + g_20_2 * r.at(3) * r.at(3) + g_21_2 * r.at(4) * r.at(4)) / au2ev;
+    U.ptr(2, 2).* = E_2 / au2ev +
+                    0.5 * (omg_10 * r.at(0) * r.at(0) + omg_12 * r.at(1) * r.at(1) + omg_18 * r.at(2) * r.at(2) + omg_20 * r.at(3) * r.at(3) + omg_21 * r.at(4) * r.at(4)) / au2cm +
+                    ((d_24_2 * std.math.pow(T, std.math.exp(a_24_2 * (r.at(5) - q_24_2)) - 1, 2) + e_24_2) + (d_25_2 * std.math.pow(T, std.math.exp(a_25_2 * (r.at(6) - q_25_2)) - 1, 2) + e_25_2) + (d_26_2 * std.math.pow(T, std.math.exp(a_26_2 * (r.at(7) - q_26_2)) - 1, 2) + e_26_2)) / au2ev +
+                    (k_18_2 * r.at(2) + k_20_2 * r.at(3) + k_21_2 * r.at(4)) / au2ev +
+                    0.5 * (g_18_2 * r.at(2) * r.at(2) + g_20_2 * r.at(3) * r.at(3) + g_21_2 * r.at(4) * r.at(4)) / au2ev;
     U.ptr(2, 3).* = 0;
 
     U.ptr(3, 0).* = U.at(0, 3);
     U.ptr(3, 1).* = U.at(1, 3);
     U.ptr(3, 2).* = U.at(2, 3);
-    U.ptr(3, 3).* = E_3 / au2ev + 0.5 * (omg_10 * r.at(0) * r.at(0) + omg_12 * r.at(1) * r.at(1) + omg_18 * r.at(2) * r.at(2) + omg_20 * r.at(3) * r.at(3) + omg_21 * r.at(4) * r.at(4)) / au2cm + ((d_24_3 * (std.math.exp(a_24_3 * (r.at(5) - q_24_3)) - 1) * (std.math.exp(a_24_3 * (r.at(5) - q_24_3)) - 1) + e_24_3) + (d_25_3 * (std.math.exp(a_25_3 * (r.at(6) - q_25_3)) - 1) * (std.math.exp(a_25_3 * (r.at(6) - q_25_3)) - 1) + e_25_3) + (d_26_3 * (std.math.exp(a_26_3 * (r.at(7) - q_26_3)) - 1) * (std.math.exp(a_26_3 * (r.at(7) - q_26_3)) - 1) + e_26_3)) / au2ev + (k_18_3 * r.at(2) + k_20_3 * r.at(3) + k_21_3 * r.at(4)) / au2ev + 0.5 * (g_18_3 * r.at(2) * r.at(2) + g_20_3 * r.at(3) * r.at(3) + g_21_3 * r.at(4) * r.at(4)) / au2ev;
+    U.ptr(3, 3).* = E_3 / au2ev +
+                    0.5 * (omg_10 * r.at(0) * r.at(0) + omg_12 * r.at(1) * r.at(1) + omg_18 * r.at(2) * r.at(2) + omg_20 * r.at(3) * r.at(3) + omg_21 * r.at(4) * r.at(4)) / au2cm +
+                    ((d_24_3 * std.math.pow(T, std.math.exp(a_24_3 * (r.at(5) - q_24_3)) - 1, 2) + e_24_3) + (d_25_3 * std.math.pow(T, std.math.exp(a_25_3 * (r.at(6) - q_25_3)) - 1, 2) + e_25_3) + (d_26_3 * std.math.pow(T, std.math.exp(a_26_3 * (r.at(7) - q_26_3)) - 1, 2) + e_26_3)) / au2ev +
+                    (k_18_3 * r.at(2) + k_20_3 * r.at(3) + k_21_3 * r.at(4)) / au2ev +
+                    0.5 * (g_18_3 * r.at(2) * r.at(2) + g_20_3 * r.at(3) * r.at(3) + g_21_3 * r.at(4) * r.at(4)) / au2ev;
 }
 
 /// Generate a grid in the k-space. The result is stored in the matrix k. Both the start and end values are included.
