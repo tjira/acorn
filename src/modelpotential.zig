@@ -12,7 +12,7 @@ const asfloat = @import("helper.zig").asfloat;
 /// Option struct for the model potential run target.
 pub fn ModelPotentialOptions(comptime T: type) type {
     return struct {
-        const ValuePair = struct {
+        pub const ValuePair = struct {
             index: u32 = 0, value: T = 0
         };
 

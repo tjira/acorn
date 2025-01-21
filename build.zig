@@ -1,7 +1,10 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-const examples: [1][]const u8 = [_][]const u8{
-    "example/compiled/qdyn_ho_excited_states.zig"
+const examples: [4][]const u8 = [_][]const u8{
+    "example/research/fssh_vs_mash_identity_check.zig",
+    "example/research/ho_excited_states.zig",
+    "example/research/uracil_lvc.zig",
+    "example/research/surface_hopping_compare.zig",
 };
 
 const targets: []const std.Target.Query = &.{
