@@ -17,6 +17,16 @@ pub fn c(n: anytype, k: @TypeOf(n)) @TypeOf(n) {
     var nck: @TypeOf(n) = 1; for (k + 1..n + 1) |i| {nck *= i;} for (2..n - k + 1) |i| {nck /= i;} return nck;
 }
 
+/// Return the maximum of two numbers
+pub fn max(comptime T: type, a: T, b: T) T {
+    return if (a > b) a else b;
+}
+
+/// Return the minimum of two numbers
+pub fn min(comptime T: type, a: T, b: T) T {
+    return if (a < b) a else b;
+}
+
 /// Calculate the product of an array.
 pub fn prod(comptime T: type, v: []const T) T {
     var result: T = 1; for (v) |value| result *= value; return result;

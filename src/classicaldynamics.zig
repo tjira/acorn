@@ -9,6 +9,8 @@ const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
+const     max = @import("helper.zig").max    ;
+const     min = @import("helper.zig").min    ;
 
 /// The classical dynamics options.
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
@@ -170,10 +172,16 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
         if (print) {try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});}
 
-        if (print) {if (r.rows > 1)  for (0..r.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"  });}
-        if (print) {if (v.rows > 1)  for (0..v.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"  });}
-        if (print) {if (fssh      ) {for (0..C.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}}
-        if (print) {if (mash      ) {for (0..S.rows - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}}
+        if (print and r.rows > 1) for (0..min(usize, r.rows, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
+
+        if (print and r.rows > 3) try std.io.getStdOut().writer().print("     ", .{}); try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"  });
+
+        if (print and v.rows > 1) for (0..min(usize, v.rows, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
+
+        if (print and v.rows > 3) try std.io.getStdOut().writer().print("     ", .{}); try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"  });
+
+        if (print) {if (fssh      ) {for (0..min(usize, C.rows, 4) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}}
+        if (print) {if (mash      ) {for (0..S.rows - 1               ) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}}
 
         if (print) {try std.io.getStdOut().writer().print("\n", .{});}
 
@@ -502,15 +510,19 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
 pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Vector(T), mass: T, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, s});
 
-    for (0..r.rows) |k| {
+    for (0..min(usize, r.rows, 3)) |k| {
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", r.at(k)});
     }
 
+    if (r.rows > 3) {try std.io.getStdOut().writer().print(", ...", .{});}
+
     try std.io.getStdOut().writer().print("] [", .{});
 
-    for (0..v.rows) |k| {
+    for (0..min(usize, v.rows, 3)) |k| {
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", v.at(k) * mass});
     }
+
+    if (v.rows > 3) {try std.io.getStdOut().writer().print(", ...", .{});}
 
     if (fssh or mash) try std.io.getStdOut().writer().print("] [", .{});
 
