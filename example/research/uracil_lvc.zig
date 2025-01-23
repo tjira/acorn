@@ -11,13 +11,13 @@ const allocator = std.heap.page_allocator;
 pub fn main() !void {
     try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
 
-    const omega = &[_]f64{388, 560, 734, 770, 771, 1193, 1228, 1383, 1406, 1673, 1761, 1794};
+    const omega_8D = &[_]f64{734, 771, 1193, 1383, 1406, 1673, 1761, 1794};
 
-    var std_x: [12]f64 = undefined; var std_p: [12]f64 = undefined; for (0..omega.len) |i| {
-        const a = std.math.sqrt(219474.6305 * 1.0 / 1.0 / omega[i]); std_x[i] = a / std.math.sqrt2; std_p[i] = 1 / a / std.math.sqrt2;
+    var std_x_8D: [8]f64 = undefined; var std_p_8D: [12]f64 = undefined; for (0..omega_8D.len) |i| {
+        const a = std.math.sqrt(219474.6305 * 1.0 / 1.0 / omega_8D[i]); std_x_8D[i] = a / std.math.sqrt2; std_p_8D[i] = 1 / a / std.math.sqrt2;
     }
 
-    const opt_fssh_12D = cdn.ClassicalDynamicsOptions(f64){
+    const opt_fssh_8D = cdn.ClassicalDynamicsOptions(f64){
         .log_intervals = .{
             .trajectory = 100, .iteration = 500
         },
@@ -33,20 +33,20 @@ pub fn main() !void {
         },
 
         .initial_conditions = .{
-            .position_mean = &[_]f64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-            .position_std  = &std_x,
-            .momentum_mean = &[_]f64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-            .momentum_std  = &std_p,
+            .position_mean = &[_]f64{0, 0, 0, 0, 0, 0, 0, 0},
+            .position_std  = &std_x_8D,
+            .momentum_mean = &[_]f64{0, 0, 0, 0, 0, 0, 0, 0},
+            .momentum_std  = &std_p_8D,
             .state = 2, .mass = 1
         },
         .fewest_switches = .{
-            .quantum_substep = 100, .decoherence_alpha = null
+            .quantum_substep = 100, .decoherence_alpha = 0.1
         },
 
         .adiabatic = true,
-        .derivative_step = 0.001,
+        .derivative_step = 0.0001,
         .iterations = 3500,
-        .potential = "uracil12D_1",
+        .potential = "uracil8D_1",
         .seed = 1,
         .time_derivative_coupling = "numeric",
         .time_step = 0.012,
@@ -330,5 +330,5 @@ pub fn main() !void {
     try mpt.write(f64, opt_potential_adia_25, allocator);
     try mpt.write(f64, opt_potential_adia_26, allocator);
 
-    const output_fssh_12D = try cdn.run(f64, opt_fssh_12D , true, allocator); defer output_fssh_12D.deinit();
+    const output_fssh_8D = try cdn.run(f64, opt_fssh_8D , true, allocator); defer output_fssh_8D.deinit();
 }
