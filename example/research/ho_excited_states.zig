@@ -25,7 +25,10 @@ pub fn main() !void {
         .time_step = 0.01,
     };
 
-    var opt_real = opt_imaginary; opt_real.mode = &[_]u32{0, 1}; opt_real.write.spectrum = "SPECTRUM.mat";
+    var opt_real = opt_imaginary; opt_real.mode = &[_]u32{0, 1};
+
+    opt_real.write.spectrum                           = "SPECTRUM.mat";
+    opt_real.write.autocorrelation_function           =      "ACF.mat";
 
     const output_imaginary = try qdn.run(f64, opt_imaginary, true, allocator); defer output_imaginary.deinit();
     const output_real      = try qdn.run(f64, opt_real,      true, allocator); defer      output_real.deinit();

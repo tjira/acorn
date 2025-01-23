@@ -93,7 +93,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
     var position = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer position.deinit(); position.fill(0);
     var momentum = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer momentum.deinit(); momentum.fill(0);
     var acf      = try Matrix(T).init(opt.iterations + 1,                                      1 + 2     , allocator); defer      acf.deinit();      acf.fill(0);
-    var spectrum = try Matrix(T).init(1 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 2     , allocator); defer spectrum.deinit(); spectrum.fill(0);
+    var spectrum = try Matrix(T).init(2 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 1     , allocator); defer spectrum.deinit(); spectrum.fill(0);
 
     var energies = try std.ArrayList(T).initCapacity(allocator, opt.mode[0] + opt.mode[1]); defer energies.deinit();
 
@@ -277,15 +277,14 @@ pub fn makeSpectrum(comptime T: type, spectrum: *Matrix(T), acf: Matrix(T), allo
     mpt.kgrid(T, &frequency, 0, asfloat(T, spectrum.rows) * (acf.at(1, 0) - acf.at(0, 0)), @intCast(spectrum.rows));
 
     for (0..acf.rows) |i| {
-        transform.ptr(i).* = Complex(T).init(acf.at(i, 1), -acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-0.001 * acf.at(i, 0) * acf.at(i, 0)), 0));
+        transform.ptr(acf.rows + i).* = Complex(T).init(acf.at(i, 1), -acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-0.001 * acf.at(i, 0) * acf.at(i, 0)), 0));
+        transform.ptr(acf.rows - i).* = Complex(T).init(acf.at(i, 1),  acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-0.001 * acf.at(i, 0) * acf.at(i, 0)), 0));
     }
 
     try ftr.fft(T, transform.sa(), -1);
 
     for (0..spectrum.rows) |i| {
-        spectrum.ptr(i, 0).* = frequency.at(i, 0)   ;
-        spectrum.ptr(i, 1).* = transform.at(i   ).re;
-        spectrum.ptr(i, 2).* = transform.at(i   ).im;
+        spectrum.ptr(i, 0).* = frequency.at(i, 0); spectrum.ptr(i, 1).* = transform.at(i   ).magnitude();
     }
 
     for (0..spectrum.rows) |i| for (1..spectrum.rows - i) |j| if (spectrum.at(j - 1, 0) > spectrum.at(j, 0)) for (0..spectrum.cols) |k| {
