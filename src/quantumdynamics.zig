@@ -2,10 +2,11 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
-const mat = @import("matrix.zig"        );
-const mpt = @import("modelpotential.zig");
-const vec = @import("vector.zig"        );
-const wfn = @import("wavefunction.zig"  );
+const ftr = @import("fouriertransform.zig");
+const mat = @import("matrix.zig"          );
+const mpt = @import("modelpotential.zig"  );
+const vec = @import("vector.zig"          );
+const wfn = @import("wavefunction.zig"    );
 
 const Matrix       = @import("matrix.zig"      ).Matrix      ;
 const Vector       = @import("vector.zig"      ).Vector      ;
@@ -32,6 +33,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             population: ?[]const u8 = null,
             position: ?[]const u8 = null,
             potential_energy: ?[]const u8 = null,
+            spectrum: ?[]const u8 = null,
             total_energy: ?[]const u8 = null,
             wavefunction: ?[]const u8 = null
         };
@@ -83,13 +85,14 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
     var output = try QuantumDynamicsOutput(T).init(ndim, nstate, allocator);
 
-    var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate, allocator); defer      pop.deinit();      pop.fill(0);
-    var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     ekin.deinit();     ekin.fill(0);
-    var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     epot.deinit();     epot.fill(0);
-    var etot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     etot.deinit();     etot.fill(0);
-    var position = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer position.deinit(); position.fill(0);
-    var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer momentum.deinit(); momentum.fill(0);
-    var acf      = try Matrix(T).init(opt.iterations + 1, 1 + 2     , allocator); defer      acf.deinit();      acf.fill(0);
+    var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();      pop.fill(0);
+    var ekin     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     ekin.deinit();     ekin.fill(0);
+    var epot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     epot.deinit();     epot.fill(0);
+    var etot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     etot.deinit();     etot.fill(0);
+    var position = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer position.deinit(); position.fill(0);
+    var momentum = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer momentum.deinit(); momentum.fill(0);
+    var acf      = try Matrix(T).init(opt.iterations + 1,                                      1 + 2     , allocator); defer      acf.deinit();      acf.fill(0);
+    var spectrum = try Matrix(T).init(1 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 2     , allocator); defer spectrum.deinit(); spectrum.fill(0);
 
     var energies = try std.ArrayList(T).initCapacity(allocator, opt.mode[0] + opt.mode[1]); defer energies.deinit();
 
@@ -104,6 +107,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
             position.ptr(i, 0).* = time.at(i, 0);
             momentum.ptr(i, 0).* = time.at(i, 0);
             acf.ptr(i, 0).*      = time.at(i, 0);
+            spectrum.ptr(i, 0).* = time.at(i, 0);
         }
     }
 
@@ -203,7 +207,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.potential_energy != null) epot.ptr(j, 1 + 0).* = Epot                            ;
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.total_energy     != null) etot.ptr(j, 1 + 0).* = Ekin + Epot                     ;
 
-                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.autocorrelation_function != null) {
+                if (i == opt.mode[0] + opt.mode[1] - 1 and (opt.write.autocorrelation_function != null or opt.write.spectrum != null)) {
                     acf.ptr(j, 1 + 0).* = acfi.re; acf.ptr(j, 1 + 1).* = acfi.im;
                 }
 
@@ -238,7 +242,9 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
         for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();} for (VA.items) |*e| {e.deinit();} for (VC.items) |*e| {e.deinit();} for (WOPT.items) |*e| {e.deinit();}
     }
 
-    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, acf, wavefunction); return output;
+    if (opt.write.spectrum != null) try makeSpectrum(T, &spectrum, acf, allocator);
+
+    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, acf, spectrum, wavefunction); return output;
 }
 
 /// Returns the propagators for the k-space grid.
@@ -260,6 +266,29 @@ pub fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_ste
     }
 
     return K;
+}
+
+pub fn makeSpectrum(comptime T: type, spectrum: *Matrix(T), acf: Matrix(T), allocator: std.mem.Allocator) !void {
+    var transform = try Vector(Complex(T)).init(spectrum.rows,    allocator); defer transform.deinit();
+    var frequency = try Matrix(T         ).init(spectrum.rows, 1, allocator); defer frequency.deinit();
+
+    mpt.kgrid(T, &frequency, 0, asfloat(T, spectrum.rows) * (acf.at(1, 0) - acf.at(0, 0)), @intCast(spectrum.rows));
+
+    for (0..acf.rows) |i| {
+        transform.ptr(i).* = Complex(T).init(acf.at(i, 1), -acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-0.001 * acf.at(i, 0) * acf.at(i, 0)), 0));
+    }
+
+    try ftr.fft(T, transform.sa(), -1);
+
+    for (0..spectrum.rows) |i| {
+        spectrum.ptr(i, 0).* = frequency.at(i, 0)   ;
+        spectrum.ptr(i, 1).* = transform.at(i   ).re;
+        spectrum.ptr(i, 2).* = transform.at(i   ).im;
+    }
+
+    for (0..spectrum.rows) |i| for (1..spectrum.rows - i) |j| if (spectrum.at(j - 1, 0) > spectrum.at(j, 0)) for (0..spectrum.cols) |k| {
+        std.mem.swap(T, spectrum.ptr(j - 1, k), spectrum.ptr(j, k));
+    };
 }
 
 /// Returns the potential matrices for each point in the space.
@@ -339,13 +368,14 @@ pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), 
 }
 
 /// Writes the results of the quantum dynamics to the output files.
-pub fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), acf: Matrix(T), wavefunction: Matrix(T)) !void {
+pub fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), acf: Matrix(T), spectrum: Matrix(T), wavefunction: Matrix(T)) !void {
     if (opt.write.autocorrelation_function) |path| try          acf.write(path);
     if (opt.write.kinetic_energy          ) |path| try         ekin.write(path);
-    if (opt.write.population              ) |path| try          pop.write(path);
-    if (opt.write.potential_energy        ) |path| try         epot.write(path);
-    if (opt.write.total_energy            ) |path| try         etot.write(path);
-    if (opt.write.position                ) |path| try     position.write(path);
     if (opt.write.momentum                ) |path| try     momentum.write(path);
+    if (opt.write.population              ) |path| try          pop.write(path);
+    if (opt.write.position                ) |path| try     position.write(path);
+    if (opt.write.potential_energy        ) |path| try         epot.write(path);
+    if (opt.write.spectrum                ) |path| try     spectrum.write(path);
+    if (opt.write.total_energy            ) |path| try         etot.write(path);
     if (opt.write.wavefunction            ) |path| try wavefunction.write(path);
 }

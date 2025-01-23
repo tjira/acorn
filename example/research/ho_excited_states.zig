@@ -7,21 +7,10 @@ const allocator = std.heap.page_allocator;
 pub fn main() !void {
     try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
 
-    const opt = qdn.QuantumDynamicsOptions(f64){
+    const opt_imaginary = qdn.QuantumDynamicsOptions(f64){
         .log_intervals = .{
             .iteration = 2000
         },
-        .write = .{
-            .autocorrelation_function = null,
-            .kinetic_energy = null,
-            .momentum = null,
-            .population = null,
-            .position = null,
-            .potential_energy = null,
-            .total_energy = null,
-            .wavefunction = null
-        },
-
         .grid = .{
             .limits = &[_]f64{-8, 8}, .points = 64
         },
@@ -36,5 +25,8 @@ pub fn main() !void {
         .time_step = 0.01,
     };
 
-    const output = try qdn.run(f64, opt, true, allocator); defer output.deinit();
+    var opt_real = opt_imaginary; opt_real.mode = &[_]u32{0, 1}; opt_real.write.spectrum = "SPECTRUM.mat";
+
+    const output_imaginary = try qdn.run(f64, opt_imaginary, true, allocator); defer output_imaginary.deinit();
+    const output_real      = try qdn.run(f64, opt_real,      true, allocator); defer      output_real.deinit();
 }

@@ -25,6 +25,7 @@
             "population" : "POPULATION_EXACT.mat",
             "position" : "POSITION_EXACT.mat",
             "potential_energy" : "POTENTIAL_ENERGY_EXACT.mat",
+            "spectrum" : "SPECTRUM.mat",
             "total_energy" : "TOTAL_ENERGY_EXACT.mat",
             "wavefunction" : "WAVEFUNCTION.mat"
         },

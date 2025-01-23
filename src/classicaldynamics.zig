@@ -174,11 +174,11 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
         if (print and r.rows > 1) for (0..min(usize, r.rows, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
 
-        if (print and r.rows > 3) try std.io.getStdOut().writer().print("     ", .{}); try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"  });
+        if (print and r.rows > 3) try std.io.getStdOut().writer().print("     ", .{}); if (print) try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"  });
 
         if (print and v.rows > 1) for (0..min(usize, v.rows, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
 
-        if (print and v.rows > 3) try std.io.getStdOut().writer().print("     ", .{}); try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"  });
+        if (print and v.rows > 3) try std.io.getStdOut().writer().print("     ", .{}); if (print) try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"  });
 
         if (print) {if (fssh      ) {for (0..min(usize, C.rows, 4) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}}
         if (print) {if (mash      ) {for (0..S.rows - 1               ) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}  try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}}
