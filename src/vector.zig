@@ -18,6 +18,7 @@ pub fn Vector(comptime T: type) type {
                 .allocator = allocator
             };
         }
+
         /// Free the memory allocated for the vector.
         pub fn deinit(self: Vector(T)) void {
             self.allocator.free(self.data);
@@ -31,6 +32,7 @@ pub fn Vector(comptime T: type) type {
 
             return other;
         }
+
         /// Convert the vector to a complex vector. Returns an error if the allocation fails.
         pub fn complex(self: Vector(T)) !Vector(Complex(T)) {
             var other = try Vector(Complex(T)).init(self.rows, self.allocator);
@@ -46,6 +48,7 @@ pub fn Vector(comptime T: type) type {
         pub fn at(self: Vector(T), i: usize) T {
             return self.ptr(i).*;
         }
+
         /// Return the vector as a matrix with one column. No memory is allocated.
         pub fn matrix(self: Vector(T)) Matrix(T) {
             return Matrix(T){
@@ -55,10 +58,12 @@ pub fn Vector(comptime T: type) type {
                 .allocator = self.allocator
             };
         }
+
         /// Return the element at the specified index as a mutable reference.
         pub fn ptr(self: Vector(T), i: usize) *T {
             return &self.data[i];
         }
+
         /// Return the vector as a strided array with a stride of 1. No memory is allocated.
         pub fn sa(self: Vector(T)) StridedArray(T) {
             return StridedArray(T){.data = self.data, .len = self.rows, .stride = 1, .zero = 0};

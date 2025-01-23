@@ -15,27 +15,27 @@ const     min = @import("helper.zig").min    ;
 /// The classical dynamics options.
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
-        const InitialConditions = struct {
-            position_mean: []const T = &[_]T{1.0},
-            position_std:  []const T = &[_]T{0.5},
-            momentum_mean: []const T = &[_]T{0.0},
-            momentum_std:  []const T = &[_]T{1.0},
-            state: u32 = 0, mass: T = 1
+        pub const InitialConditions = struct {
+            position_mean: []const T,
+            position_std:  []const T,
+            momentum_mean: []const T,
+            momentum_std:  []const T,
+            state: u32, mass: T
         };
-        const FewestSwitches = struct {
+        pub const FewestSwitches = struct {
             quantum_substep: u32 = 10,
             decoherence_alpha: ?T = null
         };
-        const LandauZener = struct {
+        pub const LandauZener = struct {
         };
-        const SpinMapping = struct {
+        pub const SpinMapping = struct {
             quantum_substep: u32 = 10,
             sample_bloch_vector: bool = true
         };
-        const LogIntervals = struct {
+        pub const LogIntervals = struct {
             trajectory: u32 = 1, iteration: u32 = 1
         };
-        const Write = struct {
+        pub const Write = struct {
             fssh_coefficient_mean:         ?[]const u8 = null,
             kinetic_energy_mean:           ?[]const u8 = null,
             momentum_mean:                 ?[]const u8 = null,
@@ -46,18 +46,18 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             total_energy_mean:             ?[]const u8 = null
         };
 
-        adiabatic: bool = true,
+        adiabatic: bool,
         derivative_step: T = 0.001,
-        iterations: u32 = 100,
-        potential: []const u8 = "harmonic1D_1",
+        iterations: u32,
+        potential: []const u8,
         seed: u32 = 1,
         time_derivative_coupling: ?[]const u8 = "numeric",
-        time_step: T = 0.1,
-        trajectories: u32 = 1000,
+        time_step: T,
+        trajectories: u32,
 
         fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
 
-        initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{},
+        initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, write: Write = .{},
     };
 }
 
@@ -84,6 +84,7 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
                 .Epot = 0
             };
         }
+
         /// Free the memory allocated for the classical dynamics output.
         pub fn deinit(self: ClassicalDynamicsOutput(T)) void {
             self.pop.deinit(); self.r.deinit(); self.p.deinit();

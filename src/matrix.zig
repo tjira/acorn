@@ -22,6 +22,7 @@ pub fn Matrix(comptime T: type) type {
                 .allocator = allocator
             };
         }
+
         /// Free the memory allocated for the matrix.
         pub fn deinit(self: Matrix(T)) void {
             self.allocator.free(self.data);
@@ -35,6 +36,7 @@ pub fn Matrix(comptime T: type) type {
 
             return other;
         }
+
         /// Convert the matrix to a complex matrix. The function returns an error if the allocation of the new matrix fails.
         pub fn complex(self: Matrix(T)) !Matrix(Complex(T)) {
             var other = try Matrix(Complex(T)).init(self.rows, self.cols, self.allocator);
@@ -50,10 +52,12 @@ pub fn Matrix(comptime T: type) type {
         pub fn at(self: Matrix(T), i: usize, j: usize) T {
             return self.ptr(i, j).*;
         }
+
         /// Access the element at the given row and column as a mutable reference.
         pub fn ptr(self: Matrix(T), i: usize, j: usize) *T {
             return &self.data[i * self.cols + j];
         }
+
         /// Returns a reference to the row at the given index. The row is returned as a new matrix. No memory is allocated.
         pub fn row(self: Matrix(T), i: usize) Matrix(T) {
             return Matrix(T){
@@ -63,10 +67,12 @@ pub fn Matrix(comptime T: type) type {
                 .allocator = self.allocator
             };
         }
+
         /// Returns the matrix in the form of a strided array. No memory is allocated.
         pub fn sa(self: Matrix(T)) StridedArray(T) {
             return StridedArray(T){.data = self.data, .len = self.rows * self.cols, .stride = 1, .zero = 0};
         }
+
         /// Returns the matrix in the form of a vector. No memory is allocated.
         pub fn vector(self: Matrix(T)) Vector(T) {
             return Vector(T){
@@ -80,6 +86,7 @@ pub fn Matrix(comptime T: type) type {
         pub fn fill(self: Matrix(T), value: T) void {
             for (0..self.data.len) |i| self.data[i] = value;
         }
+
         /// Fill the diagonal of the matrix with ones.
         pub fn identity(self: Matrix(T)) void {
             self.fill(0);
@@ -88,6 +95,7 @@ pub fn Matrix(comptime T: type) type {
                 self.ptr(i, i).* = 1;
             }
         }
+
         /// Fill the data of the matrix with a linearly spaced vector from start to end. Both start and end are included.
         pub fn linspace(self: Matrix(T), start: T, end: T) void {
             for (0..self.data.len) |i| {
@@ -103,6 +111,7 @@ pub fn Matrix(comptime T: type) type {
                 try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
             }
         }
+
         /// Write the matrix to a file.
         pub fn write(self: Matrix(T), path: []const u8) !void {
             const file = try std.fs.cwd().createFile(path, .{}); defer file.close();

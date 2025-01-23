@@ -11,6 +11,7 @@ pub fn StridedArray(comptime T: type) type {
         pub fn at(self: StridedArray(T), i: usize) T {
             return self.ptr(i).*;
         }
+
         /// Return the element at the specified index as a mutable reference.
         pub fn ptr(self: StridedArray(T), i: usize) *T {
             return &self.data[self.zero + i * self.stride];

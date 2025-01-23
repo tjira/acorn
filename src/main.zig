@@ -6,14 +6,19 @@ const allocator = std.heap.page_allocator; const fsize = 2048;
 
 pub const cdn = @import("classicaldynamics.zig"       );
 pub const cim = @import("configurationinteraction.zig");
+pub const cnt = @import("constant.zig"                );
 pub const ftr = @import("fouriertransform.zig"        );
 pub const hfm = @import("hartreefock.zig"             );
+pub const hlp = @import("helper.zig"                  );
 pub const mat = @import("matrix.zig"                  );
 pub const mpm = @import("mollerplesset.zig"           );
 pub const mpt = @import("modelpotential.zig"          );
 pub const qdn = @import("quantumdynamics.zig"         );
+pub const sta = @import("stridedarray.zig"            );
 pub const ten = @import("tensor.zig"                  );
+pub const trn = @import("transform.zig"               );
 pub const vec = @import("vector.zig"                  );
+pub const wfn = @import("wavefunction.zig"            );
 
 pub const Matrix = @import("matrix.zig").Matrix;
 pub const Tensor = @import("tensor.zig").Tensor;

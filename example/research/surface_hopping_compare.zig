@@ -28,6 +28,8 @@ pub fn main() !void {
         .iterations = 500,
         .mode = &[_]u32{0, 1},
         .time_step = 10,
+
+        .potential = "",
     };
 
     var opt_classic = cdn.ClassicalDynamicsOptions(f64){
@@ -49,6 +51,8 @@ pub fn main() !void {
         .seed = 1,
         .time_step = 1,
         .trajectories = 1000,
+
+        .potential = "",
     };
 
     var opt_diabatic_potential = mpt.ModelPotentialOptions(f64){

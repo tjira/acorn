@@ -5,6 +5,12 @@ const std = @import("std");
 /// Angstrom to atomic units factor.
 pub const A2AU = 1.8897261254578281;
 
+/// Electronvolt to reciprocal centimeter factor.
+pub const EV2RCM = 8065.54429;
+
+/// Atomic unit to electronvolt factor.
+pub const AU2EV = 27.211324570273;
+
 /// Atomic symbol to atomic number map.
 pub const SM2AN = std.StaticStringMap(u32).initComptime(.{
     .{ "H",   1},                                                                                                                                                                                                                                 .{"He",   2},

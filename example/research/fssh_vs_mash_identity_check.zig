@@ -13,14 +13,7 @@ pub fn main() !void {
             .iteration = 50
         },
         .write = .{
-            .autocorrelation_function = null,
-            .kinetic_energy = null,
-            .momentum = null,
             .population = "POPULATION_EXACT.mat",
-            .position = null,
-            .potential_energy = null,
-            .total_energy = null,
-            .wavefunction = null
         },
 
         .grid = .{
@@ -42,14 +35,7 @@ pub fn main() !void {
             .trajectory = 100, .iteration = 500
         },
         .write = .{
-            .fssh_coefficient_mean = null,
-            .kinetic_energy_mean = null,
-            .momentum_mean = null,
             .population_mean = "POPULATION_FSSH.mat",
-            .position_mean = null,
-            .potential_energy_mean = null,
-            .time_derivative_coupling_mean = null,
-            .total_energy_mean = null
         },
 
         .initial_conditions = .{

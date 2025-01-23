@@ -17,16 +17,16 @@ const asfloat = @import("helper.zig").asfloat;
 /// The quantum dynamics options struct.
 pub fn QuantumDynamicsOptions(comptime T: type) type {
     return struct {
-        const Grid = struct {
-            limits: []const T = &[_]f64{-8, 8}, points: u32 = 32
+        pub const Grid = struct {
+            limits: []const T, points: u32
         };
-        const InitialConditions = struct {
-            position: []const T = &[_]f64{1}, momentum: []const T = &[_]f64{0}, gamma: T = 2, state: u32 = 0, mass: T = 1
+        pub const InitialConditions = struct {
+            position: []const T, momentum: []const T, gamma: T, state: u32, mass: T
         };
-        const LogIntervals = struct {
+        pub const LogIntervals = struct {
             iteration: u32 = 1
         };
-        const Write = struct {
+        pub const Write = struct {
             autocorrelation_function: ?[]const u8 = null,
             kinetic_energy: ?[]const u8 = null,
             momentum: ?[]const u8 = null,
@@ -38,13 +38,13 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             wavefunction: ?[]const u8 = null
         };
 
-        adiabatic: bool = false,
-        iterations: u32 = 100,
-        mode: []const u32 = &[_]u32{0, 1},
-        potential: []const u8 = "harmonic1D_1",
-        time_step: T = 0.1,
+        adiabatic: bool,
+        iterations: u32,
+        mode: []const u32,
+        potential: []const u8,
+        time_step: T,
 
-        grid: Grid = .{}, initial_conditions: InitialConditions = .{}, log_intervals: LogIntervals = .{}, write: Write = .{}
+        grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, write: Write = .{}
     };
 }
 
@@ -70,6 +70,7 @@ pub fn QuantumDynamicsOutput(comptime T: type) type {
                 .Epot = 0
             };
         }
+
         /// Free the memory allocated for the quantum dynamics output struct.
         pub fn deinit(self: QuantumDynamicsOutput(T)) void {
             self.P.deinit(); self.r.deinit(); self.p.deinit();
@@ -268,6 +269,7 @@ pub fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_ste
     return K;
 }
 
+/// Function to transform the autocorrelation function to a spectrum.
 pub fn makeSpectrum(comptime T: type, spectrum: *Matrix(T), acf: Matrix(T), allocator: std.mem.Allocator) !void {
     var transform = try Vector(Complex(T)).init(spectrum.rows,    allocator); defer transform.deinit();
     var frequency = try Matrix(T         ).init(spectrum.rows, 1, allocator); defer frequency.deinit();

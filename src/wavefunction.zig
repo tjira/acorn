@@ -30,6 +30,7 @@ pub fn Wavefunction(comptime T: type) type {
 
             return W;
         }
+
         /// Free the memory allocated for the wavefunction object.
         pub fn deinit(self: Wavefunction(T)) void {
             self.data.deinit(); self.allocator.free(self.shape);

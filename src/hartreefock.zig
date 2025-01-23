@@ -19,7 +19,7 @@ const uncr    = @import("helper.zig").uncr   ;
 /// The Hartree-Fock options.
 pub fn HartreeFockOptions(comptime T: type) type {
     return struct {
-        const Integral = struct {
+        pub const Integral = struct {
             overlap: []const u8 = "S_AO.mat",
             kinetic: []const u8 = "T_AO.mat",
             nuclear: []const u8 = "V_AO.mat",

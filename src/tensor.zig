@@ -28,6 +28,7 @@ pub fn Tensor(comptime T: type) type {
 
             return ten;
         }
+
         /// Free the memory allocated for the tensor.
         pub fn deinit(self: Tensor(T)) void {
             self.allocator.free(self.data );
@@ -39,6 +40,7 @@ pub fn Tensor(comptime T: type) type {
         pub fn at(self: Tensor(T), indices: []const usize) T {
             return self.ptr(indices).*;
         }
+
         /// Returns the element at the specified indices as a mutable reference.
         pub fn ptr(self: Tensor(T), indices: []const usize) *T {
             var index: usize = 0;
@@ -49,6 +51,7 @@ pub fn Tensor(comptime T: type) type {
 
             return &self.data[index];
         }
+
         /// Returns the tensor as a matrix. No memory is allocated. Currently only works for 4D tensors.
         pub fn matrix(self: Tensor(T)) Matrix(T) {
             return Matrix(T){
