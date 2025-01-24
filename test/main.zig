@@ -1,13 +1,13 @@
 const std = @import("std");
 
-const mat = @import("matrix.zig"           );
-const ten = @import("tensor.zig"           );
-const vec = @import("vector.zig"           );
+const matrix = @import("matrix.zig"           );
+const tensor = @import("tensor.zig"           );
+const vector = @import("vector.zig"           );
 
 comptime {
-    _ = mat;
-    _ = ten;
-    _ = vec;
+    _ = matrix;
+    _ = tensor;
+    _ = vector;
 }
 
 test {

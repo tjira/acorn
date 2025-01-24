@@ -1,14 +1,14 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-const cdn = @import("acorn").cdn;
-const qdn = @import("acorn").qdn;
+const classical_dynamics = @import("acorn").classical_dynamics;
+const quantum_dynamics   = @import("acorn").quantum_dynamics  ;
 
 const allocator = std.heap.page_allocator;
 
 pub fn main() !void {
     try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
 
-    const opt_exact = qdn.QuantumDynamicsOptions(f64){
+    const opt_exact = quantum_dynamics.QuantumDynamicsOptions(f64){
         .log_intervals = .{
             .iteration = 50
         },
@@ -30,7 +30,7 @@ pub fn main() !void {
         .time_step = 10,
     };
 
-    const opt_fssh = cdn.ClassicalDynamicsOptions(f64){
+    const opt_fssh = classical_dynamics.ClassicalDynamicsOptions(f64){
         .log_intervals = .{
             .trajectory = 100, .iteration = 500
         },
@@ -66,7 +66,7 @@ pub fn main() !void {
         .quantum_substep = 10, .sample_bloch_vector = false,
     };
 
-    const output_exact = try qdn.run(f64, opt_exact, true, allocator); defer output_exact.deinit();
-    const output_fssh  = try cdn.run(f64, opt_fssh , true, allocator); defer  output_fssh.deinit();
-    const output_mash  = try cdn.run(f64, opt_mash , true, allocator); defer  output_mash.deinit();
+    const output_exact =   try quantum_dynamics.run(f64, opt_exact, true, allocator); defer output_exact.deinit();
+    const output_fssh  = try classical_dynamics.run(f64, opt_fssh , true, allocator); defer  output_fssh.deinit();
+    const output_mash  = try classical_dynamics.run(f64, opt_mash , true, allocator); defer  output_mash.deinit();
 }

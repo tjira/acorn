@@ -23,9 +23,14 @@ const targets: []const std.Target.Query = &.{
 pub fn build(builder: *std.Build) !void {
     const optimize = builder.standardOptimizeOption(.{});
 
+    const nocross   = builder.option(bool, "nocross",   "Disable cross compilation"      ) orelse false;
+    const noexample = builder.option(bool, "noexample", "Disable compilation of examples") orelse false;
+
     for (targets) |target| {
 
-        const target_name = try target.zigTriple(builder.allocator);
+        if (nocross and (builtin.target.cpu.arch != target.cpu_arch or builtin.target.os.tag != target.os_tag)) {
+            continue;
+        }
 
         const main_executable = builder.addExecutable(.{
             .name = "acorn",
@@ -37,14 +42,14 @@ pub fn build(builder: *std.Build) !void {
         });
 
         const main_output = builder.addInstallArtifact(main_executable, .{
-            .dest_dir = .{.override = .{.custom = target_name}}
+            .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
         });
 
         builder.getInstallStep().dependOn(&main_output.step);
 
-        for (examples) |example| {
+        if (!noexample) for (examples) |example| {
 
-            var bin_folder = try builder.allocator.alloc(u8, target_name.len + 8); bin_folder[target_name.len] = '/';
+            const target_name = try target.zigTriple(builder.allocator); var bin_folder = try builder.allocator.alloc(u8, target_name.len + 8);
 
             @memcpy(bin_folder[0                  ..target_name.len    ], target_name      );
             @memcpy(bin_folder[target_name.len + 1..target_name.len + 8], example    [0..7]);
@@ -60,18 +65,18 @@ pub fn build(builder: *std.Build) !void {
 
             example_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
 
-            const example_output = builder.addInstallArtifact(example_executable, .{
+            bin_folder[target_name.len] = '/'; const example_output = builder.addInstallArtifact(example_executable, .{
                 .dest_dir = .{.override = .{.custom = bin_folder}}
             });
 
             builder.getInstallStep().dependOn(&example_output.step);
-        }
+        };
 
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag) {
 
             const run_executable = builder.addRunArtifact(main_executable);
 
-            builder.step("run",  "Run the executable").dependOn(&run_executable.step);
+            builder.step("run", "Run the executable").dependOn(&run_executable.step);
         }
     }
 

@@ -4,21 +4,21 @@ const std = @import("std"); const builtin = @import("builtin"); const Complex = 
 
 const allocator = std.heap.page_allocator; const fsize = 2048;
 
-pub const cdn = @import("classicaldynamics.zig"       );
-pub const cim = @import("configurationinteraction.zig");
-pub const cnt = @import("constant.zig"                );
-pub const ftr = @import("fouriertransform.zig"        );
-pub const hfm = @import("hartreefock.zig"             );
-pub const hlp = @import("helper.zig"                  );
-pub const mat = @import("matrix.zig"                  );
-pub const mpm = @import("mollerplesset.zig"           );
-pub const mpt = @import("modelpotential.zig"          );
-pub const qdn = @import("quantumdynamics.zig"         );
-pub const sta = @import("stridedarray.zig"            );
-pub const ten = @import("tensor.zig"                  );
-pub const trn = @import("transform.zig"               );
-pub const vec = @import("vector.zig"                  );
-pub const wfn = @import("wavefunction.zig"            );
+pub const classical_dynamics        = @import("classicaldynamics.zig"       );
+pub const configuration_interaction = @import("configurationinteraction.zig");
+pub const constant                  = @import("constant.zig"                );
+pub const fourier_transform         = @import("fouriertransform.zig"        );
+pub const hartree_fock              = @import("hartreefock.zig"             );
+pub const helper                    = @import("helper.zig"                  );
+pub const matrix                    = @import("matrix.zig"                  );
+pub const moller_plesset            = @import("mollerplesset.zig"           );
+pub const model_potential           = @import("modelpotential.zig"          );
+pub const quantum_dynamics          = @import("quantumdynamics.zig"         );
+pub const strided_array             = @import("stridedarray.zig"            );
+pub const tensor                    = @import("tensor.zig"                  );
+pub const transform                 = @import("transform.zig"               );
+pub const vector                    = @import("vector.zig"                  );
+pub const wavefunction              = @import("wavefunction.zig"            );
 
 pub const Matrix = @import("matrix.zig").Matrix;
 pub const Tensor = @import("tensor.zig").Tensor;
@@ -30,44 +30,44 @@ pub fn parse(filebuf: []const u8) !void {
 
     if (inputjs.value.object.contains("hartree_fock")) {
 
-        const obj = try std.json.parseFromValue(hfm.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(hartree_fock.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
 
-        const output = try hfm.run(f64, obj.value, true, allocator); defer output.deinit();
+        const output = try hartree_fock.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("moller_plesset")) {
 
-        const obj = try std.json.parseFromValue(mpm.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(moller_plesset.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
 
-        const output = try mpm.run(f64, obj.value, true, allocator); defer output.deinit();
+        const output = try moller_plesset.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("configuration_interaction")) {
 
-        const obj = try std.json.parseFromValue(cim.ConfigurationInteractionOptions(f64), allocator, inputjs.value.object.get("configuration_interaction").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(configuration_interaction.ConfigurationInteractionOptions(f64), allocator, inputjs.value.object.get("configuration_interaction").?, .{}); defer obj.deinit();
 
-        const output = try cim.run(f64, obj.value, true, allocator); defer output.deinit();
+        const output = try configuration_interaction.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("classical_dynamics")) {
 
-        const obj = try std.json.parseFromValue(cdn.ClassicalDynamicsOptions(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(classical_dynamics.ClassicalDynamicsOptions(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
 
-        const output = try cdn.run(f64, obj.value, true, allocator); defer output.deinit();
+        const output = try classical_dynamics.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("quantum_dynamics")) {
 
-        const obj = try std.json.parseFromValue(qdn.QuantumDynamicsOptions(f64), allocator, inputjs.value.object.get("quantum_dynamics").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(quantum_dynamics.QuantumDynamicsOptions(f64), allocator, inputjs.value.object.get("quantum_dynamics").?, .{}); defer obj.deinit();
 
-        const output = try qdn.run(f64, obj.value, true, allocator); defer output.deinit();
+        const output = try quantum_dynamics.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("model_potential")) {
 
-        const obj = try std.json.parseFromValue(mpt.ModelPotentialOptions(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(model_potential.ModelPotentialOptions(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
 
-        try mpt.write(f64, obj.value, allocator);
+        try model_potential.write(f64, obj.value, allocator);
     }
 }
 

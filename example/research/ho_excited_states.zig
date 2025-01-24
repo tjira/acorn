@@ -1,13 +1,13 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-const qdn = @import("acorn").qdn;
+const quantum_dynamics = @import("acorn").quantum_dynamics;
 
 const allocator = std.heap.page_allocator;
 
 pub fn main() !void {
     try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
 
-    const opt_imaginary = qdn.QuantumDynamicsOptions(f64){
+    const opt_imaginary = quantum_dynamics.QuantumDynamicsOptions(f64){
         .log_intervals = .{
             .iteration = 2000
         },
@@ -30,6 +30,6 @@ pub fn main() !void {
     opt_real.write.spectrum                           = "SPECTRUM.mat";
     opt_real.write.autocorrelation_function           =      "ACF.mat";
 
-    const output_imaginary = try qdn.run(f64, opt_imaginary, true, allocator); defer output_imaginary.deinit();
-    const output_real      = try qdn.run(f64, opt_real,      true, allocator); defer      output_real.deinit();
+    const output_imaginary = try quantum_dynamics.run(f64, opt_imaginary, true, allocator); defer output_imaginary.deinit();
+    const output_real      = try quantum_dynamics.run(f64, opt_real,      true, allocator); defer      output_real.deinit();
 }

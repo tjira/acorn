@@ -1,10 +1,11 @@
 //! https://pubs.acs.org/doi/10.1021/jp512221x
+//! https://pubs.acs.org/doi/10.1021/acs.jpclett.1c04132
 //! https://arxiv.org/abs/2104.06638
 
 const std = @import("std"); const builtin = @import("builtin");
 
-const cdn = @import("acorn").cdn;
-const mpt = @import("acorn").mpt;
+const classical_dynamics = @import("acorn").classical_dynamics;
+const model_potential    = @import("acorn").model_potential   ;
 
 const allocator = std.heap.page_allocator;
 
@@ -17,7 +18,7 @@ pub fn main() !void {
         const a = std.math.sqrt(219474.6305 * 1.0 / 1.0 / omega_8D[i]); std_x_8D[i] = a / std.math.sqrt2; std_p_8D[i] = 1 / a / std.math.sqrt2;
     }
 
-    const opt_fssh_8D = cdn.ClassicalDynamicsOptions(f64){
+    const opt_fssh_8D = classical_dynamics.ClassicalDynamicsOptions(f64){
         .log_intervals = .{
             .trajectory = 100, .iteration = 500
         },
@@ -53,14 +54,16 @@ pub fn main() !void {
         .trajectories = 1000,
     };
 
-    const opt_potential_adia_3 = mpt.ModelPotentialOptions(f64){
+    var opt_lzsh_8D = opt_fssh_8D; opt_lzsh_8D.fewest_switches = null; opt_lzsh_8D.landau_zener = .{}; opt_lzsh_8D.write.population_mean = "POPULATION_LZSH.mat";
+
+    const opt_potential_adia_3 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-4.5, 4.5},
         .output = "ADIABATIC_POTENTIAL_Q3.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
             .{.index = 3,  .value = 0},
@@ -75,14 +78,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_7 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_7 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-3, 3},
         .output = "ADIABATIC_POTENTIAL_Q7.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 2,  .value = 0},
             .{.index = 3,  .value = 0},
@@ -97,14 +100,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_10 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_10 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-2, 2},
         .output = "ADIABATIC_POTENTIAL_Q10.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value =  0},
             .{.index = 1,  .value =  0},
             .{.index = 3,  .value =  0},
@@ -119,14 +122,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_11 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_11 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-3, 3},
         .output = "ADIABATIC_POTENTIAL_Q11.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
@@ -141,14 +144,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_12 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_12 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-2, 2},
         .output = "ADIABATIC_POTENTIAL_Q12.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value =  0},
             .{.index = 1,  .value =  0},
             .{.index = 2,  .value =  0},
@@ -163,14 +166,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_18 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_18 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-2, 2},
         .output = "ADIABATIC_POTENTIAL_Q18.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
@@ -185,14 +188,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_19 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_19 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-3.5, 3.5},
         .output = "ADIABATIC_POTENTIAL_Q19.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
@@ -207,14 +210,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_20 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_20 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-3.5, 3.5},
         .output = "ADIABATIC_POTENTIAL_Q20.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
@@ -229,14 +232,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_21 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_21 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-4.5, 4.5},
         .output = "ADIABATIC_POTENTIAL_Q21.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
@@ -251,14 +254,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_24 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_24 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-3.5, 3.5},
         .output = "ADIABATIC_POTENTIAL_Q24.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
@@ -273,14 +276,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_25 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_25 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-4.5, 4.5},
         .output = "ADIABATIC_POTENTIAL_Q25.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
@@ -295,14 +298,14 @@ pub fn main() !void {
         }
     };
 
-    const opt_potential_adia_26 = mpt.ModelPotentialOptions(f64){
+    const opt_potential_adia_26 = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-4.5, 4.5},
         .output = "ADIABATIC_POTENTIAL_Q26.mat",
         .points = 1024,
         .potential = "uracil12D_1",
 
-        .constant = &[_]mpt.ModelPotentialOptions(f64).ValuePair{
+        .constant = &[_]model_potential.ModelPotentialOptions(f64).ValuePair{
             .{.index = 0,  .value = 0},
             .{.index = 1,  .value = 0},
             .{.index = 2,  .value = 0},
@@ -317,18 +320,19 @@ pub fn main() !void {
         }
     };
 
-    try mpt.write(f64, opt_potential_adia_3,  allocator);
-    try mpt.write(f64, opt_potential_adia_7,  allocator);
-    try mpt.write(f64, opt_potential_adia_10, allocator);
-    try mpt.write(f64, opt_potential_adia_11, allocator);
-    try mpt.write(f64, opt_potential_adia_12, allocator);
-    try mpt.write(f64, opt_potential_adia_18, allocator);
-    try mpt.write(f64, opt_potential_adia_19, allocator);
-    try mpt.write(f64, opt_potential_adia_20, allocator);
-    try mpt.write(f64, opt_potential_adia_21, allocator);
-    try mpt.write(f64, opt_potential_adia_24, allocator);
-    try mpt.write(f64, opt_potential_adia_25, allocator);
-    try mpt.write(f64, opt_potential_adia_26, allocator);
+    try model_potential.write(f64, opt_potential_adia_3,  allocator);
+    try model_potential.write(f64, opt_potential_adia_7,  allocator);
+    try model_potential.write(f64, opt_potential_adia_10, allocator);
+    try model_potential.write(f64, opt_potential_adia_11, allocator);
+    try model_potential.write(f64, opt_potential_adia_12, allocator);
+    try model_potential.write(f64, opt_potential_adia_18, allocator);
+    try model_potential.write(f64, opt_potential_adia_19, allocator);
+    try model_potential.write(f64, opt_potential_adia_20, allocator);
+    try model_potential.write(f64, opt_potential_adia_21, allocator);
+    try model_potential.write(f64, opt_potential_adia_24, allocator);
+    try model_potential.write(f64, opt_potential_adia_25, allocator);
+    try model_potential.write(f64, opt_potential_adia_26, allocator);
 
-    const output_fssh_8D = try cdn.run(f64, opt_fssh_8D , true, allocator); defer output_fssh_8D.deinit();
+    const output_fssh_8D = try classical_dynamics.run(f64, opt_fssh_8D , true, allocator); defer output_fssh_8D.deinit();
+    const output_lzsh_8D = try classical_dynamics.run(f64, opt_lzsh_8D , true, allocator); defer output_lzsh_8D.deinit();
 }

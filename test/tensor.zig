@@ -1,35 +1,35 @@
 const std = @import("std");
 
-const ten = @import("acorn").ten;
+const tensor = @import("acorn").tensor;
 
 const Tensor = @import("acorn").Tensor;
 
 const allocator = std.testing.allocator;
 
 test "ten_init" {
-    const A = try ten.Tensor(f64).init(&[_]usize{1         }, allocator); defer A.deinit();
-    const B = try ten.Tensor(f64).init(&[_]usize{10        }, allocator); defer B.deinit();
-    const C = try ten.Tensor(f64).init(&[_]usize{100       }, allocator); defer C.deinit();
-    const D = try ten.Tensor(f64).init(&[_]usize{1000      }, allocator); defer D.deinit();
-    const E = try ten.Tensor(f64).init(&[_]usize{10000     }, allocator); defer E.deinit();
-    const F = try ten.Tensor(f64).init(&[_]usize{100000    }, allocator); defer F.deinit();
-    const G = try ten.Tensor(f64).init(&[_]usize{1000000   }, allocator); defer G.deinit();
-    const H = try ten.Tensor(f64).init(&[_]usize{1, 1      }, allocator); defer H.deinit();
-    const I = try ten.Tensor(f64).init(&[_]usize{1, 10     }, allocator); defer I.deinit();
-    const J = try ten.Tensor(f64).init(&[_]usize{1, 100    }, allocator); defer J.deinit();
-    const K = try ten.Tensor(f64).init(&[_]usize{1, 1000   }, allocator); defer K.deinit();
-    const L = try ten.Tensor(f64).init(&[_]usize{10, 1     }, allocator); defer L.deinit();
-    const M = try ten.Tensor(f64).init(&[_]usize{10, 10    }, allocator); defer M.deinit();
-    const N = try ten.Tensor(f64).init(&[_]usize{10, 100   }, allocator); defer N.deinit();
-    const O = try ten.Tensor(f64).init(&[_]usize{10, 1000  }, allocator); defer O.deinit();
-    const P = try ten.Tensor(f64).init(&[_]usize{100, 1    }, allocator); defer P.deinit();
-    const Q = try ten.Tensor(f64).init(&[_]usize{100, 10   }, allocator); defer Q.deinit();
-    const R = try ten.Tensor(f64).init(&[_]usize{100, 100  }, allocator); defer R.deinit();
-    const S = try ten.Tensor(f64).init(&[_]usize{100, 1000 }, allocator); defer S.deinit();
-    const T = try ten.Tensor(f64).init(&[_]usize{1000, 1   }, allocator); defer T.deinit();
-    const U = try ten.Tensor(f64).init(&[_]usize{1000, 10  }, allocator); defer U.deinit();
-    const V = try ten.Tensor(f64).init(&[_]usize{1000, 100 }, allocator); defer V.deinit();
-    const W = try ten.Tensor(f64).init(&[_]usize{1000, 1000}, allocator); defer W.deinit();
+    const A = try tensor.Tensor(f64).init(&[_]usize{1         }, allocator); defer A.deinit();
+    const B = try tensor.Tensor(f64).init(&[_]usize{10        }, allocator); defer B.deinit();
+    const C = try tensor.Tensor(f64).init(&[_]usize{100       }, allocator); defer C.deinit();
+    const D = try tensor.Tensor(f64).init(&[_]usize{1000      }, allocator); defer D.deinit();
+    const E = try tensor.Tensor(f64).init(&[_]usize{10000     }, allocator); defer E.deinit();
+    const F = try tensor.Tensor(f64).init(&[_]usize{100000    }, allocator); defer F.deinit();
+    const G = try tensor.Tensor(f64).init(&[_]usize{1000000   }, allocator); defer G.deinit();
+    const H = try tensor.Tensor(f64).init(&[_]usize{1, 1      }, allocator); defer H.deinit();
+    const I = try tensor.Tensor(f64).init(&[_]usize{1, 10     }, allocator); defer I.deinit();
+    const J = try tensor.Tensor(f64).init(&[_]usize{1, 100    }, allocator); defer J.deinit();
+    const K = try tensor.Tensor(f64).init(&[_]usize{1, 1000   }, allocator); defer K.deinit();
+    const L = try tensor.Tensor(f64).init(&[_]usize{10, 1     }, allocator); defer L.deinit();
+    const M = try tensor.Tensor(f64).init(&[_]usize{10, 10    }, allocator); defer M.deinit();
+    const N = try tensor.Tensor(f64).init(&[_]usize{10, 100   }, allocator); defer N.deinit();
+    const O = try tensor.Tensor(f64).init(&[_]usize{10, 1000  }, allocator); defer O.deinit();
+    const P = try tensor.Tensor(f64).init(&[_]usize{100, 1    }, allocator); defer P.deinit();
+    const Q = try tensor.Tensor(f64).init(&[_]usize{100, 10   }, allocator); defer Q.deinit();
+    const R = try tensor.Tensor(f64).init(&[_]usize{100, 100  }, allocator); defer R.deinit();
+    const S = try tensor.Tensor(f64).init(&[_]usize{100, 1000 }, allocator); defer S.deinit();
+    const T = try tensor.Tensor(f64).init(&[_]usize{1000, 1   }, allocator); defer T.deinit();
+    const U = try tensor.Tensor(f64).init(&[_]usize{1000, 10  }, allocator); defer U.deinit();
+    const V = try tensor.Tensor(f64).init(&[_]usize{1000, 100 }, allocator); defer V.deinit();
+    const W = try tensor.Tensor(f64).init(&[_]usize{1000, 1000}, allocator); defer W.deinit();
 
     try std.testing.expect(A.shape[0] == 1                             );
     try std.testing.expect(B.shape[0] == 10                            );

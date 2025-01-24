@@ -7,6 +7,7 @@ const Vector       = @import("vector.zig"      ).Vector      ;
 
 const asfloat = @import("helper.zig").asfloat;
 const uncr    = @import("helper.zig").uncr   ;
+const min     = @import("helper.zig").min    ;
 
 /// Matrix class.
 pub fn Matrix(comptime T: type) type {
@@ -26,6 +27,11 @@ pub fn Matrix(comptime T: type) type {
         /// Free the memory allocated for the matrix.
         pub fn deinit(self: Matrix(T)) void {
             self.allocator.free(self.data);
+        }
+
+        /// Access the element at the given row and column as a value.
+        pub fn at(self: Matrix(T), i: usize, j: usize) T {
+            return self.ptr(i, j).*;
         }
 
         /// Clone the matrix. The function returns an error if the allocation of the new matrix fails.
@@ -48,14 +54,41 @@ pub fn Matrix(comptime T: type) type {
             return other;
         }
 
-        /// Access the element at the given row and column as a value.
-        pub fn at(self: Matrix(T), i: usize, j: usize) T {
-            return self.ptr(i, j).*;
+        /// Fill the matrix with a given value.
+        pub fn fill(self: Matrix(T), value: T) void {
+            for (0..self.data.len) |i| self.data[i] = value;
+        }
+
+        /// Fill the diagonal of the matrix with ones.
+        pub fn identity(self: Matrix(T)) void {
+            self.fill(0);
+
+            for (0..min(usize, self.rows, self.cols)) |i| {
+                self.ptr(i, i).* = 1;
+            }
+        }
+
+        /// Fill the data of the matrix with a linearly spaced vector from start to end. Both start and end are included. If the matrix has only one element, the start value is assigned to it.
+        pub fn linspace(self: Matrix(T), start: T, end: T) void {
+            self.data[0] = start;
+
+            for (1..self.data.len) |i| {
+                self.data[i] = start + asfloat(T, i) * (end - start) / asfloat(T, self.rows * self.cols - 1);
+            }
         }
 
         /// Access the element at the given row and column as a mutable reference.
         pub fn ptr(self: Matrix(T), i: usize, j: usize) *T {
             return &self.data[i * self.cols + j];
+        }
+
+        /// Fill the matrix with normally distributed random numbers.
+        pub fn randn(self: Matrix(T), mean: T, stdev: T, seed: usize) void {
+            var rng = std.rand.DefaultPrng.init(seed); const random = rng.random();
+
+            for (0..self.data.len) |i| {
+                self.data[i] = mean + stdev * random.floatNorm(T);
+            }
         }
 
         /// Returns a reference to the row at the given index. The row is returned as a new matrix. No memory is allocated.
@@ -66,6 +99,15 @@ pub fn Matrix(comptime T: type) type {
                 .cols = self.cols,
                 .allocator = self.allocator
             };
+        }
+
+        /// Print the matrix to the given device.
+        pub fn print(self: Matrix(T), device: anytype) !void {
+            try device.print("{d} {d}\n", .{self.rows, self.cols});
+
+            for (self.data, 1..) |e, i| {
+                try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
+            }
         }
 
         /// Returns the matrix in the form of a strided array. No memory is allocated.
@@ -80,36 +122,6 @@ pub fn Matrix(comptime T: type) type {
                 .rows = self.rows * self.cols,
                 .allocator = self.allocator
             };
-        }
-
-        /// Fill the matrix with a given value.
-        pub fn fill(self: Matrix(T), value: T) void {
-            for (0..self.data.len) |i| self.data[i] = value;
-        }
-
-        /// Fill the diagonal of the matrix with ones.
-        pub fn identity(self: Matrix(T)) void {
-            self.fill(0);
-
-            for (0..self.rows) |i| {
-                self.ptr(i, i).* = 1;
-            }
-        }
-
-        /// Fill the data of the matrix with a linearly spaced vector from start to end. Both start and end are included.
-        pub fn linspace(self: Matrix(T), start: T, end: T) void {
-            for (0..self.data.len) |i| {
-                self.data[i] = start + asfloat(T, i) * (end - start) / asfloat(T, self.rows * self.cols - 1);
-            }
-        }
-
-        /// Print the matrix to the given device.
-        pub fn print(self: Matrix(T), device: anytype) !void {
-            try device.print("{d} {d}\n", .{self.rows, self.cols});
-
-            for (self.data, 1..) |e, i| {
-                try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
-            }
         }
 
         /// Write the matrix to a file.
@@ -175,21 +187,6 @@ pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *M
             std.mem.swap(T, C.ptr(k, i), C.ptr(k, j));
         }
     };
-}
-
-/// Check if two matrices are equal within a given tolerance. The function returns true if the matrices are equal and false otherwise.
-pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), epsilon: T) bool {
-    if (A.rows != B.rows or A.cols != B.cols) return false;
-
-    if (@typeInfo(T) != .Struct) for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > epsilon or std.math.isNan(@abs(A.data[i] - B.data[i]))) {
-        return false;
-    };
-
-    if (@typeInfo(T) == .Struct) for (0..A.data.len) |i| if (@abs(A.data[i].re - B.data[i].re) > epsilon or @abs(A.data[i].im - B.data[i].im) > epsilon) {
-        return false;
-    };
-
-    return true;
 }
 
 /// Horizontally concatenate two matrices. The output matrix is stored in the matrix C.
@@ -297,8 +294,8 @@ pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !M
     var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
     var stream   = std.io.fixedBufferStream(&buffer);  const writer =   stream.writer();
 
-    stream.reset(); try reader.streamUntilDelimiter(writer, ' ',  4); const rows = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
-    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 4); const cols = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
+    stream.reset(); try reader.streamUntilDelimiter(writer, ' ',  10); const rows = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
+    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 10); const cols = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
 
     const mat = try Matrix(T).init(rows, cols, allocator);
 

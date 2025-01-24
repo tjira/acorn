@@ -1,8 +1,8 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-const cdn = @import("acorn").cdn;
-const mpt = @import("acorn").mpt;
-const qdn = @import("acorn").qdn;
+const classical_dynamics = @import("acorn").classical_dynamics;
+const model_potential    = @import("acorn").model_potential   ;
+const quantum_dynamics   = @import("acorn").quantum_dynamics  ;
 
 const allocator = std.heap.page_allocator;
 
@@ -13,7 +13,7 @@ pub fn main() !void {
         "tully1D_1", "tully1D_2", "tully1D_3", "doubleState1D_1", "doubleState1D_2", "tripleState1D_1", "tripleState1D_2", "tripleState1D_3"
     };
 
-    var opt_exact = qdn.QuantumDynamicsOptions(f64){
+    var opt_exact = quantum_dynamics.QuantumDynamicsOptions(f64){
         .log_intervals = .{
             .iteration = 50
         },
@@ -32,7 +32,7 @@ pub fn main() !void {
         .potential = "",
     };
 
-    var opt_classic = cdn.ClassicalDynamicsOptions(f64){
+    var opt_classic = classical_dynamics.ClassicalDynamicsOptions(f64){
         .log_intervals = .{
             .trajectory = 100, .iteration = 500
         },
@@ -55,13 +55,13 @@ pub fn main() !void {
         .potential = "",
     };
 
-    var opt_diabatic_potential = mpt.ModelPotentialOptions(f64){
+    var opt_diabatic_potential = model_potential.ModelPotentialOptions(f64){
         .adiabatic = false,
         .limits = &[_]f64{-16, 16},
         .points = 1024,
     };
 
-    var opt_adiabatic_potential = mpt.ModelPotentialOptions(f64){
+    var opt_adiabatic_potential = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-16, 16},
         .points = 1024,
@@ -229,15 +229,15 @@ pub fn main() !void {
         opt_mash.write.total_energy_mean             =             total_energy_mean_mash;
         opt_mash.potential                           =                          potential;
 
-        try mpt.write(f64, opt_diabatic_potential, allocator); try mpt.write(f64, opt_adiabatic_potential, allocator);
+        try model_potential.write(f64, opt_diabatic_potential, allocator); try model_potential.write(f64, opt_adiabatic_potential, allocator);
 
-        const output_exact = try qdn.run(f64, opt_exact, true, allocator); defer output_exact.deinit();
-        const output_fssh  = try cdn.run(f64, opt_fssh , true, allocator); defer  output_fssh.deinit();
-        const output_kfssh = try cdn.run(f64, opt_kfssh, true, allocator); defer output_kfssh.deinit();
-        const output_lzsh  = try cdn.run(f64, opt_lzsh , true, allocator); defer  output_lzsh.deinit();
+        const output_exact =   try quantum_dynamics.run(f64, opt_exact, true, allocator); defer output_exact.deinit();
+        const output_fssh  = try classical_dynamics.run(f64, opt_fssh , true, allocator); defer  output_fssh.deinit();
+        const output_kfssh = try classical_dynamics.run(f64, opt_kfssh, true, allocator); defer output_kfssh.deinit();
+        const output_lzsh  = try classical_dynamics.run(f64, opt_lzsh , true, allocator); defer  output_lzsh.deinit();
 
         if (!std.mem.eql(u8, potential[0..6], "triple")) {
-            const output_mash  = try cdn.run(f64, opt_mash , true, allocator); defer output_mash.deinit();
+            const output_mash  = try classical_dynamics.run(f64, opt_mash , true, allocator); defer output_mash.deinit();
         }
     };
 }
