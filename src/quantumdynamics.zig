@@ -296,10 +296,10 @@ pub fn makeSpectrum(comptime T: type, spectrum: *Matrix(T), acf: Matrix(T), allo
         transform.ptr(acf.rows - i).* = Complex(T).init(acf.at(i, 1),  acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-0.001 * acf.at(i, 0) * acf.at(i, 0)), 0));
     }
 
-    try ftr.fft(T, transform.sa(), -1);
+    try ftr.fftn(T, transform.data, &[_]usize{transform.rows}, -1);
 
     for (0..spectrum.rows) |i| {
-        spectrum.ptr(i, 0).* = frequency.at(i, 0); spectrum.ptr(i, 1).* = transform.at(i   ).magnitude();
+        spectrum.ptr(i, 0).* = frequency.at(i, 0); spectrum.ptr(i, 1).* = transform.at(i).magnitude();
     }
 
     for (0..spectrum.rows) |i| for (1..spectrum.rows - i) |j| if (spectrum.at(j - 1, 0) > spectrum.at(j, 0)) for (0..spectrum.cols) |k| {

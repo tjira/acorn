@@ -110,11 +110,6 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
-        /// Returns the matrix in the form of a strided array. No memory is allocated.
-        pub fn sa(self: Matrix(T)) StridedArray(T) {
-            return StridedArray(T){.data = self.data, .len = self.rows * self.cols, .stride = 1, .zero = 0};
-        }
-
         /// Returns the matrix in the form of a vector. No memory is allocated.
         pub fn vector(self: Matrix(T)) Vector(T) {
             return Vector(T){

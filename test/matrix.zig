@@ -483,62 +483,6 @@ test "matrix_row" {
     for (0..P.rows) |i| {const row = P.row(i); for (0..P.cols) |j| try std.testing.expect(row.rows == 1 and row.cols == P.cols and row.at(0, j) == P.at(i, j));}
 }
 
-test "matrix_sa" {
-    const A = try matrix.Matrix(f64).init(1   , 1   , allocator); defer A.deinit();
-    const B = try matrix.Matrix(f64).init(1   , 10  , allocator); defer B.deinit();
-    const C = try matrix.Matrix(f64).init(1   , 100 , allocator); defer C.deinit();
-    const D = try matrix.Matrix(f64).init(1   , 1000, allocator); defer D.deinit();
-    const E = try matrix.Matrix(f64).init(10  , 1   , allocator); defer E.deinit();
-    const F = try matrix.Matrix(f64).init(10  , 10  , allocator); defer F.deinit();
-    const G = try matrix.Matrix(f64).init(10  , 100 , allocator); defer G.deinit();
-    const H = try matrix.Matrix(f64).init(10  , 1000, allocator); defer H.deinit();
-    const I = try matrix.Matrix(f64).init(100 , 1   , allocator); defer I.deinit();
-    const J = try matrix.Matrix(f64).init(100 , 10  , allocator); defer J.deinit();
-    const K = try matrix.Matrix(f64).init(100 , 100 , allocator); defer K.deinit();
-    const L = try matrix.Matrix(f64).init(100 , 1000, allocator); defer L.deinit();
-    const M = try matrix.Matrix(f64).init(1000, 1   , allocator); defer M.deinit();
-    const N = try matrix.Matrix(f64).init(1000, 10  , allocator); defer N.deinit();
-    const O = try matrix.Matrix(f64).init(1000, 100 , allocator); defer O.deinit();
-    const P = try matrix.Matrix(f64).init(1000, 1000, allocator); defer P.deinit();
-
-    A.randn(0, 1, 0); B.randn(0, 1, 1); C.randn(0, 1, 2 ); D.randn(0, 1, 3 ); E.randn(0, 1, 4 ); F.randn(0, 1, 5 ); G.randn(0, 1, 6 ); H.randn(0, 1, 7 );
-    I.randn(0, 1, 8); J.randn(0, 1, 9); K.randn(0, 1, 10); L.randn(0, 1, 11); M.randn(0, 1, 12); N.randn(0, 1, 13); O.randn(0, 1, 14); P.randn(0, 1, 15);
-
-    const AA = A.sa();
-    const BB = B.sa();
-    const CC = C.sa();
-    const DD = D.sa();
-    const EE = E.sa();
-    const FF = F.sa();
-    const GG = G.sa();
-    const HH = H.sa();
-    const II = I.sa();
-    const JJ = J.sa();
-    const KK = K.sa();
-    const LL = L.sa();
-    const MM = M.sa();
-    const NN = N.sa();
-    const OO = O.sa();
-    const PP = P.sa();
-
-    for (0..A.rows) |i| for (0..A.cols) |j| {try std.testing.expect(A.at(i, j) == AA.at(i * A.cols + j));};
-    for (0..B.rows) |i| for (0..B.cols) |j| {try std.testing.expect(B.at(i, j) == BB.at(i * B.cols + j));};
-    for (0..C.rows) |i| for (0..C.cols) |j| {try std.testing.expect(C.at(i, j) == CC.at(i * C.cols + j));};
-    for (0..D.rows) |i| for (0..D.cols) |j| {try std.testing.expect(D.at(i, j) == DD.at(i * D.cols + j));};
-    for (0..E.rows) |i| for (0..E.cols) |j| {try std.testing.expect(E.at(i, j) == EE.at(i * E.cols + j));};
-    for (0..F.rows) |i| for (0..F.cols) |j| {try std.testing.expect(F.at(i, j) == FF.at(i * F.cols + j));};
-    for (0..G.rows) |i| for (0..G.cols) |j| {try std.testing.expect(G.at(i, j) == GG.at(i * G.cols + j));};
-    for (0..H.rows) |i| for (0..H.cols) |j| {try std.testing.expect(H.at(i, j) == HH.at(i * H.cols + j));};
-    for (0..I.rows) |i| for (0..I.cols) |j| {try std.testing.expect(I.at(i, j) == II.at(i * I.cols + j));};
-    for (0..J.rows) |i| for (0..J.cols) |j| {try std.testing.expect(J.at(i, j) == JJ.at(i * J.cols + j));};
-    for (0..K.rows) |i| for (0..K.cols) |j| {try std.testing.expect(K.at(i, j) == KK.at(i * K.cols + j));};
-    for (0..L.rows) |i| for (0..L.cols) |j| {try std.testing.expect(L.at(i, j) == LL.at(i * L.cols + j));};
-    for (0..M.rows) |i| for (0..M.cols) |j| {try std.testing.expect(M.at(i, j) == MM.at(i * M.cols + j));};
-    for (0..N.rows) |i| for (0..N.cols) |j| {try std.testing.expect(N.at(i, j) == NN.at(i * N.cols + j));};
-    for (0..O.rows) |i| for (0..O.cols) |j| {try std.testing.expect(O.at(i, j) == OO.at(i * O.cols + j));};
-    for (0..P.rows) |i| for (0..P.cols) |j| {try std.testing.expect(P.at(i, j) == PP.at(i * P.cols + j));};
-}
-
 test "matrix_vector" {
     const A = try matrix.Matrix(f64).init(1   , 1   , allocator); defer A.deinit();
     const B = try matrix.Matrix(f64).init(1   , 10  , allocator); defer B.deinit();

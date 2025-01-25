@@ -81,10 +81,5 @@ pub fn Vector(comptime T: type) type {
                 self.data[i] = mean + stdev * random.floatNorm(T);
             }
         }
-
-        /// Return the vector as a strided array with a stride of 1. No memory is allocated.
-        pub fn sa(self: Vector(T)) StridedArray(T) {
-            return StridedArray(T){.data = self.data, .len = self.rows, .stride = 1, .zero = 0};
-        }
     };
 }

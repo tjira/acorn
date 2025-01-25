@@ -183,39 +183,3 @@ test "vector_randn" {
     for (0..z.rows) |i| try std.testing.expect(z.at(i) != 0);
     for (0..a.rows) |i| try std.testing.expect(a.at(i) != 0);
 }
-
-test "vector_sa" {
-    const u = try vector.Vector(f64).init(1      , allocator); defer u.deinit();
-    const v = try vector.Vector(f64).init(10     , allocator); defer v.deinit();
-    const w = try vector.Vector(f64).init(100    , allocator); defer w.deinit();
-    const x = try vector.Vector(f64).init(1000   , allocator); defer x.deinit();
-    const y = try vector.Vector(f64).init(10000  , allocator); defer y.deinit();
-    const z = try vector.Vector(f64).init(100000 , allocator); defer z.deinit();
-    const a = try vector.Vector(f64).init(1000000, allocator); defer a.deinit();
-
-    u.randn(0, 1, 0); v.randn(0, 1, 1); w.randn(0, 1, 2); x.randn(0, 1, 3); y.randn(0, 1, 4); z.randn(0, 1, 5); a.randn(0, 1, 6);
-
-    const uu = u.sa();
-    const vv = v.sa();
-    const ww = w.sa();
-    const xx = x.sa();
-    const yy = y.sa();
-    const zz = z.sa();
-    const aa = a.sa();
-
-    try std.testing.expect(uu.stride == 1 and uu.zero == 0);
-    try std.testing.expect(vv.stride == 1 and vv.zero == 0);
-    try std.testing.expect(ww.stride == 1 and ww.zero == 0);
-    try std.testing.expect(xx.stride == 1 and xx.zero == 0);
-    try std.testing.expect(yy.stride == 1 and yy.zero == 0);
-    try std.testing.expect(zz.stride == 1 and zz.zero == 0);
-    try std.testing.expect(aa.stride == 1 and aa.zero == 0);
-
-    for (0..u.rows) |i| try std.testing.expect(u.at(i) == uu.at(i));
-    for (0..v.rows) |i| try std.testing.expect(v.at(i) == vv.at(i));
-    for (0..w.rows) |i| try std.testing.expect(w.at(i) == ww.at(i));
-    for (0..x.rows) |i| try std.testing.expect(x.at(i) == xx.at(i));
-    for (0..y.rows) |i| try std.testing.expect(y.at(i) == yy.at(i));
-    for (0..z.rows) |i| try std.testing.expect(z.at(i) == zz.at(i));
-    for (0..a.rows) |i| try std.testing.expect(a.at(i) == aa.at(i));
-}
