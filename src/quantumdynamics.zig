@@ -51,29 +51,46 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
 /// The quantum dynamics output struct.
 pub fn QuantumDynamicsOutput(comptime T: type) type {
     return struct {
-        P: Matrix(T),
-        r: Vector(T),
-        p: Vector(T),
+        P: []Matrix(T),
+        r: []Vector(T),
+        p: []Vector(T),
 
-        Ekin: T,
-        Epot: T,
+        Ekin: []T,
+        Epot: []T,
+
+        allocator: std.mem.Allocator,
 
         /// Initialize the quantum dynamics output struct.
-        pub fn init(ndim: usize, nstate: usize, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
-            return QuantumDynamicsOutput(T){
-                .P = try Matrix(T).init(nstate, nstate, allocator),
+        pub fn init(ndim: usize, nstate: usize, propagations: usize, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
+            var output = QuantumDynamicsOutput(T){
+                .P = try allocator.alloc(Matrix(T), propagations),
+                .r = try allocator.alloc(Vector(T), propagations),
+                .p = try allocator.alloc(Vector(T), propagations),
 
-                .r = try Vector(T).init(ndim, allocator),
-                .p = try Vector(T).init(ndim, allocator),
+                .Ekin = try allocator.alloc(T, propagations),
+                .Epot = try allocator.alloc(T, propagations),
 
-                .Ekin = 0,
-                .Epot = 0
+                .allocator = allocator,
             };
+
+            for (0..propagations) |i| {
+                output.P[i] = try Matrix(T).init(nstate, nstate, allocator);
+                output.r[i] = try Vector(T).init(ndim,           allocator);
+                output.p[i] = try Vector(T).init(ndim,           allocator);
+            }
+
+            return output;
         }
 
         /// Free the memory allocated for the quantum dynamics output struct.
         pub fn deinit(self: QuantumDynamicsOutput(T)) void {
-            self.P.deinit(); self.r.deinit(); self.p.deinit();
+            self.allocator.free(self.Ekin); self.allocator.free(self.Epot);
+
+            for (0..self.P.len) |i| {
+                self.P[i].deinit(); self.r[i].deinit(); self.p[i].deinit();
+            }
+
+            self.allocator.free(self.P); self.allocator.free(self.r); self.allocator.free(self.p);
         }
     };
 }
@@ -84,7 +101,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
     const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential); const rdim = std.math.pow(u32, opt.grid.points, ndim);
 
-    var output = try QuantumDynamicsOutput(T).init(ndim, nstate, allocator);
+    var output = try QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
     var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();      pop.fill(0);
     var ekin     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     ekin.deinit();     ekin.fill(0);
@@ -94,8 +111,6 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
     var momentum = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer momentum.deinit(); momentum.fill(0);
     var acf      = try Matrix(T).init(opt.iterations + 1,                                      1 + 2     , allocator); defer      acf.deinit();      acf.fill(0);
     var spectrum = try Matrix(T).init(2 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 1     , allocator); defer spectrum.deinit(); spectrum.fill(0);
-
-    var energies = try std.ArrayList(T).initCapacity(allocator, opt.mode[0] + opt.mode[1]); defer energies.deinit();
 
     {
         const time = try Matrix(T).init(opt.iterations + 1, 1, allocator); defer time.deinit(); time.linspace(0, opt.time_step * asfloat(T, opt.iterations));
@@ -223,21 +238,21 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
                     if (opt.mode[0] > 0 and i < opt.mode[0] - 1) @memcpy(WOPT.items[i].data.data, W.data.data);
 
-                    @memcpy(output.P.data, P.data); @memcpy(output.r.data, r.data); @memcpy(output.p.data, p.data);
+                    @memcpy(output.P[i].data, P.data); @memcpy(output.r[i].data, r.data); @memcpy(output.p[i].data, p.data);
 
-                    output.Ekin = Ekin; output.Epot = Epot; try energies.append(Ekin + Epot);
+                    output.Ekin[i] = Ekin; output.Epot[i] = Epot;
 
-                    if (opt.mode[0] + opt.mode[1] == 1 and print) try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{output.Ekin + output.Epot});
+                    if (opt.mode[0] + opt.mode[1] == 1 and print) try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{Ekin + Epot});
 
                     if (nstate > 1) for (0..nstate) |k| if (print) {
-                        try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P.at(k, k)});
+                        try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P[i].at(k, k)});
                     };
                 }
             }
         }
 
         if (opt.mode[0] + opt.mode[1] > 1 and print) for (0..opt.mode[0] + opt.mode[1]) |i| {
-            try std.io.getStdOut().writer().print("{s}FINAL ENERGY OF PROPAGATION #{d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i + 1, energies.items[i]});
+            try std.io.getStdOut().writer().print("{s}FINAL ENERGY OF PROPAGATION #{d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i + 1, output.Ekin[i] + output.Epot[i]});
         };
 
         for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();} for (VA.items) |*e| {e.deinit();} for (VC.items) |*e| {e.deinit();} for (WOPT.items) |*e| {e.deinit();}
