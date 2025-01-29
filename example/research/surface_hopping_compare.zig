@@ -42,7 +42,7 @@ pub fn main() !void {
             .position_std  = &[_]f64{0.5},
             .momentum_mean = &[_]f64{10.0},
             .momentum_std  = &[_]f64{1.0},
-            .state = 0, .mass = 2000
+            .state = 0, .mass = &[_]f64{2000}
         },
 
         .adiabatic = true,

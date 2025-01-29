@@ -5,6 +5,7 @@
 const std = @import("std"); const builtin = @import("builtin");
 
 const classical_dynamics = @import("acorn").classical_dynamics;
+const constant           = @import("acorn").constant          ;
 const model_potential    = @import("acorn").model_potential   ;
 
 const allocator = std.heap.page_allocator;
@@ -12,10 +13,10 @@ const allocator = std.heap.page_allocator;
 pub fn main() !void {
     try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
 
-    const omega_8D = &[_]f64{734, 771, 1193, 1383, 1406, 1673, 1761, 1794};
+    var omega_8D: [8]f64 = .{734, 771, 1193, 1383, 1406, 1673, 1761, 1794}; for (0..omega_8D.len) |i| omega_8D[i] /= constant.EV2RCM * constant.AU2EV;
 
-    var std_x_8D: [8]f64 = undefined; var std_p_8D: [12]f64 = undefined; for (0..omega_8D.len) |i| {
-        const a = std.math.sqrt(219474.6305 * 1.0 / 1.0 / omega_8D[i]); std_x_8D[i] = a / std.math.sqrt2; std_p_8D[i] = 1 / a / std.math.sqrt2;
+    var std_x_8D: [8]f64 = undefined; var std_p_8D: [8]f64 = undefined; for (0..omega_8D.len) |i| {
+        std_x_8D[i] = std.math.sqrt(0.5 / omega_8D[i]); std_p_8D[i] = 0.08;
     }
 
     const opt_fssh_8D = classical_dynamics.ClassicalDynamicsOptions(f64){
@@ -38,19 +39,19 @@ pub fn main() !void {
             .position_std  = &std_x_8D,
             .momentum_mean = &[_]f64{0, 0, 0, 0, 0, 0, 0, 0},
             .momentum_std  = &std_p_8D,
-            .state = 2, .mass = 1
+            .state = 2, .mass = &[_]f64{1, 1, 1, 1, 1, 1, 1, 1}
         },
         .fewest_switches = .{
-            .quantum_substep = 100, .decoherence_alpha = 0.1
+            .quantum_substep = 100, .decoherence_alpha = null
         },
 
         .adiabatic = true,
         .derivative_step = 0.0001,
-        .iterations = 3500,
+        .iterations = 250,
         .potential = "uracil8D_1",
         .seed = 1,
         .time_derivative_coupling = "numeric",
-        .time_step = 0.012,
+        .time_step = 10,
         .trajectories = 1000,
     };
 
