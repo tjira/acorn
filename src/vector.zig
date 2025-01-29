@@ -83,3 +83,14 @@ pub fn Vector(comptime T: type) type {
         }
     };
 }
+
+/// Multiply a vector by a scalar. The output vector is stored in the vector w.
+pub fn muls(comptime T: type, w: *Vector(T), u: Vector(T), s: T) void {
+    if (@typeInfo(T) != .Struct) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i) * s;
+    };
+
+    if (@typeInfo(T) == .Struct) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i).add(s);
+    };
+}

@@ -4,6 +4,7 @@ const std = @import("std"); const Complex = std.math.Complex;
 
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
+const vec = @import("vector.zig"        );
 
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
@@ -591,8 +592,5 @@ pub fn propagate(comptime T: type, opt: ClassicalDynamicsOptions(T), r: *Vector(
 
 /// Function to rescale velocity after a nonadiabatic jump.
 pub fn rescaleVelocity(comptime T: type, v: *Vector(T), ps: u32, ns: u32, U: Matrix(T), Ekin: T) void {
-    for (0..v.rows) |k| {
-        v.ptr(k).* *= std.math.sqrt((Ekin - U.at(ns, ns) + U.at(ps, ps)) / Ekin);
-    }
-    // _ = v; _ = ps; _ = ns; _ = U; _ = Ekin;
+    vec.muls(T, v, v.*, std.math.sqrt((Ekin - U.at(ns, ns) + U.at(ps, ps)) / Ekin));
 }
