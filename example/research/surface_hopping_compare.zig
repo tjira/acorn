@@ -59,12 +59,16 @@ pub fn main() !void {
         .adiabatic = false,
         .limits = &[_]f64{-16, 16},
         .points = 1024,
+
+        .potential = "",
     };
 
     var opt_adiabatic_potential = model_potential.ModelPotentialOptions(f64){
         .adiabatic = true,
         .limits = &[_]f64{-16, 16},
         .points = 1024,
+
+        .potential = "",
     };
 
     var p: u32 = 10; while (p <= 50) : (p += 10) for (potentials) |potential| {
