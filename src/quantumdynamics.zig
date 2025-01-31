@@ -28,14 +28,14 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         };
         pub const Write = struct {
             autocorrelation_function: ?[]const u8 = null,
-            kinetic_energy: ?[]const u8 = null,
-            momentum: ?[]const u8 = null,
-            population: ?[]const u8 = null,
-            position: ?[]const u8 = null,
-            potential_energy: ?[]const u8 = null,
-            spectrum: ?[]const u8 = null,
-            total_energy: ?[]const u8 = null,
-            wavefunction: ?[]const u8 = null
+            kinetic_energy:           ?[]const u8 = null,
+            momentum:                 ?[]const u8 = null,
+            population:               ?[]const u8 = null,
+            position:                 ?[]const u8 = null,
+            potential_energy:         ?[]const u8 = null,
+            spectrum:                 ?[]const u8 = null,
+            total_energy:             ?[]const u8 = null,
+            wavefunction:             ?[]const u8 = null
         };
 
         adiabatic: bool,
@@ -103,7 +103,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
     var output = try QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
-    var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();       pop.fill(0);
+    var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();      pop.fill(0);
     var ekin     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     ekin.deinit();     ekin.fill(0);
     var epot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     epot.deinit();     epot.fill(0);
     var etot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     etot.deinit();     etot.fill(0);
@@ -112,6 +112,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
     var acf      = try Matrix(T).init(opt.iterations + 1,                                      1 + 2     , allocator); defer      acf.deinit();      acf.fill(0);
     var spectrum = try Matrix(T).init(2 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 1     , allocator); defer spectrum.deinit(); spectrum.fill(0);
 
+    pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     etot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
@@ -187,19 +188,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
                 if (j > 0) try wfn.propagate(T, &W, R, K, &T1);
 
-                if (i < opt.mode[0]) {
-                    
-                    for (0..i) |k| {
-
-                        const overlap = wfn.overlap(T, WOPT.items[k], W, dr);
-
-                        for (0..rdim) |l| for (0..nstate) |m| {
-                            W.data.ptr(l, m).* = W.data.at(l, m).sub(WOPT.items[k].data.at(l, m).conjugate().mul(overlap));
-                        };
-                    }
-
-                    wfn.normalize(T, &W, dr);
-                }
+                if (i < opt.mode[0]) orthogonalize(T, &W, WOPT, i, dr);
 
                 if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
 
@@ -227,20 +216,17 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
                 if (print and (j % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(j), Ekin, Epot, r, p, P, acfi);
 
-                if (j == opt.iterations) {
+                if (j == opt.iterations) assignOutput(T, &output, r, p, P, Ekin, Epot, i);
 
-                    if (opt.mode[0] > 0 and i < opt.mode[0] - 1) @memcpy(WOPT.items[i].data.data, W.data.data);
+                if (j == opt.iterations and opt.mode[0] > 0 and i < opt.mode[0] - 1) @memcpy(WOPT.items[i].data.data, W.data.data);
 
-                    @memcpy(output.P[i].data, P.data); @memcpy(output.r[i].data, r.data); @memcpy(output.p[i].data, p.data);
-
-                    output.Ekin[i] = Ekin; output.Epot[i] = Epot;
-
-                    if (opt.mode[0] + opt.mode[1] == 1 and print) try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{Ekin + Epot});
-
-                    if (nstate > 1) for (0..nstate) |k| if (print) {
-                        try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P[i].at(k, k)});
-                    };
+                if (print and j == opt.iterations and opt.mode[0] + opt.mode[1] == 1) {
+                    try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{Ekin + Epot});
                 }
+
+                if (print and j == opt.iterations and nstate > 1) for (0..nstate) |k| {
+                    try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P[i].at(k, k)});
+                };
             }
         }
 
@@ -248,12 +234,36 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
             try std.io.getStdOut().writer().print("{s}FINAL ENERGY OF PROPAGATION #{d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i + 1, output.Ekin[i] + output.Epot[i]});
         };
 
-        for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} for (V.items) |*e| {e.deinit();} for (VA.items) |*e| {e.deinit();} for (VC.items) |*e| {e.deinit();} for (WOPT.items) |*e| {e.deinit();}
+        for (R.items   ) |*e| e.deinit();
+        for (K.items   ) |*e| e.deinit();
+        for (V.items   ) |*e| e.deinit();
+        for (VA.items  ) |*e| e.deinit();
+        for (VC.items  ) |*e| e.deinit();
+        for (WOPT.items) |*e| e.deinit();
     }
 
     if (opt.write.spectrum != null) try makeSpectrum(T, &spectrum, acf, allocator);
 
-    try writeResults(T, opt, pop, ekin, epot, etot, position, momentum, acf, spectrum, wavefunction); return output;
+    if (opt.write.autocorrelation_function) |path| try          acf.write(path);
+    if (opt.write.kinetic_energy          ) |path| try         ekin.write(path);
+    if (opt.write.momentum                ) |path| try     momentum.write(path);
+    if (opt.write.population              ) |path| try          pop.write(path);
+    if (opt.write.position                ) |path| try     position.write(path);
+    if (opt.write.potential_energy        ) |path| try         epot.write(path);
+    if (opt.write.spectrum                ) |path| try     spectrum.write(path);
+    if (opt.write.total_energy            ) |path| try         etot.write(path);
+    if (opt.write.wavefunction            ) |path| try wavefunction.write(path);
+
+    return output;
+}
+
+/// Assigns the calculated properties to the output struct.
+pub fn assignOutput(comptime T: type, output: *QuantumDynamicsOutput(T), r: Vector(T), p: Vector(T), P: Matrix(T), Ekin: T, Epot: T, i: usize) void {
+    @memcpy(output.r[i].data, r.data);
+    @memcpy(output.p[i].data, p.data);
+    @memcpy(output.P[i].data, P.data);
+
+    output.Ekin[i] = Ekin; output.Epot[i] = Epot;
 }
 
 /// Returns the propagators for the k-space grid.
@@ -376,15 +386,16 @@ pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), 
         try std.io.getStdOut().writer().print("]\n", .{});
 }
 
-/// Writes the results of the quantum dynamics to the output files.
-pub fn writeResults(comptime T: type, opt: QuantumDynamicsOptions(T), pop: Matrix(T), ekin: Matrix(T), epot: Matrix(T), etot: Matrix(T), position: Matrix(T), momentum: Matrix(T), acf: Matrix(T), spectrum: Matrix(T), wavefunction: Matrix(T)) !void {
-    if (opt.write.autocorrelation_function) |path| try          acf.write(path);
-    if (opt.write.kinetic_energy          ) |path| try         ekin.write(path);
-    if (opt.write.momentum                ) |path| try     momentum.write(path);
-    if (opt.write.population              ) |path| try          pop.write(path);
-    if (opt.write.position                ) |path| try     position.write(path);
-    if (opt.write.potential_energy        ) |path| try         epot.write(path);
-    if (opt.write.spectrum                ) |path| try     spectrum.write(path);
-    if (opt.write.total_energy            ) |path| try         etot.write(path);
-    if (opt.write.wavefunction            ) |path| try wavefunction.write(path);
+/// Orthogonalizes the wavefunction to the lower eigenstates.
+pub fn orthogonalize(comptime T: type, W: *Wavefunction(T), WOPT: std.ArrayList(Wavefunction(T)), states: usize, dr: T) void {
+    for (0..states) |k| {
+
+        const overlap = wfn.overlap(T, WOPT.items[k], W.*, dr);
+
+        for (0..W.data.rows) |l| for (0..W.data.cols) |m| {
+            W.data.ptr(l, m).* = W.data.at(l, m).sub(WOPT.items[k].data.at(l, m).conjugate().mul(overlap));
+        };
+    }
+
+    wfn.normalize(T, W, dr);
 }

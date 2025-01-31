@@ -208,7 +208,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                 if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k).* += TDC.data[k];}                     ;
                 if (opt.write.fssh_coefficient_mean         != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();}   ;
 
-                if (j == opt.iterations - 1) assignOutput(T, &output, r, v, s, Ekin, Epot, opt.initial_conditions.mass);
+                if (j == opt.iterations) assignOutput(T, &output, r, v, s, Ekin, Epot, opt.initial_conditions.mass);
 
                 if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j % opt.log_intervals.iteration == 0)) {
                     try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, C, S, opt.initial_conditions.mass, fssh, mash);
@@ -329,7 +329,11 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDy
     const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s;
 
     const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
-        for (0..FC.rows) |i| {K.ptr(i).* = FC.at(i).mul(Complex(T).init(FU.at(i, i), 0)).mulbyi().neg();} for (0..FC.rows) |i| for (0..FC.rows) |j| {
+        for (0..FC.rows) |i| {
+            K.ptr(i).* = FC.at(i).mul(Complex(T).init(FU.at(i, i), 0)).mulbyi().neg();
+        }
+
+        for (0..FC.rows) |i| for (0..FC.rows) |j| {
             K.ptr(i).* = K.at(i).sub(FC.at(j).mul(Complex(T).init(FTDC.at(i, j), 0)));
         };
     }};
@@ -567,6 +571,7 @@ pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("\n", .{});
 }
 
+/// Function to propagate the classical coordinates in time on an "s" state.
 pub fn propagate(comptime T: type, opt: ClassicalDynamicsOptions(T), r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), T1: *Matrix(T), T2: *Matrix(T), s: u32) !void {
     for (0..r.rows) |i| {
 

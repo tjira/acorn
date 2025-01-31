@@ -69,3 +69,11 @@ If some tests fail, let me know by creating an issue. If all the tests pass, you
 ```
 
 You should see the version of the compiler and execution time of the program. If you see this, the program is working correctly.
+
+## Examples
+
+Below are some examples of the quantum mechanical methods implemented in Acorn.
+
+### Real Time Quantum Dynamics
+
+![Wavefunction](graphics/rtp.gif)

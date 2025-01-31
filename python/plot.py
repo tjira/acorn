@@ -28,7 +28,10 @@ def onedim(args):
     ymin, ymax = min([data[i][:, yexrange[i]].min() for i in range(len(data))]), max([data[i][:, yexrange[i]].max() for i in range(len(data))])
 
     # create the figure and axis and define a function that returns the line index based on the file and column
-    fig, ax = pt.subplots(figsize=(8, 6)); lineind = lambda i, j: (np.cumsum(list(map(len, columns)))[i - 1] if i else 0) + j
+    fig, ax = pt.subplots(figsize=(args.ratio[0], args.ratio[1])); lineind = lambda i, j: (np.cumsum(list(map(len, columns)))[i - 1] if i else 0) + j
+
+    # remove the axis if requested
+    if args.blank: ax.axis("off")
 
     # initialize the lines with the initial data
     for i in range(len(data)): [ax.plot(data[i][:, 0], data[i][:, 1 + column]) for column in columns[i]]
@@ -44,7 +47,7 @@ def onedim(args):
     if ymin == ymax: ymin, ymax = ymin - 1, ymax + 1
 
     # set the limits of the plot
-    ax.set_xlim(xmin, xmax); ax.set_ylim(ymin - 0.05 * (ymax - ymin), ymax + 0.05 * (ymax - ymin))
+    ax.set_xlim(xmin, xmax); ax.set_ylim(ymin - 0.01 * (ymax - ymin), ymax + 0.01 * (ymax - ymin))
 
     # create the animation
     anm = am.FuncAnimation(fig, update, frames=min([(data[i].shape[1] - 1) // args.animate for i in range(len(data))]), interval=30) if args.animate else None
@@ -100,10 +103,13 @@ if __name__ == "__main__":
     # add the optional arguments
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
     parser.add_argument("-a", "--animate", type=int, help="Perform the animation with the specified column interval.")
+    parser.add_argument("-b", "--blank", action="store_true", help="Remove the axes to create a blank frame for the plot.")
     parser.add_argument("-d", "--dpi", type=int, default=60, help="The resolution of the plot.")
+    parser.add_argument("-f", "--fps", type=int, default=30, help="Frames per second for the animations.")
     parser.add_argument("-l", "--legend", type=str, nargs="+", help="Add a legend to the plot.")
     parser.add_argument("-n", "--ndim", type=int, default=1, help="The dimension of the plot.")
     parser.add_argument("-o", "--output", type=str, default="plot", help="The output file to save the plot.")
+    parser.add_argument("-r", "--ratio", type=int, nargs=2, default=[8, 6], help="The data scaling factor.")
     parser.add_argument("-s", "--scale", type=float, default=1, help="The data scaling factor.")
     parser.add_argument("-t", "--title", type=str, help="The title of the plot.")
     parser.add_argument("-x", "--xlabel", type=str, help="The an x-axis label.")
@@ -130,15 +136,18 @@ if __name__ == "__main__":
     if args.ylabel: [ax.set_ylabel(args.ylabel) for ax in ax]
 
     # set tight layout
-    fig.tight_layout()
+    fig.tight_layout();
+
+    # remove the redundant whitespace when blank is specified
+    if args.blank: fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
     # save the plot
     if args.png: fig.savefig(args.output + ".png", dpi=args.dpi)
     if args.pdf: fig.savefig(args.output + ".pdf", dpi=args.dpi)
 
     # save the animation
-    if args.gif: anim.save(args.output + ".gif", writer="imagemagick", fps=30) # type: ignore
-    if args.mp4: anim.save(args.output + ".mp4", writer="ffmpeg",      fps=30) # type: ignore
+    if args.gif: anm.save(args.output + ".gif", writer="imagemagick", fps=args.fps) # type: ignore
+    if args.mp4: anm.save(args.output + ".mp4", writer="ffmpeg",      fps=args.fps) # type: ignore
 
     # show the plot
     if not args.png and not args.pdf and not args.gif and not args.mp4: fig.canvas.manager.set_window_title("Data Plotter"); pt.show(); # type: ignore

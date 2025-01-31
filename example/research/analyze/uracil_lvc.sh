@@ -1,10 +1,12 @@
 #!/bin/bash
 
-$PLOT POPULATION_FSSH_8D.mat:0,1,2 POPULATION_LZSH_8D.mat:0,1,2 --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (LZSH)" "D1 (LZSH)" "D2 (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D --png --dpi 100
-
 $PLOT POPULATION_FSSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_AFSSH-94.dat misc/uracil_lvc/8D_D1_AFSSH-94.dat misc/uracil_lvc/8D_D2_AFSSH-94.dat --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (REF A-FSSH)" "D1 (REF A-FSSH)" "D2 (REF A-FSSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_REFERENCE_AFSSH --png --dpi 100
 
-$PLOT POPULATION_FSSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_MCTDH.dat misc/uracil_lvc/8D_D1_MCTDH.dat misc/uracil_lvc/8D_D2_MCTDH.dat --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (REF MCTDH)" "D1 (REF MCTDH)" "D2 (REF MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_REFERENCE_MCTDH --png --dpi 100
+$PLOT POPULATION_FSSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_MCTDH.dat misc/uracil_lvc/8D_D1_MCTDH.dat misc/uracil_lvc/8D_D2_MCTDH.dat --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (REF MCTDH)" "D1 (REF MCTDH)" "D2 (REF MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_FSSH_VS_MCTDH --png --dpi 100
+
+$PLOT POPULATION_KTSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_MCTDH.dat misc/uracil_lvc/8D_D1_MCTDH.dat misc/uracil_lvc/8D_D2_MCTDH.dat --legend "D0 (KTSH)" "D1 (KTSH)" "D2 (KTSH)" "D0 (REF MCTDH)" "D1 (REF MCTDH)" "D2 (REF MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_KTSH_VS_MCTDH --png --dpi 100
+
+$PLOT POPULATION_LZSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_MCTDH.dat misc/uracil_lvc/8D_D1_MCTDH.dat misc/uracil_lvc/8D_D2_MCTDH.dat --legend "D0 (LZSH)" "D1 (LZSH)" "D2 (LZSH)" "D0 (REF MCTDH)" "D1 (REF MCTDH)" "D2 (REF MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_LZSH_VS_MCTDH --png --dpi 100
 
 $PLOT ADIABATIC_POTENTIAL_12D_Q3.mat:0,5,10,15  --legend "D0" "D1" "D2" "D3" --xlabel "\$q_{13}$" --ylabel "Energy (a.u)" --output ADIABATIC_POTENTIAL_12D_Q3  --png --dpi 100
 $PLOT ADIABATIC_POTENTIAL_12D_Q7.mat:0,5,10,15  --legend "D0" "D1" "D2" "D3" --xlabel "\$q_{17}$" --ylabel "Energy (a.u)" --output ADIABATIC_POTENTIAL_12D_Q7  --png --dpi 100

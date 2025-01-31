@@ -1,6 +1,6 @@
 #!/bin/bash
 
-zig build
+zig build -Dnocross -Dnoexample
 
 valgrind --callgrind-out-file=callgrind.out --tool=callgrind acorn $1
 

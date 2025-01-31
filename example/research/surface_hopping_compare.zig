@@ -82,21 +82,21 @@ pub fn main() !void {
         else if (std.mem.eql(u8, potential, "tripleState1D_2")) {opt_exact.initial_conditions.state = 2; opt_classic.initial_conditions.state = &[_]f64{0, 0, 1};}
         else if (std.mem.eql(u8, potential, "tripleState1D_3")) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 0, 1};}
 
-        else return error.StateNotDefined; var opt_fssh = opt_classic; var opt_kfssh = opt_classic; var opt_lzsh = opt_classic; var opt_mash = opt_classic;
+        else return error.StateNotDefined; var opt_fssh = opt_classic; var opt_ktsh = opt_classic; var opt_lzsh = opt_classic; var opt_mash = opt_classic;
 
         opt_fssh.fewest_switches  = .{.quantum_substep = 10, .decoherence_alpha = null  };
-        opt_kfssh.fewest_switches = .{.quantum_substep = 10, .decoherence_alpha = null  };
+        opt_ktsh.fewest_switches = .{.quantum_substep = 10, .decoherence_alpha = null  };
         opt_lzsh.landau_zener     = .{                                                  };
         opt_mash.spin_mapping     = .{.quantum_substep = 10, .sample_bloch_vector = true};
 
         opt_exact.initial_conditions.momentum      = &[_]f64{@as(f64, @floatFromInt(p))};
         opt_fssh.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
-        opt_kfssh.initial_conditions.momentum_mean = &[_]f64{@as(f64, @floatFromInt(p))};
+        opt_ktsh.initial_conditions.momentum_mean = &[_]f64{@as(f64, @floatFromInt(p))};
         opt_lzsh.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
         opt_mash.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
 
         opt_fssh.time_derivative_coupling  = "numeric";
-        opt_kfssh.time_derivative_coupling = "baeckan";
+        opt_ktsh.time_derivative_coupling = "baeckan";
         opt_mash.time_derivative_coupling  = "numeric";
 
         const  diabatic_potential = try allocator.alloc(u8, 23 + potential.len); defer allocator.free(diabatic_potential);
@@ -158,33 +158,33 @@ pub fn main() !void {
         opt_fssh.write.total_energy_mean             =             total_energy_mean_fssh;
         opt_fssh.potential                           =                          potential;
 
-        const coefficient_mean_kfssh              = try allocator.alloc(u8, 32 + potential.len); defer allocator.free(coefficient_mean_kfssh             );
-        const kinetic_energy_mean_kfssh           = try allocator.alloc(u8, 35 + potential.len); defer allocator.free(kinetic_energy_mean_kfssh          );
-        const momentum_mean_kfssh                 = try allocator.alloc(u8, 29 + potential.len); defer allocator.free(momentum_mean_kfssh                );
-        const population_mean_kfssh               = try allocator.alloc(u8, 31 + potential.len); defer allocator.free(population_mean_kfssh              );
-        const position_mean_kfssh                 = try allocator.alloc(u8, 29 + potential.len); defer allocator.free(position_mean_kfssh                );
-        const potential_energy_mean_kfssh         = try allocator.alloc(u8, 37 + potential.len); defer allocator.free(potential_energy_mean_kfssh        );
-        const time_derivative_coupling_mean_kfssh = try allocator.alloc(u8, 45 + potential.len); defer allocator.free(time_derivative_coupling_mean_kfssh);
-        const total_energy_mean_kfssh             = try allocator.alloc(u8, 33 + potential.len); defer allocator.free(total_energy_mean_kfssh            );
+        const coefficient_mean_ktsh              = try allocator.alloc(u8, 32 + potential.len); defer allocator.free(coefficient_mean_ktsh             );
+        const kinetic_energy_mean_ktsh           = try allocator.alloc(u8, 35 + potential.len); defer allocator.free(kinetic_energy_mean_ktsh          );
+        const momentum_mean_ktsh                 = try allocator.alloc(u8, 29 + potential.len); defer allocator.free(momentum_mean_ktsh                );
+        const population_mean_ktsh               = try allocator.alloc(u8, 31 + potential.len); defer allocator.free(population_mean_ktsh              );
+        const position_mean_ktsh                 = try allocator.alloc(u8, 29 + potential.len); defer allocator.free(position_mean_ktsh                );
+        const potential_energy_mean_ktsh         = try allocator.alloc(u8, 37 + potential.len); defer allocator.free(potential_energy_mean_ktsh        );
+        const time_derivative_coupling_mean_ktsh = try allocator.alloc(u8, 45 + potential.len); defer allocator.free(time_derivative_coupling_mean_ktsh);
+        const total_energy_mean_ktsh             = try allocator.alloc(u8, 33 + potential.len); defer allocator.free(total_energy_mean_ktsh            );
 
-        _ = try std.fmt.bufPrint(coefficient_mean_kfssh,              "COEFFICIENT_MEAN_{s}_P={d}_KFSSH.mat",      .{potential, p});
-        _ = try std.fmt.bufPrint(kinetic_energy_mean_kfssh,           "KINETIC_ENERGY_MEAN_{s}_P={d}_KFSSH.mat",   .{potential, p});
-        _ = try std.fmt.bufPrint(momentum_mean_kfssh,                 "MOMENTUM_MEAN_{s}_P={d}_KFSSH.mat",         .{potential, p});
-        _ = try std.fmt.bufPrint(population_mean_kfssh,               "POPULATION_MEAN_{s}_P={d}_KFSSH.mat",       .{potential, p});
-        _ = try std.fmt.bufPrint(position_mean_kfssh,                 "POSITION_MEAN_{s}_P={d}_KFSSH.mat",         .{potential, p});
-        _ = try std.fmt.bufPrint(potential_energy_mean_kfssh,         "POTENTIAL_ENERGY_MEAN_{s}_P={d}_KFSSH.mat", .{potential, p});
-        _ = try std.fmt.bufPrint(time_derivative_coupling_mean_kfssh, "TDC_MEAN_{s}_P={d}_KFSSH.mat",              .{potential, p});
-        _ = try std.fmt.bufPrint(total_energy_mean_kfssh,             "TOTAL_ENERGY_MEAN_{s}_P={d}_KFSSH.mat",     .{potential, p});
+        _ = try std.fmt.bufPrint(coefficient_mean_ktsh,              "COEFFICIENT_MEAN_{s}_P={d}_KTSH.mat",      .{potential, p});
+        _ = try std.fmt.bufPrint(kinetic_energy_mean_ktsh,           "KINETIC_ENERGY_MEAN_{s}_P={d}_KTSH.mat",   .{potential, p});
+        _ = try std.fmt.bufPrint(momentum_mean_ktsh,                 "MOMENTUM_MEAN_{s}_P={d}_KTSH.mat",         .{potential, p});
+        _ = try std.fmt.bufPrint(population_mean_ktsh,               "POPULATION_MEAN_{s}_P={d}_KTSH.mat",       .{potential, p});
+        _ = try std.fmt.bufPrint(position_mean_ktsh,                 "POSITION_MEAN_{s}_P={d}_KTSH.mat",         .{potential, p});
+        _ = try std.fmt.bufPrint(potential_energy_mean_ktsh,         "POTENTIAL_ENERGY_MEAN_{s}_P={d}_KTSH.mat", .{potential, p});
+        _ = try std.fmt.bufPrint(time_derivative_coupling_mean_ktsh, "TDC_MEAN_{s}_P={d}_KTSH.mat",              .{potential, p});
+        _ = try std.fmt.bufPrint(total_energy_mean_ktsh,             "TOTAL_ENERGY_MEAN_{s}_P={d}_KTSH.mat",     .{potential, p});
 
-        opt_kfssh.write.fssh_coefficient_mean         =              coefficient_mean_kfssh;
-        opt_kfssh.write.kinetic_energy_mean           =           kinetic_energy_mean_kfssh;
-        opt_kfssh.write.momentum_mean                 =                 momentum_mean_kfssh;
-        opt_kfssh.write.population_mean               =               population_mean_kfssh;
-        opt_kfssh.write.position_mean                 =                 position_mean_kfssh;
-        opt_kfssh.write.potential_energy_mean         =         potential_energy_mean_kfssh;
-        opt_kfssh.write.time_derivative_coupling_mean = time_derivative_coupling_mean_kfssh;
-        opt_kfssh.write.total_energy_mean             =             total_energy_mean_kfssh;
-        opt_kfssh.potential                           =                           potential;
+        opt_ktsh.write.fssh_coefficient_mean         =              coefficient_mean_ktsh;
+        opt_ktsh.write.kinetic_energy_mean           =           kinetic_energy_mean_ktsh;
+        opt_ktsh.write.momentum_mean                 =                 momentum_mean_ktsh;
+        opt_ktsh.write.population_mean               =               population_mean_ktsh;
+        opt_ktsh.write.position_mean                 =                 position_mean_ktsh;
+        opt_ktsh.write.potential_energy_mean         =         potential_energy_mean_ktsh;
+        opt_ktsh.write.time_derivative_coupling_mean = time_derivative_coupling_mean_ktsh;
+        opt_ktsh.write.total_energy_mean             =             total_energy_mean_ktsh;
+        opt_ktsh.potential                           =                           potential;
 
         const kinetic_energy_mean_lzsh   = try allocator.alloc(u8, 34 + potential.len); defer allocator.free(kinetic_energy_mean_lzsh  );
         const momentum_mean_lzsh         = try allocator.alloc(u8, 28 + potential.len); defer allocator.free(momentum_mean_lzsh        );
@@ -237,7 +237,7 @@ pub fn main() !void {
 
         const output_exact =   try quantum_dynamics.run(f64, opt_exact, true, allocator); defer output_exact.deinit();
         const output_fssh  = try classical_dynamics.run(f64, opt_fssh , true, allocator); defer  output_fssh.deinit();
-        const output_kfssh = try classical_dynamics.run(f64, opt_kfssh, true, allocator); defer output_kfssh.deinit();
+        const output_ktsh  = try classical_dynamics.run(f64, opt_ktsh , true, allocator); defer  output_ktsh.deinit();
         const output_lzsh  = try classical_dynamics.run(f64, opt_lzsh , true, allocator); defer  output_lzsh.deinit();
 
         if (!std.mem.eql(u8, potential[0..6], "triple")) {
