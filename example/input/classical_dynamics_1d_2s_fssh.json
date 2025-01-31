@@ -7,12 +7,12 @@
         "time_step" : 1,
         "trajectories" : 1000,
         "initial_conditions" : {
-            "mass" : 2000,
+            "mass" : [2000],
             "momentum_mean" : [15],
             "momentum_std" : [1],
             "position_mean" : [-10],
             "position_std" : [0.5],
-            "state" : 1
+            "state" : [0, 1]
         },
         "log_intervals" : {
             "iteration" : 500,

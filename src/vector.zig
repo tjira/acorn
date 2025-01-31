@@ -6,6 +6,7 @@ const StridedArray = @import("stridedarray.zig").StridedArray;
 const Matrix       = @import("matrix.zig").Matrix            ;
 
 const asfloat = @import("helper.zig").asfloat;
+const istruct = @import("helper.zig").istruct;
 
 /// Vector class.
 pub fn Vector(comptime T: type) type {
@@ -86,11 +87,11 @@ pub fn Vector(comptime T: type) type {
 
 /// Multiply a vector by a scalar. The output vector is stored in the vector w.
 pub fn muls(comptime T: type, w: *Vector(T), u: Vector(T), s: T) void {
-    if (@typeInfo(T) != .Struct) for (0..u.rows) |i| {
+    if (comptime !istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i) * s;
     };
 
-    if (@typeInfo(T) == .Struct) for (0..u.rows) |i| {
+    if (comptime istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i).add(s);
     };
 }

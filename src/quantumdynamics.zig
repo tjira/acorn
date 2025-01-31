@@ -103,7 +103,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
     var output = try QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
-    var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();      pop.fill(0);
+    var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();       pop.fill(0);
     var ekin     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     ekin.deinit();     ekin.fill(0);
     var epot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     epot.deinit();     epot.fill(0);
     var etot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     etot.deinit();     etot.fill(0);
@@ -112,20 +112,13 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
     var acf      = try Matrix(T).init(opt.iterations + 1,                                      1 + 2     , allocator); defer      acf.deinit();      acf.fill(0);
     var spectrum = try Matrix(T).init(2 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 1     , allocator); defer spectrum.deinit(); spectrum.fill(0);
 
-    {
-        const time = try Matrix(T).init(opt.iterations + 1, 1, allocator); defer time.deinit(); time.linspace(0, opt.time_step * asfloat(T, opt.iterations));
-
-        for (0..opt.iterations + 1) |i| {
-            pop.ptr(i, 0).*      = time.at(i, 0);
-            ekin.ptr(i, 0).*     = time.at(i, 0);
-            epot.ptr(i, 0).*     = time.at(i, 0);
-            etot.ptr(i, 0).*     = time.at(i, 0);
-            position.ptr(i, 0).* = time.at(i, 0);
-            momentum.ptr(i, 0).* = time.at(i, 0);
-            acf.ptr(i, 0).*      = time.at(i, 0);
-            spectrum.ptr(i, 0).* = time.at(i, 0);
-        }
-    }
+    ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    etot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    acf     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    spectrum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
     const wrows = if (opt.write.wavefunction != null) rdim else 0; const wcols = if (opt.write.wavefunction != null) ndim + 2 * (opt.iterations + 1) * nstate else 0;
 

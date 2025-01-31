@@ -33,7 +33,7 @@ pub fn main() !void {
             .position_std  = &std_x_8D,
             .momentum_mean = &[_]f64{0, 0, 0, 0, 0, 0, 0, 0},
             .momentum_std  = &std_p_8D,
-            .state = 2, .mass = &[_]f64{1, 1, 1, 1, 1, 1, 1, 1}
+            .state = &[_]f64{0.01, 0.05, 0.94, 0}, .mass = &[_]f64{1, 1, 1, 1, 1, 1, 1, 1}
         },
         .fewest_switches = .{
             .quantum_substep = 100, .decoherence_alpha = null

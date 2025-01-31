@@ -85,7 +85,7 @@ test "quantum_dynamics_real_nonadiabatic-1d/1s" {
             .limits = &[_]f64{-16, 32}, .points = 2048
         },
         .initial_conditions = .{
-            .position = &[_]f64{-10}, .momentum = &[_]f64{15}, .gamma = 2, .state = 1, .mass = 2000
+            .position = &[_]f64{-15}, .momentum = &[_]f64{20}, .gamma = 2, .state = 1, .mass = 2000
         },
 
         .adiabatic = true,
@@ -95,34 +95,34 @@ test "quantum_dynamics_real_nonadiabatic-1d/1s" {
         .time_step = 10,
     };
 
-    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.potential = "tully1D_2"; opt_tully1D_2.initial_conditions.state = 1;
-    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.potential = "tully1D_3"; opt_tully1D_3.initial_conditions.state = 0;
+    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.potential = "tully1D_2";
+    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.potential = "tully1D_3";
 
     const output_tully1D_1 = try quantum_dynamics.run(f64, opt_tully1D_1, false, allocator); defer output_tully1D_1.deinit();
     const output_tully1D_2 = try quantum_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
     const output_tully1D_3 = try quantum_dynamics.run(f64, opt_tully1D_3, false, allocator); defer output_tully1D_3.deinit();
 
-    try std.testing.expect(@abs(output_tully1D_1.r[0].at(0)                         - 17.41407850665638) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.p[0].at(0)                         - 16.01050304057247) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.Ekin[0] + output_tully1D_1.Epot[0] -  0.06650000244591) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.P[0].at(0, 0)                      -  0.41050571809112) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.P[0].at(0, 1)                      +  0.03617449781705) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.P[0].at(1, 0)                      +  0.03617449781705) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.P[0].at(1, 1)                      -  0.58949428190631) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.r[0].at(0)                         - 21.01938968482439) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.p[0].at(0)                         - 21.02856421409636) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.Ekin[0] + output_tully1D_1.Epot[0] -  0.11177076998736) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.P[0].at(0, 0)                      -  0.54705439669774) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.P[0].at(0, 1)                      -  0.09068606015816) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.P[0].at(1, 0)                      -  0.09068606015816) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.P[0].at(1, 1)                      -  0.45294560329800) < 1e-14);
 
-    try std.testing.expect(@abs(output_tully1D_2.r[0].at(0)                         - 17.66897173759843) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.p[0].at(0)                         - 15.14618136068045) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.Ekin[0] + output_tully1D_2.Epot[0] -  0.10649999998912) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.P[0].at(0, 0)                      -  0.02483439803093) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.P[0].at(0, 1)                      -  0.00003143380659) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.P[0].at(1, 0)                      -  0.00003143380659) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.P[0].at(1, 1)                      -  0.97516560196651) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.r[0].at(0)                         - 21.58373845973311) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.p[0].at(0)                         - 20.83738069194260) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.Ekin[0] + output_tully1D_2.Epot[0] -  0.15176981510196) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.P[0].at(0, 0)                      -  0.19319230896963) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.P[0].at(0, 1)                      -  0.00121002615618) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.P[0].at(1, 0)                      -  0.00121002615618) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.P[0].at(1, 1)                      -  0.80680769102602) < 1e-14);
 
-    try std.testing.expect(@abs(output_tully1D_3.r[0].at(0)                         + 8.88235020923131) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.p[0].at(0)                         + 1.83824558248584) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.Ekin[0] + output_tully1D_3.Epot[0] - 0.23000238131947) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.P[0].at(0, 0)                      - 0.49287571352242) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.P[0].at(0, 1)                      + 0.13226570241379) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.P[0].at(1, 0)                      + 0.13226570241379) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.P[0].at(1, 1)                      - 0.50712428647487) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.r[0].at(0)                         + 3.63335060066262) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.p[0].at(0)                         - 9.79711483361940) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.Ekin[0] + output_tully1D_3.Epot[0] - 0.39648649056202) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.P[0].at(0, 0)                      - 0.65976772649400) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.P[0].at(0, 1)                      + 0.18336140276091) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.P[0].at(1, 0)                      + 0.18336140276091) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.P[0].at(1, 1)                      - 0.34023227350300) < 1e-14);
 }

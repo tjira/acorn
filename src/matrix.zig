@@ -6,8 +6,9 @@ const StridedArray = @import("stridedarray.zig").StridedArray;
 const Vector       = @import("vector.zig"      ).Vector      ;
 
 const asfloat = @import("helper.zig").asfloat;
-const uncr    = @import("helper.zig").uncr   ;
+const istruct = @import("helper.zig").istruct;
 const min     = @import("helper.zig").min    ;
+const uncr    = @import("helper.zig").uncr   ;
 
 /// Matrix class.
 pub fn Matrix(comptime T: type) type {
@@ -43,13 +44,23 @@ pub fn Matrix(comptime T: type) type {
             return other;
         }
 
+        /// Return a column of a matrix as a strided array. No memory is allocated.
+        pub fn column(self: Matrix(T), j: usize) StridedArray(T) {
+            return StridedArray(T){
+                .data = self.data,
+                .len = self.rows,
+                .stride = self.cols,
+                .zero = j
+            };
+        }
+
         /// Convert the matrix to a complex matrix. The function returns an error if the allocation of the new matrix fails.
         pub fn complex(self: Matrix(T)) !Matrix(Complex(T)) {
             var other = try Matrix(Complex(T)).init(self.rows, self.cols, self.allocator);
 
-            for (0..self.data.len) |i| {
-                other.data[i] = Complex(T).init(self.data[i], 0);
-            }
+            for (0..self.rows) |i| for (0..self.cols) |j| {
+                other.ptr(i, j).* = Complex(T).init(self.at(i, j), 0);
+            };
 
             return other;
         }
@@ -130,22 +141,22 @@ pub fn Matrix(comptime T: type) type {
 
 /// Add two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn add(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+    if (comptime !istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] + B.data[i];
     };
 
-    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+    if (comptime istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].add(B.data[i]);
     };
 }
 
 /// Add a scalar to a matrix element-wise. The output matrix is stored in the matrix C.
 pub fn adds(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
-    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+    if (comptime !istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] + s;
     };
 
-    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+    if (comptime istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].add(s);
     };
 }
@@ -223,61 +234,61 @@ pub fn linsolve(comptime T: type, x: *Vector(T), A: *Matrix(T), b: *Vector(T)) v
 
 /// Matrix multiplication of the adjoint of matrix A and matrix B. The output matrix is stored in the matrix C.
 pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
+    if (comptime istruct(T)) C.fill(T.init(0, 0)) else C.fill(0);
 
-    if (@typeInfo(T) != .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
+    if (comptime !istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
         C.ptr(i, j).* += A.at(k, i) * B.at(k, j);
     };
 
-    if (@typeInfo(T) == .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
+    if (comptime istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
         C.ptr(i, j).* = C.at(i, j).add(A.at(k, i).conjugate().mul(B.at(k, j)));
     };
 }
 
 /// Matrix multiplication of matrix A and matrix B. The output matrix is stored in the matrix C.
 pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
+    if (comptime istruct(T)) C.fill(T.init(0, 0)) else C.fill(0);
 
-    if (@typeInfo(T) != .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+    if (comptime !istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
         C.ptr(i, j).* += A.at(i, k) * B.at(k, j);
     };
 
-    if (@typeInfo(T) == .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+    if (comptime istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
         C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));
     };
 }
 
 /// Matrix multiplication of matrix A and the adjoint of matrix B. The output matrix is stored in the matrix C.
 pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (@typeInfo(T) == .Struct) C.fill(T.init(0, 0)) else C.fill(0);
+    if (comptime istruct(T)) C.fill(T.init(0, 0)) else C.fill(0);
 
-    if (@typeInfo(T) != .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+    if (comptime !istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
         C.ptr(i, j).* += A.at(i, k) * B.at(j, k);
     };
 
-    if (@typeInfo(T) == .Struct) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
+    if (comptime istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
         C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k)));
     };
 }
 
 /// Multiply two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn mul(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+    if (comptime !istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] * B.data[i];
     };
 
-    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+    if (comptime istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].mul(B.data[i]);
     };
 }
 
 /// Multiply a matrix by a scalar. The output matrix is stored in the matrix C.
 pub fn muls(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
-    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+    if (comptime !istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] * s;
     };
 
-    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+    if (comptime istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].mul(s);
     };
 }
@@ -308,11 +319,11 @@ pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !M
 
 /// Subtract two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn sub(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (@typeInfo(T) != .Struct) for (0..C.data.len) |i| {
+    if (comptime !istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] - B.data[i];
     };
 
-    if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
+    if (comptime istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].sub(B.data[i]);
     };
 }

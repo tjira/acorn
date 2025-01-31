@@ -2,6 +2,8 @@
 
 const std = @import("std");
 
+const asfloat = @import("helper.zig").asfloat;
+
 /// Strided array class.
 pub fn StridedArray(comptime T: type) type {
     return struct {
@@ -10,6 +12,15 @@ pub fn StridedArray(comptime T: type) type {
         /// Get the element at the specified index as a value.
         pub fn at(self: StridedArray(T), i: usize) T {
             return self.ptr(i).*;
+        }
+
+        /// Fill the strided array elements with liearly spaced values. Start and end are inclusive.
+        pub fn linspace(self: StridedArray(T), start: T, end: T) void {
+            self.ptr(0).* = start;
+
+            for (1..self.len) |i| {
+                self.ptr(i).* = start + asfloat(T, i) * (end - start) / asfloat(T, self.len - 1);
+            }
         }
 
         /// Return the element at the specified index as a mutable reference.

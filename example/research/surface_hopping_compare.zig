@@ -42,7 +42,7 @@ pub fn main() !void {
             .position_std  = &[_]f64{0.5},
             .momentum_mean = &[_]f64{10.0},
             .momentum_std  = &[_]f64{1.0},
-            .state = 0, .mass = &[_]f64{2000}
+            .state = &[_]f64{0}, .mass = &[_]f64{2000}
         },
 
         .adiabatic = true,
@@ -73,14 +73,14 @@ pub fn main() !void {
 
     var p: u32 = 10; while (p <= 50) : (p += 10) for (potentials) |potential| {
 
-             if (std.mem.eql(u8, potential, "tully1D_1"      )) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = 1;}
-        else if (std.mem.eql(u8, potential, "tully1D_2"      )) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = 1;}
-        else if (std.mem.eql(u8, potential, "tully1D_3"      )) {opt_exact.initial_conditions.state = 0; opt_classic.initial_conditions.state = 1;}
-        else if (std.mem.eql(u8, potential, "doubleState1D_1")) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = 1;}
-        else if (std.mem.eql(u8, potential, "doubleState1D_2")) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = 1;}
-        else if (std.mem.eql(u8, potential, "tripleState1D_1")) {opt_exact.initial_conditions.state = 2; opt_classic.initial_conditions.state = 2;}
-        else if (std.mem.eql(u8, potential, "tripleState1D_2")) {opt_exact.initial_conditions.state = 2; opt_classic.initial_conditions.state = 2;}
-        else if (std.mem.eql(u8, potential, "tripleState1D_3")) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = 2;}
+             if (std.mem.eql(u8, potential, "tully1D_1"      )) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}
+        else if (std.mem.eql(u8, potential, "tully1D_2"      )) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}
+        else if (std.mem.eql(u8, potential, "tully1D_3"      )) {opt_exact.initial_conditions.state = 0; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}
+        else if (std.mem.eql(u8, potential, "doubleState1D_1")) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}
+        else if (std.mem.eql(u8, potential, "doubleState1D_2")) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}
+        else if (std.mem.eql(u8, potential, "tripleState1D_1")) {opt_exact.initial_conditions.state = 2; opt_classic.initial_conditions.state = &[_]f64{0, 0, 1};}
+        else if (std.mem.eql(u8, potential, "tripleState1D_2")) {opt_exact.initial_conditions.state = 2; opt_classic.initial_conditions.state = &[_]f64{0, 0, 1};}
+        else if (std.mem.eql(u8, potential, "tripleState1D_3")) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 0, 1};}
 
         else return error.StateNotDefined; var opt_fssh = opt_classic; var opt_kfssh = opt_classic; var opt_lzsh = opt_classic; var opt_mash = opt_classic;
 

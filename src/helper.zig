@@ -17,6 +17,11 @@ pub fn c(n: anytype, k: @TypeOf(n)) @TypeOf(n) {
     var nck: @TypeOf(n) = 1; for (k + 1..n + 1) |i| {nck *= i;} for (2..n - k + 1) |i| {nck /= i;} return nck;
 }
 
+/// Check if the passed type is a struct.
+pub fn istruct(comptime T: type) bool {
+    return @typeInfo(T) == .Struct;
+}
+
 /// Return the maximum of two numbers
 pub fn max(comptime T: type, a: T, b: T) T {
     return if (a > b) a else b;
@@ -30,6 +35,11 @@ pub fn min(comptime T: type, a: T, b: T) T {
 /// Calculate the product of an array.
 pub fn prod(comptime T: type, v: []const T) T {
     var result: T = 1; for (v) |value| result *= value; return result;
+}
+
+/// Calculate the sum of an array.
+pub fn sum(comptime T: type, v: []const T) T {
+    var result: T = 0; for (v) |value| result += value; return result;
 }
 
 /// Remove the carriage return from a string. Fucking windows.

@@ -12,6 +12,7 @@ const Vector = @import("vector.zig").Vector;
 const asfloat = @import("helper.zig").asfloat;
 const     max = @import("helper.zig").max    ;
 const     min = @import("helper.zig").min    ;
+const     sum = @import("helper.zig").sum    ;
 
 /// The classical dynamics options.
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
@@ -21,7 +22,8 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             position_std:  []const T,
             momentum_mean: []const T,
             momentum_std:  []const T,
-            state: u32, mass: []const T
+            state:         []const T,
+            mass:          []const T
         };
         pub const FewestSwitches = struct {
             quantum_substep: u32 = 10,
@@ -97,12 +99,13 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
 pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
     const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential);
 
-    if (opt.initial_conditions.state > try mpt.states(opt.potential) - 1) return error.InvalidInitialState;
-    if (opt.initial_conditions.position_mean.len != ndim                ) return error.InvalidMeanPosition;
-    if (opt.initial_conditions.position_std.len  != ndim                ) return error.InvalidStdPosition ;
-    if (opt.initial_conditions.momentum_mean.len != ndim                ) return error.InvalidMeanMomentum;
-    if (opt.initial_conditions.momentum_std.len  != ndim                ) return error.InvalidStdMomentum ;
-    if (opt.initial_conditions.mass.len          != ndim                ) return error.InvalidMass        ;
+    if (opt.initial_conditions.state.len         != nstate) return error.InvalidInitialState;
+    if (opt.initial_conditions.position_mean.len != ndim  ) return error.InvalidMeanPosition;
+    if (opt.initial_conditions.position_std.len  != ndim  ) return error.InvalidStdPosition ;
+    if (opt.initial_conditions.momentum_mean.len != ndim  ) return error.InvalidMeanMomentum;
+    if (opt.initial_conditions.momentum_std.len  != ndim  ) return error.InvalidStdMomentum ;
+    if (opt.initial_conditions.mass.len          != ndim  ) return error.InvalidMass        ;
+    if (sum(T, opt.initial_conditions.state)     != 1     ) return error.InvalidStateSum    ;
 
     var output = try ClassicalDynamicsOutput(T).init(ndim, nstate, allocator);
 
@@ -110,29 +113,14 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
     var prng_bloc = std.Random.DefaultPrng.init(opt.seed); const rand_bloc = prng_bloc.random();
 
-    var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer      pop.deinit();      pop.fill(0);
-    var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     ekin.deinit();     ekin.fill(0);
-    var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     epot.deinit();     epot.fill(0);
-    var etot     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     etot.deinit();     etot.fill(0);
-    var position = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer position.deinit(); position.fill(0);
-    var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer momentum.deinit(); momentum.fill(0);
-    var coef     = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer     coef.deinit();     coef.fill(0);
-    var tdc      = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer      tdc.deinit();      tdc.fill(0);
-
-    {
-        const time = try Matrix(T).init(opt.iterations + 1, 1, allocator); defer time.deinit(); time.linspace(0, opt.time_step * asfloat(T, opt.iterations));
-
-        for (0..opt.iterations + 1) |i| {
-            pop.ptr(i, 0).*      = time.at(i, 0);
-            ekin.ptr(i, 0).*     = time.at(i, 0);
-            epot.ptr(i, 0).*     = time.at(i, 0);
-            etot.ptr(i, 0).*     = time.at(i, 0);
-            position.ptr(i, 0).* = time.at(i, 0);
-            momentum.ptr(i, 0).* = time.at(i, 0);
-            coef.ptr(i, 0).*     = time.at(i, 0);
-            tdc.ptr(i, 0).*      = time.at(i, 0);
-        }
-    }
+    var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer      pop.deinit(); pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     ekin.deinit(); ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     epot.deinit(); epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var etot     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     etot.deinit(); etot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var position = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer position.deinit(); position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer momentum.deinit(); momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var coef     = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer     coef.deinit(); coef    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var tdc      = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer      tdc.deinit(); tdc     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
     const fssh = opt.fewest_switches != null;
     const lzsh = opt.landau_zener    != null;
@@ -180,13 +168,15 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
         for (0..opt.trajectories) |i| {
 
+            var s: u32 = undefined; for (0..nstate) |j| if (asfloat(T, i + 1) / asfloat(T, opt.trajectories) <= sum(T, opt.initial_conditions.state[0..j + 1])) {s = @intCast(j); break;};
+
             for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
             for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
 
-            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(opt.initial_conditions.state).* = Complex(T).init(1, 0);         }
-            if (mash) {try initialBlochVector(T, &S, opt.spin_mapping.?, opt.initial_conditions.state, rand_bloc, allocator);}
+            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);         }
+            if (mash) {try initialBlochVector(T, &S, opt.spin_mapping.?, s, rand_bloc, allocator);}
 
-            @memcpy(v.data, p.data); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j]; a.fill(0); var s = opt.initial_conditions.state; var ns = s; var Ekin: T = 0; var Epot: T = 0;
+            @memcpy(v.data, p.data); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j]; a.fill(0); var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
             for (0..opt.iterations + 1) |j| {
 

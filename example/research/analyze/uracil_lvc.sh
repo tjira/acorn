@@ -2,7 +2,7 @@
 
 $PLOT POPULATION_FSSH_8D.mat:0,1,2 POPULATION_LZSH_8D.mat:0,1,2 --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (LZSH)" "D1 (LZSH)" "D2 (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D --png --dpi 100
 
-$PLOT POPULATION_FSSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_AFSSH-100.dat misc/uracil_lvc/8D_D1_AFSSH-100.dat misc/uracil_lvc/8D_D2_AFSSH-100.dat --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (REF A-FSSH)" "D1 (REF A-FSSH)" "D2 (REF A-FSSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_REFERENCE_AFSSH --png --dpi 100
+$PLOT POPULATION_FSSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_AFSSH-94.dat misc/uracil_lvc/8D_D1_AFSSH-94.dat misc/uracil_lvc/8D_D2_AFSSH-94.dat --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (REF A-FSSH)" "D1 (REF A-FSSH)" "D2 (REF A-FSSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_REFERENCE_AFSSH --png --dpi 100
 
 $PLOT POPULATION_FSSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_MCTDH.dat misc/uracil_lvc/8D_D1_MCTDH.dat misc/uracil_lvc/8D_D2_MCTDH.dat --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (REF MCTDH)" "D1 (REF MCTDH)" "D2 (REF MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_REFERENCE_MCTDH --png --dpi 100
 
