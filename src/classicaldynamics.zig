@@ -141,10 +141,10 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
         var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
 
-        var r  = try Vector(T).init(ndim, allocator); defer  r.deinit();
-        var p  = try Vector(T).init(ndim, allocator); defer  p.deinit();
-        var v  = try Vector(T).init(ndim, allocator); defer  v.deinit();
-        var a  = try Vector(T).init(ndim, allocator); defer  a.deinit();
+        var r = try Vector(T).init(ndim, allocator); defer r.deinit();
+        var p = try Vector(T).init(ndim, allocator); defer p.deinit();
+        var v = try Vector(T).init(ndim, allocator); defer v.deinit();
+        var a = try Vector(T).init(ndim, allocator); defer a.deinit();
 
         var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();
         var UA  = try Matrix(T).init(nstate, nstate, allocator); defer  UA.deinit();

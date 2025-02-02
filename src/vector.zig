@@ -85,6 +85,28 @@ pub fn Vector(comptime T: type) type {
     };
 }
 
+/// Add two vectors. The output vector is stored in the vector w.
+pub fn add(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
+    if (comptime !istruct(T)) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i) + v.at(i);
+    };
+
+    if (comptime istruct(T)) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i).add(v.at(i));
+    };
+}
+
+/// Multiply two vectors element-wise. The output vector is stored in the vector w.
+pub fn mul(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
+    if (comptime !istruct(T)) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i) * v.at(i);
+    };
+
+    if (comptime istruct(T)) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i).mul(v.at(i));
+    };
+}
+
 /// Multiply a vector by a scalar. The output vector is stored in the vector w.
 pub fn muls(comptime T: type, w: *Vector(T), u: Vector(T), s: T) void {
     if (comptime !istruct(T)) for (0..u.rows) |i| {

@@ -88,6 +88,15 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
+        /// Print the matrix to the given device.
+        pub fn print(self: Matrix(T), device: anytype) !void {
+            try device.print("{d} {d}\n", .{self.rows, self.cols});
+
+            for (self.data, 1..) |e, i| {
+                try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
+            }
+        }
+
         /// Access the element at the given row and column as a mutable reference.
         pub fn ptr(self: Matrix(T), i: usize, j: usize) *T {
             return &self.data[i * self.cols + j];
@@ -110,15 +119,6 @@ pub fn Matrix(comptime T: type) type {
                 .cols = self.cols,
                 .allocator = self.allocator
             };
-        }
-
-        /// Print the matrix to the given device.
-        pub fn print(self: Matrix(T), device: anytype) !void {
-            try device.print("{d} {d}\n", .{self.rows, self.cols});
-
-            for (self.data, 1..) |e, i| {
-                try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
-            }
         }
 
         /// Returns the matrix in the form of a vector. No memory is allocated.

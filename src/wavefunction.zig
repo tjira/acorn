@@ -11,7 +11,7 @@ const Vector = @import("vector.zig").Vector;
 /// The wavefunction object.
 pub fn Wavefunction(comptime T: type) type {
     return struct {
-        data: Matrix(Complex(T)), shape: []usize, ndim: u32, nstate: u32, points: u32, allocator: std.mem.Allocator,
+        data: Matrix(Complex(T)), shape: []usize, ndim: u32, nstate: u32, allocator: std.mem.Allocator,
 
         /// Initialize the wavefunction object with the given number of dimensions, states, and points.
         pub fn init(ndim: u32, nstate: u32, points: u32, allocator: std.mem.Allocator) !Wavefunction(T) {
@@ -20,7 +20,6 @@ pub fn Wavefunction(comptime T: type) type {
                 .shape = try allocator.alloc(usize, ndim),
                 .ndim = ndim,
                 .nstate = nstate,
-                .points = points,
                 .allocator = allocator
             };
 

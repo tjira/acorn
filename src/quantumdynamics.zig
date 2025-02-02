@@ -103,14 +103,16 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
     var output = try QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
-    var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();      pop.fill(0);
-    var ekin     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     ekin.deinit();     ekin.fill(0);
-    var epot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     epot.deinit();     epot.fill(0);
-    var etot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     etot.deinit();     etot.fill(0);
-    var position = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer position.deinit(); position.fill(0);
-    var momentum = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer momentum.deinit(); momentum.fill(0);
-    var acf      = try Matrix(T).init(opt.iterations + 1,                                      1 + 2     , allocator); defer      acf.deinit();      acf.fill(0);
-    var spectrum = try Matrix(T).init(2 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 1     , allocator); defer spectrum.deinit(); spectrum.fill(0);
+    var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();
+    var ekin     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     ekin.deinit();
+    var epot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     epot.deinit();
+    var etot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     etot.deinit();
+    var position = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer position.deinit();
+    var momentum = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer momentum.deinit();
+    var acf      = try Matrix(T).init(opt.iterations + 1,                                      1 + 2     , allocator); defer      acf.deinit();
+    var spectrum = try Matrix(T).init(2 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 1     , allocator); defer spectrum.deinit();
+
+    var wavefunction: Matrix(T) = undefined;
 
     pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
@@ -121,9 +123,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
     acf     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     spectrum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
-    const wrows = if (opt.write.wavefunction != null) rdim else 0; const wcols = if (opt.write.wavefunction != null) ndim + 2 * (opt.iterations + 1) * nstate else 0;
-
-    var wavefunction = try Matrix(T).init(wrows, wcols, allocator); defer wavefunction.deinit(); wavefunction.fill(0);
+    if (opt.write.wavefunction != null) wavefunction = try Matrix(T).init(rdim, ndim + 2 * (opt.iterations + 1) * nstate, allocator);
 
     {
         var T1 = try Matrix(Complex(T)).init(rdim, 1, allocator); defer T1.deinit();
@@ -140,10 +140,10 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
         var W  = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer  W.deinit();
         var WA = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer WA.deinit();
 
-        var WOPT = try std.ArrayList(Wavefunction(T)).initCapacity(allocator, if (opt.mode[0] > 0) opt.mode[0] - 1 else 0); defer WOPT.deinit();
+        var WOPT = try allocator.alloc(Wavefunction(T), if (opt.mode[0] > 0) opt.mode[0] - 1 else 0); defer allocator.free(WOPT);
 
-        for (0..WOPT.capacity) |_| {
-            try WOPT.append(try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator));
+        for (0..WOPT.len) |i| {
+            WOPT[i] = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator);
         }
 
         var P = try Matrix(T).init(nstate, nstate, allocator); defer P.deinit();
@@ -218,7 +218,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
                 if (j == opt.iterations) assignOutput(T, &output, r, p, P, Ekin, Epot, i);
 
-                if (j == opt.iterations and opt.mode[0] > 0 and i < opt.mode[0] - 1) @memcpy(WOPT.items[i].data.data, W.data.data);
+                if (j == opt.iterations and opt.mode[0] > 0 and i < opt.mode[0] - 1) @memcpy(WOPT[i].data.data, W.data.data);
 
                 if (print and j == opt.iterations and opt.mode[0] + opt.mode[1] == 1) {
                     try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{Ekin + Epot});
@@ -239,7 +239,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
         for (V.items   ) |*e| e.deinit();
         for (VA.items  ) |*e| e.deinit();
         for (VC.items  ) |*e| e.deinit();
-        for (WOPT.items) |*e| e.deinit();
+        for (WOPT      ) |*e| e.deinit();
     }
 
     if (opt.write.spectrum != null) try makeSpectrum(T, &spectrum, acf, allocator);
@@ -253,6 +253,8 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
     if (opt.write.spectrum                ) |path| try     spectrum.write(path);
     if (opt.write.total_energy            ) |path| try         etot.write(path);
     if (opt.write.wavefunction            ) |path| try wavefunction.write(path);
+
+    if (opt.write.wavefunction != null) wavefunction.deinit();
 
     return output;
 }
@@ -276,7 +278,7 @@ pub fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_ste
 
         try K.append(try Matrix(Complex(T)).init(nstate, nstate, allocator));
 
-        for (0..K.items[i].rows) |j| {
+        for (0..nstate) |j| {
 
             for(0..kvec.cols) |k| K.items[i].ptr(j, j).* = K.items[i].at(j, j).add(Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));
 
@@ -387,13 +389,13 @@ pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), 
 }
 
 /// Orthogonalizes the wavefunction to the lower eigenstates.
-pub fn orthogonalize(comptime T: type, W: *Wavefunction(T), WOPT: std.ArrayList(Wavefunction(T)), states: usize, dr: T) void {
+pub fn orthogonalize(comptime T: type, W: *Wavefunction(T), WOPT: []Wavefunction(T), states: usize, dr: T) void {
     for (0..states) |k| {
 
-        const overlap = wfn.overlap(T, WOPT.items[k], W.*, dr);
+        const overlap = wfn.overlap(T, WOPT[k], W.*, dr);
 
         for (0..W.data.rows) |l| for (0..W.data.cols) |m| {
-            W.data.ptr(l, m).* = W.data.at(l, m).sub(WOPT.items[k].data.at(l, m).conjugate().mul(overlap));
+            W.data.ptr(l, m).* = W.data.at(l, m).sub(WOPT[k].data.at(l, m).conjugate().mul(overlap));
         };
     }
 
