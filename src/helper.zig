@@ -3,7 +3,7 @@
 const std = @import("std");
 
 /// Absolute value of a number.
-pub fn abs(comptime T: type, a: T) T {
+pub fn abs(a: anytype) @TypeOf(a) {
     return if (a < 0) -a else a;
 }
 
