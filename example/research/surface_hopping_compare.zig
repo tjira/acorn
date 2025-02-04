@@ -85,13 +85,13 @@ pub fn main() !void {
         else return error.StateNotDefined; var opt_fssh = opt_classic; var opt_ktsh = opt_classic; var opt_lzsh = opt_classic; var opt_mash = opt_classic;
 
         opt_fssh.fewest_switches  = .{.quantum_substep = 10, .decoherence_alpha = null  };
-        opt_ktsh.fewest_switches = .{.quantum_substep = 10, .decoherence_alpha = null  };
+        opt_ktsh.fewest_switches  = .{.quantum_substep = 10, .decoherence_alpha = null  };
         opt_lzsh.landau_zener     = .{                                                  };
-        opt_mash.spin_mapping     = .{.quantum_substep = 10, .sample_bloch_vector = true};
+        opt_mash.spin_mapping     = .{.sample_bloch_vector = true                       };
 
         opt_exact.initial_conditions.momentum      = &[_]f64{@as(f64, @floatFromInt(p))};
         opt_fssh.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
-        opt_ktsh.initial_conditions.momentum_mean = &[_]f64{@as(f64, @floatFromInt(p))};
+        opt_ktsh.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
         opt_lzsh.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
         opt_mash.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
 

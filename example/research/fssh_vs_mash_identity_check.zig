@@ -46,7 +46,7 @@ pub fn main() !void {
             .state = &[_]f64{1, 0}, .mass = &[_]f64{2000}
         },
         .fewest_switches = .{
-            .quantum_substep = 10, .decoherence_alpha = null
+            .quantum_substep = 1, .decoherence_alpha = null
         },
 
         .adiabatic = true,
@@ -60,7 +60,7 @@ pub fn main() !void {
     opt_mash.write.population_mean = "POPULATION_MASH.mat";
     opt_mash.fewest_switches = null;
     opt_mash.spin_mapping = .{
-        .quantum_substep = 10, .sample_bloch_vector = false,
+        .sample_bloch_vector = true,
     };
 
     const output_exact =   try quantum_dynamics.run(f64, opt_exact, true, allocator); defer output_exact.deinit();

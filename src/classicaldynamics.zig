@@ -33,7 +33,6 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         pub const LandauZener = struct {
         };
         pub const SpinMapping = struct {
-            quantum_substep: u32 = 10,
             sample_bloch_vector: bool = true
         };
         pub const LogIntervals = struct {
@@ -162,6 +161,9 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         var KC3 = try Vector(Complex(T)).init(C.rows, allocator); defer KC3.deinit();
         var KC4 = try Vector(Complex(T)).init(C.rows, allocator); defer KC4.deinit();
 
+        var SP = try Matrix(T).init(3, 3, allocator); defer SP.deinit();
+        var SN = try Vector(T).init(3,    allocator); defer SN.deinit();
+
         var U3  = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer  U3[0].deinit(); defer  U3[1].deinit(); defer U3[2].deinit();
         var UC2 = [2]Matrix(T){try U.clone(), try U.clone()               }; defer UC2[0].deinit(); defer UC2[1].deinit()                      ;
 
@@ -194,7 +196,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if (mash and j > 1) ns = try spinMapping(T, &S, opt.spin_mapping.?, U, TDC, s, opt.time_step, rand_jump);
+                if (mash and j > 1) ns = try spinMapping(T, &S, opt.spin_mapping.?, U, TDC, s, opt.time_step, rand_jump, &SP, &SN);
 
                 if (s != ns and Ekin >= U.at(ns, ns) - U.at(s, s)) {
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
@@ -409,63 +411,32 @@ pub fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamic
 }
 
 /// Function to propagate the vector on the Bloch sphere for the spin mapping methods. The function returns the new state, if a switch occurs.
-pub fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random) !u32 {
-    const iters = asfloat(T, opt.quantum_substep); var sn = s;
+pub fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random, SP: *Matrix(T), SN: *Vector(T)) !u32 {
+    const OmegaExp = struct { fn get (E: *Matrix(T), VV: T, TT: T) void {
+        const a = VV * VV + 4 * TT * TT; const b = Complex(T).init(0, std.math.sqrt(a));
+        
+        const sinhb = std.math.complex.sinh(b); const coshb = std.math.complex.cosh(b);
 
-    const FunctionX = struct { fn get (FS: Vector(T), FU: Matrix(T), FTDC: Matrix(T)) T {
-        return -(FU.at(1, 1) - FU.at(0, 0)) * FS.at(1) + 2 * FTDC.at(0, 1) * FS.at(2);
+        E.ptr(0, 0).* = coshb.re;
+        E.ptr(0, 1).* = -VV * sinhb.div(b).re;
+        E.ptr(0, 2).* = 2 * TT * sinhb.div(b).re;
+        E.ptr(1, 0).* = -E.at(0, 1);
+        E.ptr(1, 1).* = (4 * TT * TT + VV * VV * coshb.re) / a;
+        E.ptr(1, 2).* = -2 * TT * VV * (coshb.re - 1) / a;
+        E.ptr(2, 0).* = -E.at(0, 2);
+        E.ptr(2, 1).* = E.at(1, 2);
+        E.ptr(2, 2).* = (VV * VV + 4 * TT * TT * coshb.re) / a;
     }};
 
-    const FunctionY = struct { fn get (FS: Vector(T), FU: Matrix(T)                 ) T {
-        return (FU.at(1, 1) - FU.at(0, 0)) * FS.at(0);
-    }};
+    OmegaExp.get(SP, (U.at(1, 1) - U.at(0, 0)) * time_step, TDC.at(0, 1) * time_step);
 
-    const FunctionZ = struct { fn get (FS: Vector(T),                FTDC: Matrix(T)) T {
-        return -2 * FTDC.at(0, 1) * FS.at(0);
-    }};
+    const SM = S.matrix(); var SNM = SN.matrix();
 
-    for (0..opt.quantum_substep) |_| {
+    mat.mm(T, &SNM, SP.*, SM); @memcpy(S.data, SN.data);
 
-        const kx1 = FunctionX.get(S.*, U, TDC);
-        const ky1 = FunctionY.get(S.*, U,    );
-        const kz1 = FunctionZ.get(S.*,    TDC);
-
-        S.ptr(0).* += 0.5 * kx1 * time_step / iters;
-        S.ptr(1).* += 0.5 * ky1 * time_step / iters;
-        S.ptr(2).* += 0.5 * kz1 * time_step / iters;
-
-        const kx2 = FunctionX.get(S.*, U, TDC);
-        const ky2 = FunctionY.get(S.*, U     );
-        const kz2 = FunctionZ.get(S.*,    TDC);
-
-        S.ptr(0).* += 0.5 * (kx2 - kx1) * time_step / iters;
-        S.ptr(1).* += 0.5 * (ky2 - ky1) * time_step / iters;
-        S.ptr(2).* += 0.5 * (kz2 - kz1) * time_step / iters;
-
-        const kx3 = FunctionX.get(S.*, U, TDC);
-        const ky3 = FunctionY.get(S.*, U     );
-        const kz3 = FunctionZ.get(S.*,    TDC);
-
-        S.ptr(0).* += 0.5 * (2 * kx3 - kx2) * time_step / iters;
-        S.ptr(1).* += 0.5 * (2 * ky3 - ky2) * time_step / iters;
-        S.ptr(2).* += 0.5 * (2 * kz3 - kz2) * time_step / iters;
-
-        const kx4 = FunctionX.get(S.*, U, TDC);
-        const ky4 = FunctionY.get(S.*, U     );
-        const kz4 = FunctionZ.get(S.*,    TDC);
-
-        S.ptr(0).* -= kx3 * time_step / iters;
-        S.ptr(1).* -= ky3 * time_step / iters;
-        S.ptr(2).* -= kz3 * time_step / iters;
-
-        S.ptr(0).* += time_step / iters / 6 * (kx1 + 2 * kx2 + 2 * kx3 + kx4);
-        S.ptr(1).* += time_step / iters / 6 * (ky1 + 2 * ky2 + 2 * ky3 + ky4);
-        S.ptr(2).* += time_step / iters / 6 * (kz1 + 2 * kz2 + 2 * kz3 + kz4);
-
-        const rn = rand.float(T); if (!opt.sample_bloch_vector) {
-            if (s == sn and s == 0 and rn <  FunctionZ.get(S.*, TDC) / (1 - S.at(2)) * time_step / iters) sn = 1;
-            if (s == sn and s == 1 and rn < -FunctionZ.get(S.*, TDC) / (1 + S.at(2)) * time_step / iters) sn = 0;
-        }
+    const rn = rand.float(T); var sn = s; if (!opt.sample_bloch_vector) {
+        if (s == sn and s == 0 and rn < -2 * TDC.at(0, 1) * S.at(0) / (1 - S.at(2)) * time_step) sn = 1;
+        if (s == sn and s == 1 and rn <  2 * TDC.at(0, 1) * S.at(0) / (1 + S.at(2)) * time_step) sn = 0;
     }
 
     if (opt.sample_bloch_vector) {return if (S.at(2) > 0) 1 else 0;} else return sn;
