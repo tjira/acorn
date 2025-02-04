@@ -20,13 +20,13 @@ pub fn main() !void {
             .limits = &[_]f64{-48, 144}, .points = 4096
         },
         .initial_conditions = .{
-            .position = &[_]f64{-15}, .momentum = &[_]f64{25}, .gamma = 2, .state = 0, .mass = 2000
+            .position = &[_]f64{-15}, .momentum = &[_]f64{35}, .gamma = 0.5, .state = 0, .mass = 2000
         },
 
         .adiabatic = true,
         .iterations = 350,
         .mode = &[_]u32{0, 1},
-        .potential = "tully1D_3",
+        .potential = "tully1D_2",
         .time_step = 10,
     };
 
@@ -40,10 +40,10 @@ pub fn main() !void {
 
         .initial_conditions = .{
             .position_mean = &[_]f64{-15.0},
-            .position_std  = &[_]f64{0.5},
-            .momentum_mean = &[_]f64{25.0},
-            .momentum_std  = &[_]f64{1.0},
-            .state = &[_]f64{0, 1}, .mass = &[_]f64{2000}
+            .position_std  = &[_]f64{1.0},
+            .momentum_mean = &[_]f64{35.0},
+            .momentum_std  = &[_]f64{0.5},
+            .state = &[_]f64{1, 0}, .mass = &[_]f64{2000}
         },
         .fewest_switches = .{
             .quantum_substep = 10, .decoherence_alpha = null
@@ -51,7 +51,7 @@ pub fn main() !void {
 
         .adiabatic = true,
         .iterations = 3500,
-        .potential = "tully1D_3",
+        .potential = "tully1D_2",
         .time_step = 1,
         .trajectories = 1000,
     };

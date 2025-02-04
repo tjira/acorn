@@ -9,10 +9,11 @@ const vec = @import("vector.zig"        );
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
-const asfloat = @import("helper.zig").asfloat;
+const     abs = @import("helper.zig").abs    ;
 const     max = @import("helper.zig").max    ;
 const     min = @import("helper.zig").min    ;
 const     sum = @import("helper.zig").sum    ;
+const asfloat = @import("helper.zig").asfloat;
 
 /// The classical dynamics options.
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
@@ -153,8 +154,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         var TDC = try Matrix(T).init(nstate, nstate, allocator); defer TDC.deinit();
 
         var P = try Vector(T         ).init(nstate, allocator); defer P.deinit();
-        var C = try Vector(Complex(T)).init(nstate, allocator); defer C.deinit(); 
-        var S = try Vector(T         ).init(3     , allocator); defer S.deinit(); 
+        var C = try Vector(Complex(T)).init(nstate, allocator); defer C.deinit();
+        var S = try Vector(T         ).init(3     , allocator); defer S.deinit();
 
         var KC1 = try Vector(Complex(T)).init(C.rows, allocator); defer KC1.deinit();
         var KC2 = try Vector(Complex(T)).init(C.rows, allocator); defer KC2.deinit();
@@ -173,8 +174,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
             for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
             for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
 
-            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);         }
-            if (mash) {try initialBlochVector(T, &S, opt.spin_mapping.?, s, rand_bloc, allocator);}
+            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
+            if (mash) {try initialBlochVector(T, &S, opt.spin_mapping.?, s, rand_bloc);  }
 
             @memcpy(v.data, p.data); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j]; a.fill(0); var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
@@ -391,22 +392,19 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDy
 }
 
 /// Function to initialize the initial vector on the Bloch sphere for the spin mapping methods.
-pub fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random, allocator: std.mem.Allocator) !void {
-    const theta: T = if (s == 1) 0 else std.math.pi; const phi: T = 0; const xi = 2 * std.math.pi * rand.float(T);
-
-    S.ptr(0).* = std.math.sin(theta) * std.math.cos(phi); S.ptr(1).* = std.math.sin(theta) * std.math.sin(phi); S.ptr(2).* = std.math.cos(theta);
+pub fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random) !void {
+    S.ptr(0).* = 0; S.ptr(1).* = 0; S.ptr(2).* = if (s == 1) 1 else -1;
 
     if (opt.sample_bloch_vector) {
 
-        const x = try Vector(T).init(3, allocator); defer x.deinit();
-        const y = try Vector(T).init(3, allocator); defer y.deinit();
+        const phi = 2 * std.math.pi * rand.float(T);
 
-        x.ptr(0).* = std.math.cos(theta) * std.math.cos(phi); x.ptr(1).* = std.math.cos(theta) * std.math.sin(phi); x.ptr(2).* = -std.math.sin(theta);
-        y.ptr(0).* = -std.math.sin(phi);                      y.ptr(1).* = std.math.cos(phi);                       y.ptr(2).* = 0;
+        const cos_theta = if (s == 1) 1 - rand.float(T) else rand.float(T) - 1;
+        const sin_theta = std.math.sqrt(1 - cos_theta * cos_theta);
 
-        for (0..S.rows) |j| {
-            S.ptr(j).* = S.at(j) / std.math.sqrt(3) + (x.at(j) * std.math.cos(xi) + y.at(j) * std.math.sin(xi)) * std.math.sqrt2 / std.math.sqrt(3);
-        }
+        S.ptr(0).* = sin_theta * std.math.cos(phi);
+        S.ptr(1).* = sin_theta * std.math.sin(phi);
+        S.ptr(2).* = cos_theta;
     }
 }
 
@@ -415,15 +413,15 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOption
     const iters = asfloat(T, opt.quantum_substep); var sn = s;
 
     const FunctionX = struct { fn get (FS: Vector(T), FU: Matrix(T), FTDC: Matrix(T)) T {
-        return (FU.at(1, 1) - FU.at(0, 0)) * FS.at(1) - 2 * FTDC.at(0, 1) * FS.at(2);
+        return -(FU.at(1, 1) - FU.at(0, 0)) * FS.at(1) + 2 * FTDC.at(0, 1) * FS.at(2);
     }};
 
     const FunctionY = struct { fn get (FS: Vector(T), FU: Matrix(T)                 ) T {
-        return -(FU.at(1, 1) - FU.at(0, 0)) * FS.at(0);
+        return (FU.at(1, 1) - FU.at(0, 0)) * FS.at(0);
     }};
 
     const FunctionZ = struct { fn get (FS: Vector(T),                FTDC: Matrix(T)) T {
-        return 2 * FTDC.at(0, 1) * FS.at(0);
+        return -2 * FTDC.at(0, 1) * FS.at(0);
     }};
 
     for (0..opt.quantum_substep) |_| {
@@ -432,9 +430,9 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOption
         const ky1 = FunctionY.get(S.*, U,    );
         const kz1 = FunctionZ.get(S.*,    TDC);
 
-        (S.ptr(0)).* += 0.5 * kx1 * time_step / iters;
-        (S.ptr(1)).* += 0.5 * ky1 * time_step / iters;
-        (S.ptr(2)).* += 0.5 * kz1 * time_step / iters;
+        S.ptr(0).* += 0.5 * kx1 * time_step / iters;
+        S.ptr(1).* += 0.5 * ky1 * time_step / iters;
+        S.ptr(2).* += 0.5 * kz1 * time_step / iters;
 
         const kx2 = FunctionX.get(S.*, U, TDC);
         const ky2 = FunctionY.get(S.*, U     );

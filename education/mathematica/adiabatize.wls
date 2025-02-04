@@ -8,6 +8,19 @@ PlotPotentials[Ud_,xmin_,xmax_]:=GraphicsRow[{Plot[Evaluate@Diagonal@Ud,{x,xmin,
 
 
 (* ::Subsubsection:: *)
+(*Tully #2*)
+
+
+Subscript[Ud,tully,1]:={
+{0,0.015*Exp[-0.06*x^2]},
+{0.015*Exp[-0.06*x^2],-0.1*Exp[-0.28*x^2]+0.05}
+};Subscript[Ud,tully,1]//MatrixForm
+
+
+PlotPotentials[Subscript[Ud,tully,1],-8,8]
+
+
+(* ::Subsubsection:: *)
 (*Double State #1*)
 
 

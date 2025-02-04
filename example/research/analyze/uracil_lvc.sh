@@ -8,6 +8,8 @@ $PLOT POPULATION_KTSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_MCTDH.dat misc/uracil_l
 
 $PLOT POPULATION_LZSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_MCTDH.dat misc/uracil_lvc/8D_D1_MCTDH.dat misc/uracil_lvc/8D_D2_MCTDH.dat --legend "D0 (LZSH)" "D1 (LZSH)" "D2 (LZSH)" "D0 (REF MCTDH)" "D1 (REF MCTDH)" "D2 (REF MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_LZSH_VS_MCTDH --png --dpi 100
 
+$PLOT POPULATION_FSSH_8D.mat:0 POPULATION_LZSH_8D.mat:0 POPULATION_KTSH_8D.mat:0 misc/uracil_lvc/8D_D0_MCTDH.dat --legend "D0 (FSSH)" "D0 (LZSH)" "D0 (KTSH)" "D0 (MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_D0_COMPARISON --png --dpi 200
+
 $PLOT ADIABATIC_POTENTIAL_12D_Q3.mat:0,5,10,15  --legend "D0" "D1" "D2" "D3" --xlabel "\$q_{13}$" --ylabel "Energy (a.u)" --output ADIABATIC_POTENTIAL_12D_Q3  --png --dpi 100
 $PLOT ADIABATIC_POTENTIAL_12D_Q7.mat:0,5,10,15  --legend "D0" "D1" "D2" "D3" --xlabel "\$q_{17}$" --ylabel "Energy (a.u)" --output ADIABATIC_POTENTIAL_12D_Q7  --png --dpi 100
 $PLOT ADIABATIC_POTENTIAL_12D_Q10.mat:0,5,10    --legend "D0" "D1" "D2"      --xlabel "\$q_{10}$" --ylabel "Energy (a.u)" --output ADIABATIC_POTENTIAL_12D_Q10 --png --dpi 100

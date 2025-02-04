@@ -2,6 +2,11 @@
 
 const std = @import("std");
 
+/// Absolute value of a number.
+pub fn abs(comptime T: type, a: T) T {
+    return if (a < 0) -a else a;
+}
+
 /// Casts an integer to a float.
 pub fn asfloat(comptime T: type, a: anytype) T {
     return @as(T, @floatFromInt(a));
@@ -15,6 +20,11 @@ pub fn bitrev(value: anytype, count: u6) @TypeOf(value) {
 /// Calculate the combination number.
 pub fn c(n: anytype, k: @TypeOf(n)) @TypeOf(n) {
     var nck: @TypeOf(n) = 1; for (k + 1..n + 1) |i| {nck *= i;} for (2..n - k + 1) |i| {nck /= i;} return nck;
+}
+
+// Calculate the factorial of a number.
+pub fn fact(n: usize) @TypeOf(n) {
+    var result: @TypeOf(n) = 1; for (2..n + 1) |i| {result *= i;} return result;
 }
 
 /// Check if the passed type is a struct.
