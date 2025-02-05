@@ -1,7 +1,7 @@
 const std = @import("std"); const builtin = @import("builtin");
 
 const examples: [4][]const u8 = [_][]const u8{
-    "example/research/fssh_vs_mash_identity_check.zig",
+    "example/research/mash_test.zig",
     "example/research/ho_excited_states.zig",
     "example/research/uracil_lvc.zig",
     "example/research/surface_hopping_compare.zig",

@@ -24,7 +24,7 @@ pub fn main() !void {
         },
 
         .adiabatic = true,
-        .iterations = 350,
+        .iterations = 207,
         .mode = &[_]u32{0, 1},
         .potential = "tully1D_2",
         .time_step = 10,
@@ -50,7 +50,7 @@ pub fn main() !void {
         },
 
         .adiabatic = true,
-        .iterations = 3500,
+        .iterations = 2070,
         .potential = "tully1D_2",
         .time_step = 1,
         .trajectories = 1000,
@@ -58,12 +58,21 @@ pub fn main() !void {
 
     var opt_mash = opt_fssh;
     opt_mash.write.population_mean = "POPULATION_MASH.mat";
+    opt_mash.trajectories = 10000;
     opt_mash.fewest_switches = null;
     opt_mash.spin_mapping = .{
-        .sample_bloch_vector = true,
+        .fewest_switches = false, .quantum_jump_iteration = null
     };
 
-    const output_exact =   try quantum_dynamics.run(f64, opt_exact, true, allocator); defer output_exact.deinit();
-    const output_fssh  = try classical_dynamics.run(f64, opt_fssh , true, allocator); defer  output_fssh.deinit();
-    const output_mash  = try classical_dynamics.run(f64, opt_mash , true, allocator); defer  output_mash.deinit();
+    var opt_mash_fssh = opt_fssh;
+    opt_mash_fssh.write.population_mean = "POPULATION_MASH_FSSH.mat";
+    opt_mash_fssh.fewest_switches = null;
+    opt_mash_fssh.spin_mapping = .{
+        .fewest_switches = true, .quantum_jump_iteration = null
+    };
+
+    const output_exact      =   try quantum_dynamics.run(f64, opt_exact    , true, allocator); defer     output_exact.deinit();
+    const output_fssh       = try classical_dynamics.run(f64, opt_fssh     , true, allocator); defer      output_fssh.deinit();
+    const output_mash       = try classical_dynamics.run(f64, opt_mash     , true, allocator); defer      output_mash.deinit();
+    const output_mash_fssh  = try classical_dynamics.run(f64, opt_mash_fssh, true, allocator); defer output_mash_fssh.deinit();
 }

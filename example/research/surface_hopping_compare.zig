@@ -87,7 +87,7 @@ pub fn main() !void {
         opt_fssh.fewest_switches  = .{.quantum_substep = 10, .decoherence_alpha = null  };
         opt_ktsh.fewest_switches  = .{.quantum_substep = 10, .decoherence_alpha = null  };
         opt_lzsh.landau_zener     = .{                                                  };
-        opt_mash.spin_mapping     = .{.sample_bloch_vector = true                       };
+        opt_mash.spin_mapping     = .{.fewest_switches = false                          };
 
         opt_exact.initial_conditions.momentum      = &[_]f64{@as(f64, @floatFromInt(p))};
         opt_fssh.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
@@ -184,7 +184,7 @@ pub fn main() !void {
         opt_ktsh.write.potential_energy_mean         =         potential_energy_mean_ktsh;
         opt_ktsh.write.time_derivative_coupling_mean = time_derivative_coupling_mean_ktsh;
         opt_ktsh.write.total_energy_mean             =             total_energy_mean_ktsh;
-        opt_ktsh.potential                           =                           potential;
+        opt_ktsh.potential                           =                          potential;
 
         const kinetic_energy_mean_lzsh   = try allocator.alloc(u8, 34 + potential.len); defer allocator.free(kinetic_energy_mean_lzsh  );
         const momentum_mean_lzsh         = try allocator.alloc(u8, 28 + potential.len); defer allocator.free(momentum_mean_lzsh        );

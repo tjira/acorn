@@ -9,11 +9,13 @@ const vec = @import("vector.zig"        );
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
-const     abs = @import("helper.zig").abs    ;
-const     max = @import("helper.zig").max    ;
-const     min = @import("helper.zig").min    ;
-const     sum = @import("helper.zig").sum    ;
-const asfloat = @import("helper.zig").asfloat;
+const contains = @import("helper.zig").contains;
+const      abs = @import("helper.zig").abs     ;
+const      max = @import("helper.zig").max     ;
+const      min = @import("helper.zig").min     ;
+const      sgn = @import("helper.zig").sgn     ;
+const      sum = @import("helper.zig").sum     ;
+const  asfloat = @import("helper.zig").asfloat ;
 
 /// The classical dynamics options.
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
@@ -33,7 +35,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         pub const LandauZener = struct {
         };
         pub const SpinMapping = struct {
-            sample_bloch_vector: bool = true
+            fewest_switches: bool = false, quantum_jump_iteration: ?[]const u32 = null
         };
         pub const LogIntervals = struct {
             trajectory: u32 = 1, iteration: u32 = 1
@@ -126,6 +128,8 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     const lzsh = opt.landau_zener    != null;
     const mash = opt.spin_mapping    != null;
 
+    if (mash and nstate > 2) return error.InvalidNumberOfStatesForSpinMapping;
+
     if ((fssh and lzsh and mash) or (fssh and lzsh) or (fssh and mash) or (lzsh and mash)) {
         return error.MultipleHoppingMechanisms;
     }
@@ -205,7 +209,11 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
                 }
 
-                if (opt.write.population_mean               != null)  pop.ptr(j, 1 + s).* += if (mash) 2 * abs(S0.at(2)) else 1                                 ;
+                if (mash and opt.spin_mapping.?.quantum_jump_iteration != null and contains(u32, opt.spin_mapping.?.quantum_jump_iteration.?, @intCast(j))) {
+                    try initialBlochVector(T, &S, opt.spin_mapping.?, s, rand_bloc);
+                }
+
+                if (opt.write.population_mean               != null)  pop.ptr(j, 1 + s).* += 1                                                                  ;
                 if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 1 + 0).* += Ekin                                                               ;
                 if (opt.write.potential_energy_mean         != null) epot.ptr(j, 1 + 0).* += Epot                                                               ;
                 if (opt.write.total_energy_mean             != null) etot.ptr(j, 1 + 0).* += Ekin + Epot                                                        ;
@@ -400,11 +408,11 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDy
 pub fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random) !void {
     S.ptr(0).* = 0; S.ptr(1).* = 0; S.ptr(2).* = if (s == 1) 1 else -1;
 
-    if (opt.sample_bloch_vector) {
+    if (!opt.fewest_switches) {
 
         const phi = 2 * std.math.pi * rand.float(T);
 
-        const cos_theta = if (s == 1) 1 - rand.float(T) else rand.float(T) - 1;
+        const cos_theta = S.at(2) * std.math.sqrt(rand.float(T));
         const sin_theta = std.math.sqrt(1 - cos_theta * cos_theta);
 
         S.ptr(0).* = sin_theta * std.math.cos(phi);
@@ -437,12 +445,12 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOption
 
     mat.mm(T, &SNM, SP.*, SM); @memcpy(S.data, SN.data);
 
-    const rn = rand.float(T); var sn = s; if (!opt.sample_bloch_vector) {
+    const rn = rand.float(T); var sn = s; if (opt.fewest_switches) {
         if (s == sn and s == 0 and rn < -2 * TDC.at(0, 1) * S.at(0) / (1 - S.at(2)) * time_step) sn = 1;
         if (s == sn and s == 1 and rn <  2 * TDC.at(0, 1) * S.at(0) / (1 + S.at(2)) * time_step) sn = 0;
     }
 
-    if (opt.sample_bloch_vector) {return if (S.at(2) > 0) 1 else 0;} else return sn;
+    if (!opt.fewest_switches) {return if (S.at(2) > 0) 1 else 0;} else return sn;
 }
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.

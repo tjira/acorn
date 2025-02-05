@@ -22,6 +22,11 @@ pub fn c(n: anytype, k: @TypeOf(n)) @TypeOf(n) {
     var nck: @TypeOf(n) = 1; for (k + 1..n + 1) |i| {nck *= i;} for (2..n - k + 1) |i| {nck /= i;} return nck;
 }
 
+/// Check if a vector contains a value.
+pub fn contains(comptime T: type, v: []const T, value: T) bool {
+    for (v) |element| {if (element == value) return true;} return false;
+}
+
 // Calculate the factorial of a number.
 pub fn fact(n: usize) @TypeOf(n) {
     var result: @TypeOf(n) = 1; for (2..n + 1) |i| {result *= i;} return result;
@@ -45,6 +50,11 @@ pub fn min(comptime T: type, a: T, b: T) T {
 /// Calculate the product of an array.
 pub fn prod(comptime T: type, v: []const T) T {
     var result: T = 1; for (v) |value| result *= value; return result;
+}
+
+/// Sign of a number.
+pub fn sgn(a: anytype) @TypeOf(a) {
+    return if (a < 0) -1 else 1;
 }
 
 /// Calculate the sum of an array.
