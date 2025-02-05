@@ -38,11 +38,11 @@ test "quantum_dynamics_imaginary_adiabatic-1d" {
     try std.testing.expect(@abs(output_harmonic1D_1.p[2].at(0) - 0.00000000000001) < 1e-14);
     try std.testing.expect(@abs(output_harmonic1D_1.p[3].at(0) - 0.00000000000000) < 1e-14);
     try std.testing.expect(@abs(output_harmonic1D_1.p[4].at(0) + 0.00000000000001) < 1e-14);
-    try std.testing.expect(@abs(output_harmonic1D_1.p[5].at(0) + 0.00000000000001) < 1e-14);
+    try std.testing.expect(@abs(output_harmonic1D_1.p[5].at(0) + 0.00000000000000) < 1e-14);
     try std.testing.expect(@abs(output_harmonic1D_1.p[6].at(0) - 0.00000000000001) < 1e-14);
     try std.testing.expect(@abs(output_harmonic1D_1.p[7].at(0) - 0.00000000000000) < 1e-14);
-    try std.testing.expect(@abs(output_harmonic1D_1.p[8].at(0) + 0.00000000000005) < 1e-14);
-    try std.testing.expect(@abs(output_harmonic1D_1.p[9].at(0) - 0.00000000000002) < 1e-14);
+    try std.testing.expect(@abs(output_harmonic1D_1.p[8].at(0) - 0.00000000000001) < 1e-14);
+    try std.testing.expect(@abs(output_harmonic1D_1.p[9].at(0) + 0.00000000000004) < 1e-14);
 
     try std.testing.expect(@abs(output_harmonic1D_1.Ekin[0] + output_harmonic1D_1.Epot[0] - 0.50000000187134) < 1e-14);
     try std.testing.expect(@abs(output_harmonic1D_1.Ekin[1] + output_harmonic1D_1.Epot[1] - 1.49999999864282) < 1e-14);

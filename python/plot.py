@@ -46,6 +46,9 @@ def onedim(args):
     if xmin == xmax: xmin, xmax = xmin - 1, xmax + 1
     if ymin == ymax: ymin, ymax = ymin - 1, ymax + 1
 
+    # set the plot limits on the x axis from the provided domain
+    if args.domain[0] or args.domain[1]: xmin, xmax = args.domain
+
     # set the limits of the plot
     ax.set_xlim(xmin, xmax); ax.set_ylim(ymin - 0.01 * (ymax - ymin), ymax + 0.01 * (ymax - ymin))
 
@@ -107,6 +110,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dpi", type=int, default=60, help="The resolution of the plot.")
     parser.add_argument("-f", "--fps", type=int, default=30, help="Frames per second for the animations.")
     parser.add_argument("-l", "--legend", type=str, nargs="+", help="Add a legend to the plot.")
+    parser.add_argument("-m", "--domain", type=float, nargs=2, default=[0, 0], help="Domain of the plot.")
     parser.add_argument("-n", "--ndim", type=int, default=1, help="The dimension of the plot.")
     parser.add_argument("-o", "--output", type=str, default="plot", help="The output file to save the plot.")
     parser.add_argument("-r", "--ratio", type=int, nargs=2, default=[8, 6], help="The data scaling factor.")

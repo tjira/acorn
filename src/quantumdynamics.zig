@@ -97,7 +97,9 @@ pub fn QuantumDynamicsOutput(comptime T: type) type {
 
 /// The main function to run the quantum dynamics simulation.
 pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
-    if (opt.initial_conditions.state > try mpt.states(opt.potential) - 1) return error.InvalidInitialState;
+    if (opt.initial_conditions.state > try mpt.states(opt.potential) - 1  ) return error.InvalidInitialState;
+    if (opt.initial_conditions.position.len != try mpt.dims(opt.potential)) return error.InvalidInitialPosition;
+    if (opt.initial_conditions.momentum.len != try mpt.dims(opt.potential)) return error.InvalidInitialMomentum;
 
     const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential); const rdim = std.math.pow(u32, opt.grid.points, ndim);
 
@@ -395,7 +397,7 @@ pub fn orthogonalize(comptime T: type, W: *Wavefunction(T), WOPT: []Wavefunction
         const overlap = wfn.overlap(T, WOPT[k], W.*, dr);
 
         for (0..W.data.rows) |l| for (0..W.data.cols) |m| {
-            W.data.ptr(l, m).* = W.data.at(l, m).sub(WOPT[k].data.at(l, m).conjugate().mul(overlap));
+            W.data.ptr(l, m).* = W.data.at(l, m).sub(WOPT[k].data.at(l, m).mul(overlap));
         };
     }
 

@@ -17,9 +17,11 @@ pub fn main() !void {
         .log_intervals = .{
             .iteration = 50
         },
+
         .grid = .{
             .limits = &[_]f64{-48, 144}, .points = 4096
         },
+
         .initial_conditions = .{
             .position = &[_]f64{-15}, .momentum = &[_]f64{10}, .gamma = 2, .state = 0, .mass = 2000
         },

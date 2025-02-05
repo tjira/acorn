@@ -119,15 +119,18 @@ pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matri
 
     for (0..W.nstate) |i| {
 
-        for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
+        for (0..kvec.cols) |k| {
 
-        try ftr.fftn(T, T1.data, W.shape, -1);
+            for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
 
-        for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(kvec.at(j, 0), 0));
+            try ftr.fftn(T, T1.data, W.shape, -1);
 
-        try ftr.fftn(T, T1.data, W.shape, 1);
+            for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(kvec.at(j, k), 0));
 
-        for (0..W.data.rows) |j| p.ptr(0).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
+            try ftr.fftn(T, T1.data, W.shape, 1);
+
+            for (0..W.data.rows) |j| p.ptr(k).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
+        }
     }
 }
 
