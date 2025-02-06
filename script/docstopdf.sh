@@ -16,6 +16,7 @@ ACRONYMS=(
     "Coupled Cluster Singles and Doubles/CCSD"
     "Coupled Cluster Doubles/CCD"
     "Coupled Cluster/CC"
+    "Time Dependent Schrödinger Equation/TDSE"
     "Direct Inversion in the Iterative Subspace/DIIS"
     "Molecular Spinorbital/MS"
     "Self-Consistent Field/SCF"

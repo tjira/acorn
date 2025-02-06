@@ -86,17 +86,19 @@ for MODEL in ${MODELS[@]}; do
     montage "POTENTIAL_ADIABATIC_${MODEL}.png" "FINAL_POPULATION_P_${MODEL}.png"  -mode concatenate -tile x1 "FINAL_POPULATION_${MODEL}.png"
 done
 
-FILES=(${MODELS[@]/#/POTENTIAL_});        montage "${FILES[@]/%/.png}" -mode concatenate -tile 1x        "AA_POTENTIAL.png"
-FILES=(${MODELS[@]/#/FINAL_POPULATION_}); montage "${FILES[@]/%/.png}" -mode concatenate -tile 1x "AA_FINAL_POPULATION.png"
+FILES=(${MODELS[@]/#/POTENTIAL_});        montage "${FILES[@]/%/.png}" -mode concatenate -tile 1x        "POTENTIAL.png"
+FILES=(${MODELS[@]/#/FINAL_POPULATION_}); montage "${FILES[@]/%/.png}" -mode concatenate -tile 1x "FINAL_POPULATION.png"
 
 for MOMENTUM in ${MOMENTA[@]}; do
-    FILES=(${MODELS[@]/#/TRAJECTORY_GENERAL_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "AA_TRAJECTORY_GENERAL_P=${MOMENTUM}.png"
+    FILES=(${MODELS[@]/#/TRAJECTORY_GENERAL_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "TRAJECTORY_GENERAL_P=${MOMENTUM}.png"
 done
 
 for MOMENTUM in ${MOMENTA[@]}; do
-    FILES=(${MODELS[@]/#/TRAJECTORY_ENERGY_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "AA_TRAJECTORY_ENERGY_P=${MOMENTUM}.png"
+    FILES=(${MODELS[@]/#/TRAJECTORY_ENERGY_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "TRAJECTORY_ENERGY_P=${MOMENTUM}.png"
 done
 
 for MOMENTUM in ${MOMENTA[@]}; do
-    FILES=(${MODELS[@]/#/TRAJECTORY_COEFFICIENT_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "AA_TRAJECTORY_COEFFICIENT_P=${MOMENTUM}.png"
+    FILES=(${MODELS[@]/#/TRAJECTORY_COEFFICIENT_}); montage "${FILES[@]/%/_P=${MOMENTUM}.png}" -mode concatenate -tile 1x "TRAJECTORY_COEFFICIENT_P=${MOMENTUM}.png"
 done
+
+for MODEL in ${MODELS[@]}; do rm *${MODEL}*.png; done
