@@ -52,7 +52,7 @@ pub fn main() !void {
         .iterations = 5000,
         .seed = 1,
         .time_step = 1,
-        .trajectories = 1000,
+        .trajectories = 5000,
 
         .potential = "",
     };
