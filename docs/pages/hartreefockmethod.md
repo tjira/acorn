@@ -69,7 +69,7 @@ and another essential component are the two-electron repulsion integrals, define
 J\_{\mu\nu\kappa\lambda}=\braket{\phi\_{\mu}\phi\_{\mu}|\hat{J}|\phi\_{\kappa}\phi\_{\lambda}}
 \end{equation}
 
-which play crucial roles in the Hartree--Fock calculation. All of these integrals over (Gausssian) basis functions are usually calculated using analytical expressions.<!--\cite{10.1016/S0065-3276!08!60019-2}--> The solution to the Roothaan equations \eqref{eq:roothaan} requires an iterative procedure, since the Fock matrix defined as
+which play crucial roles in the Hartree--Fock calculation. All of these integrals over (Gausssian) basis functions are usually calculated using analytical expressions.<!--\supercite{10.1016/S0065-3276!08!60019-2}--> The solution to the Roothaan equations \eqref{eq:roothaan} requires an iterative procedure, since the Fock matrix defined as
 
 \begin{equation}\label{eq:fock}
 F\_{\mu\nu}=H\_{\mu\nu}^{\mathrm{core}}+D\_{\kappa\lambda}\left(J\_{\mu\nu\kappa\lambda}-\frac{1}{2}J\_{\mu\lambda\kappa\nu}\right)
@@ -139,7 +139,7 @@ After solving the linear equations, we use the coefficients $c\_j$ to construct 
 
 ### Gradient of the Restricted Hartree--Fock Method
 
-If we perform the calculation as described above and get the density matrix $\mathbf{D}$ we can evaluate the nuclear energy gradient as<!--\cite{10.1002/9780470749593.hrs006}-->
+If we perform the calculation as described above and get the density matrix $\mathbf{D}$ we can evaluate the nuclear energy gradient as<!--\supercite{10.1002/9780470749593.hrs006}-->
 
 \begin{equation}\label{eq:hf_gradient}
 \frac{\partial E}{\partial X\_{A,i}}=\sum\_{\mu\nu\in\left\lbrace\phi\_A\right\rbrace}D\_{\mu\nu}\frac{\partial H\_{\mu\nu}^{\mathrm{core}}}{\partial X\_{A,i}}+2\sum\_{\mu\nu\in\left\lbrace\phi\_A\right\rbrace}D\_{\mu\nu}D\_{\kappa\lambda}\frac{\partial\left(J\_{\mu\nu\kappa\lambda}-\frac{1}{2}J\_{\mu\lambda\kappa\nu}\right)}{\partial X\_{A,i}}-2W\_{\mu\nu}\frac{\partial S\_{\mu\nu}}{\partial X\_{A,i}}

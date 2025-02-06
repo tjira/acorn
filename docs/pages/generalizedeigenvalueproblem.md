@@ -28,6 +28,6 @@ This method is not always numerically stable, especially when the matrices $\mat
 \mathbf{B}^{-\frac{1}{2}}\mathbf{A}\mathbf{B}^{-\frac{1}{2}}\mathbf{B}^{\frac{1}{2}}\mathbf{C}&=\mathbf{B}^{\frac{1}{2}}\mathbf{C}\mathbf{\Lambda},
 \end{align}
 
-where we solve the standard eigenvalue problem for the matrix $\mathbf{B}^{-\frac{1}{2}}\mathbf{A}\mathbf{B}^{-\frac{1}{2}}$ and obtain the eigenvectors $\mathbf{B}^{\frac{1}{2}}\mathbf{C}$ and eigenvalues $\mathbf{\Lambda}$.<!--\cite{10.48550/arXiv.1903.11240}--> The eigenvectors of the original problem are then given by $\mathbf{C}=\mathbf{B}^{-\frac{1}{2}}\mathbf{B}^{\frac{1}{2}}\mathbf{C}$ and the eigenvalues are the same.
+where we solve the standard eigenvalue problem for the matrix $\mathbf{B}^{-\frac{1}{2}}\mathbf{A}\mathbf{B}^{-\frac{1}{2}}$ and obtain the eigenvectors $\mathbf{B}^{\frac{1}{2}}\mathbf{C}$ and eigenvalues $\mathbf{\Lambda}$.<!--\supercite{10.48550/arXiv.1903.11240}--> The eigenvectors of the original problem are then given by $\mathbf{C}=\mathbf{B}^{-\frac{1}{2}}\mathbf{B}^{\frac{1}{2}}\mathbf{C}$ and the eigenvalues are the same.
 
 {:.cite}

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PAGES=("electronicstructuremethods" "hartreefockmethod" "mollerplessetperturbationtheory" "configurationinteraction" "coupledcluster" "codesolutions")
+PAGES=("electronicstructuremethods" "hartreefockmethod" "mollerplessetperturbationtheory" "configurationinteraction" "coupledcluster" "quantumdynamics" "realtimepropagation" "imaginarytimepropagation" "codesolutions")
 
 ACRONYMS=(
     "Restricted Hartree--Fock/RHF"
@@ -344,7 +344,8 @@ done && echo "" >> docs/tex/main.tex
 sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/ ; s/\\\///g ; s/\\passthrough/\\texttt/g ; s/\\mathbf{\\varepsilon}/\\bm{\\varepsilon}/g' docs/tex/main.tex
 
 # replace names of some sections
-sed -i 's/\\section{Electronic Structure Methods}/\\part{Electronic Structure Methods}/g'  docs/tex/main.tex
+sed -i 's/\\section{Electronic Structure Methods}/\\part{Electronic Structure Methods}/g' docs/tex/main.tex
+sed -i 's/\\section{Quantum Dynamics}/\\part{Quantum Dynamics}/g'                         docs/tex/main.tex
 
 # replace section references
 sed -i 's/\\href{hartreefockmethod.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g'  docs/tex/main.tex

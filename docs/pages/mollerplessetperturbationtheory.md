@@ -37,7 +37,7 @@ and ask, how how does the total energy change with the included terms. After som
 E_{\mathrm{corr}}^{\mathrm{MP2}}=\sum\_{s>0}\frac{H\_{0s}^{'}H\_{s0}^{'}}{E\_0-E\_s}
 \end{equation}
 
-where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix element of the perturbation operator between the Hartree--Fock determinant and the doubly excited determinant, and $E\_0$ and $E\_s$ are the energies of the reference and doubly excited determinants, respectively.<!--\cite{10.1002/wcms.58,1014569052}--> We could express all higher-order corrections in a similar way, using only the matrix elements of the perturbation operator and the energies of the determinants. For practical calculations, we apply Slater-Condon rules to evaluate the matrix elements and use the orbital energies obtained from the Hartree-Fock calculation. The expressions for calculation are summarised below.
+where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix element of the perturbation operator between the Hartree--Fock determinant and the doubly excited determinant, and $E\_0$ and $E\_s$ are the energies of the reference and doubly excited determinants, respectively.<!--\supercite{10.1002/wcms.58,1014569052}--> We could express all higher-order corrections in a similar way, using only the matrix elements of the perturbation operator and the energies of the determinants. For practical calculations, we apply Slater-Condon rules to evaluate the matrix elements and use the orbital energies obtained from the Hartree-Fock calculation. The expressions for calculation are summarised below.
 
 ## Implementation of 2nd and 3rd Order Corrections
 
@@ -55,7 +55,7 @@ E_{\mathrm{corr}}^{\mathrm{MP3}}=&\frac{1}{8}\sum\_{ijab}\frac{\braket{ab||ij}\b
 &+\sum_{ijab}\frac{\braket{ab||ij}\braket{cj||kb}\braket{ik||ac}}{\varepsilon\_{ij}^{ab}\varepsilon\_{ik}^{ac}}
 \end{align}
 
-To calculate the 4th order correction, we would need to write 39 terms, which is not practical. Higher-order corrections are usually not programmed this way, instead, the diagrammatic approach is used.<!--\cite{1014569052,10.1016/0010-4655!73!90016-7,10.1016/0010-4655!73!90017-9}-->
+To calculate the 4th order correction, we would need to write 39 terms, which is not practical. Higher-order corrections are usually not programmed this way, instead, the diagrammatic approach is used.<!--\supercite{1014569052,10.1016/0010-4655!73!90016-7,10.1016/0010-4655!73!90017-9}-->
 
 ## 2nd and 3rd Order Corrections Code Exercise
 

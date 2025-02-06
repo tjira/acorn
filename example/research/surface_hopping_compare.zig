@@ -73,7 +73,7 @@ pub fn main() !void {
         .potential = "",
     };
 
-    var p: u32 = 10; while (p <= 50) : (p += 10) for (potentials) |potential| {
+    var p: u32 = 10; while (p <= 50) : (p += 2) for (potentials) |potential| {
 
              if (std.mem.eql(u8, potential, "tully1D_1"      )) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}
         else if (std.mem.eql(u8, potential, "tully1D_2"      )) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}

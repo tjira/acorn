@@ -1,0 +1,29 @@
+name: Research
+
+on: workflow_dispatch
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Zig Compiler
+        run: mkdir compiler && wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz && tar -xvf zig.tar.xz && mv zig-linux*/lib zig-linux*/zig compiler && rm -rf zig*
+
+      - name: Build Acorn
+        run: ./compiler/zig build --release=fast --summary all
+
+      - name: Install Python Packages
+        run: pip install matplotlib numpy
+
+      - name: Make the Binary Folder
+        working-directory: example/research
+        run: ./run.sh
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: result
+          path: example/research/result

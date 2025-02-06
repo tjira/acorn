@@ -20,6 +20,11 @@ def onedim(args):
     for (i, j, k) in ((i, j, k) for i in range(len(data)) for j in range(len(basemap[i])) for k in range(0, data[i].shape[1] - 1, args.animate if args.animate else data[i].shape[1])):
         data[i][:, 1 + k + basemap[i][j][0]] = data[i][:, 1 + k + basemap[i][j][0]] + baseline[i][:, 1 + basemap[i][j][1]] if len(baseline[i]) else 0
 
+    index = 0
+    for i in range(len(data)):
+        for j in range(len(columns[i])):
+            data[i][:, 1 + columns[i][j]] += args.offset[index] if len(args.offset) > index else 0; index += 1
+
     # get the y range to consider for the extremum calculation
     yexrange = [[1 + j + k for j in columns[i] for k in range(0, data[i].shape[1] - 1, args.animate if args.animate else data[i].shape[1])] for i in range(len(data))]
 
@@ -34,7 +39,7 @@ def onedim(args):
     if args.blank: ax.axis("off")
 
     # initialize the lines with the initial data
-    for i in range(len(data)): [ax.plot(data[i][:, 0], data[i][:, 1 + column]) for column in columns[i]]
+    for i in range(len(data)): [ax.plot(data[i][:, 0], data[i][:, 1 + columns[i][j]]) for j in range(len(columns[i]))]
 
     # plotting function
     update = lambda frame: [ax.lines[lineind(i, j)].set_ydata(data[i][:, 1 + frame * args.animate + columns[i][j]]) for j in range(len(columns[i])) for i in range(len(data))]
@@ -46,8 +51,9 @@ def onedim(args):
     if xmin == xmax: xmin, xmax = xmin - 1, xmax + 1
     if ymin == ymax: ymin, ymax = ymin - 1, ymax + 1
 
-    # set the plot limits on the x axis from the provided domain
+    # set the plot limits according to the arguments
     if args.domain[0] or args.domain[1]: xmin, xmax = args.domain
+    if args.value[0]  or args.value[1]:  ymin, ymax = args.value
 
     # set the limits of the plot
     ax.set_xlim(xmin, xmax); ax.set_ylim(ymin - 0.01 * (ymax - ymin), ymax + 0.01 * (ymax - ymin))
@@ -71,11 +77,21 @@ def twodim(args):
     # define the transform function for the data based on the columns
     transform = lambda data, columns: np.linalg.norm(data[:, columns], axis=1) if len(columns) > 1 else data[:, columns[0]]
 
-    # calculate the limits of the plot
-    vmin, vmax = min(map(lambda data: data[:, 2:].min(), data)), max(map(lambda data: data[:, 2:].max(), data))
+    # calculate the limits of the plot and set the initial shape
+    vmin, vmax = min(map(lambda data: data[:, 2:].min(), data)), max(map(lambda data: data[:, 2:].max(), data)); shape = [1, len(data)]
+
+    # exctract the most appropriate shape for the data
+    for i in range(2, len(data) + 1):
+        if len(data) > i and len(data) % i == 0: shape = [len(data) // i, i]
 
     # create the figure and axis and define the empty plot array
-    fig, ax = pt.subplots(1, len(data), figsize=(4 * len(data), 4)); ax = ax if isinstance(ax, np.ndarray) else np.array([ax]); plots = []
+    fig, ax = pt.subplots(shape[0], shape[1], figsize=(4 * shape[1], 4 * shape[0])); plots = []
+
+    # reshape the axes if necessary
+    ax = ax.flatten() if isinstance(ax, np.ndarray) else np.array([ax]);
+
+    # remove the axis if requested
+    if args.blank: [ax.axis("off") for ax in ax]
 
     # fill the plot array
     for i in range(len(data)):
@@ -107,7 +123,8 @@ if __name__ == "__main__":
     parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="Show this help message and exit.")
     parser.add_argument("-a", "--animate", type=int, help="Perform the animation with the specified column interval.")
     parser.add_argument("-b", "--blank", action="store_true", help="Remove the axes to create a blank frame for the plot.")
-    parser.add_argument("-d", "--dpi", type=int, default=60, help="The resolution of the plot.")
+    parser.add_argument("-d", "--dpi", type=int, default=100, help="The resolution of the plot.")
+    parser.add_argument("-e", "--offset", type=float, nargs="+", default=[], help="Vetrical offsets for the plotted lines.")
     parser.add_argument("-f", "--fps", type=int, default=30, help="Frames per second for the animations.")
     parser.add_argument("-l", "--legend", type=str, nargs="+", help="Add a legend to the plot.")
     parser.add_argument("-m", "--domain", type=float, nargs=2, default=[0, 0], help="Domain of the plot.")
@@ -116,6 +133,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--ratio", type=int, nargs=2, default=[8, 6], help="The data scaling factor.")
     parser.add_argument("-s", "--scale", type=float, default=1, help="The data scaling factor.")
     parser.add_argument("-t", "--title", type=str, help="The title of the plot.")
+    parser.add_argument("-v", "--value", type=float, nargs=2, default=[0, 0], help="Plotted value range.")
     parser.add_argument("-x", "--xlabel", type=str, help="The an x-axis label.")
     parser.add_argument("-y", "--ylabel", type=str, help="The an y-axis label.")
     parser.add_argument("--png", action="store_true", help="Save the plot as a png image.")
@@ -130,7 +148,7 @@ if __name__ == "__main__":
     args = parser.parse_args(); ax, fig, anm = onedim(args) if args.ndim == 1 else twodim(args)
 
     # reshape the axes if necessary
-    ax = ax if isinstance(ax, np.ndarray) else np.array([ax]); 
+    ax = ax.flatten() if isinstance(ax, np.ndarray) else np.array([ax]); 
 
     # set the title
     if args.title: [ax.set_title(args.title) for ax in ax]
@@ -150,8 +168,8 @@ if __name__ == "__main__":
     if args.pdf: fig.savefig(args.output + ".pdf", dpi=args.dpi)
 
     # save the animation
-    if args.gif: anm.save(args.output + ".gif", writer="imagemagick", fps=args.fps) # type: ignore
-    if args.mp4: anm.save(args.output + ".mp4", writer="ffmpeg",      fps=args.fps) # type: ignore
+    if args.gif: anm.save(args.output + ".gif", fps=args.fps) # type: ignore
+    if args.mp4: anm.save(args.output + ".mp4", fps=args.fps) # type: ignore
 
     # show the plot
     if not args.png and not args.pdf and not args.gif and not args.mp4: fig.canvas.manager.set_window_title("Data Plotter"); pt.show(); # type: ignore

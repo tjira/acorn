@@ -26,16 +26,22 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         pub const LogIntervals = struct {
             iteration: u32 = 1
         };
+        pub const Spectrum = struct {
+            gaussian_window_exponent: T = 0.001,
+            nearest_power_of_two: u32 = 2,
+            flip: bool = true
+        };
         pub const Write = struct {
-            autocorrelation_function: ?[]const u8 = null,
-            kinetic_energy:           ?[]const u8 = null,
-            momentum:                 ?[]const u8 = null,
-            population:               ?[]const u8 = null,
-            position:                 ?[]const u8 = null,
-            potential_energy:         ?[]const u8 = null,
-            spectrum:                 ?[]const u8 = null,
-            total_energy:             ?[]const u8 = null,
-            wavefunction:             ?[]const u8 = null
+            autocorrelation_function:             ?[]const u8 = null,
+            transformed_autocorrelation_function: ?[]const u8 = null,
+            kinetic_energy:                       ?[]const u8 = null,
+            momentum:                             ?[]const u8 = null,
+            population:                           ?[]const u8 = null,
+            position:                             ?[]const u8 = null,
+            potential_energy:                     ?[]const u8 = null,
+            spectrum:                             ?[]const u8 = null,
+            total_energy:                         ?[]const u8 = null,
+            wavefunction:                         ?[]const u8 = null
         };
 
         adiabatic: bool,
@@ -44,7 +50,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         potential: []const u8,
         time_step: T,
 
-        grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, write: Write = .{}
+        grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, spectrum: Spectrum = .{}, write: Write = .{}
     };
 }
 
@@ -103,27 +109,24 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
     const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential); const rdim = std.math.pow(u32, opt.grid.points, ndim);
 
+    var spectrum_points = std.math.pow(u32, 2, std.math.log2(opt.iterations + 1) + opt.spectrum.nearest_power_of_two); if (opt.spectrum.flip) spectrum_points *= 2;
+
     var output = try QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
-    var pop      = try Matrix(T).init(opt.iterations + 1,                                      1 + nstate, allocator); defer      pop.deinit();
-    var ekin     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     ekin.deinit();
-    var epot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     epot.deinit();
-    var etot     = try Matrix(T).init(opt.iterations + 1,                                      1 + 1     , allocator); defer     etot.deinit();
-    var position = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer position.deinit();
-    var momentum = try Matrix(T).init(opt.iterations + 1,                                      1 + ndim  , allocator); defer momentum.deinit();
-    var acf      = try Matrix(T).init(opt.iterations + 1,                                      1 + 2     , allocator); defer      acf.deinit();
-    var spectrum = try Matrix(T).init(2 * std.math.pow(usize, 2, std.math.log2(acf.rows) + 1), 1 + 1     , allocator); defer spectrum.deinit();
+    var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate, allocator); defer      pop.deinit(); pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     ekin.deinit(); ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     epot.deinit(); epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var etot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     etot.deinit(); etot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var position = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer position.deinit(); position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer momentum.deinit(); momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var acf      = try Matrix(T).init(opt.iterations + 1, 1 + 2     , allocator); defer      acf.deinit(); acf     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var acft     = try Matrix(T).init(spectrum_points,    1 + 2     , allocator); defer     acft.deinit();
+    var spectrum = try Matrix(T).init(spectrum_points,    1 + 1     , allocator); defer spectrum.deinit();
+
+    if ( opt.spectrum.flip) acft.column(0).linspace(-opt.time_step * asfloat(T, acft.rows / 2), opt.time_step * asfloat(T, acft.rows / 2 - 1));
+    if (!opt.spectrum.flip) acft.column(0).linspace(0,                                          opt.time_step * asfloat(T, acft.rows     - 1));
 
     var wavefunction: Matrix(T) = undefined;
-
-    pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    etot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    acf     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    spectrum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
     if (opt.write.wavefunction != null) wavefunction = try Matrix(T).init(rdim, ndim + 2 * (opt.iterations + 1) * nstate, allocator);
 
@@ -244,17 +247,18 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
         for (WOPT      ) |*e| e.deinit();
     }
 
-    if (opt.write.spectrum != null) try makeSpectrum(T, &spectrum, acf, allocator);
+    if (opt.write.spectrum != null or opt.write.transformed_autocorrelation_function != null) try makeSpectrum(T, opt.spectrum, &acft, &spectrum, acf, allocator);
 
-    if (opt.write.autocorrelation_function) |path| try          acf.write(path);
-    if (opt.write.kinetic_energy          ) |path| try         ekin.write(path);
-    if (opt.write.momentum                ) |path| try     momentum.write(path);
-    if (opt.write.population              ) |path| try          pop.write(path);
-    if (opt.write.position                ) |path| try     position.write(path);
-    if (opt.write.potential_energy        ) |path| try         epot.write(path);
-    if (opt.write.spectrum                ) |path| try     spectrum.write(path);
-    if (opt.write.total_energy            ) |path| try         etot.write(path);
-    if (opt.write.wavefunction            ) |path| try wavefunction.write(path);
+    if (opt.write.autocorrelation_function            ) |path| try          acf.write(path);
+    if (opt.write.kinetic_energy                      ) |path| try         ekin.write(path);
+    if (opt.write.momentum                            ) |path| try     momentum.write(path);
+    if (opt.write.population                          ) |path| try          pop.write(path);
+    if (opt.write.position                            ) |path| try     position.write(path);
+    if (opt.write.potential_energy                    ) |path| try         epot.write(path);
+    if (opt.write.spectrum                            ) |path| try     spectrum.write(path);
+    if (opt.write.total_energy                        ) |path| try         etot.write(path);
+    if (opt.write.transformed_autocorrelation_function) |path| try         acft.write(path);
+    if (opt.write.wavefunction                        ) |path| try wavefunction.write(path);
 
     if (opt.write.wavefunction != null) wavefunction.deinit();
 
@@ -292,15 +296,23 @@ pub fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_ste
 }
 
 /// Function to transform the autocorrelation function to a spectrum.
-pub fn makeSpectrum(comptime T: type, spectrum: *Matrix(T), acf: Matrix(T), allocator: std.mem.Allocator) !void {
+pub fn makeSpectrum(comptime T: type, opt: QuantumDynamicsOptions(T).Spectrum, acft: *Matrix(T), spectrum: *Matrix(T), acf: Matrix(T), allocator: std.mem.Allocator) !void {
     var transform = try Vector(Complex(T)).init(spectrum.rows,    allocator); defer transform.deinit();
     var frequency = try Matrix(T         ).init(spectrum.rows, 1, allocator); defer frequency.deinit();
 
     mpt.kgrid(T, &frequency, 0, asfloat(T, spectrum.rows) * (acf.at(1, 0) - acf.at(0, 0)), @intCast(spectrum.rows));
 
     for (0..acf.rows) |i| {
-        transform.ptr(acf.rows + i).* = Complex(T).init(acf.at(i, 1), -acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-0.001 * acf.at(i, 0) * acf.at(i, 0)), 0));
-        transform.ptr(acf.rows - i).* = Complex(T).init(acf.at(i, 1),  acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-0.001 * acf.at(i, 0) * acf.at(i, 0)), 0));
+        if (opt.flip) {
+            transform.ptr(acft.rows / 2 + i).* = Complex(T).init(acf.at(i, 1), -acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-opt.gaussian_window_exponent * acf.at(i, 0) * acf.at(i, 0)), 0));
+            transform.ptr(acft.rows / 2 - i).* = Complex(T).init(acf.at(i, 1),  acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-opt.gaussian_window_exponent * acf.at(i, 0) * acf.at(i, 0)), 0));
+        } else {
+            transform.ptr(i).* = Complex(T).init(acf.at(i, 1), -acf.at(i, 2)).mul(Complex(T).init(std.math.exp(-opt.gaussian_window_exponent * acf.at(i, 0) * acf.at(i, 0)), 0));
+        }
+    }
+
+    for (0..acft.rows) |i| {
+        acft.ptr(i, 1).* = transform.at(i).re; acft.ptr(i, 2).* = transform.at(i).im;
     }
 
     try ftr.fftn(T, transform.data, &[_]usize{transform.rows}, -1);

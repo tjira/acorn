@@ -9,4 +9,6 @@ zig build --release=fast -Dnocross && rm -rf result *.mat *.png && mkdir -p resu
     $BIN/${FILE%.*} && [[ -f ./analyze/${FILE%.*}.sh ]] && ./analyze/${FILE%.*}.sh
 
     mkdir result/${FILE%.*} && mv *.gif *.mat *.mp4 *.png result/${FILE%.*} 2>/dev/null
+
+    cd result/${FILE%.*} && zip data.zip *.mat && rm *.mat && cd ../..
 done

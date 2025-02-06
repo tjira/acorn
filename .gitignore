@@ -12,9 +12,11 @@ docs/**/*.pdf*
 
 education/**/*.mat*
 
+example/research/**/*.gif*
 example/research/**/*.mat*
-example/research/**/*.png*
 example/research/**/*.mp4*
+example/research/**/*.png*
+example/research/**/*.zip*
 
 *zig*/
 *sit*/
