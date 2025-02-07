@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PAGES=("electronicstructuremethods" "hartreefockmethod" "mollerplessetperturbationtheory" "configurationinteraction" "coupledcluster" "quantumdynamics" "realtimepropagation" "imaginarytimepropagation" "codesolutions")
+PAGES=("electronicstructuremethods" "hartreefockmethod" "mollerplessetperturbationtheory" "configurationinteraction" "coupledcluster" "quantumdynamics" "realtimepropagation" "imaginarytimepropagation" "generalizedeigenvalueproblem" "matrixexponential" "codesolutions")
 
 ACRONYMS=(
     "Restricted Hartree--Fock/RHF"
@@ -19,6 +19,10 @@ ACRONYMS=(
     "Time Dependent Schrödinger Equation/TDSE"
     "Direct Inversion in the Iterative Subspace/DIIS"
     "Molecular Spinorbital/MS"
+    "Fast Fourier Transform/FFT"
+    "Inverse Fourier Transform/IFT"
+    "Discrete Fourier Transform/DFT"
+    "Fourier Transform/FT"
     "Self-Consistent Field/SCF"
 )
 
@@ -212,6 +216,7 @@ water/RHF/STO-3G/-74.965901192180
 }\makeatother
 
 \usepackage{amsmath} % all the math environments and symbols
+\usepackage{amssymb} % additional math symbols
 \usepackage[toc,page]{appendix} % appendices
 \usepackage{attachfile} % embedding files in PDF
 \usepackage{braket} % braket notation
@@ -351,6 +356,8 @@ sed -i 's/\\section{Quantum Dynamics}/\\part{Quantum Dynamics}/g'               
 # replace section references
 sed -i 's/\\href{hartreefockmethod.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g'  docs/tex/main.tex
 sed -i 's/\\href{hartreefockmethod.html\\#hartreefock-method-and-integral-transform-coding-exercise}{here}/in Section \\ref{sec:hf_int_code_exercise}/g' docs/tex/main.tex
+sed -i 's/\\href{matrixexponential.html\\#matrix-exponential}{here}/in Section \\ref{sec:matrix_exponential}/g'                                          docs/tex/main.tex
+sed -i 's/\\href{generalizedeigenvalueproblem.html\\#generalized-eigenvalue-problem}{here}/in Section \\ref{sec:generalized_eigenvalue_problem}/g'       docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#code-solutions}{here}/in Section \\ref{sec:code_solutions}/g'                                                      docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#hartreefock-method}{here}/in Section \\ref{sec:hf_code_solution}/g'                                                docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#integral-transform}{here}/in Section \\ref{sec:int_code_solution}/g'                                               docs/tex/main.tex
@@ -385,7 +392,7 @@ done
 sed -i 's/\\section/\\chapter/g ; s/\\subsection/\\section/g ; s/\\subsubsection/\\subsection/g' docs/tex/main.tex
 
 # set the appendix
-sed -i 's/\\chapter{\\texorpdfstring{Code Solutions/\n\\begin{appendices}\\chapter{\\texorpdfstring{Code Solutions/' docs/tex/main.tex
+sed -i 's/\\chapter{\\texorpdfstring{Generalized Eigenvalue Problem/\n\\begin{appendices}\\chapter{\\texorpdfstring{Generalized Eigenvalue Problem/' docs/tex/main.tex
 
 # end the document
 cat >> docs/tex/main.tex << EOL

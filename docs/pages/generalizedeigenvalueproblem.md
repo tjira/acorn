@@ -6,7 +6,7 @@ nav_order: 1
 ---
 {% include mathjax.html %}
 
-# Generalized Eigenvalue Problem
+# Generalized Eigenvalue Problem<!--\label{sec:generalized_eigenvalue_problem}-->
 
 The generalized eigenvalue problem is a mathematical problem that arises in many areas of science and engineering. It is a generalization of the standard eigenvalue problem, where we seek the eigenvalues and eigenvectors of a square matrix. In the generalized eigenvalue problem, we consider two square matrices $\mathbf{A}$ and $\mathbf{B}$, and we seek the eigenvalues $\lambda$ and eigenvectors $\mathbf{x}$ that satisfy the equation
 
