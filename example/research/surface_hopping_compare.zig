@@ -49,7 +49,7 @@ pub fn main() !void {
 
         .adiabatic = true,
         .derivative_step = 0.001,
-        .iterations = 5000,
+        .iterations = 1000,
         .seed = 1,
         .time_step = 1,
         .trajectories = 5000,

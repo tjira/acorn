@@ -21,7 +21,7 @@ i\hbar\frac{\mathrm{d}}{\mathrm{d} t}\ket{\Psi\left(t\right)}=\hat{\mathbf{H}}\k
 where $i$ is the imaginary unit, $\hbar$ is the reduced Planck constant, $\ket{\Psi\left(t\right)}$ is the time dependent wavefunction, $\hat{\mathbf{H}}$ is the Hamiltonian and  $x$ represents the position of a quantum particle, such as an electron or proton. The solution of the Time Dependent Schrödinger Equation can be in general written as
 
 \begin{equation}
-\ket{\Psi\left(t\right)}=\hat{\mathbf{U}}\left(t\right)\ket{\Psi\left(t\right)},
+\ket{\Psi\left(t\right)}=\hat{\mathbf{U}}\left(t\right)\ket{\Psi\left(0\right)},
 \end{equation}
 
 where the operator $\hat{\mathbf{U}}$ is called a time evolution operator. Application of the propagator to a wavefunction is equivalent to evolving the wave function from time 0 to time $t$. The knowledge of the evolution operator is, therefore, critical for a description of dynamics in quantum systems.

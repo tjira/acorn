@@ -7,8 +7,9 @@
 /*.png*
 /*.xyz*
 
-docs/**/*.loc*
-docs/**/*.pdf*
+docs/**/*.lo*
+docs/**/*.pd*
+docs/**/*.py*
 
 education/**/*.mat*
 
