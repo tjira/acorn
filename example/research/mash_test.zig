@@ -12,15 +12,17 @@ pub fn main() !void {
         .log_intervals = .{
             .iteration = 50
         },
-        .write = .{
-            .population = "POPULATION_EXACT.mat",
-        },
 
         .grid = .{
             .limits = &[_]f64{-48, 144}, .points = 4096
         },
+
         .initial_conditions = .{
             .position = &[_]f64{-15}, .momentum = &[_]f64{35}, .gamma = 0.5, .state = 0, .mass = 2000
+        },
+
+        .write = .{
+            .population = "POPULATION_EXACT.mat",
         },
 
         .adiabatic = true,
@@ -34,9 +36,6 @@ pub fn main() !void {
         .log_intervals = .{
             .trajectory = 100, .iteration = 500
         },
-        .write = .{
-            .population_mean = "POPULATION_FSSH.mat",
-        },
 
         .initial_conditions = .{
             .position_mean = &[_]f64{-15.0},
@@ -45,8 +44,13 @@ pub fn main() !void {
             .momentum_std  = &[_]f64{0.5},
             .state = &[_]f64{1, 0}, .mass = &[_]f64{2000}
         },
+
         .fewest_switches = .{
             .quantum_substep = 1, .decoherence_alpha = null
+        },
+
+        .write = .{
+            .population_mean = "POPULATION_FSSH.mat",
         },
 
         .adiabatic = true,

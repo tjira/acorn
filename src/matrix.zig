@@ -90,11 +90,15 @@ pub fn Matrix(comptime T: type) type {
 
         /// Print the matrix to the given device.
         pub fn print(self: Matrix(T), device: anytype) !void {
-            try device.print("{d} {d}\n", .{self.rows, self.cols});
+            var buffered = std.io.bufferedWriter(device); var writer = buffered.writer();
+
+            try writer.print("{d} {d}\n", .{self.rows, self.cols});
 
             for (self.data, 1..) |e, i| {
-                try device.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
+                try writer.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
             }
+
+            try buffered.flush();
         }
 
         /// Access the element at the given row and column as a mutable reference.
