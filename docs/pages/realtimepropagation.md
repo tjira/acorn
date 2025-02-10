@@ -6,13 +6,13 @@ nav_order: 1
 ---
 {% include mathjax.html %}
 
-# Real Time Propagation
+# Real Time Propagation<!--\label{sec:real_time_propagation}-->
 
-Real time propagation is a computational approach used to study the time evolution of quantum systems according to the Time Dependent Schrödinger Equation. It is essential for modeling dynamic processes such as electronic excitations, molecular vibrations, and non equilibrium phenomena in quantum chemistry. By solving the wavefunction’s evolution step by step in real time, this method captures transient states and ultrafast reactions. However, due to the exponential growth of computational complexity, real time propagation is feasible only for small systems or simplified models.
+Real time propagation is a computational approach used to study the time evolution of quantum systems according to the Time-Dependent Schrödinger Equation. It is essential for modeling dynamic processes such as electronic excitations, molecular vibrations, and non equilibrium phenomena in quantum chemistry. By solving the wavefunction’s evolution step by step in real time, this method captures transient states and ultrafast reactions. However, due to the exponential growth of computational complexity, real time propagation is feasible only for small systems or simplified models.
 
 ## Theoretical Background
 
-The time evolution in quantum mechanics is governed by the Time Dependent Schrödinger Equation in the form
+The time evolution in quantum mechanics is governed by the Time-Dependent Schrödinger Equation in the form
 
 \begin{equation}\label{eq:tdse}
 \mathrm{i}\hbar\frac{\mathrm{d}}{\mathrm{d}t}\ket{\Psi\left(t\right)}=\hat{\mathbf{H}}\ket{\Psi\left(t\right)},
@@ -20,13 +20,13 @@ The time evolution in quantum mechanics is governed by the Time Dependent Schrö
 
 where $i$ is the imaginary unit, $\hbar$ is the reduced Planck constant, $\ket{\Psi\left(t\right)}$ is the time dependent wavefunction, $\hat{\mathbf{H}}$ is the Hamiltonian operator, which encodes the total energy of the system. In the position representation, one could write $\Psi\left(x,t\right)$, where $x$ is the position coordinate for a quantum particle such as an electron or proton.
 
-A general solution of the Time Dependent Schrödinger Equation can be written as
+A general solution of the Time-Dependent Schrödinger Equation can be written as
 
 \begin{equation}\label{eq:tdse_propagator}
 \ket{\Psi\left(t\right)}=\hat{\mathbf{U}}\left(t\right)\ket{\Psi\left(0\right)},
 \end{equation}
 
-where the operator $\hat{\mathbf{U}}$ is called a time evolution operator (propagator). The action if $\hat{\mathbf{U}}$ on the initial wavefunction $\ket{\Psi\left(0\right)}$ propagates the state from time $0$ to time $t$, carrying all the information about the time evolution of the system. The propagator is straightforward to find if the Hamiltonian $\hat{\mathbf{H}}$ does not depend on time. In this case, the formal solution to the Time Dependent Schrödinger Equation can be written as
+where the operator $\hat{\mathbf{U}}$ is called a time evolution operator (propagator). The action if $\hat{\mathbf{U}}$ on the initial wavefunction $\ket{\Psi\left(0\right)}$ propagates the state from time $0$ to time $t$, carrying all the information about the time evolution of the system. The propagator is straightforward to find if the Hamiltonian $\hat{\mathbf{H}}$ does not depend on time. In this case, the formal solution to the Time-Dependent Schrödinger Equation can be written as
 
 \begin{equation}\label{eq:tdse_explicit_propagator}
 \ket{\Psi\left(t\right)}=\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}t}\ket{\Psi\left(0\right)}.
@@ -106,3 +106,21 @@ which is valid for small $\Delta t$. Now we have everything we need to propagate
 \end{equation}
 
 where $\mathbf{T}$ is the kinetic matrix in the momentum space, and $\mathbf{V}$ is the potential matrix in the position space. The matrix exponential is now simply a mathematical problem and is described [here](matrixexponential.html#matrix-exponential).
+
+Now that we have the wavefunction an any given time, we can calculate observables, such as the density matrix, position, momentum, etc. The expectation value of position is trivial to calculate, since the wavefunction is already in the position space. The expectation value of momentum can be calculated by Fourier Transforming the wavefunction to the momentum space and multiplying by the momentum operator. The density matrix can be calculated by taking the outer product of the wavefunction with itself.
+
+### The Adiabatic Transform
+
+Sometimes, we would like to see the results from the dynamics in the adiabatic basis (i.e., the basis where the potential matrix $\mathbf{V}$ is diagonal). Most of the quantum chemistry software for molecular dynamics use the adiabatic basis, since the diabatic basis is not known. For that reason, most of the surface hopping algorithms also work in the adiabatic basis so it is convenient to know how to transform the wavefunction from the diabatic basis to the adiabatic basis to compare the results. To find the transformation from the diabatic basis to the adiabatic basis, we need to find a matrix $\mathbf{U}$ that diagonalizes the potential matrix $\mathbf{V}$. To do that, we solve the eigenvalue problem
+
+\begin{equation}
+\mathbf{V}\mathbf{U}=\mathbf{U}\mathbf{E},
+\end{equation}
+
+for each coordinate of the grid, where $\mathbf{E}$ is a diagonal matrix with the eigenvalues of $\mathbf{V}$ on the diagonal. The columns of $\mathbf{U}$ are the eigenvectors of $\mathbf{V}$. The matrix $\mathbf{U}$ is the transformation matrix from the diabatic basis to the adiabatic basis. To transform the wavefunction from the diabatic basis to the adiabatic basis, we multiply the wavefunction by the transformation matrix $\mathbf{U}^\dagger$ as
+
+\begin{equation}
+\ket{\Psi_{\text{adiabatic}}\left(x,t\right)}=\mathbf{U}^\dagger\ket{\Psi_{\text{diabatic}}\left(x,t\right)}.
+\end{equation}
+
+The transformation matrix $\mathbf{U}$ can be used to transform matrix representations of any operator from the diabatic basis to the adiabatic basis.

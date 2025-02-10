@@ -16,7 +16,7 @@ ACRONYMS=(
     "Coupled Cluster Singles and Doubles/CCSD"
     "Coupled Cluster Doubles/CCD"
     "Coupled Cluster/CC"
-    "Time Dependent Schrödinger Equation/TDSE"
+    "Time-Dependent Schrödinger Equation/TDSE"
     "Direct Inversion in the Iterative Subspace/DIIS"
     "Molecular Spinorbital/MS"
     "Fast Fourier Transform/FFT"
@@ -354,6 +354,7 @@ sed -i 's/\\section{Electronic Structure Methods}/\\part{Electronic Structure Me
 sed -i 's/\\section{Quantum Dynamics}/\\part{Quantum Dynamics}/g'                         docs/tex/main.tex
 
 # replace section references
+sed -i 's/\\href{realtimepropagation.html}{here}/in Section \\ref{sec:real_time_propagation}/g'  docs/tex/main.tex
 sed -i 's/\\href{hartreefockmethod.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g'  docs/tex/main.tex
 sed -i 's/\\href{hartreefockmethod.html\\#hartreefock-method-and-integral-transform-coding-exercise}{here}/in Section \\ref{sec:hf_int_code_exercise}/g' docs/tex/main.tex
 sed -i 's/\\href{matrixexponential.html\\#matrix-exponential}{here}/in Section \\ref{sec:matrix_exponential}/g'                                          docs/tex/main.tex
