@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install System Packages
-        run: sudo apt install imagemagick
+        run: sudo apt install ffmpeg imagemagick
 
       - name: Install Python Packages
         run: pip install matplotlib numpy

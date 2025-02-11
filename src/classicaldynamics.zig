@@ -128,8 +128,6 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     const lzsh = opt.landau_zener    != null;
     const mash = opt.spin_mapping    != null;
 
-    if (mash and nstate > 2) return error.InvalidNumberOfStatesForSpinMapping;
-
     if ((fssh and lzsh and mash) or (fssh and lzsh) or (fssh and mash) or (lzsh and mash)) {
         return error.MultipleHoppingMechanisms;
     }
@@ -156,18 +154,19 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         var UCS = try Matrix(T).init(nstate, nstate, allocator); defer UCS.deinit();
         var TDC = try Matrix(T).init(nstate, nstate, allocator); defer TDC.deinit();
 
-        var P = try Vector(T         ).init(nstate, allocator); defer P.deinit();
-        var C = try Vector(Complex(T)).init(nstate, allocator); defer C.deinit();
-        var S = try Vector(T         ).init(3     , allocator); defer S.deinit();
+        var P  = try Vector(T         ).init(nstate    ,    allocator); defer P.deinit();
+        var C  = try Vector(Complex(T)).init(nstate    ,    allocator); defer C.deinit();
+        var S  = try Matrix(T         ).init(nstate - 1, 3, allocator); defer S.deinit();
+        var SI = try Matrix(usize     ).init(nstate - 1, 2, allocator); defer SI.deinit();
 
         var KC1 = try Vector(Complex(T)).init(C.rows, allocator); defer KC1.deinit();
         var KC2 = try Vector(Complex(T)).init(C.rows, allocator); defer KC2.deinit();
         var KC3 = try Vector(Complex(T)).init(C.rows, allocator); defer KC3.deinit();
         var KC4 = try Vector(Complex(T)).init(C.rows, allocator); defer KC4.deinit();
 
-        var SP = try Matrix(T).init(3, 3, allocator); defer SP.deinit();
-        var SN = try Vector(T).init(3,    allocator); defer SN.deinit();
-        var S0 = try Vector(T).init(3,    allocator); defer S0.deinit();
+        var SP = try Matrix(T).init(3,          3, allocator); defer SP.deinit();
+        var SN = try Matrix(T).init(nstate - 1, 3, allocator); defer SN.deinit();
+        var S0 = try Matrix(T).init(nstate - 1, 3, allocator); defer S0.deinit();
 
         var U3  = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer  U3[0].deinit(); defer  U3[1].deinit(); defer U3[2].deinit();
         var UC2 = [2]Matrix(T){try U.clone(), try U.clone()               }; defer UC2[0].deinit(); defer UC2[1].deinit()                      ;
@@ -184,7 +183,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
             a.fill(0); @memcpy(v.data, p.data); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j];
 
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
-            if (mash) {try initialBlochVector(T, &S, opt.spin_mapping.?, s, rand_bloc);  }
+            if (mash) {try initialBlochVector(T, &S, &SI, opt.spin_mapping.?, s, rand_bloc);  }
 
             @memcpy(S0.data, S.data); var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
@@ -203,14 +202,14 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if (mash and j > 1) ns = try spinMapping(T, &S, opt.spin_mapping.?, U, TDC, s, opt.time_step, rand_jump, &SP, &SN);
+                if (mash and j > 1) ns = try spinMapping(T, &S, &SI, opt.spin_mapping.?, U, TDC, s, opt.time_step, rand_jump, &SP, &SN);
 
                 if (s != ns and Ekin >= U.at(ns, ns) - U.at(s, s)) {
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
                 }
 
                 if (mash and opt.spin_mapping.?.quantum_jump_iteration != null and contains(u32, opt.spin_mapping.?.quantum_jump_iteration.?, @intCast(j))) {
-                    try initialBlochVector(T, &S, opt.spin_mapping.?, s, rand_bloc);
+                    try initialBlochVector(T, &S, &SI, opt.spin_mapping.?, s, rand_bloc);
                 }
 
                 if (opt.write.population_mean               != null)  pop.ptr(j, 1 + s).* += 1                                                                  ;
@@ -405,24 +404,32 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDy
 }
 
 /// Function to initialize the initial vector on the Bloch sphere for the spin mapping methods.
-pub fn initialBlochVector(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random) !void {
-    S.ptr(0).* = 0; S.ptr(1).* = 0; S.ptr(2).* = if (s == 1) 1 else -1;
+pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random) !void {
+    S.ptr(0, 0).* = 0; S.ptr(0, 1).* = 0; S.ptr(0, 2).* = if (s == 1) 1 else -1;
+
+    for (0..SI.rows) |i| {
+        SI.ptr(i, 0).* = s; SI.ptr(i, 1).* = if (i >= s) i + 1 else i;
+    }
+
+    try SI.print(std.io.getStdOut().writer());
 
     if (!opt.fewest_switches) {
 
         const phi = 2 * std.math.pi * rand.float(T);
 
-        const cos_theta = S.at(2) * std.math.sqrt(rand.float(T));
+        const cos_theta = std.math.sqrt(rand.float(T));
         const sin_theta = std.math.sqrt(1 - cos_theta * cos_theta);
 
-        S.ptr(0).* = sin_theta * std.math.cos(phi);
-        S.ptr(1).* = sin_theta * std.math.sin(phi);
-        S.ptr(2).* = cos_theta;
+        S.ptr(0, 0).* = sin_theta * std.math.cos(phi);
+        S.ptr(0, 1).* = sin_theta * std.math.sin(phi);
+        S.ptr(0, 2).* = cos_theta;
     }
 }
 
 /// Function to propagate the vector on the Bloch sphere for the spin mapping methods. The function returns the new state, if a switch occurs.
-pub fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random, SP: *Matrix(T), SN: *Vector(T)) !u32 {
+pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random, SP: *Matrix(T), SN: *Matrix(T)) !u32 {
+    var sn = s;
+
     const OmegaExp = struct { fn get (E: *Matrix(T), VV: T, TT: T) void {
         const a = VV * VV + 4 * TT * TT; const b = Complex(T).init(0, std.math.sqrt(a));
         
@@ -439,18 +446,25 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), opt: ClassicalDynamicsOption
         E.ptr(2, 2).* = (VV * VV + 4 * TT * TT * coshb.re) / a;
     }};
 
-    OmegaExp.get(SP, (U.at(1, 1) - U.at(0, 0)) * time_step, TDC.at(0, 1) * time_step);
+    for (0..S.rows) |i| {
 
-    const SM = S.matrix(); var SNM = SN.matrix();
+        OmegaExp.get(SP, (U.at(1, 1) - U.at(0, 0)) * time_step, TDC.at(0, 1) * time_step);
 
-    mat.mm(T, &SNM, SP.*, SM); @memcpy(S.data, SN.data);
+        var SM = S.row(i); var SNM = SN.row(i); std.mem.swap(usize, &SM.rows, &SM.cols); std.mem.swap(usize, &SNM.rows, &SNM.cols);
 
-    const rn = rand.float(T); var sn = s; if (opt.fewest_switches) {
-        if (s == sn and s == 0 and rn < -2 * TDC.at(0, 1) * S.at(0) / (1 - S.at(2)) * time_step) sn = 1;
-        if (s == sn and s == 1 and rn <  2 * TDC.at(0, 1) * S.at(0) / (1 + S.at(2)) * time_step) sn = 0;
+        mat.mm(T, &SNM, SP.*, SM);
     }
 
-    if (!opt.fewest_switches) {return if (S.at(2) > 0) 1 else 0;} else return sn;
+    const rn = rand.float(T); if (opt.fewest_switches) {
+        if (s == sn and s == 0 and rn < -2 * TDC.at(0, 1) * SN.at(0, 0) / (1 - SN.at(0, 2)) * time_step) sn = 1;
+        if (s == sn and s == 1 and rn <  2 * TDC.at(0, 1) * SN.at(0, 0) / (1 + SN.at(0, 2)) * time_step) sn = 0;
+    }
+
+    if (!opt.fewest_switches) for (0..S.rows) |i| if (S.at(i, 2) * SN.at(i, 2) < 0) {
+        sn = if (SI.at(i, 0) == s) @intCast(SI.at(i, 1)) else @intCast(SI.at(i, 0));
+    };
+
+    @memcpy(S.data, SN.data); return sn;
 }
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.
@@ -503,7 +517,7 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
 }
 
 /// Function to print the results of a single iteration.
-pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Vector(T), mass: []const T, fssh: bool, mash: bool) !void {
+pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Matrix(T), mass: []const T, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, s});
 
     for (0..min(usize, r.rows, 3)) |k| {
@@ -526,8 +540,8 @@ pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: 
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", C.at(k).magnitude() * C.at(k).magnitude()});
     };
 
-    if (mash) for (0..S.rows) |k| {
-        try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", S.at(k)});
+    if (mash) for (0..S.cols) |k| {
+        try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", S.at(0, k)});
     };
 
     try std.io.getStdOut().writer().print("]\n", .{});

@@ -6,7 +6,7 @@ zig build --release=fast -Dnocross && rm -rf result *.mat *.png && mkdir -p resu
 
     [[ "$#" -eq 1 ]] && [[ $1 != $FILE ]] && continue;
 
-    $BIN/${FILE%.*} && [[ -f ./analyze/${FILE%.*}.sh ]] && ./analyze/${FILE%.*}.sh
+    $BIN/${FILE%.*} ; [[ -f ./analyze/${FILE%.*}.sh ]] && ./analyze/${FILE%.*}.sh
 
     mkdir result/${FILE%.*} && mv *.gif *.mat *.mp4 *.png result/${FILE%.*} 2>/dev/null
 

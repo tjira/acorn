@@ -8,7 +8,7 @@ const allocator = std.heap.page_allocator;
 pub fn main() !void {
     try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
 
-    const opt_exact = quantum_dynamics.QuantumDynamicsOptions(f64){
+    const opt_exact_tully1D_2 = quantum_dynamics.QuantumDynamicsOptions(f64){
         .log_intervals = .{
             .iteration = 50
         },
@@ -22,7 +22,7 @@ pub fn main() !void {
         },
 
         .write = .{
-            .population = "POPULATION_EXACT.mat",
+            .population = "POPULATION_EXACT_tully1D_2.mat",
         },
 
         .adiabatic = true,
@@ -32,7 +32,7 @@ pub fn main() !void {
         .time_step = 10,
     };
 
-    const opt_fssh = classical_dynamics.ClassicalDynamicsOptions(f64){
+    const opt_fssh_tully1D_2 = classical_dynamics.ClassicalDynamicsOptions(f64){
         .log_intervals = .{
             .trajectory = 100, .iteration = 500
         },
@@ -50,7 +50,7 @@ pub fn main() !void {
         },
 
         .write = .{
-            .population_mean = "POPULATION_FSSH.mat",
+            .population_mean = "POPULATION_FSSH_tully1D_2.mat",
         },
 
         .adiabatic = true,
@@ -60,23 +60,39 @@ pub fn main() !void {
         .trajectories = 1000,
     };
 
-    var opt_mash = opt_fssh;
-    opt_mash.write.population_mean = "POPULATION_MASH.mat";
-    opt_mash.trajectories = 10000;
-    opt_mash.fewest_switches = null;
-    opt_mash.spin_mapping = .{
+
+    var opt_mash_tully1D_2 = opt_fssh_tully1D_2;
+    opt_mash_tully1D_2.write.population_mean = "POPULATION_MASH_tully1D_2.mat";
+    opt_mash_tully1D_2.fewest_switches = null;
+    opt_mash_tully1D_2.spin_mapping = .{
         .fewest_switches = false, .quantum_jump_iteration = null
     };
 
-    var opt_mash_fssh = opt_fssh;
-    opt_mash_fssh.write.population_mean = "POPULATION_MASH_FSSH.mat";
-    opt_mash_fssh.fewest_switches = null;
-    opt_mash_fssh.spin_mapping = .{
+    var opt_mash_fssh_tully1D_2 = opt_fssh_tully1D_2;
+    opt_mash_fssh_tully1D_2.write.population_mean = "POPULATION_MASH_FSSH_tully1D_2.mat";
+    opt_mash_fssh_tully1D_2.fewest_switches = null;
+    opt_mash_fssh_tully1D_2.spin_mapping = .{
         .fewest_switches = true, .quantum_jump_iteration = null
     };
 
-    const output_exact      =   try quantum_dynamics.run(f64, opt_exact    , true, allocator); defer     output_exact.deinit();
-    const output_fssh       = try classical_dynamics.run(f64, opt_fssh     , true, allocator); defer      output_fssh.deinit();
-    const output_mash       = try classical_dynamics.run(f64, opt_mash     , true, allocator); defer      output_mash.deinit();
-    const output_mash_fssh  = try classical_dynamics.run(f64, opt_mash_fssh, true, allocator); defer output_mash_fssh.deinit();
+    var opt_exact_tripleState1D_3 = opt_exact_tully1D_2; opt_exact_tripleState1D_3.potential = "tripleState1D_3";
+    opt_exact_tripleState1D_3.write.population = "POPULATION_EXACT_tripleState1D_3.mat";
+    opt_exact_tripleState1D_3.initial_conditions.state = 1;
+
+    var opt_fssh_tripleState1D_3 = opt_fssh_tully1D_2; opt_fssh_tripleState1D_3.potential = "tripleState1D_3";
+    opt_fssh_tripleState1D_3.write.population_mean = "POPULATION_FSSH_tripleState1D_3.mat";
+    opt_fssh_tripleState1D_3.initial_conditions.state = &[_]f64{0, 0, 1};
+
+    var opt_mash_tripleState1D_3 = opt_mash_tully1D_2; opt_mash_tripleState1D_3.potential = "tripleState1D_3";
+    opt_mash_tripleState1D_3.write.population_mean = "POPULATION_MASH_tripleState1D_3.mat";
+    opt_mash_tripleState1D_3.initial_conditions.state = &[_]f64{0, 0, 1};
+
+    const output_exact_tully1D_2     =   try quantum_dynamics.run(f64, opt_exact_tully1D_2    , true, allocator); defer     output_exact_tully1D_2.deinit();
+    const output_fssh_tully1D_2      = try classical_dynamics.run(f64, opt_fssh_tully1D_2     , true, allocator); defer      output_fssh_tully1D_2.deinit();
+    const output_mash_tully1D_2      = try classical_dynamics.run(f64, opt_mash_tully1D_2     , true, allocator); defer      output_mash_tully1D_2.deinit();
+    const output_mash_fssh_tully1D_2 = try classical_dynamics.run(f64, opt_mash_fssh_tully1D_2, true, allocator); defer output_mash_fssh_tully1D_2.deinit();
+
+    const output_exact_tripleState1D_3 =   try quantum_dynamics.run(f64, opt_exact_tripleState1D_3, true, allocator); defer output_exact_tripleState1D_3.deinit();
+    const output_fssh_tripleState1D_3  = try classical_dynamics.run(f64, opt_fssh_tripleState1D_3 , true, allocator); defer  output_fssh_tripleState1D_3.deinit();
+    const output_mash_tripleState1D_3  = try classical_dynamics.run(f64, opt_mash_tripleState1D_3 , true, allocator); defer  output_mash_tripleState1D_3.deinit();
 }
