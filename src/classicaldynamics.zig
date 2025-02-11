@@ -411,19 +411,19 @@ pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), o
         SI.ptr(i, 0).* = s; SI.ptr(i, 1).* = if (i >= s) i + 1 else i;
     }
 
-    try SI.print(std.io.getStdOut().writer());
+    // try SI.print(std.io.getStdOut().writer());
 
-    if (!opt.fewest_switches) {
+    if (!opt.fewest_switches) for (0..S.rows) |i| {
 
         const phi = 2 * std.math.pi * rand.float(T);
 
         const cos_theta = std.math.sqrt(rand.float(T));
         const sin_theta = std.math.sqrt(1 - cos_theta * cos_theta);
 
-        S.ptr(0, 0).* = sin_theta * std.math.cos(phi);
-        S.ptr(0, 1).* = sin_theta * std.math.sin(phi);
-        S.ptr(0, 2).* = cos_theta;
-    }
+        S.ptr(i, 0).* = sin_theta * std.math.cos(phi);
+        S.ptr(i, 1).* = sin_theta * std.math.sin(phi);
+        S.ptr(i, 2).* = cos_theta;
+    };
 }
 
 /// Function to propagate the vector on the Bloch sphere for the spin mapping methods. The function returns the new state, if a switch occurs.
@@ -448,7 +448,9 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), opt: Cla
 
     for (0..S.rows) |i| {
 
-        OmegaExp.get(SP, (U.at(1, 1) - U.at(0, 0)) * time_step, TDC.at(0, 1) * time_step);
+        const nu = max(SI.at(i, 0), SI.at(i, 1)); const nd = min(SI.at(i, 0), SI.at(i, 1));
+        
+        OmegaExp.get(SP, (U.at(nu, nu) - U.at(nd, nd)) * time_step, TDC.at(nd, nu) * time_step);
 
         var SM = S.row(i); var SNM = SN.row(i); std.mem.swap(usize, &SM.rows, &SM.cols); std.mem.swap(usize, &SNM.rows, &SNM.cols);
 
@@ -460,9 +462,17 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), opt: Cla
         if (s == sn and s == 1 and rn <  2 * TDC.at(0, 1) * SN.at(0, 0) / (1 + SN.at(0, 2)) * time_step) sn = 0;
     }
 
-    if (!opt.fewest_switches) for (0..S.rows) |i| if (S.at(i, 2) * SN.at(i, 2) < 0) {
-        sn = if (SI.at(i, 0) == s) @intCast(SI.at(i, 1)) else @intCast(SI.at(i, 0));
-    };
+    if (!opt.fewest_switches) {
+
+        for (0..S.rows) |i| if (S.at(i, 2) * SN.at(i, 2) < 0) {
+            sn = if (SI.at(i, 0) == s) @intCast(SI.at(i, 1)) else @intCast(SI.at(i, 0));
+        };
+
+        for (0..SI.rows) |i| {
+            if (SI.at(i, 0) == s and SI.at(i, 1) != sn) SI.ptr(i, 0).* = sn;
+            if (SI.at(i, 1) == s and SI.at(i, 0) != sn) SI.ptr(i, 1).* = sn;
+        }
+    }
 
     @memcpy(S.data, SN.data); return sn;
 }
@@ -520,7 +530,7 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
 pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Matrix(T), mass: []const T, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, s});
 
-    for (0..min(usize, r.rows, 3)) |k| {
+    for (0..min(r.rows, 3)) |k| {
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", r.at(k)});
     }
 
@@ -528,7 +538,7 @@ pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: 
 
     try std.io.getStdOut().writer().print("] [", .{});
 
-    for (0..min(usize, v.rows, 3)) |k| {
+    for (0..min(v.rows, 3)) |k| {
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", v.at(k) * mass[k]});
     }
 
@@ -551,16 +561,16 @@ pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: 
 pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});
 
-    if (ndim > 1) for (0..min(usize, ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
+    if (ndim > 1) for (0..min(ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
 
     if (ndim > 3) try std.io.getStdOut().writer().print("     ", .{}); try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"});
 
-    if (ndim > 1) for (0..min(usize, ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
+    if (ndim > 1) for (0..min(ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
 
     if (ndim > 3) try std.io.getStdOut().writer().print("     ", .{}); try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"});
 
-    if (fssh) {for (0..min(usize, nstate, 4) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});} try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}
-    if (mash) {for (0..2                        ) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});} try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}
+    if (fssh) {for (0..min(nstate, 4) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});} try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}
+    if (mash) {for (0..2                 ) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});} try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}
 
     try std.io.getStdOut().writer().print("\n", .{});
 }

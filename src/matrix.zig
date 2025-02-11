@@ -74,7 +74,7 @@ pub fn Matrix(comptime T: type) type {
         pub fn identity(self: Matrix(T)) void {
             self.fill(0);
 
-            for (0..min(usize, self.rows, self.cols)) |i| {
+            for (0..min(self.rows, self.cols)) |i| {
                 self.ptr(i, i).* = 1;
             }
         }

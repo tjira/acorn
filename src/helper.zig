@@ -38,12 +38,12 @@ pub fn istruct(comptime T: type) bool {
 }
 
 /// Return the maximum of two numbers
-pub fn max(comptime T: type, a: T, b: T) T {
+pub fn max(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a > b) a else b;
 }
 
 /// Return the minimum of two numbers
-pub fn min(comptime T: type, a: T, b: T) T {
+pub fn min(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a < b) a else b;
 }
 

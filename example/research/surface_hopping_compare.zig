@@ -241,9 +241,6 @@ pub fn main() !void {
         const output_fssh  = try classical_dynamics.run(f64, opt_fssh , true, allocator); defer  output_fssh.deinit();
         const output_ktsh  = try classical_dynamics.run(f64, opt_ktsh , true, allocator); defer  output_ktsh.deinit();
         const output_lzsh  = try classical_dynamics.run(f64, opt_lzsh , true, allocator); defer  output_lzsh.deinit();
-
-        if (!std.mem.eql(u8, potential[0..6], "triple")) {
-            const output_mash  = try classical_dynamics.run(f64, opt_mash , true, allocator); defer output_mash.deinit();
-        }
+        const output_mash  = try classical_dynamics.run(f64, opt_mash , true, allocator); defer  output_mash.deinit();
     };
 }
