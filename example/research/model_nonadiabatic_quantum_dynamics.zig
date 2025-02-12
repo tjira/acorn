@@ -18,7 +18,7 @@ pub fn main() !void {
         },
 
         .initial_conditions = .{
-            .position = &[_]f64{-15}, .momentum = &[_]f64{20}, .gamma = 2, .state = 1, .mass = 2000
+            .position = &[_]f64{-15}, .momentum = &[_]f64{35}, .gamma = 2, .state = 1, .mass = 2000
         },
 
         .write = .{
@@ -27,7 +27,7 @@ pub fn main() !void {
         },
 
         .adiabatic = false,
-        .iterations = 350,
+        .iterations = 200,
         .mode = &[_]u32{0, 1},
         .potential = "tully1D_1",
         .time_step = 10,

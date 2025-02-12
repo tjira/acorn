@@ -89,7 +89,7 @@ pub fn main() !void {
         opt_fssh.fewest_switches  = .{.quantum_substep = 10, .decoherence_alpha = null  };
         opt_ktsh.fewest_switches  = .{.quantum_substep = 10, .decoherence_alpha = null  };
         opt_lzsh.landau_zener     = .{                                                  };
-        opt_mash.spin_mapping     = .{.fewest_switches = false                          };
+        opt_mash.spin_mapping     = .{.quantum_jump_iteration = null                    };
 
         opt_exact.initial_conditions.momentum      = &[_]f64{@as(f64, @floatFromInt(p))};
         opt_fssh.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
@@ -98,7 +98,7 @@ pub fn main() !void {
         opt_mash.initial_conditions.momentum_mean  = &[_]f64{@as(f64, @floatFromInt(p))};
 
         opt_fssh.time_derivative_coupling  = "numeric";
-        opt_ktsh.time_derivative_coupling = "baeckan";
+        opt_ktsh.time_derivative_coupling  = "baeckan";
         opt_mash.time_derivative_coupling  = "numeric";
 
         const  diabatic_potential = try allocator.alloc(u8, 23 + potential.len); defer allocator.free(diabatic_potential);

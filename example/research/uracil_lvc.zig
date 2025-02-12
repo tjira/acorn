@@ -47,6 +47,7 @@ pub fn main() !void {
     };
 
     var opt_lzsh_8D = opt_fssh_8D; opt_lzsh_8D.fewest_switches = null; opt_lzsh_8D.landau_zener = .{}; opt_lzsh_8D.write.population_mean = "POPULATION_LZSH_8D.mat";
+    var opt_mash_8D = opt_fssh_8D; opt_mash_8D.fewest_switches = null; opt_mash_8D.spin_mapping = .{}; opt_mash_8D.write.population_mean = "POPULATION_MASH_8D.mat";
 
     var opt_ktsh_8D = opt_fssh_8D; opt_ktsh_8D.time_derivative_coupling = "baeckan"; opt_ktsh_8D.write.population_mean = "POPULATION_KTSH_8D.mat";
 
@@ -330,4 +331,5 @@ pub fn main() !void {
     const output_fssh_8D = try classical_dynamics.run(f64, opt_fssh_8D , true, allocator); defer output_fssh_8D.deinit();
     const output_lzsh_8D = try classical_dynamics.run(f64, opt_lzsh_8D , true, allocator); defer output_lzsh_8D.deinit();
     const output_ktsh_8D = try classical_dynamics.run(f64, opt_ktsh_8D , true, allocator); defer output_ktsh_8D.deinit();
+    const output_mash_8D = try classical_dynamics.run(f64, opt_mash_8D , true, allocator); defer output_mash_8D.deinit();
 }

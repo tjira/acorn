@@ -2,7 +2,7 @@
 
 $PLOT POPULATION_FSSH_8D.mat:0,1,2 misc/uracil_lvc/8D_D0_AFSSH-94.dat misc/uracil_lvc/8D_D1_AFSSH-94.dat misc/uracil_lvc/8D_D2_AFSSH-94.dat --legend "D0 (FSSH)" "D1 (FSSH)" "D2 (FSSH)" "D0 (REF A-FSSH)" "D1 (REF A-FSSH)" "D2 (REF A-FSSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_REFERENCE_AFSSH --png
 
-$PLOT POPULATION_FSSH_8D.mat:0 POPULATION_LZSH_8D.mat:0 POPULATION_KTSH_8D.mat:0 misc/uracil_lvc/8D_D0_MCTDH.dat --legend "D0 (FSSH)" "D0 (LZSH)" "D0 (KTSH)" "D0 (MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_D0_COMPARISON --png
+$PLOT POPULATION_FSSH_8D.mat:0 POPULATION_LZSH_8D.mat:0 POPULATION_KTSH_8D.mat:0 POPULATION_MASH_8D.mat:0 misc/uracil_lvc/8D_D0_MCTDH.dat --legend "D0 (FSSH)" "D0 (LZSH)" "D0 (KTSH)" "D0 (MASH)" "D0 (MCTDH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_8D_D0_COMPARISON --png
 
 $PLOT ADIABATIC_POTENTIAL_12D_Q3.mat:0,5,10,15  --legend "D0" "D1" "D2" "D3" --xlabel "\$q_{13}$" --ylabel "Energy (a.u)" --output ADIABATIC_POTENTIAL_12D_Q3  --png
 $PLOT ADIABATIC_POTENTIAL_12D_Q7.mat:0,5,10,15  --legend "D0" "D1" "D2" "D3" --xlabel "\$q_{17}$" --ylabel "Energy (a.u)" --output ADIABATIC_POTENTIAL_12D_Q7  --png

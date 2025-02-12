@@ -35,7 +35,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         pub const LandauZener = struct {
         };
         pub const SpinMapping = struct {
-            fewest_switches: bool = false, quantum_jump_iteration: ?[]const u32 = null
+            quantum_jump_iteration: ?[]const u32 = null
         };
         pub const LogIntervals = struct {
             trajectory: u32 = 1, iteration: u32 = 1
@@ -183,7 +183,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
             a.fill(0); @memcpy(v.data, p.data); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j];
 
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
-            if (mash) {try initialBlochVector(T, &S, &SI, opt.spin_mapping.?, s, rand_bloc);  }
+            if (mash) {try initialBlochVector(T, &S, &SI, s, rand_bloc);  }
 
             @memcpy(S0.data, S.data); var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
@@ -202,14 +202,14 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if (mash and j > 1) ns = try spinMapping(T, &S, &SI, opt.spin_mapping.?, U, TDC, s, opt.time_step, rand_jump, &SP, &SN);
+                if (mash and j > 1) ns = try spinMapping(T, &S, &SI, U, TDC, s, opt.time_step, &SP, &SN);
 
                 if (s != ns and Ekin >= U.at(ns, ns) - U.at(s, s)) {
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
                 }
 
                 if (mash and opt.spin_mapping.?.quantum_jump_iteration != null and contains(u32, opt.spin_mapping.?.quantum_jump_iteration.?, @intCast(j))) {
-                    try initialBlochVector(T, &S, &SI, opt.spin_mapping.?, s, rand_bloc);
+                    try initialBlochVector(T, &S, &SI, s, rand_bloc);
                 }
 
                 if (opt.write.population_mean               != null)  pop.ptr(j, 1 + s).* += 1                                                                  ;
@@ -404,16 +404,12 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDy
 }
 
 /// Function to initialize the initial vector on the Bloch sphere for the spin mapping methods.
-pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), opt: ClassicalDynamicsOptions(T).SpinMapping, s: u32, rand: std.Random) !void {
-    S.ptr(0, 0).* = 0; S.ptr(0, 1).* = 0; S.ptr(0, 2).* = if (s == 1) 1 else -1;
-
+pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), s: u32, rand: std.Random) !void {
     for (0..SI.rows) |i| {
         SI.ptr(i, 0).* = s; SI.ptr(i, 1).* = if (i >= s) i + 1 else i;
     }
 
-    // try SI.print(std.io.getStdOut().writer());
-
-    if (!opt.fewest_switches) for (0..S.rows) |i| {
+    for (0..S.rows) |i| {
 
         const phi = 2 * std.math.pi * rand.float(T);
 
@@ -423,11 +419,11 @@ pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), o
         S.ptr(i, 0).* = sin_theta * std.math.cos(phi);
         S.ptr(i, 1).* = sin_theta * std.math.sin(phi);
         S.ptr(i, 2).* = cos_theta;
-    };
+    }
 }
 
 /// Function to propagate the vector on the Bloch sphere for the spin mapping methods. The function returns the new state, if a switch occurs.
-pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), opt: ClassicalDynamicsOptions(T).SpinMapping, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, rand: std.Random, SP: *Matrix(T), SN: *Matrix(T)) !u32 {
+pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, SP: *Matrix(T), SN: *Matrix(T)) !u32 {
     var sn = s;
 
     const OmegaExp = struct { fn get (E: *Matrix(T), VV: T, TT: T) void {
@@ -457,21 +453,13 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), opt: Cla
         mat.mm(T, &SNM, SP.*, SM);
     }
 
-    const rn = rand.float(T); if (opt.fewest_switches) {
-        if (s == sn and s == 0 and rn < -2 * TDC.at(0, 1) * SN.at(0, 0) / (1 - SN.at(0, 2)) * time_step) sn = 1;
-        if (s == sn and s == 1 and rn <  2 * TDC.at(0, 1) * SN.at(0, 0) / (1 + SN.at(0, 2)) * time_step) sn = 0;
-    }
+    for (0..S.rows) |i| if (S.at(i, 2) * SN.at(i, 2) < 0) {
+        sn = if (SI.at(i, 0) == s) @intCast(SI.at(i, 1)) else @intCast(SI.at(i, 0));
+    };
 
-    if (!opt.fewest_switches) {
-
-        for (0..S.rows) |i| if (S.at(i, 2) * SN.at(i, 2) < 0) {
-            sn = if (SI.at(i, 0) == s) @intCast(SI.at(i, 1)) else @intCast(SI.at(i, 0));
-        };
-
-        for (0..SI.rows) |i| {
-            if (SI.at(i, 0) == s and SI.at(i, 1) != sn) SI.ptr(i, 0).* = sn;
-            if (SI.at(i, 1) == s and SI.at(i, 0) != sn) SI.ptr(i, 1).* = sn;
-        }
+    for (0..SI.rows) |i| {
+        if (SI.at(i, 0) == s and SI.at(i, 1) != sn) SI.ptr(i, 0).* = sn;
+        if (SI.at(i, 1) == s and SI.at(i, 0) != sn) SI.ptr(i, 1).* = sn;
     }
 
     @memcpy(S.data, SN.data); return sn;
