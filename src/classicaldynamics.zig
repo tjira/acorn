@@ -35,7 +35,11 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         pub const LandauZener = struct {
         };
         pub const SpinMapping = struct {
-            quantum_jump_iteration: ?[]const u32 = null
+            pub const Resample = struct {
+                jump: bool = false, threshold: T = 0
+            };
+
+            resample: ?Resample = null
         };
         pub const LogIntervals = struct {
             trajectory: u32 = 1, iteration: u32 = 1
@@ -202,15 +206,20 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if (mash and j > 1) ns = try spinMapping(T, &S, &SI, U, TDC, s, opt.time_step, &SP, &SN);
+                if (mash and j > 1) ns = try spinMapping(T, &S, &SI, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
                 if (s != ns and Ekin >= U.at(ns, ns) - U.at(s, s)) {
+
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
+
+                    if (mash and opt.spin_mapping.?.resample != null and opt.spin_mapping.?.resample.?.jump) {
+                        try initialBlochVector(T, &S, &SI, s, rand_bloc);
+                    }
                 }
 
-                if (mash and opt.spin_mapping.?.quantum_jump_iteration != null and contains(u32, opt.spin_mapping.?.quantum_jump_iteration.?, @intCast(j))) {
+                if (mash) for (0..S.rows) |k| if (abs(S.at(k, 0)) < opt.spin_mapping.?.resample.?.threshold and abs(S.at(k, 1)) < opt.spin_mapping.?.resample.?.threshold) {
                     try initialBlochVector(T, &S, &SI, s, rand_bloc);
-                }
+                };
 
                 if (opt.write.population_mean               != null)  pop.ptr(j, 1 + s).* += 1                                                                  ;
                 if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 1 + 0).* += Ekin                                                               ;
@@ -423,7 +432,7 @@ pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), s
 }
 
 /// Function to propagate the vector on the Bloch sphere for the spin mapping methods. The function returns the new state, if a switch occurs.
-pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, SP: *Matrix(T), SN: *Matrix(T)) !u32 {
+pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, SP: *Matrix(T), SN: *Matrix(T)) !u32 {
     var sn = s;
 
     const OmegaExp = struct { fn get (E: *Matrix(T), VV: T, TT: T) void {
@@ -457,10 +466,10 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matri
         sn = if (SI.at(i, 0) == s) @intCast(SI.at(i, 1)) else @intCast(SI.at(i, 0));
     };
 
-    for (0..SI.rows) |i| {
+    if (s != sn and Ekin >= U.at(sn, sn) - U.at(s, s)) for (0..SI.rows) |i| {
         if (SI.at(i, 0) == s and SI.at(i, 1) != sn) SI.ptr(i, 0).* = sn;
         if (SI.at(i, 1) == s and SI.at(i, 0) != sn) SI.ptr(i, 1).* = sn;
-    }
+    };
 
     @memcpy(S.data, SN.data); return sn;
 }
