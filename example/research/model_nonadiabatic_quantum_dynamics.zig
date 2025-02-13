@@ -41,19 +41,46 @@ pub fn main() !void {
         .potential = "tully1D_1"
     };
 
+    var opt_diabatic_tripleState1D_3 = opt_diabatic_tully1D_1;
+    opt_diabatic_tripleState1D_3.potential = "tripleState1D_3";
+    opt_diabatic_tripleState1D_3.write = .{
+        .population = "POPULATION_DIABATIC_tripleState1D_3.mat",
+        .wavefunction = "WAVEFUNCTION_DIABATIC_tripleState1D_3.mat"
+    };
+
     var opt_adiabatic_tully1D_1 = opt_diabatic_tully1D_1; opt_adiabatic_tully1D_1.adiabatic = true;
     opt_adiabatic_tully1D_1.write = .{
         .population = "POPULATION_ADIABATIC_tully1D_1.mat",
         .wavefunction = "WAVEFUNCTION_ADIABATIC_tully1D_1.mat"
     };
 
+    var opt_adibatic_tripleState1D_3 = opt_diabatic_tripleState1D_3; opt_adibatic_tripleState1D_3.adiabatic = true;
+    opt_adibatic_tripleState1D_3.write = .{
+        .population = "POPULATION_ADIABATIC_tripleState1D_3.mat",
+        .wavefunction = "WAVEFUNCTION_ADIABATIC_tripleState1D_3.mat"
+    };
+
+    var opt_diabatic_potential_tripleState1D_3 = opt_diabatic_potential_tully1D_1;
+    opt_diabatic_potential_tripleState1D_3.potential = "tripleState1D_3";
+    opt_diabatic_potential_tripleState1D_3.output = "POTENTIAL_DIABATIC_tripleState1D_3.mat";
+
     var opt_adiabatic_potential_tully1D_1 = opt_diabatic_potential_tully1D_1;
     opt_adiabatic_potential_tully1D_1.adiabatic = true;
     opt_adiabatic_potential_tully1D_1.output = "POTENTIAL_ADIABATIC_tully1D_1.mat";
 
+    var opt_adiabatic_potential_tripleState1D_3 = opt_diabatic_potential_tripleState1D_3;
+    opt_adiabatic_potential_tripleState1D_3.adiabatic = true;
+    opt_adiabatic_potential_tripleState1D_3.output = "POTENTIAL_ADIABATIC_tripleState1D_3.mat";
+
     const output_diabatic_tully1D_1  = try quantum_dynamics.run(f64, opt_diabatic_tully1D_1,  true, allocator); defer  output_diabatic_tully1D_1.deinit();
     const output_adiabatic_tully1D_1 = try quantum_dynamics.run(f64, opt_adiabatic_tully1D_1, true, allocator); defer output_adiabatic_tully1D_1.deinit();
 
+    const output_diabatic_tripleState1D_3  = try quantum_dynamics.run(f64, opt_diabatic_tripleState1D_3, true, allocator); defer  output_diabatic_tripleState1D_3.deinit();
+    const output_adiabatic_tripleState1D_3 = try quantum_dynamics.run(f64, opt_adibatic_tripleState1D_3, true, allocator); defer output_adiabatic_tripleState1D_3.deinit();
+
     try model_potential.write(f64, opt_diabatic_potential_tully1D_1,  allocator);
     try model_potential.write(f64, opt_adiabatic_potential_tully1D_1, allocator);
+
+    try model_potential.write(f64, opt_diabatic_potential_tripleState1D_3,  allocator);
+    try model_potential.write(f64, opt_adiabatic_potential_tripleState1D_3, allocator);
 }
