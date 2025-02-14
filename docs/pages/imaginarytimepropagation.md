@@ -12,7 +12,7 @@ Imaginary time propagation is a numerical technique used to find the ground stat
 
 ## Theoretical Background
 
-Similar to real time propagation [here](realtimepropagation.html), we start with the Time-Dependent Schrödinger Equation, but this time we perform a suspicious substitution $t\rightarrow\mathrm{i}\tau$ to obtain the equation
+Similar to real time propagation [here](realtimepropagation.html), we start with the Time-Dependent Schrödinger Equation, but this time we perform a suspicious substitution $\tau\rightarrow\mathrm{i}t$ to obtain the equation
 
 \begin{equation}\label{eq:tdse_it}
 \hbar\frac{\mathrm{d}}{\mathrm{d}\tau}\ket{\Psi\left(\tau\right)}=-\hat{\mathbf{H}}\ket{\Psi\left(\tau\right)},
