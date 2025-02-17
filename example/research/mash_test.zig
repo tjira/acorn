@@ -98,7 +98,7 @@ pub fn main() !void {
         },
 
         .spin_mapping = .{
-            .resample = null
+            .resample = .{.reflect = true}
         },
 
         .write = .{

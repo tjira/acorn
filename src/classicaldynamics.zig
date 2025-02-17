@@ -36,7 +36,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         };
         pub const SpinMapping = struct {
             pub const Resample = struct {
-                jump: bool = false, threshold: T = 0
+                reflect: bool = false, threshold: T = 0
             };
 
             resample: ?Resample = null
@@ -152,6 +152,11 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
         var v = try Vector(T).init(ndim, allocator); defer v.deinit();
         var a = try Vector(T).init(ndim, allocator); defer a.deinit();
 
+        var rp = try Vector(T).init(ndim, allocator); defer rp.deinit();
+        var pp = try Vector(T).init(ndim, allocator); defer pp.deinit();
+        var vp = try Vector(T).init(ndim, allocator); defer vp.deinit();
+        var ap = try Vector(T).init(ndim, allocator); defer ap.deinit();
+
         var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();
         var UA  = try Matrix(T).init(nstate, nstate, allocator); defer  UA.deinit();
         var UC  = try Matrix(T).init(nstate, nstate, allocator); defer  UC.deinit();
@@ -193,11 +198,11 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
 
             for (0..opt.iterations + 1) |j| {
 
+                @memcpy(rp.data, r.data); @memcpy(pp.data, p.data); @memcpy(vp.data, v.data); @memcpy(ap.data, a.data);
+
                 if (j > 0) try propagate(T, opt, &r, &v, &a, &U, &UA, &UC, &T1, &T2, s);
 
-                try mpt.eval(T, &U, opt.potential, r);
-
-                if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, &T1, &T2, j);
+                try mpt.eval(T, &U, opt.potential, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, &T1, &T2, j);
 
                 @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
@@ -209,17 +214,19 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                 if (mash and j > 1) ns = try spinMapping(T, &S, &SI, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
                 if (s != ns and Ekin >= U.at(ns, ns) - U.at(s, s)) {
-
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
-
-                    if (mash and opt.spin_mapping.?.resample != null and opt.spin_mapping.?.resample.?.jump) {
-                        try initialBlochVector(T, &S, &SI, s, rand_bloc);
-                    }
                 }
 
-                if (mash) for (0..S.rows) |k| if (abs(S.at(k, 0)) < opt.spin_mapping.?.resample.?.threshold and abs(S.at(k, 1)) < opt.spin_mapping.?.resample.?.threshold) {
-                    try initialBlochVector(T, &S, &SI, s, rand_bloc);
-                };
+                if (mash) {
+
+                    for (0..S.rows) |k| if (abs(S.at(k, 0)) < opt.spin_mapping.?.resample.?.threshold and abs(S.at(k, 1)) < opt.spin_mapping.?.resample.?.threshold) {
+                        try initialBlochVector(T, &S, &SI, s, rand_bloc);
+                    };
+
+                    for (0..ndim) |k| if (opt.spin_mapping.?.resample.?.reflect and vp.at(k) * v.at(k) < 0) {
+                        try initialBlochVector(T, &S, &SI, s, rand_bloc); break;
+                    };
+                }
 
                 if (opt.write.population_mean               != null)  pop.ptr(j, 1 + s).* += 1                                                                  ;
                 if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 1 + 0).* += Ekin                                                               ;
@@ -470,6 +477,10 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matri
         if (SI.at(i, 0) == s and SI.at(i, 1) != sn) SI.ptr(i, 0).* = sn;
         if (SI.at(i, 1) == s and SI.at(i, 0) != sn) SI.ptr(i, 1).* = sn;
     };
+
+    if (s != sn and Ekin < U.at(sn, sn) - U.at(s, s)) {
+        sn = s;
+    }
 
     @memcpy(S.data, SN.data); return sn;
 }
