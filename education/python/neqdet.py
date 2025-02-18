@@ -13,10 +13,11 @@ if __name__ == "__main__":
     )
 
     # add the arguments
-    parser.add_argument("-d", "--dimension", help="Dimensionality of the simulation. (default: %(default)s)", type=int, default=1)
+    parser.add_argument("-n", "--dimension", help="Number of dimensions in the simulation. (default: %(default)s)", type=int, default=1)
+    parser.add_argument("-d", "--damp", help="Gaussian damping parameter for autocorrelation function. (default: %(default)s)", type=float, default=0)
     parser.add_argument("-g", "--points", help="Number of points in the wavefunction grid. (default: %(default)s)", type=int, default=128)
     parser.add_argument("-h", "--help", help="Print this help message.", action=ap.BooleanOptionalAction)
-    parser.add_argument("-i", "--iterations", help="Number of iterations. (default: %(default)s)", type=int, default=500)
+    parser.add_argument("-i", "--iterations", help="Number of iterations. (default: %(default)s)", type=int, default=1000)
     parser.add_argument("-l", "--limit", help="Distance limit of the wavefunction grid. (default: %(default)s)", type=float, default=8)
     parser.add_argument("-m", "--mass", help="Mass of the particle. (default: %(default)s)", type=float, default=1)
     parser.add_argument("-s", "--states", help="Number of states to find using imaginary time propagation. (default: %(default)s)", type=int, default=1)
@@ -60,7 +61,7 @@ if __name__ == "__main__":
         print("%sPROPAGATION OF STATE %d " % ("\n " if i else "", i))
 
         # clear the time-dependent observable containers
-        population.clear()
+        acf.clear(); population.clear(); wfn.clear()
 
         # create the initial wavefunction from the provided guess
         psi = np.array(list(map(lambda x: x*np.ones(r.shape[0]), eval(args.guess))), dtype=complex).T; psi0 = psi.copy() / np.sqrt(np.sum(psi.conj() * psi) * dr)
@@ -114,11 +115,11 @@ if __name__ == "__main__":
         # append the optimized wavefunction to the container
         if not args.real: wfnopt.append(psi.copy())
 
-    # prepend the conjugated acf before acf
-    acf = np.concatenate((np.flip(acf)[:-1], np.array(acf).conj())) * np.exp(-0.001 * (np.arange(-args.iterations, args.iterations + 1) * args.timestep)**2)
+    # symmetrize the acf and apply the damping function
+    acf = np.concatenate((np.flip(acf)[:-1], np.array(acf).conj())) * np.exp(-args.damp * (np.arange(-args.iterations, args.iterations + 1) * args.timestep)**2)
 
-    # calculate the spectrum
-    omega = 2 * np.pi * np.fft.fftfreq(len(acf), args.timestep); spectrum = np.abs(np.fft.fft(acf))**2
+    # calculate the spectrum of the zero-padded acf and the corresponding energies
+    spectrum = np.abs(np.fft.fft(np.pad(acf, 2 * [10 * len(acf)], mode="constant")))**2; omega = 2 * np.pi * np.fft.fftfreq(len(spectrum), args.timestep)
 
     # PLOT THE RESULTS ================================================================================================================================================================================
 
@@ -136,18 +137,22 @@ if __name__ == "__main__":
     axs[1, 0].plot(np.arange(-args.iterations, args.iterations + 1) * args.timestep, np.array(acf).imag)
 
     # plot the spectrum
-    axs[1, 1].plot(omega[np.argsort(omega)], spectrum[np.argsort(omega)])
+    axs[1, 1].plot(omega[np.argsort(omega)], spectrum[np.argsort(omega)] / np.max(spectrum))
 
     # set the labels
-    axs[0, 1].set_xlabel("Time (a.u.)"  ); axs[0, 1].set_ylabel("Population"              )
-    axs[1, 0].set_xlabel("Time (a.u.)"  ); axs[1, 0].set_ylabel("Autocorrelation Function")
-    axs[1, 1].set_xlabel("Energy (a.u.)"); axs[1, 1].set_ylabel("Intensity"               )
+    axs[0, 0].set_xlabel("Position (a.u.)"); axs[0, 0].set_ylabel("Wavefunction"            )
+    axs[0, 1].set_xlabel("Time (a.u.)"    ); axs[0, 1].set_ylabel("Population"              )
+    axs[1, 0].set_xlabel("Time (a.u.)"    ); axs[1, 0].set_ylabel("Autocorrelation Function")
+    axs[1, 1].set_xlabel("Energy (a.u.)"  ); axs[1, 1].set_ylabel("Normalized Intensity"    )
 
-    # set the domain for the spectrum plot
-    axs[1, 1].set_xlim(0, omega[np.argsort(omega)][-1])
+    # extract the wfn min and max
+    minwfn, maxwfn = min(np.array(wfn).real.min(), np.array(wfn).imag.min()), max(np.array(wfn).real.max(), np.array(wfn).imag.max())
 
-    # set thi limits for the wavefunction animation
-    axs[0, 0].set_ylim(1.1 * np.min(np.real(wfn)), 1.1 * np.max(np.real(wfn)))
+    # set the domain for the spectrum plot, the end wll be as last element from the end less than some value
+    axs[1, 1].set_xlim(0, omega[np.argsort(omega)][np.where(spectrum[np.argsort(omega)] / np.max(spectrum) > 1e-6)][-1])
+
+    # set the limits for the wavefunction animation
+    axs[0, 0].set_ylim(minwfn - 0.1 * (maxwfn - minwfn), maxwfn + 0.1 * (maxwfn - minwfn))
 
     # define the update function for the wavefunction animation
     update = lambda i: [wfnplotre.set_ydata(wfn[i][:, 0].real), wfnplotim.set_ydata(wfn[i][:, 0].imag)]
