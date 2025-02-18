@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse as ap, matplotlib.pyplot as plt, numpy as np, scipy as sp, scipy.linalg
+import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, scipy as sp, scipy.linalg
 
 if __name__ == "__main__":
     # SECTION FOR PARSING COMMAND LINE ARGUMENTS =======================================================================================================================================================
@@ -13,16 +13,16 @@ if __name__ == "__main__":
     )
 
     # add the arguments
-    parser.add_argument("-w", "--guess", help="Initial guess for the wavefunction. (default: %(default)s)", type=str, default="[np.exp(-(r1-1)**2)]")
-    parser.add_argument("-v", "--potential", help="Potential matrix. (default: %(default)s)", type=str, default="[[0.5*r1**2]]")
+    parser.add_argument("-d", "--dimension", help="Dimensionality of the simulation. (default: %(default)s)", type=int, default=1)
+    parser.add_argument("-g", "--points", help="Number of points in the wavefunction grid. (default: %(default)s)", type=int, default=128)
     parser.add_argument("-h", "--help", help="Print this help message.", action=ap.BooleanOptionalAction)
     parser.add_argument("-i", "--iterations", help="Number of iterations. (default: %(default)s)", type=int, default=500)
     parser.add_argument("-l", "--limit", help="Distance limit of the wavefunction grid. (default: %(default)s)", type=float, default=8)
-    parser.add_argument("-t", "--timestep", help="Time step of the simulation. (default: %(default)s)", type=float, default=0.1)
     parser.add_argument("-m", "--mass", help="Mass of the particle. (default: %(default)s)", type=float, default=1)
-    parser.add_argument("-d", "--dimension", help="Dimensionality of the simulation. (default: %(default)s)", type=int, default=1)
-    parser.add_argument("-g", "--points", help="Number of points in the wavefunction grid. (default: %(default)s)", type=int, default=128)
     parser.add_argument("-s", "--states", help="Number of states to find using imaginary time propagation. (default: %(default)s)", type=int, default=1)
+    parser.add_argument("-t", "--timestep", help="Time step of the simulation. (default: %(default)s)", type=float, default=0.1)
+    parser.add_argument("-v", "--potential", help="Potential matrix. (default: %(default)s)", type=str, default="[[0.5*r1**2]]")
+    parser.add_argument("-w", "--guess", help="Initial guess for the wavefunction. (default: %(default)s)", type=str, default="[np.exp(-(r1-1)**2)]")
 
     # optional flags
     parser.add_argument("-r", "--real", help="Perform real-time propagation on the last used wavefunction.", action=ap.BooleanOptionalAction)
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     r = np.stack(np.meshgrid(*[np.linspace(-args.limit, args.limit, args.points)] * args.dimension, indexing="ij"), axis=-1).reshape(-1, args.dimension)
 
     # calculate the space step and create containers for the optimized wavefunctions and time dependent observables
-    dr = r[1, -1] - r[0, -1]; wfnopt, population = [], []
+    dr = r[1, -1] - r[0, -1]; wfnopt, acf, population, wfn = [], [], [], []
 
     # create the grid in momentum space
     k = np.stack(np.meshgrid(*[2 * np.pi * np.fft.fftfreq(args.points, dr)] * args.dimension, indexing="ij"), axis=-1).reshape(-1, args.dimension)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         population.clear()
 
         # create the initial wavefunction from the provided guess
-        psi = np.array(list(map(lambda x: x*np.ones(r.shape[0]), eval(args.guess))), dtype=complex).T
+        psi = np.array(list(map(lambda x: x*np.ones(r.shape[0]), eval(args.guess))), dtype=complex).T; psi0 = psi.copy() / np.sqrt(np.sum(psi.conj() * psi) * dr)
 
         # calculate the propagators for each point in the grid
         K = np.array([sp.linalg.expm(-0.5 * (1j if args.real else 1) * args.timestep * np.sum(k[i, :] ** 2) / args.mass * np.eye(psi.shape[1])) for i in range(r.shape[0])])
@@ -106,7 +106,7 @@ if __name__ == "__main__":
             rho = psi.T @ psi.conj() * dr
 
             # assign the observables to the containers
-            population.append(np.diag(rho).real)
+            acf.append(np.sum(psi0.conj() * psi) * dr); population.append(np.diag(rho).real); wfn.append(psi.copy())
 
             # print the iteration info
             if j % 100 == 0: print("%6d %12.6f %12.6f %12.6f%s" % (j, Ekin, Epot, Ekin + Epot, "".join(" %12.6f" % (rho[i, i].real) for i in range(rho.shape[0]))))
@@ -114,16 +114,46 @@ if __name__ == "__main__":
         # append the optimized wavefunction to the container
         if not args.real: wfnopt.append(psi.copy())
 
+    # prepend the conjugated acf before acf
+    acf = np.concatenate((np.flip(acf)[:-1], np.array(acf).conj())) * np.exp(-0.001 * (np.arange(-args.iterations, args.iterations + 1) * args.timestep)**2)
+
+    # calculate the spectrum
+    omega = 2 * np.pi * np.fft.fftfreq(len(acf), args.timestep); spectrum = np.abs(np.fft.fft(acf))**2
+
     # PLOT THE RESULTS ================================================================================================================================================================================
 
     # create the subplots
     fig, axs = plt.subplots(2, 2, figsize=(8, 6))
 
+    # plot the initial wavefunction
+    wfnplotre, wfnplotim = axs[0, 0].plot(r, wfn[0][:, 0].real)[0], axs[0, 0].plot(r, wfn[0][:, 0].imag)[0]
+
     # plot the population
-    axs[0, 0].plot(np.arange(args.iterations + 1) * args.timestep, population)
+    axs[0, 1].plot(np.arange(args.iterations + 1) * args.timestep, population)
+
+    # print the acf
+    axs[1, 0].plot(np.arange(-args.iterations, args.iterations + 1) * args.timestep, np.array(acf).real)
+    axs[1, 0].plot(np.arange(-args.iterations, args.iterations + 1) * args.timestep, np.array(acf).imag)
+
+    # plot the spectrum
+    axs[1, 1].plot(omega[np.argsort(omega)], spectrum[np.argsort(omega)])
 
     # set the labels
-    axs[0, 0].set_xlabel("Time (a.u.)"); axs[0, 0].set_ylabel("Population")
+    axs[0, 1].set_xlabel("Time (a.u.)"  ); axs[0, 1].set_ylabel("Population"              )
+    axs[1, 0].set_xlabel("Time (a.u.)"  ); axs[1, 0].set_ylabel("Autocorrelation Function")
+    axs[1, 1].set_xlabel("Energy (a.u.)"); axs[1, 1].set_ylabel("Intensity"               )
+
+    # set the domain for the spectrum plot
+    axs[1, 1].set_xlim(0, omega[np.argsort(omega)][-1])
+
+    # set thi limits for the wavefunction animation
+    axs[0, 0].set_ylim(1.1 * np.min(np.real(wfn)), 1.1 * np.max(np.real(wfn)))
+
+    # define the update function for the wavefunction animation
+    update = lambda i: [wfnplotre.set_ydata(wfn[i][:, 0].real), wfnplotim.set_ydata(wfn[i][:, 0].imag)]
+
+    # make the wavefunction plot animated
+    ani = anm.FuncAnimation(fig, update, frames=range(len(wfn)), repeat=True, interval=30)
 
     # show the plot
     plt.tight_layout(); plt.show()
