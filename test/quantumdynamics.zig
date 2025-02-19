@@ -79,7 +79,7 @@ test "quantum_dynamics_real_adiabatic-1d" {
     try std.testing.expect(@abs(output_harmonic1D_1.Ekin[0] + output_harmonic1D_1.Epot[0] - 1.12499907510295) < 1e-14);
 }
 
-test "quantum_dynamics_real_nonadiabatic-1d/1s" {
+test "quantum_dynamics_real_nonadiabatic-1d/2s" {
     const opt_tully1D_1 = quantum_dynamics.QuantumDynamicsOptions(f64){
         .grid = .{
             .limits = &[_]f64{-16, 32}, .points = 2048

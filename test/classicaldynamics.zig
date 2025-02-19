@@ -72,3 +72,93 @@ test "classical_dynamics_nonadiabatic_fssh" {
     try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    - 0.59            ) < 1e-14);
     try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    - 0.41            ) < 1e-14);
 }
+
+test "classical_dynamics_nonadiabatic_lzsh" {
+    const opt_tully1D_1 = classical_dynamics.ClassicalDynamicsOptions(f64){
+        .initial_conditions = .{
+            .position_mean = &[_]f64{-15.0},
+            .position_std  = &[_]f64{  0.5},
+            .momentum_mean = &[_]f64{ 20.0},
+            .momentum_std  = &[_]f64{  1.0},
+            .state = &[_]f64{0, 1}, .mass = &[_]f64{2000}
+        },
+
+        .landau_zener = .{},
+
+        .adiabatic = true,
+        .iterations = 3500,
+        .potential = "tully1D_1",
+        .time_step = 1,
+        .trajectories = 100,
+    };
+
+    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.potential = "tully1D_2";
+    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.potential = "tully1D_3";
+
+    const output_tully1D_1 = try classical_dynamics.run(f64, opt_tully1D_1, false, allocator); defer output_tully1D_1.deinit();
+    const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
+    const output_tully1D_3 = try classical_dynamics.run(f64, opt_tully1D_3, false, allocator); defer output_tully1D_3.deinit();
+
+    try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 21.03442355730371) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.11129461625254) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10955556586487) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(0)                    -  0.61            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(1)                    -  0.39            ) < 1e-14);
+
+    try std.testing.expect(@abs(output_tully1D_2.r.at(0)                      - 21.35503334318419) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.p.at(0)                      - 20.66406116097518) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.Ekin + output_tully1D_2.Epot -  0.14955544536330) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(0)                    -  0.16            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(1)                    -  0.84            ) < 1e-14);
+
+    try std.testing.expect(@abs(output_tully1D_3.r.at(0)                      + 16.75966919098743) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.p.at(0)                      + 19.93694370559839) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.Ekin + output_tully1D_3.Epot -  0.10015338906946) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    -  0.00            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    -  1.00            ) < 1e-14);
+}
+
+test "classical_dynamics_nonadiabatic_mash" {
+    const opt_tully1D_1 = classical_dynamics.ClassicalDynamicsOptions(f64){
+        .initial_conditions = .{
+            .position_mean = &[_]f64{-15.0},
+            .position_std  = &[_]f64{  0.5},
+            .momentum_mean = &[_]f64{ 20.0},
+            .momentum_std  = &[_]f64{  1.0},
+            .state = &[_]f64{0, 1}, .mass = &[_]f64{2000}
+        },
+
+        .spin_mapping = .{},
+
+        .adiabatic = true,
+        .iterations = 3500,
+        .potential = "tully1D_1",
+        .time_step = 1,
+        .trajectories = 100,
+    };
+
+    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.potential = "tully1D_2";
+    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.potential = "tully1D_3";
+
+    const output_tully1D_1 = try classical_dynamics.run(f64, opt_tully1D_1, false, allocator); defer output_tully1D_1.deinit();
+    const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
+    const output_tully1D_3 = try classical_dynamics.run(f64, opt_tully1D_3, false, allocator); defer output_tully1D_3.deinit();
+
+    try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 21.00714185386427) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.05977392710928) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10954664424545) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(0)                    -  0.59            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(1)                    -  0.41            ) < 1e-14);
+
+    try std.testing.expect(@abs(output_tully1D_2.r.at(0)                      - 21.39838522317274) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.p.at(0)                      - 20.66718100732489) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.Ekin + output_tully1D_2.Epot -  0.14951839950157) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(0)                    -  0.16            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(1)                    -  0.84            ) < 1e-14);
+
+    try std.testing.expect(@abs(output_tully1D_3.r.at(0)                      + 1.14318287393842) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.p.at(0)                      + 3.60808111892007) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.Ekin + output_tully1D_3.Epot - 0.10015092475260) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    - 0.68            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    - 0.32            ) < 1e-14);
+}

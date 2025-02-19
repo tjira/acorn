@@ -217,7 +217,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
                 }
 
-                if (mash) {
+                if (mash and opt.spin_mapping.?.resample != null) {
 
                     for (0..S.rows) |k| if (abs(S.at(k, 0)) < opt.spin_mapping.?.resample.?.threshold and abs(S.at(k, 1)) < opt.spin_mapping.?.resample.?.threshold) {
                         try initialBlochVector(T, &S, &SI, s, rand_bloc);
