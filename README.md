@@ -90,7 +90,7 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
         "time_step" : 0.1,
         "grid" : {
             "limits" : [-8, 8],
-            "points" : 1024
+            "points" : 512
         },
         "initial_conditions" : {
             "mass" : 1,
@@ -107,15 +107,54 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
 }
 ```
 
-The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. After the simulation is complete, you can visualize the results using the commands in the below sections. Below is a list of available examples.
+The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. Acorn also supports higher dimensions. As an example you can simulate a 2D wavefunction in a 2D harmonic potential using the following input.
 
-<details> <summary><b>Wavefunction</b></summary>
+```json
+{
+    "quantum_dynamics" : {
+        "adiabatic" : false,
+        "iterations" : 500,
+        "mode" : [0, 1],
+        "time_step" : 0.1,
+        "grid" : {
+            "limits" : [-8, 8],
+            "points" : 256
+        },
+        "initial_conditions" : {
+            "mass" : 1,
+            "momentum" : [0, 0],
+            "position" : [1, 1],
+            "state" : 0,
+            "gamma" : 2
+        },
+        "write" : {
+            "wavefunction" : "WAVEFUNCTION.mat"
+        },
+        "potential" : "harmonic2D_1"
+    }
+}
+```
+
+This simulation takes a few seconds, since the time complexity increases exponentially. After the simulation is complete, you can visualize the results using the commands in the below sections.
+
+<details> <summary><b>Wavefunction 1D</b></summary>
 
 ```bash
 plot.py WAVEFUNCTION.mat:0,1 --animate 2 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction"
 ```
 
-![Wavefunction](graphics/rtpa_wavefunction.gif)
+<p align="center"><img src="graphics/rtpa_wavefunction_1D.gif"/></p>
+
+</details>
+
+<details> <summary><b>Wavefunction 2D</b></summary>
+
+```bash
+plot.py WAVEFUNCTION.mat:0,1 --ndim 2 --animate 2 --xlabel "Coordinate #1 (a.u.)" --ylabel "Coordinate #2 (a.u.)"
+```
+
+<p align="center"><img src="graphics/rtpa_wavefunction_2D.gif"/></p>
+
 </details>
 
 ### Real Time Nonadiabatic Quantum Dynamics
@@ -163,5 +202,6 @@ This simulation is fast and should complete approximately in a second. After the
 plot.py WAVEFUNCTION.mat:0,1,2,3~POTENTIAL.mat:0-0,1-0,2-3,3-3 --animate 4 --scale 0.01 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction"
 ```
 
-![Wavefunction](graphics/rtpn_wavefunction.gif)
+<p align="center"><img src="graphics/rtpn_wavefunction.gif"/></p>
+
 </details>
