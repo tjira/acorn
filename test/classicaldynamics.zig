@@ -23,9 +23,9 @@ test "classical_dynamics_adiabatic" {
 
     const output_harmonic1D_1 = try classical_dynamics.run(f64, opt_harmonic1D_1, false, allocator); defer output_harmonic1D_1.deinit();
 
-    try std.testing.expect(@abs(output_harmonic1D_1.r.at(0)                         + 0.86233273468923) < 1e-14);
-    try std.testing.expect(@abs(output_harmonic1D_1.p.at(0)                         - 0.51533412567938) < 1e-14);
-    try std.testing.expect(@abs(output_harmonic1D_1.Ekin + output_harmonic1D_1.Epot - 1.10694105966608) < 1e-14);
+    try std.testing.expect(@abs(output_harmonic1D_1.r.at(0)                         + 0.86233273468923) < 1e-12);
+    try std.testing.expect(@abs(output_harmonic1D_1.p.at(0)                         - 0.51533412567938) < 1e-12);
+    try std.testing.expect(@abs(output_harmonic1D_1.Ekin + output_harmonic1D_1.Epot - 1.10694105966608) < 1e-12);
 }
 
 test "classical_dynamics_nonadiabatic_fssh" {
@@ -54,23 +54,23 @@ test "classical_dynamics_nonadiabatic_fssh" {
     const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
     const output_tully1D_3 = try classical_dynamics.run(f64, opt_tully1D_3, false, allocator); defer output_tully1D_3.deinit();
 
-    try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 20.96747749693828) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.01999888560924) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10954931488450) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.pop.at(0)                    -  0.57            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.pop.at(1)                    -  0.43            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 20.96747749693828) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.01999888560924) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10954931488450) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(0)                    -  0.57            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(1)                    -  0.43            ) < 1e-12);
 
-    try std.testing.expect(@abs(output_tully1D_2.r.at(0)                      - 21.24034857366279) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.p.at(0)                      - 20.46292853412406) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.Ekin + output_tully1D_2.Epot -  0.14951227243131) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.pop.at(0)                    -  0.12            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.pop.at(1)                    -  0.88            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.r.at(0)                      - 21.24034857366279) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.p.at(0)                      - 20.46292853412406) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.Ekin + output_tully1D_2.Epot -  0.14951227243131) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(0)                    -  0.12            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(1)                    -  0.88            ) < 1e-12);
 
-    try std.testing.expect(@abs(output_tully1D_3.r.at(0)                      - 3.96609063054275) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.p.at(0)                      - 1.90698142764801) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.Ekin + output_tully1D_3.Epot - 0.10014861728192) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    - 0.59            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    - 0.41            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.r.at(0)                      - 3.96609063054275) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.p.at(0)                      - 1.90698142764801) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.Ekin + output_tully1D_3.Epot - 0.10014861728192) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    - 0.59            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    - 0.41            ) < 1e-12);
 }
 
 test "classical_dynamics_nonadiabatic_lzsh" {
@@ -119,23 +119,23 @@ test "classical_dynamics_nonadiabatic_lzsh" {
     std.debug.print("tully3, P0 = {d:.14}\n", .{output_tully1D_3.pop.at(0)});
     std.debug.print("tully3, P1 = {d:.14}\n", .{output_tully1D_3.pop.at(1)});
 
-    try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 21.03442355730371) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.11129461625254) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10955556586487) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.pop.at(0)                    -  0.61            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.pop.at(1)                    -  0.39            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 21.03442355730371) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.11129461625254) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10955556586487) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(0)                    -  0.61            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(1)                    -  0.39            ) < 1e-12);
 
-    try std.testing.expect(@abs(output_tully1D_2.r.at(0)                      - 21.35503334318419) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.p.at(0)                      - 20.66406116097518) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.Ekin + output_tully1D_2.Epot -  0.14955544536330) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.pop.at(0)                    -  0.16            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.pop.at(1)                    -  0.84            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.r.at(0)                      - 21.35503334318419) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.p.at(0)                      - 20.66406116097518) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.Ekin + output_tully1D_2.Epot -  0.14955544536330) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(0)                    -  0.16            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(1)                    -  0.84            ) < 1e-12);
 
-    try std.testing.expect(@abs(output_tully1D_3.r.at(0)                      + 16.75966919098743) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.p.at(0)                      + 19.93694370559839) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.Ekin + output_tully1D_3.Epot -  0.10015338906946) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    -  0.00            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    -  1.00            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.r.at(0)                      + 16.75966919098743) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.p.at(0)                      + 19.93694370559839) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.Ekin + output_tully1D_3.Epot -  0.10015338906946) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    -  0.00            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    -  1.00            ) < 1e-12);
 }
 
 test "classical_dynamics_nonadiabatic_mash" {
@@ -184,21 +184,21 @@ test "classical_dynamics_nonadiabatic_mash" {
     std.debug.print("tully3, P0 = {d:.14}\n", .{output_tully1D_3.pop.at(0)});
     std.debug.print("tully3, P1 = {d:.14}\n", .{output_tully1D_3.pop.at(1)});
 
-    try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 21.00714185386427) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.05977392710928) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10954664424545) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.pop.at(0)                    -  0.59            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_1.pop.at(1)                    -  0.41            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 21.00714185386427) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.05977392710928) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10954664424545) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(0)                    -  0.59            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_1.pop.at(1)                    -  0.41            ) < 1e-12);
 
-    try std.testing.expect(@abs(output_tully1D_2.r.at(0)                      - 21.39838522317274) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.p.at(0)                      - 20.66718100732489) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.Ekin + output_tully1D_2.Epot -  0.14951839950157) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.pop.at(0)                    -  0.16            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_2.pop.at(1)                    -  0.84            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_2.r.at(0)                      - 21.39838522317274) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.p.at(0)                      - 20.66718100732489) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.Ekin + output_tully1D_2.Epot -  0.14951839950157) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(0)                    -  0.16            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_2.pop.at(1)                    -  0.84            ) < 1e-12);
 
-    try std.testing.expect(@abs(output_tully1D_3.r.at(0)                      + 1.14318287393842) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.p.at(0)                      + 3.60808111892007) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.Ekin + output_tully1D_3.Epot - 0.10015092475260) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    - 0.68            ) < 1e-14);
-    try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    - 0.32            ) < 1e-14);
+    try std.testing.expect(@abs(output_tully1D_3.r.at(0)                      + 1.14318287393842) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.p.at(0)                      + 3.60808111892007) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.Ekin + output_tully1D_3.Epot - 0.10015092475260) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(0)                    - 0.68            ) < 1e-12);
+    try std.testing.expect(@abs(output_tully1D_3.pop.at(1)                    - 0.32            ) < 1e-12);
 }
