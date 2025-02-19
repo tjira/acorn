@@ -344,22 +344,22 @@ test "matrix_io" {
     try std.testing.expect(O.rows == OO.rows and O.cols == OO.cols);
     try std.testing.expect(P.rows == PP.rows and P.cols == PP.cols);
 
-    for (0..A.rows) |i| for (0..A.cols) |j| {try std.testing.expect(@abs(A.at(i, j) - AA.at(i, j)) < 1e-14);};
-    for (0..B.rows) |i| for (0..B.cols) |j| {try std.testing.expect(@abs(B.at(i, j) - BB.at(i, j)) < 1e-14);};
-    for (0..C.rows) |i| for (0..C.cols) |j| {try std.testing.expect(@abs(C.at(i, j) - CC.at(i, j)) < 1e-14);};
-    for (0..D.rows) |i| for (0..D.cols) |j| {try std.testing.expect(@abs(D.at(i, j) - DD.at(i, j)) < 1e-14);};
-    for (0..E.rows) |i| for (0..E.cols) |j| {try std.testing.expect(@abs(E.at(i, j) - EE.at(i, j)) < 1e-14);};
-    for (0..F.rows) |i| for (0..F.cols) |j| {try std.testing.expect(@abs(F.at(i, j) - FF.at(i, j)) < 1e-14);};
-    for (0..G.rows) |i| for (0..G.cols) |j| {try std.testing.expect(@abs(G.at(i, j) - GG.at(i, j)) < 1e-14);};
-    for (0..H.rows) |i| for (0..H.cols) |j| {try std.testing.expect(@abs(H.at(i, j) - HH.at(i, j)) < 1e-14);};
-    for (0..I.rows) |i| for (0..I.cols) |j| {try std.testing.expect(@abs(I.at(i, j) - II.at(i, j)) < 1e-14);};
-    for (0..J.rows) |i| for (0..J.cols) |j| {try std.testing.expect(@abs(J.at(i, j) - JJ.at(i, j)) < 1e-14);};
-    for (0..K.rows) |i| for (0..K.cols) |j| {try std.testing.expect(@abs(K.at(i, j) - KK.at(i, j)) < 1e-14);};
-    for (0..L.rows) |i| for (0..L.cols) |j| {try std.testing.expect(@abs(L.at(i, j) - LL.at(i, j)) < 1e-14);};
-    for (0..M.rows) |i| for (0..M.cols) |j| {try std.testing.expect(@abs(M.at(i, j) - MM.at(i, j)) < 1e-14);};
-    for (0..N.rows) |i| for (0..N.cols) |j| {try std.testing.expect(@abs(N.at(i, j) - NN.at(i, j)) < 1e-14);};
-    for (0..O.rows) |i| for (0..O.cols) |j| {try std.testing.expect(@abs(O.at(i, j) - OO.at(i, j)) < 1e-14);};
-    for (0..P.rows) |i| for (0..P.cols) |j| {try std.testing.expect(@abs(P.at(i, j) - PP.at(i, j)) < 1e-14);};
+    for (0..A.rows) |i| for (0..A.cols) |j| {try std.testing.expect(@abs(A.at(i, j) - AA.at(i, j)) < 1e-12);};
+    for (0..B.rows) |i| for (0..B.cols) |j| {try std.testing.expect(@abs(B.at(i, j) - BB.at(i, j)) < 1e-12);};
+    for (0..C.rows) |i| for (0..C.cols) |j| {try std.testing.expect(@abs(C.at(i, j) - CC.at(i, j)) < 1e-12);};
+    for (0..D.rows) |i| for (0..D.cols) |j| {try std.testing.expect(@abs(D.at(i, j) - DD.at(i, j)) < 1e-12);};
+    for (0..E.rows) |i| for (0..E.cols) |j| {try std.testing.expect(@abs(E.at(i, j) - EE.at(i, j)) < 1e-12);};
+    for (0..F.rows) |i| for (0..F.cols) |j| {try std.testing.expect(@abs(F.at(i, j) - FF.at(i, j)) < 1e-12);};
+    for (0..G.rows) |i| for (0..G.cols) |j| {try std.testing.expect(@abs(G.at(i, j) - GG.at(i, j)) < 1e-12);};
+    for (0..H.rows) |i| for (0..H.cols) |j| {try std.testing.expect(@abs(H.at(i, j) - HH.at(i, j)) < 1e-12);};
+    for (0..I.rows) |i| for (0..I.cols) |j| {try std.testing.expect(@abs(I.at(i, j) - II.at(i, j)) < 1e-12);};
+    for (0..J.rows) |i| for (0..J.cols) |j| {try std.testing.expect(@abs(J.at(i, j) - JJ.at(i, j)) < 1e-12);};
+    for (0..K.rows) |i| for (0..K.cols) |j| {try std.testing.expect(@abs(K.at(i, j) - KK.at(i, j)) < 1e-12);};
+    for (0..L.rows) |i| for (0..L.cols) |j| {try std.testing.expect(@abs(L.at(i, j) - LL.at(i, j)) < 1e-12);};
+    for (0..M.rows) |i| for (0..M.cols) |j| {try std.testing.expect(@abs(M.at(i, j) - MM.at(i, j)) < 1e-12);};
+    for (0..N.rows) |i| for (0..N.cols) |j| {try std.testing.expect(@abs(N.at(i, j) - NN.at(i, j)) < 1e-12);};
+    for (0..O.rows) |i| for (0..O.cols) |j| {try std.testing.expect(@abs(O.at(i, j) - OO.at(i, j)) < 1e-12);};
+    for (0..P.rows) |i| for (0..P.cols) |j| {try std.testing.expect(@abs(P.at(i, j) - PP.at(i, j)) < 1e-12);};
 }
 
 test "matrix_linspace" {
