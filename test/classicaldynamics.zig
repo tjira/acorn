@@ -99,6 +99,26 @@ test "classical_dynamics_nonadiabatic_lzsh" {
     const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
     const output_tully1D_3 = try classical_dynamics.run(f64, opt_tully1D_3, false, allocator); defer output_tully1D_3.deinit();
 
+    std.debug.print("\n\n", .{});
+
+    std.debug.print("tully1, r  = {d:.14}\n", .{output_tully1D_1.r.at(0)});
+    std.debug.print("tully1, p  = {d:.14}\n", .{output_tully1D_1.p.at(0)});
+    std.debug.print("tully1, E  = {d:.14}\n", .{output_tully1D_1.Ekin + output_tully1D_1.Epot});
+    std.debug.print("tully1, P0 = {d:.14}\n", .{output_tully1D_1.pop.at(0)});
+    std.debug.print("tully1, P1 = {d:.14}\n", .{output_tully1D_1.pop.at(1)});
+
+    std.debug.print("tully2, r  = {d:.14}\n", .{output_tully1D_2.r.at(0)});
+    std.debug.print("tully2, p  = {d:.14}\n", .{output_tully1D_2.p.at(0)});
+    std.debug.print("tully2, E  = {d:.14}\n", .{output_tully1D_2.Ekin + output_tully1D_2.Epot});
+    std.debug.print("tully2, P0 = {d:.14}\n", .{output_tully1D_2.pop.at(0)});
+    std.debug.print("tully2, P1 = {d:.14}\n", .{output_tully1D_2.pop.at(1)});
+
+    std.debug.print("tully3, r  = {d:.14}\n", .{output_tully1D_3.r.at(0)});
+    std.debug.print("tully3, p  = {d:.14}\n", .{output_tully1D_3.p.at(0)});
+    std.debug.print("tully3, E  = {d:.14}\n", .{output_tully1D_3.Ekin + output_tully1D_3.Epot});
+    std.debug.print("tully3, P0 = {d:.14}\n", .{output_tully1D_3.pop.at(0)});
+    std.debug.print("tully3, P1 = {d:.14}\n", .{output_tully1D_3.pop.at(1)});
+
     try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 21.03442355730371) < 1e-14);
     try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.11129461625254) < 1e-14);
     try std.testing.expect(@abs(output_tully1D_1.Ekin + output_tully1D_1.Epot -  0.10955556586487) < 1e-14);
@@ -143,6 +163,26 @@ test "classical_dynamics_nonadiabatic_mash" {
     const output_tully1D_1 = try classical_dynamics.run(f64, opt_tully1D_1, false, allocator); defer output_tully1D_1.deinit();
     const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
     const output_tully1D_3 = try classical_dynamics.run(f64, opt_tully1D_3, false, allocator); defer output_tully1D_3.deinit();
+
+    std.debug.print("\n\n", .{});
+
+    std.debug.print("tully1, r  = {d:.14}\n", .{output_tully1D_1.r.at(0)});
+    std.debug.print("tully1, p  = {d:.14}\n", .{output_tully1D_1.p.at(0)});
+    std.debug.print("tully1, E  = {d:.14}\n", .{output_tully1D_1.Ekin + output_tully1D_1.Epot});
+    std.debug.print("tully1, P0 = {d:.14}\n", .{output_tully1D_1.pop.at(0)});
+    std.debug.print("tully1, P1 = {d:.14}\n", .{output_tully1D_1.pop.at(1)});
+
+    std.debug.print("tully2, r  = {d:.14}\n", .{output_tully1D_2.r.at(0)});
+    std.debug.print("tully2, p  = {d:.14}\n", .{output_tully1D_2.p.at(0)});
+    std.debug.print("tully2, E  = {d:.14}\n", .{output_tully1D_2.Ekin + output_tully1D_2.Epot});
+    std.debug.print("tully2, P0 = {d:.14}\n", .{output_tully1D_2.pop.at(0)});
+    std.debug.print("tully2, P1 = {d:.14}\n", .{output_tully1D_2.pop.at(1)});
+
+    std.debug.print("tully3, r  = {d:.14}\n", .{output_tully1D_3.r.at(0)});
+    std.debug.print("tully3, p  = {d:.14}\n", .{output_tully1D_3.p.at(0)});
+    std.debug.print("tully3, E  = {d:.14}\n", .{output_tully1D_3.Ekin + output_tully1D_3.Epot});
+    std.debug.print("tully3, P0 = {d:.14}\n", .{output_tully1D_3.pop.at(0)});
+    std.debug.print("tully3, P1 = {d:.14}\n", .{output_tully1D_3.pop.at(1)});
 
     try std.testing.expect(@abs(output_tully1D_1.r.at(0)                      - 21.00714185386427) < 1e-14);
     try std.testing.expect(@abs(output_tully1D_1.p.at(0)                      - 21.05977392710928) < 1e-14);
