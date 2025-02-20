@@ -48,7 +48,7 @@ To represent the wavefunction numerically, we sample it on a spatial grid. In pr
 \bra{\Phi_i}\frac{\partial}{\partial x}\ket{\Phi_j}=0,\,i\neq j.
 \end{equation}
 
-This condition essentially means that the states $\ket{\Phi_i}$ are either constant in space, or purely imaginary and a basis with this property is called diabatic diabatic basis. Note that the specific functional form of these basis states is not crucial for the dynamics, since they are implicitly taken to be the canonical basis in $\mathbb{R}^N$ when defining the potential energy surfaces. For a two-state system, our wavefunction in the diabatic basis can be written as
+Note that the specific functional form of these basis states is not crucial for the dynamics on the model potentials, since they are implicitly taken to be the canonical basis in $\mathbb{R}^N$ when defining the potential energy surfaces. For a two-state system, our wavefunction in the diabatic basis can be written as
 
 \begin{equation}\label{eq:diabatic_wavefunction}
 \ket{\Psi\left(x,t\right)}=c_1\left(x,t\right)\ket{\Phi_1}+c_2\left(x,t\right)\ket{\Phi_2}=
@@ -96,7 +96,7 @@ If such a factorization were possible, we could apply the exponential of $\hat{\
 where $\Delta t$ is a fixed time step. Now, each individual short-time propagator acts on the wave function and causes a small evolution. We can then use the symmetric splitting approximation
 
 \begin{equation}
-\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}\Delta t}=\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{2\hbar}\hat{\mathbf{V}}}\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{\hbar}\hat{\mathbf{T}}}\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{2\hbar}\hat{\mathbf{V}}(x)}+\mathcal{O}(\Delta t^3),
+\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}\Delta t}=\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{2\hbar}\hat{\mathbf{V}}}\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{\hbar}\hat{\mathbf{T}}}\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{2\hbar}\hat{\mathbf{V}}}+\mathcal{O}(\Delta t^3),
 \end{equation}
 
 which is valid for small $\Delta t$. Now we have everything we need to propagate the wavefunction in time. The formula for propagating the wavefunction from time $t$ to time $t+\Delta t$ is

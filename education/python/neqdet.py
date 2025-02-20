@@ -4,7 +4,7 @@ import argparse as ap, itertools as it, matplotlib.animation as anm, matplotlib.
 
 # EXAMPLES
 # ./neqdet.py -n 2 -w "[np.exp(-(r1-1)**2-(r2-1)**2)]" -v "[[0.5*(r1**2+r2**2)]]"
-# ./neqdet.py -d 0 -f 0.01 -p 2048 -l 32 -m 2000 -t 10 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2)],[0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" -g "[0,np.exp(-(r1+10)**2+10j*r1)]" --align
+# ./neqdet.py -d 0 -f 0.01 -p 2048 -l 32 -m 2000 -t 10 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2)],[0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" -g "[0,np.exp(-(r1+10)**2+15j*r1)]" --align
 
 if __name__ == "__main__":
     # SECTION FOR PARSING COMMAND LINE ARGUMENTS =======================================================================================================================================================

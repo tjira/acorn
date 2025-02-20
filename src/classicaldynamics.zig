@@ -217,16 +217,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
                 }
 
-                if (mash and opt.spin_mapping.?.resample != null) {
-
-                    for (0..S.rows) |k| if (abs(S.at(k, 0)) < opt.spin_mapping.?.resample.?.threshold and abs(S.at(k, 1)) < opt.spin_mapping.?.resample.?.threshold) {
-                        try initialBlochVector(T, &S, &SI, s, rand_bloc);
-                    };
-
-                    for (0..ndim) |k| if (opt.spin_mapping.?.resample.?.reflect and vp.at(k) * v.at(k) < 0) {
-                        try initialBlochVector(T, &S, &SI, s, rand_bloc); break;
-                    };
-                }
+                if (mash and opt.spin_mapping.?.resample != null) try resampleBlochVector(T, opt.spin_mapping.?.resample.?, &S, &SI, v, vp, s, rand_bloc);
 
                 if (opt.write.population_mean               != null)  pop.ptr(j, 1 + s).* += 1                                                                  ;
                 if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 1 + 0).* += Ekin                                                               ;
@@ -436,6 +427,17 @@ pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), s
         S.ptr(i, 1).* = sin_theta * std.math.sin(phi);
         S.ptr(i, 2).* = cos_theta;
     }
+}
+
+/// Function to resample the Bloch sphere at apecified time points.
+pub fn resampleBlochVector(comptime T: type, opt: ClassicalDynamicsOptions(T).SpinMapping.Resample, S: *Matrix(T), SI: *Matrix(usize), v: Vector(T), vp: Vector(T), s: u32, rand: std.Random) !void {
+    for (0..S.rows) |k| if (abs(S.at(k, 0)) < opt.threshold and abs(S.at(k, 1)) < opt.threshold) {
+        try initialBlochVector(T, S, SI, s, rand); break;
+    };
+
+    for (0..v.rows) |k| if (opt.reflect and vp.at(k) * v.at(k) < 0) {
+        try initialBlochVector(T, S, SI, s, rand); break;
+    };
 }
 
 /// Function to propagate the vector on the Bloch sphere for the spin mapping methods. The function returns the new state, if a switch occurs.
