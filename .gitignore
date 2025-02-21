@@ -13,11 +13,11 @@ docs/**/*.py*
 
 education/**/*.mat*
 
-example/research/**/*.gif*
-example/research/**/*.mat*
-example/research/**/*.mp4*
-example/research/**/*.png*
-example/research/**/*.zip*
+research/**/*.gif*
+research/**/*.mat*
+research/**/*.mp4*
+research/**/*.png*
+research/**/*.zip*
 
 *zig*/
 *sit*/

@@ -20,7 +20,7 @@ jobs:
 
       - name: Run the Research Scripts
         working-directory: research
-        run: PATH="../compiler:$PATH" ./run.sh
+        run: PATH="../compiler:$PATH" ../script/batchrun.sh
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

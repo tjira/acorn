@@ -1,11 +1,11 @@
 const std = @import("std"); const builtin = @import("builtin");
 
 const examples: [5][]const u8 = [_][]const u8{
-    "example/research/mash_test.zig",
-    "example/research/ho_excited_states.zig",
-    "example/research/uracil_lvc.zig",
-    "example/research/surface_hopping_compare.zig",
-    "example/research/model_nonadiabatic_quantum_dynamics.zig",
+    "research/mash_test.zig",
+    "research/ho_excited_states.zig",
+    "research/uracil_lvc.zig",
+    "research/surface_hopping_compare.zig",
+    "research/model_nonadiabatic_quantum_dynamics.zig",
 };
 
 const targets: []const std.Target.Query = &.{
@@ -52,13 +52,13 @@ pub fn build(builder: *std.Build) !void {
 
         if (!noexample) for (examples) |example| {
 
-            const target_name = try target.zigTriple(builder.allocator); var bin_folder = try builder.allocator.alloc(u8, target_name.len + 8);
+            const target_name = try target.zigTriple(builder.allocator); var bin_folder = try builder.allocator.alloc(u8, target_name.len + 9);
 
             @memcpy(bin_folder[0                  ..target_name.len    ], target_name      );
-            @memcpy(bin_folder[target_name.len + 1..target_name.len + 8], example    [0..7]);
+            @memcpy(bin_folder[target_name.len + 1..target_name.len + 9], example    [0..8]);
 
             const example_executable = builder.addExecutable(.{
-                .name = example[17..example.len - 4],
+                .name = example[9..example.len - 4],
                 .optimize = optimize,
                 .root_source_file = builder.path(example),
                 .single_threaded = true,
