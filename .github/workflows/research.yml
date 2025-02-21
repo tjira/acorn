@@ -19,8 +19,8 @@ jobs:
         run: mkdir compiler && wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz && tar -xvf zig.tar.xz && mv zig-linux*/lib zig-linux*/zig compiler && rm -rf zig*
 
       - name: Run the Research Scripts
-        working-directory: example/research
-        run: PATH="../../compiler:$PATH" ./run.sh
+        working-directory: research
+        run: PATH="../compiler:$PATH" ./run.sh
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
