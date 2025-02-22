@@ -26,4 +26,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: result
-          path: example/research/result
+          path: research/result
