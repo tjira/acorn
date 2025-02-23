@@ -42,6 +42,11 @@ pub fn max(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a > b) a else b;
 }
 
+/// Return the mean of a vector.
+pub fn mean(comptime T: type, v: []const T) T {
+    return sum(T, v) / asfloat(T, v.len);
+}
+
 /// Return the minimum of two numbers
 pub fn min(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a < b) a else b;
@@ -55,6 +60,11 @@ pub fn prod(comptime T: type, v: []const T) T {
 /// Sign of a number.
 pub fn sgn(a: anytype) @TypeOf(a) {
     return if (a < 0) -1 else 1;
+}
+
+/// Return the standard deviation of a vector.
+pub fn stdev(comptime T: type, v: []const T) T {
+    var result: T = 0; for (v) |value| result += (value - mean(T, v)) * (value - mean(T, v)); return std.math.sqrt(result / asfloat(T, v.len));
 }
 
 /// Calculate the sum of an array.

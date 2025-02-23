@@ -77,9 +77,21 @@ pub fn build(builder: *std.Build) !void {
 
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag) {
 
+            const benchmark_executable = builder.addRunArtifact(builder.addExecutable(.{
+                .name = "benchmark",
+                .optimize = optimize,
+                .root_source_file = builder.path("benchmark/main.zig"),
+                .single_threaded = true,
+                .strip = if (optimize != .Debug) true else false,
+                .target = builder.resolveTargetQuery(target)
+            }));
+
+            benchmark_executable.argv.getLast().artifact.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
+
             const run_executable = builder.addRunArtifact(main_executable);
 
-            builder.step("run", "Run the executable").dependOn(&run_executable.step);
+            builder.step("benchmark", "Run the benchmarks").dependOn(&benchmark_executable.step);
+            builder.step("run",       "Run the executable").dependOn(      &run_executable.step);
         }
     }
 
