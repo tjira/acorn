@@ -8,9 +8,9 @@ const Matrix = @import("acorn").Matrix;
 const allocator = std.heap.page_allocator;
 
 pub fn matrix_mm(samples: u64) ![2]f64 {
-    var A = try matrix.Matrix(f64).init(500, 500, allocator); defer A.deinit();
-    var B = try matrix.Matrix(f64).init(500, 500, allocator); defer B.deinit();
-    var C = try matrix.Matrix(f64).init(500, 500, allocator); defer C.deinit();
+    var A = try matrix.Matrix(f64).init(700, 700, allocator); defer A.deinit();
+    var B = try matrix.Matrix(f64).init(700, 700, allocator); defer B.deinit();
+    var C = try matrix.Matrix(f64).init(700, 700, allocator); defer C.deinit();
 
     A.randn(0, 1, 0); B.randn(0, 1, 1);
 
