@@ -114,24 +114,24 @@ After completing the Hartree--Fock implementation [here](hartreefockmethod.html#
 
 <!--{id=code:cc_exercise caption="Coupled Cluster Singles and Doubles exercise code. The energy and amplitudes are initialized with default values. The student is expected to fill the loop for the calculation of the excitation amplitudes and ground state energy. After the self-consistency is achieved the result is automatically printed."}-->
 ```python
-"""
-We also have everything we need for the CC calculations. In this exercise, we will calculate the CCSD energy. Since the calculation will be iterative, I define here the CCSD energy as zero, the "E_CCSD_P" variable will be used to monitor convergence.
-"""
-E_CCSD, E_CCSD_P = 0, 1
+    """
+    We also have everything we need for the CC calculations. In this exercise, we will calculate the CCSD energy. Since the calculation will be iterative, I define here the CCSD energy as zero, the "E_CCSD_P" variable will be used to monitor convergence.
+    """
+    E_CCSD, E_CCSD_P = 0, 1
 
-"""
-The first step of the calculation is to define the "t1" and "t2" amplitudes. These arrays can be initialized as zero arrays with the appropriate dimensions. I will leave this task to you.
-"""
-t1, t2 = np.array([]), np.array([])
+    """
+    The first step of the calculation is to define the "t1" and "t2" amplitudes. These arrays can be initialized as zero arrays with the appropriate dimensions. I will leave this task to you.
+    """
+    t1, t2 = np.array([]), np.array([])
 
-"""
-Now for the more complicated part. The CCSD calculation is iterative, and the convergence criterion is set by the "thresh" variable. The while loop should be filled with the appropriate calculations. The calculation of the "t1" and "t2" amplitudes is the most challenging part of the CCSD calculation. After convergence, the "E_CCSD" variable should store the final CCSD energy.
-"""
-while abs(E_CCSD - E_CCSD_P) > thresh:
-    break
+    """
+    Now for the more complicated part. The CCSD calculation is iterative, and the convergence criterion is set by the "thresh" variable. The while loop should be filled with the appropriate calculations. The calculation of the "t1" and "t2" amplitudes is the most challenging part of the CCSD calculation. After convergence, the "E_CCSD" variable should store the final CCSD energy.
+    """
+    while abs(E_CCSD - E_CCSD_P) > thresh:
+        break
 
-# print the CCSD energy
-print("CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
+    # print the CCSD energy
+    print("CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 ```
 
 Solution to this exercise can be found [here](codesolutions.html#coupled-cluster-singles-and-doubles).

@@ -20,6 +20,16 @@ You can also download this documentation along with complementary files in vario
 [Exercise](/acorn/python/exercise/resmet_exercise.py){: .btn .btn-purple }
 [Solution](/acorn/python/resmet.py){: .btn .btn-purple }
 
+### Quantum Dynamics Python Exercises
+
+<!--[Exercise](/acorn/python/exercise/neqdet_exercise.py){: .btn .btn-purple }-->
+[Solution](/acorn/python/neqdet.py){: .btn .btn-purple }
+
+### Classical Dynamics Python Exercises
+
+<!--[Exercise](/acorn/python/exercise/shcdet_exercise.py){: .btn .btn-purple }-->
+[Solution](/acorn/python/shcdet.py){: .btn .btn-purple }
+
 ### Other Tools
 
 [Code Documentation](/acorn/code){: .btn .btn-purple }

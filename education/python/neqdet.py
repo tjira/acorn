@@ -44,23 +44,26 @@ if __name__ == "__main__":
 
     # PREPARE VARIABLES FOR THE DYNAMICS ==============================================================================================================================================================
 
-    # calculate the space step, extract the number of dimensions and create the containers for the wavefunctions
-    dr = 2 * args.limit / (args.points - 1); ndim = max(map(int, re.findall(r"r\[:, (\d)\]", args.potential))) + 1; wfnopt, wfn = [], []
+    # calculate the space step, extract the number of dimensions
+    dr = 2 * args.limit / (args.points - 1); ndim = max(map(int, re.findall(r"r\[:, (\d)\]", args.potential))) + 1;
 
     # create the grid in real and fourier space
     r = np.stack(np.meshgrid(*[np.linspace(-args.limit, args.limit, args.points)] * ndim, indexing="ij"), axis=-1).reshape(-1, ndim)
     k = np.stack(np.meshgrid(*[2 * np.pi * np.fft.fftfreq(args.points, dr)      ] * ndim, indexing="ij"), axis=-1).reshape(-1, ndim)
 
-    # define the potential and create containers for the observables
-    V = np.array(eval(args.potential)).transpose(2, 0, 1); position, momentum, ekin, epot = [], [], [], []
+    # define the potential
+    V = np.array(eval(args.potential)).transpose(2, 0, 1)
 
-    # PERFORM THE PROPAGATIONS =========================================================================================================================================================================
+    # REAL AND IMAGINARY QUANTUM DYNAMICS =============================================================================================================================================================
+
+    # create the containers for the observables and wavefunctions
+    position, momentum, ekin, epot = [], [], [], []; wfnopt, wfn = [], []
 
     # iterate over the propagations
     for i in range(args.imaginary if args.imaginary else 1):
 
         # print the propagation header
-        print("%sPROPAGATION OF STATE %d " % ("\n " if i else "", i))
+        print() if i else None; print("PROPAGATION OF STATE %d " % (i))
 
         # create the initial wavefunction from the provided guess and normalize it
         psi = np.array(list(map(lambda x: x * np.ones(r.shape[0]), eval(args.guess))), dtype=complex).T; psi /= np.sqrt(dr * np.einsum("ij,ij->", psi.conj(), psi))
@@ -129,7 +132,7 @@ if __name__ == "__main__":
         # append the optimized wavefunction to the container
         if args.imaginary: wfnopt.append(psi.copy())
 
-    # TRANSFORM THE WAVEFUNCTION AND CALCULATE SPECTRUM ==================================================================================================================================================
+    # ADIABATIC TRANSFORM AND SPECTRUM ====================================================================================================================================================================
 
     # calculate the adiabatic eigenstates
     U = [np.linalg.eigh(V[i])[1] for i in range(V.shape[0])]

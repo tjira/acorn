@@ -8,7 +8,7 @@ nav_order: 1
 
 # Code Solutions<!--\label{sec:code_solutions}-->
 
-This section provides the solutions to all of the coding exercises provided in the text. The solutions are written in Python and use the NumPy library for numerical operations. The code snippets are self-contained and can be run in any Python environment. The solutions are organized by the exercise they correspond to and are presented in the same order as in the text. For convenience, the full code solution file [resmet.py](/acorn/python/resmet.py) can be saved here.
+This section provides the solutions to all of the coding exercises provided in the text. The solutions are written in Python and use the NumPy library for numerical operations. The code snippets are self-contained and can be run in any Python environment. The solutions are organized by the exercise they correspond to and are presented in the same order as in the text. For convenience, the full code solution files [resmet.py](/acorn/python/resmet.py), [neqdet.py](/acorn/python/neqdet.py) and [shcdet.py](/acorn/python/shcdet.py) can be saved by clicking the links.
 
 ## Hartree--Fock Method<!--\label{sec:hf_code_solution}-->
 
@@ -341,6 +341,85 @@ if args.ccsd:
 
     # print the CCSD energy
     print("   CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
+```
+## Quantum and Bohmian Dynamics<!--\label{sec:qd_code_solution}-->
+
+<!--{id=code:qd_solution caption="Quantum and Bohmian dynamics solution."}-->
+```python
+position, momentum, ekin, epot = [], [], [], []; wfnopt, wfn = [], []
+
+# iterate over the propagations
+for i in range(args.imaginary if args.imaginary else 1):
+
+    # print the propagation header
+    print() if i else None; print("PROPAGATION OF STATE %d " % (i))
+
+    # create the initial wavefunction from the provided guess and normalize it
+    psi = np.array(list(map(lambda x: x * np.ones(r.shape[0]), eval(args.guess))), dtype=complex).T; psi /= np.sqrt(dr * np.einsum("ij,ij->", psi.conj(), psi))
+
+    # create the initial points for Bohmian trajectories
+    trajs = np.concatenate((r[np.random.choice(psi.shape[0], size=args.ntraj, p=(np.abs(psi)**2 * dr).sum(axis=1))][:, None, :], np.zeros((args.ntraj, args.iterations, ndim))), axis=1)
+
+    # get the full wavefunction shape and clear the containers
+    shape = ndim * [args.points] + [psi.shape[1]]; wfn.clear(), position.clear(), momentum.clear(), ekin.clear(), epot.clear()
+
+    # calculate the propagators for each point in the grid
+    K = np.array([sp.linalg.expm(-0.5 * (1 if args.imaginary else 1j) * args.timestep * np.sum(k[i, :] ** 2) / args.mass * np.eye(psi.shape[1])) for i in range(r.shape[0])])
+    R = np.array([sp.linalg.expm(-0.5 * (1 if args.imaginary else 1j) * args.timestep                                    * V[i]                ) for i in range(r.shape[0])])
+
+    # print the propagation header
+    print("%6s %12s %12s %12s" % ("ITER", "EKIN", "EPOT", "ETOT", ))
+
+    # propagate the wavefunction
+    for j in range(args.iterations + 1):
+
+        # propagate in real space 
+        if (j): psi = np.einsum("ijk,ik->ij", R, psi)
+
+        # fourier transform the wavefunction
+        if (j): psi = np.fft.fftn(psi.reshape(shape), axes=range(ndim)).reshape(psi.shape)
+
+        # propagate in momentum space
+        if (j): psi = np.einsum("ijk,ik->ij", K, psi)
+
+        # inverse fourier transform the wavefunction
+        if (j): psi = np.fft.ifftn(psi.reshape(shape), axes=range(ndim)).reshape(psi.shape)
+
+        # propagate in real space
+        if (j): psi = np.einsum("ijk,ik->ij", R, psi)
+
+        # orthogonalize the wavefunction
+        for i in range(len(wfnopt)): psi -= np.sum(wfnopt[i].conj() * psi) * wfnopt[i] * dr
+
+        # normalize the wavefunction
+        if args.imaginary: psi /= np.sqrt(dr * np.einsum("ij,ij->", psi.conj(), psi))
+
+        # append the potential energy and the wavefunction
+        epot.append(np.einsum("ij,ijk,ik->", psi.conj(), V, psi).real * dr); wfn.append(psi.copy())
+
+        # create a n dimensional copy of the wavefunction, its fourier transform and a container for Bohmian trajectory velocity
+        psid, psik, v = psi.reshape(shape), np.fft.fftn(psi.reshape(shape), axes=range(ndim)).reshape(psi.shape), np.zeros(shape[:-1] + [ndim])
+
+        # append the kinetic energy
+        ekin.append((psi.conj() * np.fft.ifftn((psik * (0.5 * np.sum(k**2, axis=1) / args.mass)[:, None]).reshape(shape), axes=range(ndim)).reshape(psi.shape)).real.sum() * dr)
+
+        # append the position
+        position.append(np.sum(r * np.sum(np.abs(psi)**2, axis=1, keepdims=True), axis=0) * dr)
+
+        # append the momentum
+        momentum.append(np.array([np.sum(psi.conj() * np.fft.ifftn((1j * (k[:, dim:dim + 1]) * psik).reshape(shape), axes=range(ndim)).reshape(psi.shape)).imag * dr for dim in range(ndim)]))
+
+        # calculate the velocity of the Bohmian trajectories
+        if (j): v[..., :] = np.array([(np.conjugate(psid) * np.gradient(psid, dr, axis=dim)).sum(axis=-1).imag / ((np.abs(psid)**2).sum(axis=-1) + 1e-14) / args.mass for dim in range(ndim)]).T
+
+        # propagate the Bohmian trajectories
+        if (j): trajs[:, j, :] = trajs[:, j - 1, :] + sp.interpolate.interpn(points=ndim * [np.unique(r[:, 0])], values=v, xi=trajs[:, j - 1, :]) * args.timestep
+
+        # print the iteration info
+        if j % 100 == 0: print("%6d %12.6f %12.6f %12.6f" % (j, ekin[-1], epot[-1], ekin[-1] + epot[-1]))
+
+    # append the optimized wavefunction to the container
+    if args.imaginary: wfnopt.append(psi.copy())
 ```
 
 {:.cite}

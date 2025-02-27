@@ -23,22 +23,10 @@ where $i$ is the imaginary unit, $\hbar$ is the reduced Planck constant, $\ket{\
 A general solution of the Time-Dependent Schrödinger Equation can be written as
 
 \begin{equation}\label{eq:tdse_propagator}
-\ket{\Psi\left(t\right)}=\hat{\mathbf{U}}\left(t\right)\ket{\Psi\left(0\right)},
+\ket{\Psi\left(t\right)}=\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}t}\ket{\Psi\left(0\right)},
 \end{equation}
 
-where the operator $\hat{\mathbf{U}}$ is called a time evolution operator (propagator). The action if $\hat{\mathbf{U}}$ on the initial wavefunction $\ket{\Psi\left(0\right)}$ propagates the state from time $0$ to time $t$, carrying all the information about the time evolution of the system. The propagator is straightforward to find if the Hamiltonian $\hat{\mathbf{H}}$ does not depend on time. In this case, the formal solution to the Time-Dependent Schrödinger Equation can be written as
-
-\begin{equation}\label{eq:tdse_explicit_propagator}
-\ket{\Psi\left(t\right)}=\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}t}\ket{\Psi\left(0\right)}.
-\end{equation}
-
-Comparing equations \eqref{eq:tdse_propagator} and \eqref{eq:tdse_explicit_propagator} reveals that the time evolution operator for a time independent Hamiltonian can be expressed as
-
-\begin{equation}\label{eq:propagator}
-\hat{\mathbf{U}}(t)=\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}t}.
-\end{equation}
-
-This exponential operator contains the complete description of how the system evolves with time. In practical applications, however, evaluating $\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}t}$ analytically is rarely straightforward for nontrivial Hamiltonians, which often necessitates numerical methods for an accurate treatment of quantum dynamics.
+The action of $\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}t}$ on the initial wavefunction $\ket{\Psi\left(0\right)}$ propagates the state from time $0$ to time $t$, carrying all the information about the time evolution of the system. The propagator is straightforward to find if the Hamiltonian $\hat{\mathbf{H}}$ does not depend on time. In this case, the formal solution to the Time-Dependent Schrödinger Equation can be written as This exponential operator contains the complete description of how the system evolves with time. In practical applications, however, evaluating $\mathrm{e}^{-\frac{\mathrm{i}}{\hbar}\hat{\mathbf{H}}t}$ analytically is rarely straightforward for nontrivial Hamiltonians, which often necessitates numerical methods for an accurate treatment of quantum dynamics.
 
 ### Space Discretization and the Diabatic Basis
 
@@ -48,7 +36,7 @@ To represent the wavefunction numerically, we sample it on a spatial grid. In pr
 \bra{\Phi_i}\frac{\partial}{\partial x}\ket{\Phi_j}=0,\,i\neq j.
 \end{equation}
 
-Note that the specific functional form of these basis states is not crucial for the dynamics on the model potentials, since they are implicitly taken to be the canonical basis in $\mathbb{R}^N$ when defining the potential energy surfaces. For a two-state system, our wavefunction in the diabatic basis can be written as
+Because these diabatic basis states are frequently taken simply as the canonical basis in $\mathbb{R}^N$ when defining model potential energy surfaces, their explicit functional forms are not crucial in most model-based simulations. Nonetheless, from a physical standpoint, these states are usually determined through quantum chemical computations that ensure minimal coordinate dependence in the electronic mixing. For a two-state system, the wavefunction in the diabatic basis can be written as
 
 \begin{equation}\label{eq:diabatic_wavefunction}
 \ket{\Psi\left(x,t\right)}=c_1\left(x,t\right)\ket{\Phi_1}+c_2\left(x,t\right)\ket{\Phi_2}=
@@ -72,7 +60,7 @@ where $\mathbf{I}$ is the identity matrix, $\hat{\mathbf{T}}$ is the kinetic ene
 
 ### Wavefunction Propagation
 
-We aim to reduce the action of the propagator \eqref{eq:propagator} on the diabatic wavefunction \eqref{eq:diabatic_wavefunction} to a simple matrix multiplication. The main difficulty is the differential form of the kinetic operator in the equation \ref{eq:diabatic_hamiltonian}. To handle this, we use a Fourier-based method for applying the kinetic operator $\hat{\mathbf{T}}$ on a wavefunction $\ket{\Psi\left(x,t\right)}$. Taking the Fourier Transform $\hat{\mathbf{T}}\ket{\Psi\left(x,t\right)}$ yields
+We aim to reduce the action of the propagator on the diabatic wavefunction \eqref{eq:diabatic_wavefunction} to a simple matrix multiplication. The main difficulty is the differential form of the kinetic operator in the equation \eqref{eq:diabatic_hamiltonian}. To handle this, we use a Fourier-based method for applying the kinetic operator $\hat{\mathbf{T}}$ on a wavefunction $\ket{\Psi\left(x,t\right)}$. Taking the Fourier Transform $\hat{\mathbf{T}}\ket{\Psi\left(x,t\right)}$ yields
 
 \begin{align}\label{eq:kinetic_fourier_method}
 \mathcal{F}\left\lbrace\hat{\mathbf{T}}\ket{\Psi\left(x,t\right)}\right\rbrace&=\mathcal{F}\left\lbrace-\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2}\ket{\Psi\left(x,t\right)}\right\rbrace=\frac{\hbar^2 k^2}{2m}\mathcal{F}\left\lbrace\ket{\Psi\left(x,t\right)}\right\rbrace \\\\\
@@ -107,7 +95,7 @@ which is valid for small $\Delta t$. Now we have everything we need to propagate
 
 where $\mathbf{T}$ is the kinetic matrix in the momentum space, and $\mathbf{V}$ is the potential matrix in the position space. The matrix exponential is now simply a mathematical problem and is described [here](matrixexponential.html#matrix-exponential).
 
-Now that we have the wavefunction an any given time, we can calculate observables, such as the density matrix, position, momentum, etc. The expectation value of position is trivial to calculate, since the wavefunction is already in the position space. The expectation value of momentum can be calculated by Fourier Transforming the wavefunction to the momentum space and multiplying by the momentum operator. The density matrix can be calculated by taking the outer product of the wavefunction with itself.
+Now that we have the wavefunction an any given time, we can calculate observables, such as the density matrix, position, momentum, etc. The expectation value of position is trivial to calculate, since the wavefunction is already in the position space. The expectation value of momentum can be calculated by applying Fourier Transform on the wavefunction and multiplying by the momentum operator. The density matrix can be calculated by taking the outer product of the wavefunction with itself.
 
 ### The Adiabatic Transform
 

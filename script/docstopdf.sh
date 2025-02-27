@@ -38,6 +38,8 @@ EOL
 
 # add the contents of the educational scripts
 echo -e "\n\\\begin{filecontents*}{resmet.py}" >> docs/tex/main.tex && cat education/python/resmet.py >> docs/tex/main.tex && echo -e "\\\end{filecontents*}\n" >> docs/tex/main.tex
+echo -e   "\\\begin{filecontents*}{neqdet.py}" >> docs/tex/main.tex && cat education/python/neqdet.py >> docs/tex/main.tex && echo -e "\\\end{filecontents*}\n" >> docs/tex/main.tex
+echo -e   "\\\begin{filecontents*}{shcdet.py}" >> docs/tex/main.tex && cat education/python/shcdet.py >> docs/tex/main.tex && echo -e "\\\end{filecontents*}\n" >> docs/tex/main.tex
 
 # add the rest of the header
 cat >> docs/tex/main.tex << EOL
@@ -307,22 +309,25 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
 
     # get the exercise and solution code blocks
     if [ "$PAGE" == "hartreefockmethod" ]; then
-        CONTENT_EXC_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
-        CONTENT_EXC=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p ; s/^    //' docs/python/exercise/resmet_exercise.py       | head -n -2 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p ; s/^    //' docs/python/resmet.py                         | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_EXC_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+        CONTENT_EXC=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p' docs/python/exercise/resmet_exercise.py       | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p' docs/python/resmet.py                         | head -n -2 | tail -n +3 | sed 's/^    //'    )
     fi
     if [ "$PAGE" == "mollerplessetperturbationtheory" ]; then
-        CONTENT_EXC=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+        CONTENT_EXC=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
     fi
     if [ "$PAGE" == "configurationinteraction" ]; then
-        CONTENT_EXC=$(sed -n '/# CONFIGURATION INTERACTION/,$p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -0 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL=$(sed -n '/# CONFIGURATION INTERACTION/,$p ; s/^    //' docs/python/resmet.py                   | head -n -0 | tail -n +4 | sed 's/^        //')
+        CONTENT_EXC=$(sed -n '/# CONFIGURATION INTERACTION/,$p' docs/python/exercise/resmet_exercise.py | head -n -0 | tail -n +3 | sed 's/^    //'    )
+        CONTENT_SOL=$(sed -n '/# CONFIGURATION INTERACTION/,$p' docs/python/resmet.py                   | head -n -0 | tail -n +4 | sed 's/^        //')
     fi
     if [ "$PAGE" == "coupledcluster" ]; then
-        CONTENT_EXC=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p ; s/^    //' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p ; s/^    //' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+        CONTENT_EXC=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3)
+        CONTENT_SOL=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
+    fi
+    if [ "$PAGE" == "realtimepropagation" ]; then
+        CONTENT_SOL=$(sed -n '/# REAL AND IMAGINARY QUANTUM DYNAMICS/,/# ADIABATIC TRANSFORM AND SPECTRUM/p' docs/python/neqdet.py | head -n -2 | tail -n +4 | sed 's/^    //')
     fi
 
     # add the base exercise block
@@ -354,13 +359,14 @@ sed -i 's/\\section{Electronic Structure Methods}/\\part{Electronic Structure Me
 sed -i 's/\\section{Quantum Dynamics}/\\part{Quantum Dynamics}/g'                         docs/tex/main.tex
 
 # replace section references
-sed -i 's/\\href{realtimepropagation.html}{here}/in Section \\ref{sec:real_time_propagation}/g'  docs/tex/main.tex
+sed -i 's/\\href{realtimepropagation.html}{here}/in Section \\ref{sec:real_time_propagation}/g'                                                          docs/tex/main.tex
 sed -i 's/\\href{hartreefockmethod.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g'  docs/tex/main.tex
 sed -i 's/\\href{hartreefockmethod.html\\#hartreefock-method-and-integral-transform-coding-exercise}{here}/in Section \\ref{sec:hf_int_code_exercise}/g' docs/tex/main.tex
 sed -i 's/\\href{matrixexponential.html\\#matrix-exponential}{here}/in Section \\ref{sec:matrix_exponential}/g'                                          docs/tex/main.tex
 sed -i 's/\\href{generalizedeigenvalueproblem.html\\#generalized-eigenvalue-problem}{here}/in Section \\ref{sec:generalized_eigenvalue_problem}/g'       docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#code-solutions}{here}/in Section \\ref{sec:code_solutions}/g'                                                      docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#hartreefock-method}{here}/in Section \\ref{sec:hf_code_solution}/g'                                                docs/tex/main.tex
+sed -i 's/\\href{codesolutions.html\\#quantum-and-bohmian-dynamics}{here}/in Section \\ref{sec:qd_code_solution}/g'                                      docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#integral-transform}{here}/in Section \\ref{sec:int_code_solution}/g'                                               docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#2nd-and-3rd-order-perturbative-corrections}{here}/in Section \\ref{sec:mp_code_solution}/g'                        docs/tex/main.tex
 sed -i 's/\\href{codesolutions.html\\#full-configuration-interaction}{here}/in Section \\ref{sec:ci_code_solution}/g'                                    docs/tex/main.tex
@@ -372,6 +378,8 @@ sed -i 's/\\href{\/acorn\/python\/H_AO.mat}/\\textattachfile[color=0 0 1]{H_AO.m
 sed -i 's/\\href{\/acorn\/python\/S_AO.mat}/\\textattachfile[color=0 0 1]{S_AO.mat}/g'         docs/tex/main.tex
 sed -i 's/\\href{\/acorn\/python\/J_AO.mat}/\\textattachfile[color=0 0 1]{J_AO.mat}/g'         docs/tex/main.tex
 sed -i 's/\\href{\/acorn\/python\/resmet.py}/\\textattachfile[color=0 0 1]{resmet.py}/g'       docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/neqdet.py}/\\textattachfile[color=0 0 1]{neqdet.py}/g'       docs/tex/main.tex
+sed -i 's/\\href{\/acorn\/python\/shcdet.py}/\\textattachfile[color=0 0 1]{shcdet.py}/g'       docs/tex/main.tex
 
 # loop over all acronyms
 for ACRONYM in "${ACRONYMS[@]}"; do
