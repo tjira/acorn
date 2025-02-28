@@ -1,6 +1,6 @@
 ---
 title: Real Time Propagation
-parent: Quantum Dynamics
+parent: Time Evolution in Quantum Mechanics
 layout: default
 nav_order: 1
 ---
@@ -93,7 +93,7 @@ which is valid for small $\Delta t$. Now we have everything we need to propagate
 \ket{\Psi\left(x,t+\Delta t\right)}=\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{2\hbar}\mathbf{V}}\mathcal{F}^{-1}\left\lbrace\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{\hbar}\mathbf{T}}\mathcal{F}\left\lbrace\mathrm{e}^{-\frac{\mathrm{i}\Delta t}{2\hbar}\mathbf{V}}\ket{\Psi\left(x,t\right)}\right\rbrace\right\rbrace,
 \end{equation}
 
-where $\mathbf{T}$ is the kinetic matrix in the momentum space, and $\mathbf{V}$ is the potential matrix in the position space. The matrix exponential is now simply a mathematical problem and is described [here](matrixexponential.html#matrix-exponential).
+where $\mathbf{T}$ is the kinetic matrix in the momentum space, and $\mathbf{V}$ is the potential matrix in the position space. The matrix exponential is now simply a mathematical problem and is described [here](me.html#matrix-exponential).
 
 Now that we have the wavefunction an any given time, we can calculate observables, such as the density matrix, position, momentum, etc. The expectation value of position is trivial to calculate, since the wavefunction is already in the position space. The expectation value of momentum can be calculated by applying Fourier Transform on the wavefunction and multiplying by the momentum operator. The density matrix can be calculated by taking the outer product of the wavefunction with itself.
 

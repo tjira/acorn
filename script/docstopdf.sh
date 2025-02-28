@@ -1,6 +1,20 @@
 #!/bin/bash
 
-PAGES=("electronicstructuremethods" "hartreefockmethod" "mollerplessetperturbationtheory" "configurationinteraction" "coupledcluster" "quantumdynamics" "realtimepropagation" "imaginarytimepropagation" "generalizedeigenvalueproblem" "matrixexponential" "codesolutions")
+PAGES=(
+    "esm"
+    "hf"
+    "mppt"
+    "ci"
+    "cc"
+    "teqm"
+    "rtp"
+    "itp"
+    "mqcd"
+    "sh"
+    "gep"
+    "me"
+    "cs"
+)
 
 ACRONYMS=(
     "Restricted Hartree--Fock/RHF"
@@ -33,7 +47,7 @@ cp -r education/python docs/
 mkdir -p docs/tex && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
 
-\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\pdfminorversion=7\title{Algorithms of Quantum Chemistry}\author{Tomáš \textsc{Jíra}, Jiří \textsc{Janoš}, Petr \textsc{Slavíček}}
+\documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\pdfminorversion=7\title{Algorithms of Quantum Chemistry}\author{Tomáš \textsc{Jíra}}
 EOL
 
 # add the contents of the educational scripts
@@ -250,7 +264,8 @@ water/RHF/STO-3G/-74.965901192180
     numbers=none,
     frame=single,
     showstringspaces=false,
-    captionpos=b
+    captionpos=b,
+    literate={\ \ }{{\ }}1
 }
 \lstset{style=code}
 
@@ -293,54 +308,21 @@ cat >> docs/tex/main.tex << EOL
 EOL
 
 # clear codes from solution file
-sed -i '/^```python/,/^```/{/^```/!d}' docs/pages/codesolutions.md
-
-# add code counter
-SOLUTION_CODE_COUNTER=1
+sed -i '/^```python/,/^```/{/^```/!d}' docs/pages/cs.md
 
 # loop over all pages
 echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
 
-    # remove the exercise and solution code blocks
-    [[ "$PAGE" != "codesolutions" ]] && sed -i '/^```python/,/^```/{/^```/!d}' docs/pages/$PAGE.md
+    # add the educational content to the code solution section
+    if [ "$PAGE" == "cs" ]; then
+        RESMET=$(cat docs/python/resmet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g')
+        NEQDET=$(cat docs/python/neqdet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g')
+        SHCDET=$(cat docs/python/shcdet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g')
 
-    # clear the specific variables
-    CONTENT_EXC=""; CONTENT_SOL=""; CONTENT_EXC_INT=""; CONTENT_SOL_INT=""
-
-    # get the exercise and solution code blocks
-    if [ "$PAGE" == "hartreefockmethod" ]; then
-        CONTENT_EXC_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL_INT=$(sed -n '/# INTEGRAL TRANSFORM/,/# MOLLER-PLESSET/p' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
-        CONTENT_EXC=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p' docs/python/exercise/resmet_exercise.py       | head -n -2 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL=$(sed -n '/# HARTREE-FOCK/,/# INTEGRAL TRANSFORM/p' docs/python/resmet.py                         | head -n -2 | tail -n +3 | sed 's/^    //'    )
+        awk -v content="$RESMET" -v i=1 '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/cs.md > temp.md && mv temp.md docs/pages/cs.md
+        awk -v content="$NEQDET" -v i=2 '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/cs.md > temp.md && mv temp.md docs/pages/cs.md
+        awk -v content="$SHCDET" -v i=3 '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/cs.md > temp.md && mv temp.md docs/pages/cs.md
     fi
-    if [ "$PAGE" == "mollerplessetperturbationtheory" ]; then
-        CONTENT_EXC=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL=$(sed -n '/# MOLLER-PLESSET/,/# COUPLED CLUSTER/p' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
-    fi
-    if [ "$PAGE" == "configurationinteraction" ]; then
-        CONTENT_EXC=$(sed -n '/# CONFIGURATION INTERACTION/,$p' docs/python/exercise/resmet_exercise.py | head -n -0 | tail -n +3 | sed 's/^    //'    )
-        CONTENT_SOL=$(sed -n '/# CONFIGURATION INTERACTION/,$p' docs/python/resmet.py                   | head -n -0 | tail -n +4 | sed 's/^        //')
-    fi
-    if [ "$PAGE" == "coupledcluster" ]; then
-        CONTENT_EXC=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p' docs/python/exercise/resmet_exercise.py | head -n -2 | tail -n +3)
-        CONTENT_SOL=$(sed -n '/# COUPLED CLUSTER/,/# CONFIGURATION INTERACTION/p' docs/python/resmet.py                   | head -n -2 | tail -n +4 | sed 's/^        //')
-    fi
-    if [ "$PAGE" == "realtimepropagation" ]; then
-        CONTENT_SOL=$(sed -n '/# REAL AND IMAGINARY QUANTUM DYNAMICS/,/# ADIABATIC TRANSFORM AND SPECTRUM/p' docs/python/neqdet.py | head -n -2 | tail -n +4 | sed 's/^    //')
-    fi
-
-    # add the base exercise block
-    [[ ! -z "$CONTENT_EXC" ]] && awk -v content="$CONTENT_EXC" '/^```python/ {count++; if (count == 1) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
-
-    # add the specific exercise blocks
-    [[ ! -z "$CONTENT_EXC_INT" ]] && awk -v content="$CONTENT_EXC_INT" '/^```python/ {count++; if (count == 2) {print; print content; next}}1' "docs/pages/$PAGE.md" > temp.md && mv temp.md "docs/pages/$PAGE.md"
-
-    # add the base solution block
-    [[ ! -z "$CONTENT_SOL" ]] && awk -v content="$CONTENT_SOL" -v i=$SOLUTION_CODE_COUNTER '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/codesolutions.md > temp.md && mv temp.md docs/pages/codesolutions.md && ((SOLUTION_CODE_COUNTER++))
-
-    # add the specific solution blocks
-    [[ ! -z "$CONTENT_SOL_INT" ]] && awk -v content="$CONTENT_SOL_INT" -v i=$SOLUTION_CODE_COUNTER '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/codesolutions.md > temp.md && mv temp.md docs/pages/codesolutions.md && ((SOLUTION_CODE_COUNTER++))
 
     # replace some MD quirks with LaTeX quirks
     awk '/^<!--{id/{s=$0;next}{printf("%s", $0)} ; /^```py/{printf("%s", s)} ; {printf("\n")}' "docs/pages/$PAGE.md" | \
@@ -354,23 +336,17 @@ done && echo "" >> docs/tex/main.tex
 # replace some conversion artifacts
 sed -i 's/\\begin{lstlisting}/\\raggedbottom\\begin{lstlisting}/ ; s/\\\///g ; s/\\passthrough/\\texttt/g ; s/\\mathbf{\\varepsilon}/\\bm{\\varepsilon}/g' docs/tex/main.tex
 
-# replace names of some sections
-sed -i 's/\\section{Electronic Structure Methods}/\\part{Electronic Structure Methods}/g' docs/tex/main.tex
-sed -i 's/\\section{Quantum Dynamics}/\\part{Quantum Dynamics}/g'                         docs/tex/main.tex
+# set what sections are chapters
+sed -i 's/\\section{Electronic Structure Methods}/\\chapter{Electronic Structure Methods}/g'               docs/tex/main.tex
+sed -i 's/\\section{Time Evolution in Quantum Mechanics}/\\chapter{Time Evolution in Quantum Mechanics}/g' docs/tex/main.tex
+sed -i 's/\\section{Mixed Quantum-Classical Dynamics}/\\chapter{Mixed Quantum-Classical Dynamics}/g'       docs/tex/main.tex
 
 # replace section references
-sed -i 's/\\href{realtimepropagation.html}{here}/in Section \\ref{sec:real_time_propagation}/g'                                                          docs/tex/main.tex
-sed -i 's/\\href{hartreefockmethod.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g'  docs/tex/main.tex
-sed -i 's/\\href{hartreefockmethod.html\\#hartreefock-method-and-integral-transform-coding-exercise}{here}/in Section \\ref{sec:hf_int_code_exercise}/g' docs/tex/main.tex
-sed -i 's/\\href{matrixexponential.html\\#matrix-exponential}{here}/in Section \\ref{sec:matrix_exponential}/g'                                          docs/tex/main.tex
-sed -i 's/\\href{generalizedeigenvalueproblem.html\\#generalized-eigenvalue-problem}{here}/in Section \\ref{sec:generalized_eigenvalue_problem}/g'       docs/tex/main.tex
-sed -i 's/\\href{codesolutions.html\\#code-solutions}{here}/in Section \\ref{sec:code_solutions}/g'                                                      docs/tex/main.tex
-sed -i 's/\\href{codesolutions.html\\#hartreefock-method}{here}/in Section \\ref{sec:hf_code_solution}/g'                                                docs/tex/main.tex
-sed -i 's/\\href{codesolutions.html\\#quantum-and-bohmian-dynamics}{here}/in Section \\ref{sec:qd_code_solution}/g'                                      docs/tex/main.tex
-sed -i 's/\\href{codesolutions.html\\#integral-transform}{here}/in Section \\ref{sec:int_code_solution}/g'                                               docs/tex/main.tex
-sed -i 's/\\href{codesolutions.html\\#2nd-and-3rd-order-perturbative-corrections}{here}/in Section \\ref{sec:mp_code_solution}/g'                        docs/tex/main.tex
-sed -i 's/\\href{codesolutions.html\\#full-configuration-interaction}{here}/in Section \\ref{sec:ci_code_solution}/g'                                    docs/tex/main.tex
-sed -i 's/\\href{codesolutions.html\\#coupled-cluster-singles-and-doubles}{here}/in Section \\ref{sec:cc_code_solution}/g'                               docs/tex/main.tex
+sed -i 's/\\href{rtp.html}{here}/in Section \\ref{sec:real_time_propagation}/g'                                                          docs/tex/main.tex
+sed -i 's/\\href{mf.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g' docs/tex/main.tex
+sed -i 's/\\href{me.html\\#matrix-exponential}{here}/in Section \\ref{sec:matrix_exponential}/g'                                         docs/tex/main.tex
+sed -i 's/\\href{gep.html\\#generalized-eigenvalue-problem}{here}/in Section \\ref{sec:generalized_eigenvalue_problem}/g'                docs/tex/main.tex
+sed -i 's/\\href{cs.html\\#code-solutions}{here}/in Section \\ref{sec:code_solutions}/g'                                                 docs/tex/main.tex
 
 # replace file attachments
 sed -i 's/\\href{\/acorn\/python\/molecule.xyz}/\\textattachfile[color=0 0 1]{molecule.xyz}/g' docs/tex/main.tex
@@ -397,11 +373,8 @@ for ACRONYM in "${ACRONYMS[@]}"; do
     sed -i '0,/\\acrshort{'"${AS[1],,}"'}/s//\\acrfull{'"${AS[1],,}"'}/' temp.tex && mv temp.tex docs/tex/main.tex
 done
 
-# replace section with chapters and subsections with sections
-sed -i 's/\\section/\\chapter/g ; s/\\subsection/\\section/g ; s/\\subsubsection/\\subsection/g' docs/tex/main.tex
-
-# set the appendix
-sed -i 's/\\chapter{\\texorpdfstring{Generalized Eigenvalue Problem/\n\\begin{appendices}\\chapter{\\texorpdfstring{Generalized Eigenvalue Problem/' docs/tex/main.tex
+# set the start of the appendix
+sed -i 's/\\section{\\texorpdfstring{Generalized Eigenvalue Problem/\n\\begin{appendices}\\section{\\texorpdfstring{Generalized Eigenvalue Problem/' docs/tex/main.tex
 
 # end the document
 cat >> docs/tex/main.tex << EOL

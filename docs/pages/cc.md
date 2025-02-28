@@ -11,6 +11,7 @@ nav_order: 1
 Coupled Cluster theory is a post-Hartree--Fock method used in quantum chemistry to achieve highly accurate solutions to the electronic Schrödinger equation, particularly for ground states and certain excited states. It improves upon Hartree--Fock by incorporating electron correlation effects through a systematic inclusion of excitations (singles, doubles, triples, etc.) from a reference wavefunction, usually the Hartree--Fock wavefunction. The method uses an exponential ansatz to account for these excitations, leading to a size-consistent and size-extensive approach, making it one of the most accurate methods available for small to medium-sized molecular systems.
 
 Within Coupled Cluster theory, specific truncations are often applied to manage computational cost. The Coupled Cluster Doubles method considers only double excitations, capturing electron correlation more effectively than simpler methods like Hartree--Fock, but at a lower computational expense than higher-level methods. Coupled Cluster Singles and Doubles extends this approach by including both single and double excitations, offering greater accuracy, particularly for systems where single excitations play a significant role. Coupled Cluster Singles and Doubles is widely used due to its balance between accuracy and computational feasibility, making it a reliable choice for many chemical systems.
+
 ## Coupled Cluster Formalism
 
 In the Coupled Cluster formalism, we write the total wavefunction in an exponential form as
@@ -53,7 +54,7 @@ taking advantage of the exponential form of the wavefunction. We could then proc
 
 ## Implementation of Truncated Coupled Cluster Methods
 
-We will not go into the details here, but we will provide the final expressions for the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods.<!--\supercite{10.1063/1.460620}--> The Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods are the most commonly used Coupled Cluster methods, and they are often used as benchmarks for other methods. All we need for the evaluation of the expressions below are the two-electron integrals in the Molecular Spinorbital basis and physicists' notation, Fock matrix in the Molecular Spinorbital basis and the orbital energy tensors obtained from the Hartree--Fock calculation. All these transformations are already explained [here](hartreefockmethod.html#integral-transforms-to-the-basis-of-molecular-spinorbitals). The expressions for the Coupled Cluster Doubles can be written as
+We will not go into the details here, but we will provide the final expressions for the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods.<!--\supercite{10.1063/1.460620}--> The Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods are the most commonly used Coupled Cluster methods, and they are often used as benchmarks for other methods. All we need for the evaluation of the expressions below are the two-electron integrals in the Molecular Spinorbital basis and physicists' notation, Fock matrix in the Molecular Spinorbital basis and the orbital energy tensors obtained from the Hartree--Fock calculation. All these transformations are already explained [here](hf.html#integral-transforms-to-the-basis-of-molecular-spinorbitals). The expressions for the Coupled Cluster Doubles can be written as
 
 \begin{equation}
 E\_{\text{CCD}}=\frac{1}{4}\braket{ij||ab}t\_{ij}^{ab}
@@ -107,34 +108,6 @@ t\_{ij}^{ab}=&\braket{ab||ij}+\hat{P}\_{(a/b)}t\_{ij}^{ae}\left(\mathscr{F}\_{be
 \end{align}
 
 The Coupled Cluster Singles and Doubles amplitude equations are, again, nonlinear and require iterative solution methods to obtain the final amplitudes. The initial guess for the amplitudes is often set to zero, and the equations are solved iteratively until convergence is achieved.
-
-## Coupled Cluster Singles and Doubles Code Exercise
-
-After completing the Hartree--Fock implementation [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise), you can proceed with coding the Coupled Cluster Singles and Doubles exercise, which builds on the Hartree--Fock results. The exercise is provided in the Listing <!--\ref{code:cc_exercise}--> below.
-
-<!--{id=code:cc_exercise caption="Coupled Cluster Singles and Doubles exercise code. The energy and amplitudes are initialized with default values. The student is expected to fill the loop for the calculation of the excitation amplitudes and ground state energy. After the self-consistency is achieved the result is automatically printed."}-->
-```python
-    """
-    We also have everything we need for the CC calculations. In this exercise, we will calculate the CCSD energy. Since the calculation will be iterative, I define here the CCSD energy as zero, the "E_CCSD_P" variable will be used to monitor convergence.
-    """
-    E_CCSD, E_CCSD_P = 0, 1
-
-    """
-    The first step of the calculation is to define the "t1" and "t2" amplitudes. These arrays can be initialized as zero arrays with the appropriate dimensions. I will leave this task to you.
-    """
-    t1, t2 = np.array([]), np.array([])
-
-    """
-    Now for the more complicated part. The CCSD calculation is iterative, and the convergence criterion is set by the "thresh" variable. The while loop should be filled with the appropriate calculations. The calculation of the "t1" and "t2" amplitudes is the most challenging part of the CCSD calculation. After convergence, the "E_CCSD" variable should store the final CCSD energy.
-    """
-    while abs(E_CCSD - E_CCSD_P) > thresh:
-        break
-
-    # print the CCSD energy
-    print("CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
-```
-
-Solution to this exercise can be found [here](codesolutions.html#coupled-cluster-singles-and-doubles).
 
 {:.cite}
 > Stanton, John F., Jürgen Gauss, John D. Watts, and Rodney J. Bartlett. 1991. “A Direct Product Decomposition Approach for Symmetry Exploitation in Many-Body Methods. I. Energy Calculations.” *The Journal of Chemical Physics* 94: 4334–45. <https://doi.org/10.1063/1.460620>.

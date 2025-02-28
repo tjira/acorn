@@ -82,6 +82,16 @@ pub fn Vector(comptime T: type) type {
                 self.data[i] = mean + stdev * random.floatNorm(T);
             }
         }
+
+        /// Returns the transposed column vector as a matrix with one row. No memory is allocated.
+        pub fn transposed(self: Vector(T)) Matrix(T) {
+            return Matrix(T){
+                .data = self.data,
+                .rows = 1,
+                .cols = self.rows,
+                .allocator = self.allocator
+            };
+        }
     };
 }
 

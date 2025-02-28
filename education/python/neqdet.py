@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-import argparse as ap, itertools as it, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, re, scipy as sp, scipy.linalg; np.random.seed(0)
+import argparse as ap, itertools as it, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, scipy as sp, scipy.linalg; np.random.seed(0)
 
 # EXAMPLES
 # ./neqdet.py -g "[np.exp(-(r1-1)**2-(r2-1)**2)]" -v "[[0.5*(r1**2+r2**2)]]"
 # ./neqdet.py -d 0 -f 0.01 -p 8192 -l 32 -m 2000 -t 10 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2)],[0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" -g "[0,np.exp(-(r1+10)**2+10j*r1)]" --align --adiabatic
 
 if __name__ == "__main__":
-    # SECTION FOR PARSING COMMAND LINE ARGUMENTS =======================================================================================================================================================
+    # SECTION FOR PARSING COMMAND LINE ARGUMENTS =========================================
 
     # create the parser
     parser = ap.ArgumentParser(
@@ -42,22 +42,34 @@ if __name__ == "__main__":
     # print the help message if the flag is set
     if args.help: parser.print_help(); exit()
 
-    # PREPARE VARIABLES FOR THE DYNAMICS ==============================================================================================================================================================
+    # PREPARE VARIABLES FOR THE DYNAMICS =================================================
 
-    # calculate the space step, extract the number of dimensions
-    dr = 2 * args.limit / (args.points - 1); ndim = max(map(int, re.findall(r"r\[:, (\d)\]", args.potential))) + 1;
+    # extract the number of dimensions without using regex
+    ndim = max([int(e[0]) for e in args.potential.split("r[:, ")[1:]]) + 1
+
+    # define the function to evaluate potential
+    potf = lambda: np.array(eval(args.potential)).transpose(2, 0, 1);
+
+    # define the function to evaluate the guess wavefunction on a specified grid
+    psif = lambda: np.array(list(map(lambda x: x * np.ones(args.points**ndim), eval(args.guess))), dtype=complex).T
+
+    # REAL AND IMAGINARY QUANTUM DYNAMICS ================================================
+
+    # calculate the space step
+    dr = 2 * args.limit / (args.points - 1)
 
     # create the grid in real and fourier space
     r = np.stack(np.meshgrid(*[np.linspace(-args.limit, args.limit, args.points)] * ndim, indexing="ij"), axis=-1).reshape(-1, ndim)
     k = np.stack(np.meshgrid(*[2 * np.pi * np.fft.fftfreq(args.points, dr)      ] * ndim, indexing="ij"), axis=-1).reshape(-1, ndim)
 
-    # define the potential
-    V = np.array(eval(args.potential)).transpose(2, 0, 1)
+    # create the potential, wavefunction and extract wavefunction dimensions
+    V, psi = potf(), psif(); shape = ndim * [args.points] + [psi.shape[1]]
 
-    # REAL AND IMAGINARY QUANTUM DYNAMICS =============================================================================================================================================================
+    # normalize the guess wavefunction
+    psi /= np.sqrt(dr * np.einsum("ij,ij->", psi.conj(), psi))
 
     # create the containers for the observables and wavefunctions
-    position, momentum, ekin, epot = [], [], [], []; wfnopt, wfn = [], []
+    position, momentum, ekin, epot = [], [], [], []; wfnopt, wfn = [], [psi]
 
     # iterate over the propagations
     for i in range(args.imaginary if args.imaginary else 1):
@@ -65,14 +77,11 @@ if __name__ == "__main__":
         # print the propagation header
         print() if i else None; print("PROPAGATION OF STATE %d " % (i))
 
-        # create the initial wavefunction from the provided guess and normalize it
-        psi = np.array(list(map(lambda x: x * np.ones(r.shape[0]), eval(args.guess))), dtype=complex).T; psi /= np.sqrt(dr * np.einsum("ij,ij->", psi.conj(), psi))
-
         # create the initial points for Bohmian trajectories
         trajs = np.concatenate((r[np.random.choice(psi.shape[0], size=args.ntraj, p=(np.abs(psi)**2 * dr).sum(axis=1))][:, None, :], np.zeros((args.ntraj, args.iterations, ndim))), axis=1)
 
-        # get the full wavefunction shape and clear the containers
-        shape = ndim * [args.points] + [psi.shape[1]]; wfn.clear(), position.clear(), momentum.clear(), ekin.clear(), epot.clear()
+        # initialize the initial wavefunction from the wfn container and clear all containers
+        psi = wfn[0]; wfn.clear(), position.clear(), momentum.clear(), ekin.clear(), epot.clear()
 
         # calculate the propagators for each point in the grid
         K = np.array([sp.linalg.expm(-0.5 * (1 if args.imaginary else 1j) * args.timestep * np.sum(k[i, :] ** 2) / args.mass * np.eye(psi.shape[1])) for i in range(r.shape[0])])
@@ -132,7 +141,7 @@ if __name__ == "__main__":
         # append the optimized wavefunction to the container
         if args.imaginary: wfnopt.append(psi.copy())
 
-    # ADIABATIC TRANSFORM AND SPECTRUM ====================================================================================================================================================================
+    # ADIABATIC TRANSFORM AND SPECTRUM ===================================================
 
     # calculate the adiabatic eigenstates
     U = [np.linalg.eigh(V[i])[1] for i in range(V.shape[0])]
@@ -151,7 +160,7 @@ if __name__ == "__main__":
     # calculate the spectrum of the zero-padded acf and the corresponding energies
     spectrum = np.abs(np.fft.fft(np.pad(acf, 2 * [10 * len(acf)], mode="constant")))**2; omega = 2 * np.pi * np.fft.fftfreq(len(spectrum), args.timestep)
 
-    # PRINT AND PLOT THE RESULTS ==========================================================================================================================================================================
+    # PRINT AND PLOT THE RESULTS =========================================================
 
     # print the final population
     print("\nFINAL POPULATION: %s" % np.diag(density[-1]))

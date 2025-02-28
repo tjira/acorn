@@ -18,7 +18,7 @@ ATOM = {
 }
 
 if __name__ == "__main__":
-    # SECTION FOR PARSING COMMAND LINE ARGUMENTS =======================================================================================================================================================
+    # SECTION FOR PARSING COMMAND LINE ARGUMENTS =========================================
 
     # create the parser
     parser = ap.ArgumentParser(
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # forward declaration of integrals and energies in MS basis (just to avoid NameError in linting)
     Hms, Fms, Jms, Jmsa, Emss, Emsd = np.zeros(2 * [0]), np.zeros(2 * [0]), np.zeros(4 * [0]), np.zeros(4 * [0]), np.array([[]]), np.array([[[[]]]])
 
-    # OBTAIN THE MOLECULE AND ATOMIC INTEGRALS =========================================================================================================================================================
+    # OBTAIN THE MOLECULE AND ATOMIC INTEGRALS ===========================================
 
     # get the atomic numbers and coordinates of all atoms
     atoms  = np.array([ATOM[line.split()[0]] for line in open(args.molecule).readlines()[2:]], dtype=int  )
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # load the integrals from the files
     H, S = np.loadtxt(args.int[0], skiprows=1) + np.loadtxt(args.int[1], skiprows=1), np.loadtxt(args.int[2], skiprows=1); J = np.loadtxt(args.int[3], skiprows=1).reshape(4 * [S.shape[1]])
 
-    # HARTREE-FOCK METHOD ==============================================================================================================================================================================
+    # HARTREE-FOCK METHOD ================================================================
 
     # energies, iteration counter, number of basis functions and number of occupied/virtual orbitals
     E_HF, E_HF_P, VNN, iter, nbf, nocc = 0, 1, 0, 0, S.shape[0], sum(atoms) // 2; nvirt = nbf - nocc
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # print the results
     print("    RHF ENERGY: {:.8f} ({} ITERATIONS)".format(E_HF + VNN, iter))
 
-    # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS =================================================================================================================================================
+    # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS ==================================
     if args.mp2 or args.mp3 or args.ccd or args.ccsd or args.fci:
 
         # define the occ and virt spinorbital slices shorthand
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         # tensor epsilon_ij^ab
         Emsd = epsms[o] + epsms[o, None] - epsms[v, None, None] - epsms[v, None, None, None]
 
-    # MOLLER-PLESSET PERTURBATION THEORY ===============================================================================================================================================================
+    # MOLLER-PLESSET PERTURBATION THEORY =================================================
     if args.mp2 or args.mp3:
 
         # energy containers
@@ -188,7 +188,7 @@ if __name__ == "__main__":
             )
             print("    MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
 
-    # COUPLED CLUSTER METHOD ===========================================================================================================================================================================
+    # COUPLED CLUSTER METHOD =============================================================
     if args.ccd or args.ccsd:
 
         # energy containers for all the CC methods
@@ -338,7 +338,7 @@ if __name__ == "__main__":
             # print the CCSD energy
             print("   CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
 
-    # CONFIGURATION INTERACTION =======================================================================================================================================================================
+    # CONFIGURATION INTERACTION ==========================================================
     if args.fci:
 
         # generate the determiants

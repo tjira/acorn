@@ -6,7 +6,7 @@ import argparse as ap, itertools as it, matplotlib.animation as anm, matplotlib.
 # ./shcdet.py -p 10 1 -r -10 0.5 -s 1 -m 2000 -t 1 -i 5000 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2)],[0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" --adiabatic -n 1000 --lzsh
 
 if __name__ == "__main__":
-    # SECTION FOR PARSING COMMAND LINE ARGUMENTS =======================================================================================================================================================
+    # SECTION FOR PARSING COMMAND LINE ARGUMENTS =========================================
 
     # create the parser
     parser = ap.ArgumentParser(
@@ -39,16 +39,10 @@ if __name__ == "__main__":
     # print the help message if the flag is set
     if args.help: parser.print_help(); exit()
 
-    # PREPARE VARIABLES FOR THE DYNAMICS ==============================================================================================================================================================
+    # SURFACE HOPPING ALGORITHMS =========================================================
 
-    # create the initial conditions for the trajectories
-    r = np.column_stack([np.random.normal(loc=mu, scale=sigma, size=args.trajectories) for mu, sigma in zip(args.position[0::2], args.position[1::2])])
-    v = np.column_stack([np.random.normal(loc=mu, scale=sigma, size=args.trajectories) for mu, sigma in zip(args.momentum[0::2], args.momentum[1::2])])
-
-    # calculate the initial velocity from mass, initial state, define the differentiation offset and some containers
-    v /= args.mass; a, s = np.zeros_like(r), np.zeros((r.shape[0], args.iterations + 1), dtype=int) + args.state; diff = 0.0001; Vs, Us = [], []
-
-    # SURFACE HOPPING ALGORITHMS ======================================================================================================================================================================
+    # define the state vector and containers for the potential and transformation matrices
+    s = np.zeros((args.trajectories, args.iterations + 1), dtype=int) + args.state; Vs, Us = [], []
 
     # define the Landau-Zener Surface Hopping algorithm
     def lzsh(i, rn):
@@ -76,7 +70,14 @@ if __name__ == "__main__":
             # hop to another state if accepted
             if (not np.isnan(p) and rn < p): s[j, i:] = k
 
-    # PERFORM THE DYNAMICS ============================================================================================================================================================================
+    # PERFORM THE CLASSICAL DYNAMICS =====================================================
+
+    # create the initial conditions for the trajectories
+    r = np.column_stack([np.random.normal(loc=mu, scale=sigma, size=args.trajectories) for mu, sigma in zip(args.position[0::2], args.position[1::2])])
+    v = np.column_stack([np.random.normal(loc=mu, scale=sigma, size=args.trajectories) for mu, sigma in zip(args.momentum[0::2], args.momentum[1::2])])
+
+    # divide momentum by mass and define acceleration
+    v /= args.mass; a = np.zeros_like(r); diff = 0.0001;
 
     # print the propagation header
     print("%6s %12s %12s %12s" % ("ITER", "EKIN", "EPOT", "ETOT", ))
@@ -132,7 +133,7 @@ if __name__ == "__main__":
         # print the iteration
         if i % 1000 == 0: print("%6d %12.6f %12.6f %12.6f" % (i, np.mean(Ekin), np.mean(Epot), np.mean(Ekin + Epot)))
 
-    # PRINT AND PLOT THE RESULTS ==========================================================================================================================================================================
+    # PRINT AND PLOT THE RESULTS =========================================================
 
     # print the final populations
     print("\nFINAL POPULATION: %s" % (np.bincount(s[:, -1]) / s.shape[0]))

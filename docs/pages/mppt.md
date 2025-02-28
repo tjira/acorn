@@ -41,7 +41,7 @@ where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix
 
 ## Implementation of 2nd and 3rd Order Corrections
 
-Having the antisymmetrized two-electron integrals in the Molecular Spinorbital basis and physicists' notation defined [here](hartreefockmethod.html#integral-transforms-to-the-basis-of-molecular-spinorbitals), we can now proceed with the calculation of the correlation energy. The 2nd order correlation energy can be expressed as
+Having the antisymmetrized two-electron integrals in the Molecular Spinorbital basis and physicists' notation defined [here](hf.html#integral-transforms-to-the-basis-of-molecular-spinorbitals), we can now proceed with the calculation of the correlation energy. The 2nd order correlation energy can be expressed as
 
 \begin{equation}
 E_{\mathrm{corr}}^{\mathrm{MP2}}=\frac{1}{4}\sum\_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon\_{ij}^{ab}}
@@ -56,29 +56,6 @@ E_{\mathrm{corr}}^{\mathrm{MP3}}=&\frac{1}{8}\sum\_{ijab}\frac{\braket{ab||ij}\b
 \end{align}
 
 To calculate the 4th order correction, we would need to write 39 terms, which is not practical. Higher-order corrections are usually not programmed this way, instead, the diagrammatic approach is used.<!--\supercite{1014569052,10.1016/0010-4655!73!90016-7,10.1016/0010-4655!73!90017-9}-->
-
-## 2nd and 3rd Order Corrections Code Exercise
-
-Similar to the Hartree--Fock method, Møller--Plesset perturbation theory can also be implemented in Python. The code exercise below provides a self-contained guide to calculating the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order correlation energies. This exercise is designed to be appended to your existing Hartree--Fock implementation, as the Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order methods build on the results of the Hartree--Fock procedure. You can access the foundational Hartree--Fock method and integral transformation coding exercise [here](hartreefockmethod.html#hartreefock-method-and-integral-transform-coding-exercise). The exercise is provided in the Listing <!--\ref{code:mp_exercise}--> below
-
-<!--{id=code:mp_exercise caption="Møller--Plesset Perturbation Theory of 2nd Order and Møller--Plesset Perturbation Theory of 3rd Order exercise code. The placeholders for the energies are initialized to zero. If you transformed all the necessary integrals in the previous exercise, you should be able to fill the placeholders with correct expressions."}-->
-```python
-"""
-Since we have everything we need for the MP calculations, we can now calculate the MP2 correlation energy. The result should be stored in the "E_MP2" variable.
-"""
-E_MP2 = 0
-
-"""
-Let's not stop here. We can calculate MP3 correlation energy as well. Please calculate it and store it in the "E_MP3" variable.
-"""
-E_MP3 = 0
-
-# print the results
-print("MP2 ENERGY: {:.8f}".format(E_HF + E_MP2 +       + VNN))
-print("MP3 ENERGY: {:.8f}".format(E_HF + E_MP2 + E_MP3 + VNN))
-```
-
-Solution to this exercise can be found [here](codesolutions.html#2nd-and-3rd-order-perturbative-corrections).
 
 {:.cite}
 > Cremer, Dieter. 2011. “Møller–Plesset Perturbation Theory: From Small Molecule Methods to Methods for Thousands of Atoms.” *WIREs Computational Molecular Science* 1: 509–30. <https://doi.org/10.1002/wcms.58>.

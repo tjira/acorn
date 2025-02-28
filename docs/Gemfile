@@ -6,3 +6,5 @@ gem "jekyll-remote-theme"
 gem "jekyll-seo-tag"
 gem "json"
 gem "rake"
+
+gem "sass-embedded", "1.78"
