@@ -259,13 +259,12 @@ water/RHF/STO-3G/-74.965901192180
     numberstyle=\tiny\color[rgb]{0.50,0.50,0.50},
     rulecolor=\color[rgb]{0.00,0.00,0.00},
     stringstyle=\color[rgb]{0.50,0.00,0.50},
-    basicstyle=\ttfamily\footnotesize,
+    basicstyle=\ttfamily\tiny,
     breaklines=true,
     numbers=none,
     frame=single,
     showstringspaces=false,
-    captionpos=b,
-    literate={\ \ }{{\ }}1
+    captionpos=b
 }
 \lstset{style=code}
 
