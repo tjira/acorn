@@ -92,7 +92,7 @@ for i in range(args.imaginary if args.imaginary else 1):
 
     # calculate the propagators for each point in the grid
     K = np.array([sp.linalg.expm(unit * np.sum(k[i, :]**2) / args.mass * np.eye(psi.shape[1])) for i in range(r.shape[0])])
-    R = np.array([sp.linalg.expm(unit *                                * V[i]                ) for i in range(r.shape[0])])
+    R = np.array([sp.linalg.expm(unit *                                  V[i]                ) for i in range(r.shape[0])])
 
     # print the propagation header
     print("%6s %12s %12s %12s" % ("ITER", "EKIN", "EPOT", "ETOT", ))
