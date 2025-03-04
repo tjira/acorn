@@ -66,7 +66,7 @@ def lzsh(i, rn):
         if (k == s[j, i - 1] or (dk0 - ds0) * (dk1 - ds1) > 0 or ddk * dds > 0 or ddk - dds == 0): continue
 
         # calculate the hopping probability
-        p = np.exp(-0.5 * np.pi * np.sqrt(sqrtarg)) if ((sqrtarg := (V[j, k, k] - V[j, s[j, i], s[j, i]])**3 / (ddk - dds)) > 0) else 0
+        p = np.exp(-0.5 * np.pi * np.sqrt(arg)) if ((arg := (V[j, k, k] - V[j, s[j, i], s[j, i]])**3 / (ddk - dds)) > 0) else 0
 
         # hop to another state if accepted
         if (not np.isnan(p) and rn < p): s[j, i:] = k
@@ -74,8 +74,8 @@ def lzsh(i, rn):
 # PERFORM THE CLASSICAL DYNAMICS =================================================================================================
 
 # create the initial conditions for the trajectories
-r = np.column_stack([np.random.normal(loc=mu, scale=sigma, size=args.trajectories) for mu, sigma in zip(args.position[0::2], args.position[1::2])])
-v = np.column_stack([np.random.normal(loc=mu, scale=sigma, size=args.trajectories) for mu, sigma in zip(args.momentum[0::2], args.momentum[1::2])])
+r = np.column_stack([np.random.normal(mu, sigma, len(s)) for mu, sigma in zip(args.position[0::2], args.position[1::2])])
+v = np.column_stack([np.random.normal(mu, sigma, len(s)) for mu, sigma in zip(args.momentum[0::2], args.momentum[1::2])])
 
 # divide momentum by mass and define acceleration
 v /= args.mass; a = np.zeros_like(r); diff = 0.0001;
@@ -104,8 +104,11 @@ for i in range(args.iterations + 1):
         if args.adiabatic: Vplus = np.einsum("ij,jk->ijk", np.linalg.eigvalsh(Vplus), np.eye(V.shape[1]))
         if args.adiabatic: Vmins = np.einsum("ij,jk->ijk", np.linalg.eigvalsh(Vmins), np.eye(V.shape[1]))
 
+        Vplusi = np.einsum("ijj->ij", Vplus)[np.arange(args.trajectories), s[:, i]]
+        Vminsi = np.einsum("ijj->ij", Vmins)[np.arange(args.trajectories), s[:, i]]
+
         # calculate the acceleration
-        a[:, j] = 0.5 * (np.einsum("ijj->ij", Vmins)[np.arange(args.trajectories), s[:, i]] - np.einsum("ijj->ij", Vplus)[np.arange(args.trajectories), s[:, i]]) / (diff * args.mass)
+        a[:, j] = 0.5 * (Vminsi - Vplusi) / (diff * args.mass)
 
         # update the positions and velocities
         v[:, j] += 0.5 * (a[:, j] + ap[:, j]) * args.timestep; r[:, j] += (v[:, j] + 0.5 * a[:, j] * args.timestep) * args.timestep

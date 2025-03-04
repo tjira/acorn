@@ -15,20 +15,11 @@ You can also download this documentation along with complementary files in vario
 [PDF Document](/acorn/tex/main.pdf){: .btn .btn-purple }
 [TeX Document](/acorn/tex/main.tex){: .btn .btn-purple }
 
-### Electronic Structure Python Exercises
+### Educational Toolkits in Python
 
-[Exercise](/acorn/python/exercise/resmet_exercise.py){: .btn .btn-purple }
-[Solution](/acorn/python/resmet.py){: .btn .btn-purple }
-
-### Quantum Dynamics Python Exercises
-
-<!--[Exercise](/acorn/python/exercise/neqdet_exercise.py){: .btn .btn-purple }-->
-[Solution](/acorn/python/neqdet.py){: .btn .btn-purple }
-
-### Classical Dynamics Python Exercises
-
-<!--[Exercise](/acorn/python/exercise/shcdet_exercise.py){: .btn .btn-purple }-->
-[Solution](/acorn/python/shcdet.py){: .btn .btn-purple }
+[Electronic Structure Methods    ](/acorn/python/resmet.py){: .btn .btn-purple }
+[Quantum and Bohmian Dynamics    ](/acorn/python/neqdet.py){: .btn .btn-purple }
+[Mixed Quantum-Classical Dynamics](/acorn/python/shcdet.py){: .btn .btn-purple }
 
 ### Other Tools
 

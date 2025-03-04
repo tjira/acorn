@@ -314,9 +314,9 @@ echo "" >> docs/tex/main.tex && for PAGE in ${PAGES[@]}; do
 
     # add the educational content to the code solution section
     if [ "$PAGE" == "cs" ]; then
-        RESMET=$(cat docs/python/resmet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g')
-        NEQDET=$(cat docs/python/neqdet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g')
-        SHCDET=$(cat docs/python/shcdet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g')
+        RESMET=$(cat docs/python/resmet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g ; /^# EXAMPLES$/,/^# SECTION/{/^# SECTION/!d}')
+        NEQDET=$(cat docs/python/neqdet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g ; /^# EXAMPLES$/,/^# SECTION/{/^# SECTION/!d}')
+        SHCDET=$(cat docs/python/shcdet.py | sed 's/\\hat/\\\\hat/g ; s/\\Psi/\\\\Psi/g ; /^# EXAMPLES$/,/^# SECTION/{/^# SECTION/!d}')
 
         awk -v content="$RESMET" -v i=1 '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/cs.md > temp.md && mv temp.md docs/pages/cs.md
         awk -v content="$NEQDET" -v i=2 '/^```python/ {count++; if (count == i) {print; print content; next}}1' docs/pages/cs.md > temp.md && mv temp.md docs/pages/cs.md

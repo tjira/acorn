@@ -401,10 +401,6 @@ import argparse as ap, itertools as it, matplotlib.animation as anm, matplotlib.
 
 np.set_printoptions(edgeitems=30, linewidth=100000, formatter=dict(float=lambda x: "%20.14f" % x)); np.random.seed(0)
 
-# EXAMPLES
-# ./neqdet.py -g "[np.exp(-(r1-1)**2-(r2-1)**2)]" -v "[[0.5*(r1**2+r2**2)]]"
-# ./neqdet.py -d 0 -f 0.01 -p 8192 -l 32 -m 2000 -t 10 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2)],[0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" -g "[0,np.exp(-(r1+10)**2+10j*r1)]" --align --adiabatic
-
 # SECTION FOR PARSING COMMAND LINE ARGUMENTS =====================================================================================
 
 # create the parser
@@ -453,8 +449,8 @@ psif = lambda: np.array(list(map(lambda x: x * np.ones(args.points**ndim), eval(
 
 # REAL AND IMAGINARY QUANTUM DYNAMICS ============================================================================================
 
-# calculate the space step
-dr = 2 * args.limit / (args.points - 1)
+# calculate the space step and the grid limits in each dimension
+dr, grid = 2 * args.limit / (args.points - 1), [np.linspace(-args.limit, args.limit, args.points)] * ndim
 
 # create the grid in real and fourier space
 r = np.stack(np.meshgrid(*[np.linspace(-args.limit, args.limit, args.points)] * ndim, indexing="ij"), axis=-1).reshape(-1, ndim)
@@ -468,6 +464,9 @@ psi /= np.sqrt(dr * np.einsum("ij,ij->", psi.conj(), psi))
 
 # create the containers for the observables and wavefunctions
 position, momentum, ekin, epot = [], [], [], []; wfnopt, wfn = [], [psi]
+
+# create the function to apply an operator in the momentum space to the n dimensional wavefunction
+fapply = lambda op, psik: np.fft.ifftn((op * psik).reshape(shape), axes=range(ndim)).reshape(psi.shape)
 
 # iterate over the propagations
 for i in range(args.imaginary if args.imaginary else 1):
@@ -489,7 +488,7 @@ for i in range(args.imaginary if args.imaginary else 1):
 
     # calculate the propagators for each point in the grid
     K = np.array([sp.linalg.expm(unit * np.sum(k[i, :]**2) / args.mass * np.eye(psi.shape[1])) for i in range(r.shape[0])])
-    R = np.array([sp.linalg.expm(unit *                                * V[i]                ) for i in range(r.shape[0])])
+    R = np.array([sp.linalg.expm(unit *                                  V[i]                ) for i in range(r.shape[0])])
 
     # print the propagation header
     print("%6s %12s %12s %12s" % ("ITER", "EKIN", "EPOT", "ETOT", ))
@@ -521,23 +520,29 @@ for i in range(args.imaginary if args.imaginary else 1):
         # append the potential energy and the wavefunction
         epot.append(np.einsum("ij,ijk,ik->", psi.conj(), V, psi).real * dr); wfn.append(psi.copy())
 
-        # create a n dimensional copy of the wavefunction, its fourier transform and a container for Bohmian trajectory velocity
-        psid, psik, v = psi.reshape(shape), np.fft.fftn(psi.reshape(shape), axes=range(ndim)).reshape(psi.shape), np.zeros(shape[:-1] + [ndim])
+        # create a n dimensional copy of the wavefunction and its fourier transform
+        psid, psik = psi.reshape(shape), np.fft.fftn(psi.reshape(shape), axes=range(ndim)).reshape(psi.shape)
 
         # append the kinetic energy
-        ekin.append((psi.conj() * np.fft.ifftn((psik * (0.5 * np.sum(k**2, axis=1) / args.mass)[:, None]).reshape(shape), axes=range(ndim)).reshape(psi.shape)).real.sum() * dr)
+        ekin.append((psi.conj() * fapply((0.5 * np.sum(k**2, axis=1) / args.mass)[:, None], psik)).real.sum() * dr)
 
         # append the position
         position.append(np.sum(r * np.sum(np.abs(psi)**2, axis=1, keepdims=True), axis=0) * dr)
 
         # append the momentum
-        momentum.append(np.array([np.sum(psi.conj() * np.fft.ifftn((1j * (k[:, dim:dim + 1]) * psik).reshape(shape), axes=range(ndim)).reshape(psi.shape)).imag * dr for dim in range(ndim)]))
+        momentum.append([(psi.conj() * fapply(1j * k[:, l:l + 1], psik)).imag.sum() * dr for l in range(ndim)])
+
+        # Bohmian velocity container
+        v = np.zeros(shape[:-1] + [ndim])
+
+        # calculate probability current in each dimension
+        if (j): currents = [(np.conjugate(psid) * np.gradient(psid, dr, axis=l)).sum(axis=-1).imag for l in range(ndim)]
 
         # calculate the velocity of the Bohmian trajectories
-        if (j): v[..., :] = np.array([(np.conjugate(psid) * np.gradient(psid, dr, axis=dim)).sum(axis=-1).imag / ((np.abs(psid)**2).sum(axis=-1) + 1e-14) / args.mass for dim in range(ndim)]).T
+        if (j): v[..., :] = np.array([currents[l] / ((np.abs(psid)**2).sum(axis=-1) + 1e-14) / args.mass for l in range(ndim)]).T
 
         # propagate the Bohmian trajectories
-        if (j): trajs[:, j, :] = trajs[:, j - 1, :] + sp.interpolate.interpn(points=ndim * [np.unique(r[:, 0])], values=v, xi=trajs[:, j - 1, :]) * args.timestep
+        if (j): trajs[:, j] = (lambda r: r + sp.interpolate.interpn(points=grid, values=v, xi=r) * args.timestep)(trajs[:, j - 1])
 
         # print the iteration info
         if j % 100 == 0: print("%6d %12.6f %12.6f %12.6f" % (j, ekin[-1], epot[-1], ekin[-1] + epot[-1]))
@@ -558,11 +563,17 @@ wfn = np.einsum("ikl,jik->jil",     U, wfn   ) if args.adiabatic else np.array(w
 density = np.einsum("jia,jib->jab", wfn,           wfn.conj()).real * dr
 acf     = np.einsum("ij,tij->t",    wfn[0].conj(), wfn       )      * dr
 
-# symmetrize the acf and apply the damping function
-acf = np.concatenate((np.flip(acf)[:-1], np.array(acf).conj())) * np.exp(-args.damp * (np.arange(-args.iterations, args.iterations + 1) * args.timestep)**2)
+# symmetrize the acf
+acf = np.concatenate((np.flip(acf)[:-1], np.array(acf).conj()))
+
+# apply the damping to the acf
+acf *= np.exp(-args.damp * (np.arange(-args.iterations, args.iterations + 1) * args.timestep)**2)
+
+# create the padded acf
+acfpad = np.pad(acf, 2 * [10 * len(acf)], mode="constant")
 
 # calculate the spectrum of the zero-padded acf and the corresponding energies
-spectrum = np.abs(np.fft.fft(np.pad(acf, 2 * [10 * len(acf)], mode="constant")))**2; omega = 2 * np.pi * np.fft.fftfreq(len(spectrum), args.timestep)
+spectrum = np.abs(np.fft.fft(acfpad))**2; omega = 2 * np.pi * np.fft.fftfreq(len(spectrum), args.timestep)
 
 # PRINT AND PLOT THE RESULTS =====================================================================================================
 
@@ -572,15 +583,18 @@ print(); print("FINAL POPULATION: %s" % np.diag(density[-1]))
 # scale the wavefunction and add the potential to the wavefunction
 wfn = args.factor * np.array(wfn); wfn += (1 + 1j) * np.einsum("ijj,k->kij", V, np.ones(args.iterations + 1)) if args.align else 0
 
-# create the stationary subplots and scale the wavefunction
-fig, axs = plt.subplots(2, 3, figsize=(12, 6))
+# extract the momenta from the Bohmian trajectories
+ptrajs = np.gradient(trajs, args.timestep, axis=1) * args.mass
+
+# create the stationary subplots
+fig, axs = plt.subplots(2, 3, figsize=(12, 6)); time = np.arange(args.iterations + 1) * args.timestep
 
 # plot the energies
-axs[0, 0].plot(np.arange(args.iterations + 1) * args.timestep, ekin, label="Kinetic Energy"  )
-axs[0, 0].plot(np.arange(args.iterations + 1) * args.timestep, epot, label="Potential Energy")
+axs[0, 0].plot(time, ekin, label="Kinetic Energy"  )
+axs[0, 0].plot(time, epot, label="Potential Energy")
 
 # plot the population
-axs[0, 1].plot(np.arange(args.iterations + 1) * args.timestep, [np.diag(rho) for rho in density], label=[f"S$_{i}$" for i in range(density.shape[1])])
+axs[0, 1].plot(time, [np.diag(rho) for rho in density], label=[f"S$_{i}$" for i in range(density.shape[1])])
 
 # print the acf
 axs[1, 0].plot(np.arange(-args.iterations, args.iterations + 1) * args.timestep, np.array(acf).real, label="Re(ACF)")
@@ -590,24 +604,24 @@ axs[1, 0].plot(np.arange(-args.iterations, args.iterations + 1) * args.timestep,
 axs[1, 1].plot(omega[np.argsort(omega)], spectrum[np.argsort(omega)] / np.max(spectrum))
 
 # plot the position and momentum of the Bohmian trajectories
-[axs[0, 2].plot(np.arange(args.iterations + 1) * args.timestep, trajs[i, :, 0],                                                 alpha=0.05, color="tab:blue") for i in range(args.ntraj)]
-[axs[1, 2].plot(np.arange(args.iterations + 1) * args.timestep, np.gradient(trajs[i, :, 0], args.timestep, axis=0) * args.mass, alpha=0.05, color="tab:blue") for i in range(args.ntraj)]
+[axs[0, 2].plot(time,  trajs[i, :, 0], alpha=0.05, color="tab:blue") for i in range(args.ntraj)]
+[axs[1, 2].plot(time, ptrajs[i, :, 0], alpha=0.05, color="tab:blue") for i in range(args.ntraj)]
 
 # plot the numerically exact expectation values of position and momentum
-axs[0, 2].plot(np.arange(args.iterations + 1) * args.timestep, np.array(position)[:, 0], color="tab:orange", label="$<\Psi|\hat{r_x}|\Psi>$")
-axs[1, 2].plot(np.arange(args.iterations + 1) * args.timestep, np.array(momentum)[:, 0], color="tab:orange", label="$<\Psi|\hat{p_x}|\Psi>$")
+axs[0, 2].plot(time, np.array(position)[:, 0], color="tab:orange", label="$<\Psi|\hat{r_x}|\Psi>$")
+axs[1, 2].plot(time, np.array(momentum)[:, 0], color="tab:orange", label="$<\Psi|\hat{p_x}|\Psi>$")
 
 # plot the mean of the Bohmian trajectories
-axs[0, 2].plot(np.arange(args.iterations + 1) * args.timestep, np.mean(trajs[:, :, 0], axis=0),                                                 "--", color="black", label="$<r_x>$")
-axs[1, 2].plot(np.arange(args.iterations + 1) * args.timestep, np.mean(np.gradient(trajs[:, :, 0], args.timestep, axis=1), axis=0) * args.mass, "--", color="black", label="$<p_x>$")
+axs[0, 2].plot(time, np.mean( trajs[:, :, 0], axis=0), "--", color="black", label="$<r_x>$")
+axs[1, 2].plot(time, np.mean(ptrajs[:, :, 0], axis=0), "--", color="black", label="$<p_x>$")
 
 # set the labels for the stationary plot
-axs[0, 0].set_xlabel("Time (a.u.)"    ); axs[0, 0].set_ylabel("Energy (a.u.)"           )
-axs[0, 1].set_xlabel("Time (a.u.)"    ); axs[0, 1].set_ylabel("Population"              )
-axs[0, 2].set_xlabel("Time (a.u.)"    ); axs[0, 2].set_ylabel("Position (a.u.)"         )
-axs[1, 0].set_xlabel("Time (a.u.)"    ); axs[1, 0].set_ylabel("Autocorrelation Function")
-axs[1, 1].set_xlabel("Energy (a.u.)"  ); axs[1, 1].set_ylabel("Normalized Intensity"    )
-axs[1, 2].set_xlabel("Time (a.u.)"    ); axs[1, 2].set_ylabel("Momentum (a.u.)"         )
+axs[0, 0].set_xlabel("Time (a.u.)"  ); axs[0, 0].set_ylabel("Energy (a.u.)"           )
+axs[0, 1].set_xlabel("Time (a.u.)"  ); axs[0, 1].set_ylabel("Population"              )
+axs[0, 2].set_xlabel("Time (a.u.)"  ); axs[0, 2].set_ylabel("Position (a.u.)"         )
+axs[1, 0].set_xlabel("Time (a.u.)"  ); axs[1, 0].set_ylabel("Autocorrelation Function")
+axs[1, 1].set_xlabel("Energy (a.u.)"); axs[1, 1].set_ylabel("Normalized Intensity"    )
+axs[1, 2].set_xlabel("Time (a.u.)"  ); axs[1, 2].set_ylabel("Momentum (a.u.)"         )
 
 # set the domain for the spectrum plot, the end will be as last element from the end less than some value
 axs[1, 1].set_xlim(0, omega[np.argsort(omega)][np.where(spectrum[np.argsort(omega)] / np.max(spectrum) > 1e-6)][-1])
@@ -622,7 +636,9 @@ if ndim == 1:
     wfig, wax = plt.subplots(1, 1)
 
     # plot the wavefunction
-    wfnplot = np.array([[wax.plot(r, wfn[0][:, i].real, label="Re($\Psi$)")[0], wax.plot(r, wfn[0][:, i].imag, label="Im($\Psi$)")[0]] for i in range(psi.shape[1])]).flatten()
+    wfnplot = np.array([
+        [wax.plot(r, wfn[0][:, i].real, label="Re($\Psi$)")[0], wax.plot(r, wfn[0][:, i].imag, label="Im($\Psi$)")[0]]
+    for i in range(psi.shape[1])]).flatten()
 
     # set the labels for the wavefunction plot and enable legend
     wax.set_xlabel("Position (a.u.)"); wax.set_ylabel("Wavefunction"); wax.legend()
@@ -634,7 +650,9 @@ if ndim == 1:
     wax.set_ylim(minwfn - 0.1 * (maxwfn - minwfn), maxwfn + 0.1 * (maxwfn - minwfn))
 
     # define the update function for the wavefunction animation
-    update = lambda i: [wfnplot[j].set_ydata(wfn[i][:, j // 2].real if j % 2 == 0 else wfn[i][:, j // 2].imag) for j in range(2 * psi.shape[1])]
+    update = lambda i: [
+        wfnplot[j].set_ydata(wfn[i][:, j // 2].real if j % 2 == 0 else wfn[i][:, j // 2].imag) for j in range(2 * psi.shape[1])
+    ]
 
     # make the wavefunction plot animation and set the layout
     ani = anm.FuncAnimation(wfig, update, frames=range(len(wfn)), repeat=True, interval=30); wfig.tight_layout()
@@ -651,8 +669,7 @@ fig.tight_layout(); plt.show()
 
 import argparse as ap, itertools as it, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, scipy as sp, scipy.linalg
 
-# EXAMPLES
-# ./shcdet.py -p 10 1 -r -10 0.5 -s 1 -m 2000 -t 1 -i 5000 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2)],[0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" --adiabatic -n 1000 --lzsh
+np.set_printoptions(edgeitems=30, linewidth=100000, formatter=dict(float=lambda x: "%20.14f" % x)); np.random.seed(0)
 
 # SECTION FOR PARSING COMMAND LINE ARGUMENTS ===========================================================================
 
@@ -713,7 +730,7 @@ def lzsh(i, rn):
         if (k == s[j, i - 1] or (dk0 - ds0) * (dk1 - ds1) > 0 or ddk * dds > 0 or ddk - dds == 0): continue
 
         # calculate the hopping probability
-        p = np.exp(-0.5 * np.pi * np.sqrt(sqrtarg)) if ((sqrtarg := (V[j, k, k] - V[j, s[j, i], s[j, i]])**3 / (ddk - dds)) > 0) else 0
+        p = np.exp(-0.5 * np.pi * np.sqrt(arg)) if ((arg := (V[j, k, k] - V[j, s[j, i], s[j, i]])**3 / (ddk - dds)) > 0) else 0
 
         # hop to another state if accepted
         if (not np.isnan(p) and rn < p): s[j, i:] = k
@@ -721,8 +738,8 @@ def lzsh(i, rn):
 # PERFORM THE CLASSICAL DYNAMICS =================================================================================================
 
 # create the initial conditions for the trajectories
-r = np.column_stack([np.random.normal(loc=mu, scale=sigma, size=args.trajectories) for mu, sigma in zip(args.position[0::2], args.position[1::2])])
-v = np.column_stack([np.random.normal(loc=mu, scale=sigma, size=args.trajectories) for mu, sigma in zip(args.momentum[0::2], args.momentum[1::2])])
+r = np.column_stack([np.random.normal(mu, sigma, len(s)) for mu, sigma in zip(args.position[0::2], args.position[1::2])])
+v = np.column_stack([np.random.normal(mu, sigma, len(s)) for mu, sigma in zip(args.momentum[0::2], args.momentum[1::2])])
 
 # divide momentum by mass and define acceleration
 v /= args.mass; a = np.zeros_like(r); diff = 0.0001;
@@ -751,8 +768,11 @@ for i in range(args.iterations + 1):
         if args.adiabatic: Vplus = np.einsum("ij,jk->ijk", np.linalg.eigvalsh(Vplus), np.eye(V.shape[1]))
         if args.adiabatic: Vmins = np.einsum("ij,jk->ijk", np.linalg.eigvalsh(Vmins), np.eye(V.shape[1]))
 
+        Vplusi = np.einsum("ijj->ij", Vplus)[np.arange(args.trajectories), s[:, i]]
+        Vminsi = np.einsum("ijj->ij", Vmins)[np.arange(args.trajectories), s[:, i]]
+
         # calculate the acceleration
-        a[:, j] = 0.5 * (np.einsum("ijj->ij", Vmins)[np.arange(args.trajectories), s[:, i]] - np.einsum("ijj->ij", Vplus)[np.arange(args.trajectories), s[:, i]]) / (diff * args.mass)
+        a[:, j] = 0.5 * (Vminsi - Vplusi) / (diff * args.mass)
 
         # update the positions and velocities
         v[:, j] += 0.5 * (a[:, j] + ap[:, j]) * args.timestep; r[:, j] += (v[:, j] + 0.5 * a[:, j] * args.timestep) * args.timestep
