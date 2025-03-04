@@ -1,0 +1,5 @@
+.site-nav {
+  @include mq(lg) {
+    width: $nav-width + 3rem;
+  }
+}
