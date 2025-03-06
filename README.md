@@ -135,7 +135,7 @@ The input file can be run like any other program in Acorn, no special flags are 
 }
 ```
 
-This simulation takes a few seconds, since the time complexity increases exponentially. After the simulation is complete, you can visualize the results using the commands in the below sections.
+This simulation takes a few seconds, since the time complexity increases exponentially. You can visualize the results using the commands in the below sections.
 
 <details> <summary><b>Wavefunction 1D</b></summary>
 
@@ -194,7 +194,7 @@ This example demonstrates the real-time quantum dynamics of a first Tully potent
 }
 ```
 
-This simulation is fast and should complete approximately in a second. After the simulation is complete, you can visualize the results using the commands in the below sections.
+This simulation is fast and should complete approximately in a second. You can visualize the results using the commands in the below sections.
 
 <details> <summary><b>Wavefunction</b></summary>
 

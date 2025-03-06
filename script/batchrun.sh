@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BIN=../zig-out/x86_64-linux/research; PLOT=../python/plot.py; export PLOT; export MPLBACKEND=agg
+BIN=../zig-out/x86_64-linux/research; PLOT=../python/lines.py; export PLOT; export MPLBACKEND=agg
 
 zig build --release=fast -Dnocross && rm -rf result *.mat *.png && mkdir -p result && for FILE in *.zig; do
 
