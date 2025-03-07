@@ -81,9 +81,12 @@ for (data_errors_i, j) in dcit(data_errors, cols_errors):
     # fill the area between the top and bottom line and append the plot to the list
     ebars.append(ax.fill_between(data_errors_i[:, 0], bot, top, color=cmap[lind_errors[len(ebars)] % len(cmap)], alpha=0.2))
 
+# calculate the y limits
+ymin = np.min([[data_i[:, j + i * int(not args.animate) + 1].min() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])
+ymax = np.max([[data_i[:, j + i * int(not args.animate) + 1].max() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])
+
 # set the default axis limits
-ax.set_xlim(min([data_i[:, 0 ].min() for data_i in data]), max([data_i[:, 0 ].max() for data_i in data]))
-ax.set_ylim(min([data_i[:, 1:].min() for data_i in data]), max([data_i[:, 1:].max() for data_i in data]))
+ax.set_xlim(min([data_i[:, 0 ].min() for data_i in data]), max([data_i[:, 0 ].max() for data_i in data])); ax.set_ylim(ymin, ymax)
 
 # enlarge the y limit by 5 percent
 ax.set_ylim(ax.get_ylim()[0] - 0.05 * np.diff(ax.get_ylim()), ax.get_ylim()[1] + 0.05 * np.diff(ax.get_ylim()))
