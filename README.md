@@ -117,6 +117,8 @@ lines.py WAVEFUNCTION.mat:0,1 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" --xlabe
 
 <p align="center"><img src="graphics/rtpa_wavefunction_1D.gif"/></p>
 
+</details>
+
 Acorn also supports higher dimensions. As an example you can simulate a 2D wavefunction in a 2D harmonic potential using the following input.
 
 ```json
@@ -146,8 +148,6 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
 ```
 
 This simulation takes a few seconds, since the time complexity increases exponentially.
-
-</details>
 
 ### Real Time Nonadiabatic Quantum Dynamics
 
@@ -189,6 +189,8 @@ lines.py WAVEFUNCTION.mat:0,1,2,3 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re
 ```
 
 <p align="center"><img src="graphics/rtpn_wavefunction_1D.gif"/></p>
+
+</details>
 
 <details> <summary><b> Populations - 1. Tully Potential</b></summary>
 
