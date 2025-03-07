@@ -109,7 +109,7 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
 
 The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction with the command bellow.
 
-<details> <summary><b>Wavefunction 1D</b></summary>
+<details> <summary><b>Wavefunction 1D - Harmonic Oscillator</b></summary>
 
 ```bash
 lines.py WAVEFUNCTION.mat:0,1 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 2
