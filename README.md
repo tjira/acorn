@@ -107,7 +107,17 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
 }
 ```
 
-The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. Acorn also supports higher dimensions. As an example you can simulate a 2D wavefunction in a 2D harmonic potential using the following input.
+The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction with the command bellow.
+
+<details> <summary><b>Wavefunction 1D</b></summary>
+
+```bash
+lines.py WAVEFUNCTION.mat:0,1 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 2
+```
+
+<p align="center"><img src="graphics/rtpa_wavefunction_1D.gif"/></p>
+
+Acorn also supports higher dimensions. As an example you can simulate a 2D wavefunction in a 2D harmonic potential using the following input.
 
 ```json
 {
@@ -135,25 +145,7 @@ The input file can be run like any other program in Acorn, no special flags are 
 }
 ```
 
-This simulation takes a few seconds, since the time complexity increases exponentially. You can visualize the results using the commands in the below sections.
-
-<details> <summary><b>Wavefunction 1D</b></summary>
-
-```bash
-plot.py WAVEFUNCTION.mat:0,1 --animate 2 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction"
-```
-
-<p align="center"><img src="graphics/rtpa_wavefunction_1D.gif"/></p>
-
-</details>
-
-<details> <summary><b>Wavefunction 2D</b></summary>
-
-```bash
-plot.py WAVEFUNCTION.mat:0,1 --ndim 2 --animate 2 --xlabel "Coordinate #1 (a.u.)" --ylabel "Coordinate #2 (a.u.)"
-```
-
-<p align="center"><img src="graphics/rtpa_wavefunction_2D.gif"/></p>
+This simulation takes a few seconds, since the time complexity increases exponentially.
 
 </details>
 
@@ -180,28 +172,30 @@ This example demonstrates the real-time quantum dynamics of a first Tully potent
             "gamma" : 2
         },
         "write" : {
-            "wavefunction" : "WAVEFUNCTION.mat"
+            "wavefunction" : "WAVEFUNCTION.mat",
+            "population" : "POPULATION.mat"
         },
-        "potential" : "tully1D_1"
-    },
-    "model_potential" : {
-        "adiabatic" : true,
-        "limits" : [-16, 32],
-        "output" : "POTENTIAL.mat",
-        "points" : 2048,
         "potential" : "tully1D_1"
     }
 }
 ```
 
-This simulation is fast and should complete approximately in a second. You can visualize the results using the commands in the below sections.
+This simulation is fast and should complete approximately in a second. You can visualize the wavefunction and state population with the commands below. The wavefunctions on each states are vertically separated for better visualization.
 
-<details> <summary><b>Wavefunction</b></summary>
+<details> <summary><b>Adiabatic Wavefunction - 1. Tully Potential</b></summary>
 
 ```bash
-plot.py WAVEFUNCTION.mat:0,1,2,3~POTENTIAL.mat:0-0,1-0,2-3,3-3 --animate 4 --scale 0.01 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction"
+lines.py WAVEFUNCTION.mat:0,1,2,3 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re(\$\Psi_1\$)" "Im(\$\Psi_1\$)" --offsets all -1 -1 1 1 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 4
 ```
 
-<p align="center"><img src="graphics/rtpn_wavefunction.gif"/></p>
+<p align="center"><img src="graphics/rtpn_wavefunction_1D.gif"/></p>
+
+<details> <summary><b> Populations - 1. Tully Potential</b></summary>
+
+```bash
+lines.py POPULATIONS.mat --legend "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.)" --ylabel "Population"
+```
+
+<p align="center"><img src="graphics/rtpn_population_1D.png"/></p>
 
 </details>
