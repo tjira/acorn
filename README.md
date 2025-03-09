@@ -195,7 +195,7 @@ lines.py WAVEFUNCTION.mat:0,1,2,3 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re
 <details> <summary><b> Populations - 1. Tully Potential</b></summary>
 
 ```bash
-lines.py POPULATIONS.mat --legend "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.)" --ylabel "Population"
+lines.py POPULATION.mat --legend "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.)" --ylabel "Population"
 ```
 
 <p align="center"><img src="graphics/rtpn_population_1D.png"/></p>
