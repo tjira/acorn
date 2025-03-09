@@ -2,11 +2,9 @@
 
 import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np
 
-import matplotlib
-
 # create the parser
 parser = ap.ArgumentParser(
-    prog="Acorn 1D Plotter", description="One-dimensional plotting script for the Quantum Acorn package.",
+    prog="Acorn Lines Plotter", description="Lines plotting script for the Quantum Acorn package.",
     formatter_class=lambda prog: ap.HelpFormatter(prog, max_help_position=128),
     add_help=False, allow_abbrev=False
 )
@@ -65,6 +63,10 @@ fig, ax = plt.subplots(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0]))
 # set the colormap
 cmap = plt.get_cmap(args.colormap)(np.linspace(0.1, 0.9, nline) if (ncolor := plt.get_cmap(args.colormap).N) > 20 else np.linspace(0, 1, ncolor))
 
+# calculate the y limits
+ymin = np.min([[data_i[:, j + i * (args.animate if args.animate else 0) + 1].min() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])
+ymax = np.max([[data_i[:, j + i * (args.animate if args.animate else 0) + 1].max() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])
+
 # loop over data and its columns to plot
 for data_i, j in dcit(data, data_cols):
 
@@ -80,10 +82,6 @@ for (data_errors_i, j) in dcit(data_errors, cols_errors):
 
     # fill the area between the top and bottom line and append the plot to the list
     ebars.append(ax.fill_between(data_errors_i[:, 0], bot, top, color=cmap[lind_errors[len(ebars)] % len(cmap)], alpha=0.2))
-
-# calculate the y limits
-ymin = np.min([[data_i[:, j + i * int(not args.animate) + 1].min() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])
-ymax = np.max([[data_i[:, j + i * int(not args.animate) + 1].max() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])
 
 # set the default axis limits
 ax.set_xlim(min([data_i[:, 0 ].min() for data_i in data]), max([data_i[:, 0 ].max() for data_i in data])); ax.set_ylim(ymin, ymax)
@@ -129,6 +127,9 @@ def update(frame):
 
 # create the animation
 anm = anm.FuncAnimation(fig, update, frames=(data[0].shape[1] - 1) // args.animate, init_func=lambda: None, interval=1000 // args.fps) if args.animate else None
+
+# set the window title
+if not args.output: fig.canvas.manager.set_window_title("Acorn Lines Plotter")
 
 # save or show the plot
 (anm.save(args.output, fps=args.fps) if args.animate else plt.savefig(args.output)) if args.output else plt.show()
