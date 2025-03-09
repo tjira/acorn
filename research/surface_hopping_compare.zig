@@ -9,8 +9,8 @@ const allocator = std.heap.page_allocator;
 pub fn main() !void {
     try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
 
-    const potentials: [4][]const u8 = [_][]const u8{
-        "tully1D_1", "tully1D_2", "tripleState1D_2", "tripleState1D_3"
+    const potentials: [2][]const u8 = [_][]const u8{
+        "doubleState1D_2", "tripleState1D_2"
     };
 
     var opt_exact = quantum_dynamics.QuantumDynamicsOptions(f64){
@@ -52,7 +52,7 @@ pub fn main() !void {
         .iterations = 5000,
         .seed = 1,
         .time_step = 1,
-        .trajectories = 1000,
+        .trajectories = 10000,
 
         .potential = "",
     };
@@ -73,7 +73,7 @@ pub fn main() !void {
         .potential = "",
     };
 
-    var p: u32 = 10; while (p <= 50) : (p += 5) for (potentials) |potential| {
+    var p: u32 = 10; while (p <= 50) : (p += 1) for (potentials) |potential| {
 
              if (std.mem.eql(u8, potential, "tully1D_1"      )) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}
         else if (std.mem.eql(u8, potential, "tully1D_2"      )) {opt_exact.initial_conditions.state = 1; opt_classic.initial_conditions.state = &[_]f64{0, 1   };}

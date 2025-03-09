@@ -8,9 +8,9 @@ const Matrix = @import("acorn").Matrix;
 const allocator = std.heap.page_allocator;
 
 pub fn matrix_mm(samples: u64) ![2]f64 {
-    var A = try matrix.Matrix(f64).init(700, 700, allocator); defer A.deinit();
-    var B = try matrix.Matrix(f64).init(700, 700, allocator); defer B.deinit();
-    var C = try matrix.Matrix(f64).init(700, 700, allocator); defer C.deinit();
+    var A = try matrix.Matrix(f64).init(1000, 1000, allocator); defer A.deinit();
+    var B = try matrix.Matrix(f64).init(1000, 1000, allocator); defer B.deinit();
+    var C = try matrix.Matrix(f64).init(1000, 1000, allocator); defer C.deinit();
 
     A.randn(0, 1, 0); B.randn(0, 1, 1);
 
@@ -24,11 +24,11 @@ pub fn matrix_mm(samples: u64) ![2]f64 {
 }
 
 pub fn matrix_eigh(samples: u64) ![2]f64 {
-    var A  = try matrix.Matrix(f64).init(40, 40, allocator); defer  A.deinit(); 
-    var UA = try matrix.Matrix(f64).init(40, 40, allocator); defer UA.deinit();
-    var UC = try matrix.Matrix(f64).init(40, 40, allocator); defer UC.deinit();
-    var T1 = try matrix.Matrix(f64).init(40, 40, allocator); defer T1.deinit();
-    var T2 = try matrix.Matrix(f64).init(40, 40, allocator); defer T2.deinit();
+    var A  = try matrix.Matrix(f64).init(50, 50, allocator); defer  A.deinit(); 
+    var UA = try matrix.Matrix(f64).init(50, 50, allocator); defer UA.deinit();
+    var UC = try matrix.Matrix(f64).init(50, 50, allocator); defer UC.deinit();
+    var T1 = try matrix.Matrix(f64).init(50, 50, allocator); defer T1.deinit();
+    var T2 = try matrix.Matrix(f64).init(50, 50, allocator); defer T2.deinit();
 
     A.randn(0, 1, 0); matrix.transpose(f64, &T1, A); matrix.add(f64, &A, A, T1);
 
