@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np
+import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, numpy.linalg
 
 # create the parser
 parser = ap.ArgumentParser(
@@ -20,6 +20,7 @@ parser.add_argument("--dpi", type=int, default=96, help="The DPI of the plot.")
 parser.add_argument("--figsize", type=int, nargs=2, default=[6, 6], help="The dimensions of the plot in inches.")
 parser.add_argument("--fps", type=int, default=30, help="Frames per second for the animation.")
 parser.add_argument("--title", type=str, help="The title of the plot.")
+parser.add_argument("--transform", type=str, default="sum", help="The transform function used when multiple columns are plotted.")
 parser.add_argument("--xlabel", type=str, help="The an x-axis label.")
 parser.add_argument("--xlim", type=float, nargs=2, help="The x-axis limits of the plot.")
 parser.add_argument("--ylabel", type=str, help="The an y-axis label.")
@@ -37,22 +38,27 @@ dcit = lambda d, c: ((d_i, j) for i, (d_i, c_i) in enumerate(zip(d, c)) for j in
 # load the data with plotted columns and get the total number of lines
 data, data_cols = zip(*[load(file) for file in args.files]); nline = sum(len(data_cols[i]) for i in range(len(data_cols)))
 
+# define the transform function
+if   args.transform == "sum":  transform = lambda z: np.sum        (z, axis=1)
+elif args.transform == "norm": transform = lambda z: np.linalg.norm(z, axis=1)
+else: raise ValueError(f"TRANSFORM '{args.transform}' NOT RECOGNIZED"        )
+
 # create the figure and the container for plots
 fig, ax = plt.subplots(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); plots = []
 
-# calculate the y limits
-zmin = np.min([[data_i[:, j + i * (args.animate if args.animate else 0) + 2].min() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 2) // args.animate if args.animate else 1)])
-zmax = np.max([[data_i[:, j + i * (args.animate if args.animate else 0) + 2].max() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 2) // args.animate if args.animate else 1)])
-
 # loop over data and its columns to plot
-for data_i, j in dcit(data, data_cols):
+for data_i, data_cols_i in zip(data, data_cols):
 
     # define the independent coordinates
     x = data_i[:, 0].reshape(int(np.sqrt(data_i.shape[0])), int(np.sqrt(data_i.shape[0])))
     y = data_i[:, 1].reshape(int(np.sqrt(data_i.shape[0])), int(np.sqrt(data_i.shape[0])))
 
     # define the dependent coordinates
-    z = data_i[:, j + 2].reshape(int(np.sqrt(data_i.shape[0])), int(np.sqrt(data_i.shape[0])))
+    z = transform(data_i[:, data_cols_i + 2]).reshape(int(np.sqrt(data_i.shape[0])), int(np.sqrt(data_i.shape[0])))
+
+    # calculate the z limits
+    zmin = np.min([transform(data_i[:, data_cols_i + i * (args.animate if args.animate else 0) + 2]).min() for i in range((data[0].shape[1] - 2) // args.animate if args.animate else 1)])
+    zmax = np.max([transform(data_i[:, data_cols_i + i * (args.animate if args.animate else 0) + 2]).max() for i in range((data[0].shape[1] - 2) // args.animate if args.animate else 1)])
 
     # plot the data and append the plot to the list
     plots.append(ax.pcolormesh(x, y, z, cmap=args.colormap, vmin=zmin, vmax=zmax))
@@ -74,11 +80,11 @@ fig.tight_layout()
 # update function
 def update(frame):
 
-    # loop over the data and its columns to plot
-    for i, (data_i, j) in enumerate(dcit(data, data_cols)):
+    # loop over data and its columns to plot
+    for i, (data_i, data_cols_i) in enumerate(zip(data, data_cols)):
 
         # update the data
-        plots[i].set_array(data_i[:, j + frame * args.animate + 2])
+        plots[i].set_array(transform(data_i[:, data_cols_i + frame * args.animate + 2]).reshape(int(np.sqrt(data_i.shape[0])), int(np.sqrt(data_i.shape[0]))))
 
 # create the animation
 anm = anm.FuncAnimation(fig, update, frames=(data[0].shape[1] - 2) // args.animate, init_func=lambda: None, interval=1000 // args.fps) if args.animate else None

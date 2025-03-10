@@ -30,12 +30,5 @@
             "wavefunction" : "WAVEFUNCTION.mat"
         },
         "potential" : "harmonic1D_1"
-    },
-    "model_potential" : {
-        "adiabatic" : true,
-        "limits" : [-8, 8],
-        "output" : "POTENTIAL.mat",
-        "points" : 32,
-        "potential" : "harmonic1D_1"
     }
 }

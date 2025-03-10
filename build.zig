@@ -26,14 +26,9 @@ const targets: []const std.Target.Query = &.{
 pub fn build(builder: *std.Build) !void {
     const optimize = builder.standardOptimizeOption(.{});
 
-    const nocross   = builder.option(bool, "nocross",   "Disable cross compilation"      ) orelse false;
-    const noexample = builder.option(bool, "noexample", "Disable compilation of examples") orelse false;
+    const build_examples = builder.option(bool, "BUILD_EXAMPLES", "Build examples in the research folder") orelse false;
 
     for (targets) |target| {
-
-        if (nocross and (builtin.target.cpu.arch != target.cpu_arch or builtin.target.os.tag != target.os_tag)) {
-            continue;
-        }
 
         const main_executable = builder.addExecutable(.{
             .name = "acorn",
@@ -50,7 +45,7 @@ pub fn build(builder: *std.Build) !void {
 
         builder.getInstallStep().dependOn(&main_output.step);
 
-        if (!noexample) for (examples) |example| {
+        if (build_examples) for (examples) |example| {
 
             const target_name = try target.zigTriple(builder.allocator); var bin_folder = try builder.allocator.alloc(u8, target_name.len + 9);
 

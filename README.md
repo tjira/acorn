@@ -107,7 +107,7 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
 }
 ```
 
-The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction with the command bellow.
+The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction with the command below.
 
 <details> <summary><b>Wavefunction 1D - Harmonic Oscillator</b></summary>
 
@@ -147,7 +147,17 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
 }
 ```
 
-This simulation takes a few seconds, since the time complexity increases exponentially.
+This simulation takes a few seconds, since the time complexity increases exponentially. Visualizing the 3D complex wavefunction is a little tricky. One way is to plot the square of the wavefunction on a 2D heatmap. You can visualize the wavefunction this way with the command below.
+
+<details> <summary><b>Wavefunction 2D - Harmonic Oscillator</b></summary>
+
+```bash
+heatmap.py WAVEFUNCTION.mat:0,1 --xlabel "Coordinate (a.u.)" --ylabel "Coordinate (a.u.)" --transform norm --animate 2
+```
+
+<p align="center"><img src="graphics/rtpa_wavefunction_2D.gif"/></p>
+
+</details>
 
 ### Real Time Nonadiabatic Quantum Dynamics
 
@@ -192,7 +202,7 @@ lines.py WAVEFUNCTION.mat:0,1,2,3 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re
 
 </details>
 
-<details> <summary><b> Populations - 1. Tully Potential</b></summary>
+<details> <summary><b> Population - 1. Tully Potential</b></summary>
 
 ```bash
 lines.py POPULATION.mat --legend "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.)" --ylabel "Population"
