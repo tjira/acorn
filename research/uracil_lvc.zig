@@ -43,7 +43,7 @@ pub fn main() !void {
         .iterations = 250,
         .potential = "uracil8D_1",
         .time_step = 10,
-        .trajectories = 1000
+        .trajectories = 10000
     };
 
     var opt_lzsh_8D = opt_fssh_8D; opt_lzsh_8D.fewest_switches = null; opt_lzsh_8D.landau_zener = .{}; opt_lzsh_8D.write.population_mean = "POPULATION_LZSH_8D.mat";

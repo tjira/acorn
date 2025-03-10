@@ -19,6 +19,8 @@ research/**/*.mp4*
 research/**/*.png*
 research/**/*.zip*
 
+research/*.sh*
+
 *zig*/
 *sit*/
 *tex*/

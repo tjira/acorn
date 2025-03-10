@@ -17,14 +17,14 @@ parser.add_argument("-a", "--animate", type=int, help="Animate the plot.")
 # add the plotting arguments
 parser.add_argument("--colormap", type=str, default="viridis", help="The colormap to use for the plot.")
 parser.add_argument("--dpi", type=int, default=96, help="The DPI of the plot.")
-parser.add_argument("--figsize", type=int, nargs=2, default=[6, 6], help="The dimensions of the plot in inches.")
+parser.add_argument("--figsize", type=int, nargs=2, default=[4, 4], help="The dimensions of the plot in inches.")
 parser.add_argument("--fps", type=int, default=30, help="Frames per second for the animation.")
-parser.add_argument("--title", type=str, help="The title of the plot.")
+parser.add_argument("--title", type=str, nargs="+", help="The title of the plot.")
 parser.add_argument("--transform", type=str, default="sum", help="The transform function used when multiple columns are plotted.")
-parser.add_argument("--xlabel", type=str, help="The an x-axis label.")
-parser.add_argument("--xlim", type=float, nargs=2, help="The x-axis limits of the plot.")
-parser.add_argument("--ylabel", type=str, help="The an y-axis label.")
-parser.add_argument("--ylim", type=float, nargs=2, help="The y-axis limits of the plot.")
+parser.add_argument("--xlabel", type=str, nargs="+", help="The an x-axis label.")
+parser.add_argument("--xlim", type=float, nargs="+", help="The x-axis limits of the plot.")
+parser.add_argument("--ylabel", type=str, nargs="+", help="The an y-axis label.")
+parser.add_argument("--ylim", type=float, nargs="+", help="The y-axis limits of the plot.")
 
 # add positional arguments and parse the arguments
 parser.add_argument("files", nargs="+", help="The data files to plot."); args = parser.parse_args()
@@ -43,8 +43,14 @@ if   args.transform == "sum":  transform = lambda z: np.sum        (z, axis=1)
 elif args.transform == "norm": transform = lambda z: np.linalg.norm(z, axis=1)
 else: raise ValueError(f"TRANSFORM '{args.transform}' NOT RECOGNIZED"        )
 
+# calculate the number of rows and columns for the plot
+nrow = [i for i in range(1, int(np.sqrt(len(args.files))) + 1) if len(args.files) % i == 0][-1]; ncol = len(args.files) // nrow
+
 # create the figure and the container for plots
-fig, ax = plt.subplots(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); plots = []
+fig, ax = plt.subplots(nrow, ncol, dpi=args.dpi, figsize=(ncol * args.figsize[1], nrow * args.figsize[0])); plots = []
+
+# reshape the axes if the axes are not a matrix
+ax = np.array([ax]) if not isinstance(ax, np.ndarray) else (ax if not isinstance(ax[0], np.ndarray) else ax.flatten())
 
 # loop over data and its columns to plot
 for data_i, data_cols_i in zip(data, data_cols):
@@ -61,18 +67,18 @@ for data_i, data_cols_i in zip(data, data_cols):
     zmax = np.max([transform(data_i[:, data_cols_i + i * (args.animate if args.animate else 0) + 2]).max() for i in range((data[0].shape[1] - 2) // args.animate if args.animate else 1)])
 
     # plot the data and append the plot to the list
-    plots.append(ax.pcolormesh(x, y, z, cmap=args.colormap, vmin=zmin, vmax=zmax))
+    plots.append(ax[len(plots)].pcolormesh(x, y, z, cmap=args.colormap, vmin=zmin, vmax=zmax))
 
 # set the title
-if args.title: ax.set_title(args.title)
+if args.title: [ax[i].set_title(args.title[i]) for i in range(len(args.title)) if args.title[i]]
 
 # set the axis labels
-if args.xlabel: ax.set_xlabel(args.xlabel)
-if args.ylabel: ax.set_ylabel(args.ylabel)
+if args.xlabel: [ax[i].set_xlabel(args.xlabel[i]) for i in range(len(args.xlabel)) if args.xlabel[i]]
+if args.ylabel: [ax[i].set_ylabel(args.ylabel[i]) for i in range(len(args.ylabel)) if args.ylabel[i]]
 
 # set the axis limits
-if args.xlim: ax.set_xlim(args.xlim)
-if args.ylim: ax.set_ylim(args.ylim)
+if args.xlim: [ax[i].set_xlim([args.xlim[2 * i], args.xlim[2 * i + 1]]) for i in range(0, len(args.xlim) // 2) if not np.isnan(args.xlim[2 * i])]
+if args.ylim: [ax[i].set_ylim([args.ylim[2 * i], args.ylim[2 * i + 1]]) for i in range(0, len(args.ylim) // 2) if not np.isnan(args.ylim[2 * i])]
 
 # set the layout
 fig.tight_layout()
