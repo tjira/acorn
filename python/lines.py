@@ -35,7 +35,7 @@ parser.add_argument("--scales", nargs="+", help="Scales for the plotted lines.")
 parser.add_argument("files", nargs="+", help="The data files to plot."); args = parser.parse_args()
 
 # function to load the data from the input string as well as the columns to plot
-load = lambda s: (d := np.loadtxt((p := s.split(":", 1))[0], ndmin=2, skiprows=1), np.array(p[1].split(","), int) if len(p) == 2 and p[1] else np.arange(d.shape[1] - 1))
+def load(fname): tmp = fname.split(":"); data = np.loadtxt(tmp[0], ndmin=2, skiprows=1); return data, np.array(tmp[1].split(","), int) if len(tmp) == 2 and tmp[1] else np.arange(data.shape[1] - 1)
 
 # function to return the iterator for the data and columns
 dcit = lambda d, c: ((d_i, j) for i, (d_i, c_i) in enumerate(zip(d, c)) for j in c_i)
@@ -61,7 +61,7 @@ for (frame, step) in ((frame, args.animate if args.animate else 0) for frame in 
 fig, ax = plt.subplots(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); plots, ebars = [], []
 
 # set the colormap
-cmap = plt.get_cmap(args.colormap)(np.linspace(0.1, 0.9, nline) if (ncolor := plt.get_cmap(args.colormap).N) > 20 else np.linspace(0, 1, ncolor))
+cmap = plt.get_cmap(args.colormap)(np.linspace(0.1, 0.9, nline) if (plt.get_cmap(args.colormap).N) > 20 else np.linspace(0, 1, plt.get_cmap(args.colormap).N))
 
 # calculate the y limits
 ymin = np.min([[data_i[:, j + i * (args.animate if args.animate else 0) + 1].min() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])

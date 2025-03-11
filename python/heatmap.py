@@ -30,7 +30,7 @@ parser.add_argument("--ylim", type=float, nargs="+", help="The y-axis limits of 
 parser.add_argument("files", nargs="+", help="The data files to plot."); args = parser.parse_args()
 
 # function to load the data from the input string as well as the columns to plot
-load = lambda s: (d := np.loadtxt((p := s.split(":", 1))[0], ndmin=2, skiprows=1), np.array(p[1].split(","), int) if len(p) == 2 and p[1] else np.arange(d.shape[1] - 2))
+def load(fname): tmp = fname.split(":"); data = np.loadtxt(tmp[0], ndmin=2, skiprows=1); return data, np.array(tmp[1].split(","), int) if len(tmp) == 2 and tmp[1] else np.arange(data.shape[1] - 2)
 
 # function to return the iterator for the data and columns
 dcit = lambda d, c: ((d_i, j) for i, (d_i, c_i) in enumerate(zip(d, c)) for j in c_i)
