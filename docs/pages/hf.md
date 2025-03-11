@@ -93,7 +93,7 @@ After convergence of both the density matrix and total energy, the process concl
 E\_{\mathrm{nuc}}=\sum\_{A}\sum\_{B<A}\frac{Z\_{A}Z\_{B}}{R\_{AB}}
 \end{equation}
 
-where $Z\_A$ is the nuclear charge of atom $A$, and $R\_{AB}$ is the distance between atoms $A$ and $B$. The Roothaan equations \eqref{eq:roothaan} are a generalized eigenvalue problem, which can be transformed into a standard eigenvalue problem as explained [here](generalizedeigenvalueproblem.html#generalized-eigenvalue-problem).
+where $Z\_A$ is the nuclear charge of atom $A$, and $R\_{AB}$ is the distance between atoms $A$ and $B$. The Roothaan equations \eqref{eq:roothaan} are a generalized eigenvalue problem, which can be transformed into a standard eigenvalue problem as explained [here](gep.html#generalized-eigenvalue-problem).
 
 ### Direct Inversion in the Iterative Subspace
 

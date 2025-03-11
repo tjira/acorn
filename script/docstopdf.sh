@@ -342,10 +342,11 @@ sed -i 's/\\section{Mixed Quantum-Classical Dynamics}/\\chapter{Mixed Quantum-Cl
 
 # replace section references
 sed -i 's/\\href{rtp.html}{here}/in Section \\ref{sec:real_time_propagation}/g'                                                          docs/tex/main.tex
-sed -i 's/\\href{mf.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g' docs/tex/main.tex
+sed -i 's/\\href{hf.html\\#integral-transforms-to-the-basis-of-molecular-spinorbitals}{here}/in Section \\ref{sec:integral_transform}/g' docs/tex/main.tex
 sed -i 's/\\href{me.html\\#matrix-exponential}{here}/in Section \\ref{sec:matrix_exponential}/g'                                         docs/tex/main.tex
 sed -i 's/\\href{gep.html\\#generalized-eigenvalue-problem}{here}/in Section \\ref{sec:generalized_eigenvalue_problem}/g'                docs/tex/main.tex
 sed -i 's/\\href{cs.html\\#code-solutions}{here}/in Section \\ref{sec:code_solutions}/g'                                                 docs/tex/main.tex
+sed -i 's/\\href{gep.html\\#generalized-eigenvalue-problem}{here}/in Section \\ref{sec:generalized_eigenvalue_problem}/g'                docs/tex/main.tex
 
 # replace file attachments
 sed -i 's/\\href{\/acorn\/python\/molecule.xyz}/\\textattachfile[color=0 0 1]{molecule.xyz}/g' docs/tex/main.tex
