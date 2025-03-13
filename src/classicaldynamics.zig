@@ -504,34 +504,30 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
 
     if (adiabatic) for (0..U3[0].rows) |i| if (i != s) {
 
-        const di0 = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const ds0 = (U3[0].at(s, s) - U3[1].at(s, s)) / time_step;
-        const di1 = (U3[1].at(i, i) - U3[2].at(i, i)) / time_step; const ds1 = (U3[1].at(s, s) - U3[2].at(s, s)) / time_step;
+        const Z0 = abs(U3[0].at(i, i) - U3[0].at(s, s)); const Z1 = abs(U3[1].at(i, i) - U3[1].at(s, s)); const Z2 = abs(U3[2].at(i, i) - U3[2].at(s, s));
 
-        if ((di0 - ds0) * (di1 - ds1) > 0) continue;
+        const dZ0 = (Z0 - Z1) / time_step; const dZ1 = (Z1 - Z2) / time_step;
 
-        const ddi = (di0 - di1) / time_step; const dds = (ds0 - ds1) / time_step;
+        const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
 
-        P.ptr(i).* = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, U3[0].at(i, i) - U3[0].at(s, s), 3) / (ddi - dds)));
+        if (dZ0 * dZ1 > 0 or (dZ0 * dZ1 < 0 and ddZ0 < 0)) continue;
+
+        P.ptr(i).* = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, Z0, 3) / ddZ0));
 
         if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
     };
 
     var ps: T = 0; for (0..P.rows) |i| ps += P.at(i);
 
-    if (ps > 0) {
+    if (ps > 1) for (0..P.rows) |i| {P.ptr(i).* /= ps;};
 
-        if (ps > 1) {
-            for (0..P.rows) |i| P.ptr(i).* /= ps;
-        }
+    for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
 
-        for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
+    rn = rand.float(T);
 
-        rn = rand.float(T);
-
-        for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
-            sn = @intCast(i); break;
-        };
-    }
+    for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+        sn = @intCast(i);
+    };
 
     return sn;
 }
