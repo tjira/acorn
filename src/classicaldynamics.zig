@@ -523,9 +523,9 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
 
     for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
 
-    rn = rand.float(T);
+    if (ps > 0) rn = rand.float(T);
 
-    for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+    if (ps > 0) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
         sn = @intCast(i);
     };
 
