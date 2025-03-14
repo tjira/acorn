@@ -2,7 +2,7 @@
 
 BIN=../zig-out/x86_64-linux/research; export PLOT_HEATMAP=../python/heatmap.py; export PLOT_LINES=../python/lines.py; export MPLBACKEND=agg
 
-zig build --release=fast -DBUILD_EXAMPLES && rm -rf result *.mat *.png && mkdir -p result && for FILE in *.zig; do
+zig build -DBUILD_EXAMPLES && rm -rf result *.mat *.png && mkdir -p result && for FILE in *.zig; do
 
     [[ "$#" -eq 1 ]] && [[ $1 != $FILE ]] && continue;
 

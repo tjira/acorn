@@ -53,13 +53,13 @@ Below are all the important features of Acorn divided into categories.
 Since the software is coded in zig, you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download). After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
 
 ```bash
-zig build --release=fast --summary all
+zig build
 ```
 
 This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os` folder, where `arch` is the architecture of your system and `os` is the operating system you are using. If you don't know your CPU architecture, you probably want the `x86_64` binary. You can also perform tests on the project by running the following command.
 
 ```bash
-zig build --release=fast --summary all test
+zig build test
 ```
 
 If some tests fail, let me know by creating an issue. If all the tests pass, you can run the binary file using the following command.

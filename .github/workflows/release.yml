@@ -19,7 +19,7 @@ jobs:
         run: mkdir compiler && wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz && tar -xvf zig.tar.xz && mv zig-linux*/lib zig-linux*/zig compiler && rm -rf zig*
 
       - name: Build Acorn
-        run: ./compiler/zig build --release=fast --summary all
+        run: ./compiler/zig build --summary all
 
       - name: Make the Binary Folder
         run: mkdir bin

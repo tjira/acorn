@@ -21,6 +21,7 @@ research/**/*.zip*
 
 research/*.sh*
 
-*zig*/
+*cod*/
 *sit*/
 *tex*/
+*zig*/
