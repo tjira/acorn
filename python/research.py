@@ -89,7 +89,7 @@ if SH_TESTING:
         open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
 
-        os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S$_0$ (EXACT)" "S$_0$ (FSSH)" "S$_0$ (KTSH)" "S$_0$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_{potential}.png')
+        os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S\$_0\$ (EXACT)" "S\$_0\$ (FSSH)" "S\$_0\$ (KTSH)" "S\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_{potential}.png')
 
 # DYNAMICS ON URACIL VC MODEL ================================================================================================================================================================
 
@@ -137,7 +137,7 @@ if URACIL_LVC:
         open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
 
-        os.system(f'python python/lines.py data/MAITRA_URACIL8D_1_D0_MCTDH.dat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D$_0$ (MCTDH)" "D$_0$ (FSSH)" "D$_0$ (KTSH)" "D$_0$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
+        os.system(f'python python/lines.py data/MAITRA_URACIL8D_1_D0_MCTDH.dat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D\$_0\$ (MCTDH)" "D\$_0\$ (FSSH)" "D\$_0\$ (KTSH)" "D\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
 
 # CLEANUP ====================================================================================================================================================================================
 
