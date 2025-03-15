@@ -1,13 +1,5 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-const examples = [_][]const u8{
-    "mash_test",
-    "ho_excited_states",
-    "uracil_lvc",
-    "surface_hopping_compare",
-    "model_nonadiabatic_quantum_dynamics",
-};
-
 const targets: []const std.Target.Query = &.{
     .{.os_tag = .linux  , .cpu_arch = .aarch64},
     .{.os_tag = .linux  , .cpu_arch = .arm    },
@@ -24,8 +16,7 @@ const targets: []const std.Target.Query = &.{
 };
 
 pub fn build(builder: *std.Build) !void {
-    const build_examples = builder.option(bool, "BUILD_EXAMPLES", "Build examples in the research folder") orelse false;
-    const debug          = builder.option(bool, "DEBUG",          "Build everything in the debug mode"   ) orelse false;
+    const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode") orelse false;
 
     for (targets) |target| {
 
@@ -53,36 +44,15 @@ pub fn build(builder: *std.Build) !void {
             builder.step("docs", "Compile code documentation" ).dependOn(&docs_install                           .step);
             builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
         }
-
-        if (build_examples) for (examples) |example| {
-
-            const example_source_file   = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"research/", example, ".zig"                        });
-            const example_output_folder = try std.mem.concat(builder.allocator, u8, &[_][]const u8{try target.zigTriple(builder.allocator), "/research"});
-
-            const example_executable = builder.addExecutable(.{
-                .name = example,
-                .optimize = if (debug) .Debug else .ReleaseFast,
-                .root_source_file = builder.path(example_source_file),
-                .single_threaded = true,
-                .strip = !debug,
-                .target = builder.resolveTargetQuery(target)
-            });
-
-            example_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
-
-            const example_install = builder.addInstallArtifact(example_executable,
-                .{.dest_dir = .{.override = .{.custom = example_output_folder}}
-            });
-
-            builder.getInstallStep().dependOn(&example_install.step);
-        };
     }
 
     const test_executable = builder.addTest(.{
+        .name = "test",
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("test/main.zig"),
         .single_threaded = true,
-        .strip = !debug
+        .strip = !debug,
+        .target = builder.host
     });
 
     test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
