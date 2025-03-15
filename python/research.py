@@ -82,14 +82,14 @@ if SH_TESTING:
         kt_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_{potential}_KTSH.mat"
         lz_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_{potential}_LZSH.mat"
 
-        open(f"input_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_dp_{potential}.json")
-        open(f"input_ap_{potential}.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"acorn input_ap_{potential}.json")
-        open(f"input_qd_{potential}.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"acorn input_qd_{potential}.json")
-        open(f"input_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_fs_{potential}.json")
-        open(f"input_kt_{potential}.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_kt_{potential}.json")
-        open(f"input_lz_{potential}.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_lz_{potential}.json")
+        open(f"input.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"zig build run")
+        open(f"input.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"zig build run")
+        open(f"input.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"zig build run")
+        open(f"input.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"zig build run")
+        open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
+        open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
 
-        os.system(f'lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S\$_0\$ (EXACT)" "S\$_0\$ (FSSH)" "S\$_0\$ (KTSH)" "S\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_{potential}.png')
+        os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S\$_0\$ (EXACT)" "S\$_0\$ (FSSH)" "S\$_0\$ (KTSH)" "S\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_{potential}.png')
 
 # DYNAMICS ON URACIL VC MODEL ================================================================================================================================================================
 
@@ -133,11 +133,11 @@ if URACIL_LVC:
         kt_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_uracil{i}D_1_KTSH.mat"
         lz_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_uracil{i}D_1_LZSH.mat"
 
-        open(f"input_fs_uracil{i}D_1.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_fs_uracil{i}D_1.json")
-        open(f"input_kt_uracil{i}D_1.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_kt_uracil{i}D_1.json")
-        open(f"input_lz_uracil{i}D_1.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_lz_uracil{i}D_1.json")
+        open(f"input.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"zig build run")
+        open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
+        open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
 
-        os.system(f'lines.py external/MAITRA_URACIL_8D_LVC_D0_MCTDH.dat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D\$_0\$ (MCTDH)" "D\$_0\$ (FSSH)" "D\$_0\$ (KTSH)" "D\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
+        os.system(f'python python/lines.py external/MAITRA_URACIL_8D_LVC_D0_MCTDH.dat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D\$_0\$ (MCTDH)" "D\$_0\$ (FSSH)" "D\$_0\$ (KTSH)" "D\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
 
 # CLEANUP ====================================================================================================================================================================================
 
@@ -145,6 +145,5 @@ if os.path.exists("research"): sh.rmtree("research")
 
 os.mkdir("research"); os.mkdir("research/source"); os.mkdir("research/output")
 
-for file in gl.glob("*.json"): sh.move(file, "research/source")
 for file in gl.glob("*.mat" ): sh.move(file, "research/source")
 for file in gl.glob("*.png" ): sh.move(file, "research/output")
