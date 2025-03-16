@@ -5,7 +5,7 @@ const std = @import("std");
 const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
 
-/// The classical dynamics options.
+/// The classical dynamics options
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         pub const InitialConditions = struct {
@@ -58,7 +58,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
     };
 }
 
-/// The CI options.
+/// The CI options
 pub fn ConfigurationInteractionOptions(comptime T: type) type {
     return struct {
         excitation: ?[]const u32 = null,
@@ -67,7 +67,7 @@ pub fn ConfigurationInteractionOptions(comptime T: type) type {
     };
 }
 
-/// The Hartree-Fock options.
+/// The Hartree-Fock options
 pub fn HartreeFockOptions(comptime T: type) type {
     return struct {
         pub const Integral = struct {
@@ -86,7 +86,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
     };
 }
 
-/// Option struct for the model potential run target.
+/// Option struct for the model potential run target
 pub fn ModelPotentialOptions(comptime T: type) type {
     return struct {
         pub const ValuePair = struct {
@@ -103,7 +103,7 @@ pub fn ModelPotentialOptions(comptime T: type) type {
     };
 }
 
-/// The Moller-Plesset options.
+/// The Moller-Plesset options
 pub fn MollerPlessetOptions(comptime T: type) type {
     return struct {
         order: u32 = 2,
@@ -112,7 +112,20 @@ pub fn MollerPlessetOptions(comptime T: type) type {
     };
 }
 
-/// The quantum dynamics options struct.
+/// The prime generation ang checking options
+pub fn PrimeOptions(comptime T: type) type {
+    return struct {
+        pub const Generate = struct {
+            count: T, log_interval: T = 1
+        };
+
+        mode: []const u8,
+        generate: ?Generate,
+        number: T,
+    };
+}
+
+/// The quantum dynamics options struct
 pub fn QuantumDynamicsOptions(comptime T: type) type {
     return struct {
         pub const Grid = struct {
@@ -152,7 +165,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
     };
 }
 
-/// The sort options.
+/// The sort options
 pub fn SortOptions() type {
     return struct {
         input:     []const u8,

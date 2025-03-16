@@ -15,12 +15,13 @@ pub const matrix                    = @import("matrix.zig"                  );
 pub const model_potential           = @import("modelpotential.zig"          );
 pub const moller_plesset            = @import("mollerplesset.zig"           );
 pub const output                    = @import("input.zig"                   );
+pub const prime                     = @import("prime.zig"                   );
 pub const quantum_dynamics          = @import("quantumdynamics.zig"         );
+pub const sort                      = @import("sort.zig"                    );
 pub const strided_array             = @import("stridedarray.zig"            );
 pub const tensor                    = @import("tensor.zig"                  );
 pub const transform                 = @import("transform.zig"               );
 pub const vector                    = @import("vector.zig"                  );
-pub const sort                      = @import("sort.zig"                    );
 pub const wavefunction              = @import("wavefunction.zig"            );
 
 pub const Matrix = @import("matrix.zig").Matrix;
@@ -64,6 +65,13 @@ pub fn parse(filebuf: []const u8) !void {
         const obj = try std.json.parseFromValue(input.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
 
         _ = try moller_plesset.run(f64, obj.value, true, allocator);
+    }
+
+    if (inputjs.value.object.contains("prime")) {
+
+        const obj = try std.json.parseFromValue(input.PrimeOptions(u1024), allocator, inputjs.value.object.get("prime").?, .{}); defer obj.deinit();
+
+        _ = try prime.run(u1024, obj.value, true, allocator);
     }
 
     if (inputjs.value.object.contains("quantum_dynamics")) {
