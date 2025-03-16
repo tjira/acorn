@@ -38,13 +38,16 @@ pub fn build(builder: *std.Build) !void {
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag) {
 
             const docs_install = builder.addInstallDirectory(.{
-                .install_dir = .prefix, .install_subdir = "docs", .source_dir = main_executable.getEmittedDocs()
+                .install_dir = .prefix, .install_subdir = "docs", .source_dir = builder.addExecutable(.{
+                    .name = "main", .root_source_file = builder.path("src/main.zig"), .target = builder.host
+                }).getEmittedDocs(),
             });
 
             builder.step("docs", "Compile code documentation" ).dependOn(&docs_install                           .step);
             builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
         }
     }
+
 
     const test_executable = builder.addTest(.{
         .name = "test",
