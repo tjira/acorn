@@ -2,8 +2,10 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
+const inp = @import("input.zig"         );
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
+const out = @import("output.zig"        );
 const vec = @import("vector.zig"        );
 
 const Matrix = @import("matrix.zig").Matrix;
@@ -17,92 +19,8 @@ const      sgn = @import("helper.zig").sgn     ;
 const      sum = @import("helper.zig").sum     ;
 const  asfloat = @import("helper.zig").asfloat ;
 
-/// The classical dynamics options.
-pub fn ClassicalDynamicsOptions(comptime T: type) type {
-    return struct {
-        pub const InitialConditions = struct {
-            position_mean: []const T,
-            position_std:  []const T,
-            momentum_mean: []const T,
-            momentum_std:  []const T,
-            state:         []const T,
-            mass:          []const T
-        };
-        pub const FewestSwitches = struct {
-            quantum_substep: u32 = 10,
-            decoherence_alpha: ?T = null
-        };
-        pub const LandauZener = struct {
-        };
-        pub const SpinMapping = struct {
-            pub const Resample = struct {
-                reflect: bool = false, threshold: T = 0
-            };
-
-            resample: ?Resample = null
-        };
-        pub const LogIntervals = struct {
-            trajectory: u32 = 1, iteration: u32 = 1
-        };
-        pub const Write = struct {
-            fssh_coefficient_mean:         ?[]const u8 = null,
-            kinetic_energy_mean:           ?[]const u8 = null,
-            momentum_mean:                 ?[]const u8 = null,
-            population_mean:               ?[]const u8 = null,
-            position_mean:                 ?[]const u8 = null,
-            potential_energy_mean:         ?[]const u8 = null,
-            time_derivative_coupling_mean: ?[]const u8 = null,
-            total_energy_mean:             ?[]const u8 = null
-        };
-
-        adiabatic: bool,
-        derivative_step: T = 0.001,
-        iterations: u32,
-        potential: []const u8,
-        seed: u32 = 1,
-        time_derivative_coupling: ?[]const u8 = "numeric",
-        time_step: T,
-        trajectories: u32,
-
-        fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
-
-        initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, write: Write = .{},
-    };
-}
-
-/// The classical dynamics output.
-pub fn ClassicalDynamicsOutput(comptime T: type) type {
-    return struct {
-        pop: Vector(T),
-
-        r: Vector(T),
-        p: Vector(T),
-
-        Ekin: T,
-        Epot: T,
-
-        /// Initialize the classical dynamics output.
-        pub fn init(ndim: usize, nstate: usize, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
-            return ClassicalDynamicsOutput(T){
-                .pop = try Vector(T).init(nstate, allocator),
-
-                .r = try Vector(T).init(ndim, allocator),
-                .p = try Vector(T).init(ndim, allocator),
-
-                .Ekin = 0,
-                .Epot = 0
-            };
-        }
-
-        /// Free the memory allocated for the classical dynamics output.
-        pub fn deinit(self: ClassicalDynamicsOutput(T)) void {
-            self.pop.deinit(); self.r.deinit(); self.p.deinit();
-        }
-    };
-}
-
 /// Main function for running classical dynamics simulations.
-pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
+pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.ClassicalDynamicsOutput(T) {
     const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential);
 
     if (opt.initial_conditions.state.len         != nstate) return error.InvalidInitialState;
@@ -113,7 +31,7 @@ pub fn run(comptime T: type, opt: ClassicalDynamicsOptions(T), print: bool, allo
     if (opt.initial_conditions.mass.len          != ndim  ) return error.InvalidMass        ;
     if (sum(T, opt.initial_conditions.state)     != 1     ) return error.InvalidStateSum    ;
 
-    var output = try ClassicalDynamicsOutput(T).init(ndim, nstate, allocator);
+    var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator);
 
     var prng_jump = std.Random.DefaultPrng.init(opt.seed); const rand_jump = prng_jump.random();
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
@@ -290,7 +208,7 @@ pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: 
 }
 
 /// Add the position, momentum, population and energies to the output vector.
-pub fn assignOutput(comptime T: type, output: *ClassicalDynamicsOutput(T), r: Vector(T), v: Vector(T), state: u32, Ekin: T, Epot: T, mass: []const T) void {
+pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r: Vector(T), v: Vector(T), state: u32, Ekin: T, Epot: T, mass: []const T) void {
     output.pop.ptr(state).* += 1;
 
     for (0..r.rows) |i| {
@@ -302,7 +220,7 @@ pub fn assignOutput(comptime T: type, output: *ClassicalDynamicsOutput(T), r: Ve
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
-pub fn calculateForce(comptime T: type, opt: ClassicalDynamicsOptions(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), T1: *Matrix(T), T2: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
+pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), T1: *Matrix(T), T2: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
     r.ptr(c).* += 1 * opt.derivative_step; try mpt.eval(T, U, opt.potential, r.*);
 
     if (opt.adiabatic) {mat.eigh(T, UA, UC, U.*, T1, T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
@@ -345,7 +263,7 @@ pub fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix
 }
 
 /// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.
-pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
+pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: inp.ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
     const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s;
 
     const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
@@ -430,7 +348,7 @@ pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), s
 }
 
 /// Function to resample the Bloch sphere at apecified time points.
-pub fn resampleBlochVector(comptime T: type, opt: ClassicalDynamicsOptions(T).SpinMapping.Resample, S: *Matrix(T), SI: *Matrix(usize), v: Vector(T), vp: Vector(T), s: u32, rand: std.Random) !void {
+pub fn resampleBlochVector(comptime T: type, opt: inp.ClassicalDynamicsOptions(T).SpinMapping.Resample, S: *Matrix(T), SI: *Matrix(usize), v: Vector(T), vp: Vector(T), s: u32, rand: std.Random) !void {
     for (0..S.rows) |k| if (abs(S.at(k, 0)) < opt.threshold and abs(S.at(k, 1)) < opt.threshold) {
         try initialBlochVector(T, S, SI, s, rand); break;
     };
@@ -582,7 +500,7 @@ pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
 }
 
 /// Function to propagate the classical coordinates in time on an "s" state.
-pub fn propagate(comptime T: type, opt: ClassicalDynamicsOptions(T), r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), T1: *Matrix(T), T2: *Matrix(T), s: u32) !void {
+pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), T1: *Matrix(T), T2: *Matrix(T), s: u32) !void {
     for (0..r.rows) |i| {
 
         const F = try calculateForce(T, opt, U, UA, UC, T1, T2, r, i, s);

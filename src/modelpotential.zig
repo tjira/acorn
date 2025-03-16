@@ -2,6 +2,7 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
+const inp = @import("input.zig"   );
 const cnt = @import("constant.zig");
 const mat = @import("matrix.zig"  );
 
@@ -9,23 +10,6 @@ const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
-
-/// Option struct for the model potential run target.
-pub fn ModelPotentialOptions(comptime T: type) type {
-    return struct {
-        pub const ValuePair = struct {
-            index: u32 = 0, value: T = 0
-        };
-
-        adiabatic: bool,
-        limits: []const T,
-        output: []const u8 = "POTENTIAL.mat",
-        points: u32,
-        potential: []const u8,
-
-        constant: []const ValuePair = &[_]ValuePair{}
-    };
-}
 
 /// Return the number of dimensions of the potential energy surface.
 pub fn dims(potential: []const u8) !u32 {
@@ -363,7 +347,7 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
 }
 
 /// Write the potential energy surfaces to a file.
-pub fn write(comptime T: type, opt: ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
+pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
     const ndim = try dims(opt.potential); const nstate = try states(opt.potential);
 
     var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();

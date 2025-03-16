@@ -3,8 +3,10 @@
 const std = @import("std"); const Complex = std.math.Complex;
 
 const ftr = @import("fouriertransform.zig");
+const inp = @import("input.zig"           );
 const mat = @import("matrix.zig"          );
 const mpt = @import("modelpotential.zig"  );
+const out = @import("output.zig"          );
 const vec = @import("vector.zig"          );
 const wfn = @import("wavefunction.zig"    );
 
@@ -14,95 +16,9 @@ const Wavefunction = @import("wavefunction.zig").Wavefunction;
 
 const asfloat = @import("helper.zig").asfloat;
 
-/// The quantum dynamics options struct.
-pub fn QuantumDynamicsOptions(comptime T: type) type {
-    return struct {
-        pub const Grid = struct {
-            limits: []const T, points: u32
-        };
-        pub const InitialConditions = struct {
-            position: []const T, momentum: []const T, gamma: T, state: u32, mass: T
-        };
-        pub const LogIntervals = struct {
-            iteration: u32 = 1
-        };
-        pub const Spectrum = struct {
-            gaussian_window_exponent: T = 0.001,
-            nearest_power_of_two: u32 = 2,
-            flip: bool = true
-        };
-        pub const Write = struct {
-            autocorrelation_function:             ?[]const u8 = null,
-            transformed_autocorrelation_function: ?[]const u8 = null,
-            kinetic_energy:                       ?[]const u8 = null,
-            momentum:                             ?[]const u8 = null,
-            population:                           ?[]const u8 = null,
-            position:                             ?[]const u8 = null,
-            potential_energy:                     ?[]const u8 = null,
-            spectrum:                             ?[]const u8 = null,
-            total_energy:                         ?[]const u8 = null,
-            wavefunction:                         ?[]const u8 = null
-        };
-
-        adiabatic: bool,
-        iterations: u32,
-        mode: []const u32,
-        potential: []const u8,
-        time_step: T,
-
-        grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, spectrum: Spectrum = .{}, write: Write = .{}
-    };
-}
-
-/// The quantum dynamics output struct.
-pub fn QuantumDynamicsOutput(comptime T: type) type {
-    return struct {
-        P: []Matrix(T),
-        r: []Vector(T),
-        p: []Vector(T),
-
-        Ekin: []T,
-        Epot: []T,
-
-        allocator: std.mem.Allocator,
-
-        /// Initialize the quantum dynamics output struct.
-        pub fn init(ndim: usize, nstate: usize, propagations: usize, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
-            var output = QuantumDynamicsOutput(T){
-                .P = try allocator.alloc(Matrix(T), propagations),
-                .r = try allocator.alloc(Vector(T), propagations),
-                .p = try allocator.alloc(Vector(T), propagations),
-
-                .Ekin = try allocator.alloc(T, propagations),
-                .Epot = try allocator.alloc(T, propagations),
-
-                .allocator = allocator,
-            };
-
-            for (0..propagations) |i| {
-                output.P[i] = try Matrix(T).init(nstate, nstate, allocator);
-                output.r[i] = try Vector(T).init(ndim,           allocator);
-                output.p[i] = try Vector(T).init(ndim,           allocator);
-            }
-
-            return output;
-        }
-
-        /// Free the memory allocated for the quantum dynamics output struct.
-        pub fn deinit(self: QuantumDynamicsOutput(T)) void {
-            self.allocator.free(self.Ekin); self.allocator.free(self.Epot);
-
-            for (0..self.P.len) |i| {
-                self.P[i].deinit(); self.r[i].deinit(); self.p[i].deinit();
-            }
-
-            self.allocator.free(self.P); self.allocator.free(self.r); self.allocator.free(self.p);
-        }
-    };
-}
 
 /// The main function to run the quantum dynamics simulation.
-pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
+pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.QuantumDynamicsOutput(T) {
     if (opt.initial_conditions.state > try mpt.states(opt.potential) - 1  ) return error.InvalidInitialState;
     if (opt.initial_conditions.position.len != try mpt.dims(opt.potential)) return error.InvalidInitialPosition;
     if (opt.initial_conditions.momentum.len != try mpt.dims(opt.potential)) return error.InvalidInitialMomentum;
@@ -111,7 +27,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 
     var spectrum_points = std.math.pow(u32, 2, std.math.log2(opt.iterations + 1) + opt.spectrum.nearest_power_of_two); if (opt.spectrum.flip) spectrum_points *= 2;
 
-    var output = try QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
+    var output = try out.QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
     var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate, allocator); defer      pop.deinit(); pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     ekin.deinit(); ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
@@ -266,7 +182,7 @@ pub fn run(comptime T: type, opt: QuantumDynamicsOptions(T), print: bool, alloca
 }
 
 /// Assigns the calculated properties to the output struct.
-pub fn assignOutput(comptime T: type, output: *QuantumDynamicsOutput(T), r: Vector(T), p: Vector(T), P: Matrix(T), Ekin: T, Epot: T, i: usize) void {
+pub fn assignOutput(comptime T: type, output: *out.QuantumDynamicsOutput(T), r: Vector(T), p: Vector(T), P: Matrix(T), Ekin: T, Epot: T, i: usize) void {
     @memcpy(output.r[i].data, r.data);
     @memcpy(output.p[i].data, p.data);
     @memcpy(output.P[i].data, P.data);
@@ -296,7 +212,7 @@ pub fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_ste
 }
 
 /// Function to transform the autocorrelation function to a spectrum.
-pub fn makeSpectrum(comptime T: type, opt: QuantumDynamicsOptions(T).Spectrum, acft: *Matrix(T), spectrum: *Matrix(T), acf: Matrix(T), allocator: std.mem.Allocator) !void {
+pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectrum, acft: *Matrix(T), spectrum: *Matrix(T), acf: Matrix(T), allocator: std.mem.Allocator) !void {
     var transform = try Vector(Complex(T)).init(spectrum.rows,    allocator); defer transform.deinit();
     var frequency = try Matrix(T         ).init(spectrum.rows, 1, allocator); defer frequency.deinit();
 

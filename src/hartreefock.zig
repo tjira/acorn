@@ -5,7 +5,9 @@ const std = @import("std");
 const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
+const inp = @import("input.zig" );
 const mat = @import("matrix.zig");
+const out = @import("output.zig");
 const ten = @import("tensor.zig");
 const vec = @import("vector.zig");
 
@@ -16,39 +18,8 @@ const Tensor = @import("tensor.zig").Tensor;
 const asfloat = @import("helper.zig").asfloat;
 const uncr    = @import("helper.zig").uncr   ;
 
-/// The Hartree-Fock options.
-pub fn HartreeFockOptions(comptime T: type) type {
-    return struct {
-        pub const Integral = struct {
-            overlap: []const u8 = "S_AO.mat",
-            kinetic: []const u8 = "T_AO.mat",
-            nuclear: []const u8 = "V_AO.mat",
-            coulomb: []const u8 = "J_AO.mat"
-        };
-
-        molecule: []const u8 = "molecule.xyz",
-        threshold: T = 1e-12,
-        maxiter: u32 = 100,
-        dsize: ?u32 = 5,
-
-        integral: Integral = .{}
-    };
-}
-
-/// The Hartree-Fock output.
-pub fn HartreeFockOutput(comptime T: type) type {
-    return struct {
-        C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T), E: T, VNN: T, nbf: usize, nocc: usize,
-
-        /// Free the memory allocated for the Hartree-Fock output.
-        pub fn deinit(self: HartreeFockOutput(T)) void {
-            self.C_MO.deinit(); self.D_MO.deinit(); self.E_MO.deinit(); self.F_AO.deinit();
-        }
-    };
-}
-
 /// Run the Hartree-Fock calculation with the given options.
-pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !HartreeFockOutput(T) {
+pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
     const S_AO = try mat.read(T, opt.integral.overlap, allocator); defer S_AO.deinit();
 
     const system = try parseSystem(T, opt.molecule, print, allocator);
@@ -142,7 +113,7 @@ pub fn run(comptime T: type, opt: HartreeFockOptions(T), print: bool, allocator:
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
 
-    return HartreeFockOutput(T){
+    return out.HartreeFockOutput(T){
         .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .VNN = VNN, .nbf = nbf, .nocc = nocc
     };
 }

@@ -2,36 +2,17 @@
 
 const std = @import("std");
 
+const inp = @import("input.zig"      );
 const hfm = @import("hartreefock.zig");
+const out = @import("output.zig"     );
 const ten = @import("tensor.zig"     );
 const tns = @import("transform.zig"  );
 
 const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// The Moller-Plesset options.
-pub fn MollerPlessetOptions(comptime T: type) type {
-    return struct {
-        order: u32 = 2,
-
-        hartree_fock: hfm.HartreeFockOptions(T) = .{},
-    };
-}
-
-/// The Moller-Plesset output.
-pub fn MollerPlessetOutput(comptime T: type) type {
-    return struct {
-        E: T,
-
-        /// Free the memory allocated for the Moller-Plesset output.
-        pub fn deinit(self: MollerPlessetOutput(T)) void {
-            _ = self;
-        }
-    };
-}
-
 /// Main function to run the Moller-Plesset calculations.
-pub fn run(comptime T: type, opt: MollerPlessetOptions(T), print: bool, allocator: std.mem.Allocator) !MollerPlessetOutput(T) {
+pub fn run(comptime T: type, opt: inp.MollerPlessetOptions(T), print: bool, allocator: std.mem.Allocator) !out.MollerPlessetOutput(T) {
     if (opt.order != 2) return error.PerturbationOrderNotImplemented;
 
     const hf = try hfm.run(T, opt.hartree_fock, print, allocator); const nbf = 2 * hf.nbf; const nocc = 2 * hf.nocc;

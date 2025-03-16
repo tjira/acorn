@@ -10,9 +10,10 @@ pub const constant                  = @import("constant.zig"                );
 pub const fourier_transform         = @import("fouriertransform.zig"        );
 pub const hartree_fock              = @import("hartreefock.zig"             );
 pub const helper                    = @import("helper.zig"                  );
+pub const input                     = @import("input.zig"                   );
 pub const matrix                    = @import("matrix.zig"                  );
-pub const moller_plesset            = @import("mollerplesset.zig"           );
 pub const model_potential           = @import("modelpotential.zig"          );
+pub const moller_plesset            = @import("mollerplesset.zig"           );
 pub const quantum_dynamics          = @import("quantumdynamics.zig"         );
 pub const strided_array             = @import("stridedarray.zig"            );
 pub const tensor                    = @import("tensor.zig"                  );
@@ -30,42 +31,42 @@ pub fn parse(filebuf: []const u8) !void {
 
     if (inputjs.value.object.contains("hartree_fock")) {
 
-        const obj = try std.json.parseFromValue(hartree_fock.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
 
         const output = try hartree_fock.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("moller_plesset")) {
 
-        const obj = try std.json.parseFromValue(moller_plesset.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
 
         const output = try moller_plesset.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("configuration_interaction")) {
 
-        const obj = try std.json.parseFromValue(configuration_interaction.ConfigurationInteractionOptions(f64), allocator, inputjs.value.object.get("configuration_interaction").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.ConfigurationInteractionOptions(f64), allocator, inputjs.value.object.get("configuration_interaction").?, .{}); defer obj.deinit();
 
         const output = try configuration_interaction.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("classical_dynamics")) {
 
-        const obj = try std.json.parseFromValue(classical_dynamics.ClassicalDynamicsOptions(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.ClassicalDynamicsOptions(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
 
         const output = try classical_dynamics.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("quantum_dynamics")) {
 
-        const obj = try std.json.parseFromValue(quantum_dynamics.QuantumDynamicsOptions(f64), allocator, inputjs.value.object.get("quantum_dynamics").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.QuantumDynamicsOptions(f64), allocator, inputjs.value.object.get("quantum_dynamics").?, .{}); defer obj.deinit();
 
         const output = try quantum_dynamics.run(f64, obj.value, true, allocator); defer output.deinit();
     }
 
     if (inputjs.value.object.contains("model_potential")) {
 
-        const obj = try std.json.parseFromValue(model_potential.ModelPotentialOptions(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.ModelPotentialOptions(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
 
         try model_potential.write(f64, obj.value, allocator);
     }
