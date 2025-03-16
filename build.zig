@@ -38,7 +38,7 @@ pub fn build(builder: *std.Build) !void {
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag) {
 
             const docs_install = builder.addInstallDirectory(.{
-                .install_dir = .prefix, .install_subdir = "../docs/code", .source_dir = main_executable.getEmittedDocs()
+                .install_dir = .prefix, .install_subdir = "docs", .source_dir = main_executable.getEmittedDocs()
             });
 
             builder.step("docs", "Compile code documentation" ).dependOn(&docs_install                           .step);
