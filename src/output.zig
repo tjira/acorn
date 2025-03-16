@@ -39,12 +39,7 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
 /// The CI output.
 pub fn ConfigurationInteractionOutput(comptime T: type) type {
     return struct {
-        E: T,
-
-        /// Free the memory allocated for the CI output.
-        pub fn deinit(self: ConfigurationInteractionOutput(T)) void {
-            _ = self;
-        }
+        E: T
     };
 }
 
@@ -63,12 +58,7 @@ pub fn HartreeFockOutput(comptime T: type) type {
 /// The Moller-Plesset output.
 pub fn MollerPlessetOutput(comptime T: type) type {
     return struct {
-        E: T,
-
-        /// Free the memory allocated for the Moller-Plesset output.
-        pub fn deinit(self: MollerPlessetOutput(T)) void {
-            _ = self;
-        }
+        E: T
     };
 }
 

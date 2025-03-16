@@ -20,6 +20,7 @@ pub const strided_array             = @import("stridedarray.zig"            );
 pub const tensor                    = @import("tensor.zig"                  );
 pub const transform                 = @import("transform.zig"               );
 pub const vector                    = @import("vector.zig"                  );
+pub const sort                      = @import("sort.zig"                    );
 pub const wavefunction              = @import("wavefunction.zig"            );
 
 pub const Matrix = @import("matrix.zig").Matrix;
@@ -30,18 +31,11 @@ pub const Vector = @import("vector.zig").Vector;
 pub fn parse(filebuf: []const u8) !void {
     const inputjs = try std.json.parseFromSlice(std.json.Value, allocator, filebuf, .{}); defer inputjs.deinit();
 
-    if (inputjs.value.object.contains("hartree_fock")) {
+    if (inputjs.value.object.contains("classical_dynamics")) {
 
-        const obj = try std.json.parseFromValue(input.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.ClassicalDynamicsOptions(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
 
-        _ = try hartree_fock.run(f64, obj.value, true, allocator);
-    }
-
-    if (inputjs.value.object.contains("moller_plesset")) {
-
-        const obj = try std.json.parseFromValue(input.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
-
-        _ = try moller_plesset.run(f64, obj.value, true, allocator);
+        _ = try classical_dynamics.run(f64, obj.value, true, allocator);
     }
 
     if (inputjs.value.object.contains("configuration_interaction")) {
@@ -51,11 +45,25 @@ pub fn parse(filebuf: []const u8) !void {
         _ = try configuration_interaction.run(f64, obj.value, true, allocator);
     }
 
-    if (inputjs.value.object.contains("classical_dynamics")) {
+    if (inputjs.value.object.contains("hartree_fock")) {
 
-        const obj = try std.json.parseFromValue(input.ClassicalDynamicsOptions(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
 
-        _ = try classical_dynamics.run(f64, obj.value, true, allocator);
+        _ = try hartree_fock.run(f64, obj.value, true, allocator);
+    }
+
+    if (inputjs.value.object.contains("model_potential")) {
+
+        const obj = try std.json.parseFromValue(input.ModelPotentialOptions(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
+
+        _ = try model_potential.write(f64, obj.value, allocator);
+    }
+
+    if (inputjs.value.object.contains("moller_plesset")) {
+
+        const obj = try std.json.parseFromValue(input.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
+
+        _ = try moller_plesset.run(f64, obj.value, true, allocator);
     }
 
     if (inputjs.value.object.contains("quantum_dynamics")) {
@@ -65,11 +73,11 @@ pub fn parse(filebuf: []const u8) !void {
         _ = try quantum_dynamics.run(f64, obj.value, true, allocator);
     }
 
-    if (inputjs.value.object.contains("model_potential")) {
+    if (inputjs.value.object.contains("sort")) {
 
-        const obj = try std.json.parseFromValue(input.ModelPotentialOptions(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.SortOptions(), allocator, inputjs.value.object.get("sort").?, .{}); defer obj.deinit();
 
-        _ = try model_potential.write(f64, obj.value, allocator);
+        _ = try sort.run(f64, obj.value, true, allocator);
     }
 }
 
@@ -97,5 +105,5 @@ pub fn main() !void {
         try parse(filebuf); allocator.free(filebuf); 
     }}
 
-    std.debug.print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+    try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
 }
