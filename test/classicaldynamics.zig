@@ -1,11 +1,12 @@
 const std = @import("std");
 
+const input              = @import("acorn").input             ;
 const classical_dynamics = @import("acorn").classical_dynamics;
 
 const allocator = std.testing.allocator;
 
 test "classical_dynamics_adiabatic" {
-    const opt_harmonic1D_1 = classical_dynamics.ClassicalDynamicsOptions(f64){
+    const opt_harmonic1D_1 = input.ClassicalDynamicsOptions(f64){
         .initial_conditions = .{
             .position_mean = &[_]f64{1.0},
             .position_std  = &[_]f64{0.5},
@@ -29,7 +30,7 @@ test "classical_dynamics_adiabatic" {
 }
 
 test "classical_dynamics_nonadiabatic_fssh" {
-    const opt_tully1D_1 = classical_dynamics.ClassicalDynamicsOptions(f64){
+    const opt_tully1D_1 = input.ClassicalDynamicsOptions(f64){
         .initial_conditions = .{
             .position_mean = &[_]f64{-15.0},
             .position_std  = &[_]f64{  0.5},
@@ -74,7 +75,7 @@ test "classical_dynamics_nonadiabatic_fssh" {
 }
 
 test "classical_dynamics_nonadiabatic_lzsh" {
-    const opt_tully1D_1 = classical_dynamics.ClassicalDynamicsOptions(f64){
+    const opt_tully1D_1 = input.ClassicalDynamicsOptions(f64){
         .initial_conditions = .{
             .position_mean = &[_]f64{-15.0},
             .position_std  = &[_]f64{  0.5},
@@ -119,7 +120,7 @@ test "classical_dynamics_nonadiabatic_lzsh" {
 }
 
 test "classical_dynamics_nonadiabatic_mash" {
-    const opt_tully1D_1 = classical_dynamics.ClassicalDynamicsOptions(f64){
+    const opt_tully1D_1 = input.ClassicalDynamicsOptions(f64){
         .initial_conditions = .{
             .position_mean = &[_]f64{-15.0},
             .position_std  = &[_]f64{  0.5},

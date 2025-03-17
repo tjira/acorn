@@ -29,8 +29,8 @@ jobs:
       - name: Compile Document
         run: ./script/docstopdf.sh
 
-      - name: Compile and Copy the Code Documentation
-        run: ./bin/zig build docs && cp -r zig-out/code docs
+      - name: Compile the Code Documentation
+        run: ./bin/zig build docs && cp -r zig-out/docs docs/code
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

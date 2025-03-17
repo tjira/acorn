@@ -2,8 +2,10 @@
 
 const std = @import("std");
 
+const inp = @import("input.zig"      );
 const hfm = @import("hartreefock.zig");
 const mat = @import("matrix.zig"     );
+const out = @import("output.zig"     );
 const ten = @import("tensor.zig"     );
 const tns = @import("transform.zig"  );
 
@@ -14,29 +16,8 @@ const Vector = @import("vector.zig").Vector;
 const asfloat = @import("helper.zig").asfloat;
 const c       = @import("helper.zig").c      ;
 
-/// The CI options.
-pub fn ConfigurationInteractionOptions(comptime T: type) type {
-    return struct {
-        excitation: ?[]const u32 = null,
-
-        hartree_fock: hfm.HartreeFockOptions(T) = .{},
-    };
-}
-
-/// The CI output.
-pub fn ConfigurationInteractionOutput(comptime T: type) type {
-    return struct {
-        E: T,
-
-        /// Free the memory allocated for the CI output.
-        pub fn deinit(self: ConfigurationInteractionOutput(T)) void {
-            _ = self;
-        }
-    };
-}
-
 /// The main function to run the CI calculations.
-pub fn run(comptime T: type, opt: ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !ConfigurationInteractionOutput(T) {
+pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
     const hf = try hfm.run(T, opt.hartree_fock, print, allocator);
 
     const nbf = 2 * hf.nbf; const nocc = 2 * hf.nocc; const ndet = c(nbf, nocc);

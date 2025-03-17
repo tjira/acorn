@@ -53,13 +53,13 @@ Below are all the important features of Acorn divided into categories.
 Since the software is coded in zig, you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download). After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
 
 ```bash
-zig build --release=fast --summary all
+zig build
 ```
 
 This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os` folder, where `arch` is the architecture of your system and `os` is the operating system you are using. If you don't know your CPU architecture, you probably want the `x86_64` binary. You can also perform tests on the project by running the following command.
 
 ```bash
-zig build --release=fast --summary all test
+zig build test
 ```
 
 If some tests fail, let me know by creating an issue. If all the tests pass, you can run the binary file using the following command.
@@ -109,15 +109,9 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
 
 The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction with the command below.
 
-<details> <summary><b>Wavefunction 1D - Harmonic Oscillator</b></summary>
-
 ```bash
 lines.py WAVEFUNCTION.mat:0,1 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 2
 ```
-
-<p align="center"><img src="graphics/rtpa_wavefunction_1D.gif"/></p>
-
-</details>
 
 Acorn also supports higher dimensions. As an example you can simulate a 2D wavefunction in a 2D harmonic potential using the following input.
 
@@ -149,15 +143,9 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
 
 This simulation takes a few seconds, since the time complexity increases exponentially. Visualizing the 3D complex wavefunction is a little tricky. One way is to plot the square of the wavefunction on a 2D heatmap. You can visualize the wavefunction this way with the command below.
 
-<details> <summary><b>Wavefunction 2D - Harmonic Oscillator</b></summary>
-
 ```bash
 heatmap.py WAVEFUNCTION.mat:0,1 --xlabel "Coordinate (a.u.)" --ylabel "Coordinate (a.u.)" --transform norm --animate 2
 ```
-
-<p align="center"><img src="graphics/rtpa_wavefunction_2D.gif"/></p>
-
-</details>
 
 ### Real Time Nonadiabatic Quantum Dynamics
 
@@ -192,22 +180,10 @@ This example demonstrates the real-time quantum dynamics of a first Tully potent
 
 This simulation is fast and should complete approximately in a second. You can visualize the wavefunction and state population with the commands below. The wavefunctions on each states are vertically separated for better visualization.
 
-<details> <summary><b>Adiabatic Wavefunction - 1. Tully Potential</b></summary>
-
 ```bash
 lines.py WAVEFUNCTION.mat:0,1,2,3 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re(\$\Psi_1\$)" "Im(\$\Psi_1\$)" --offsets all -1 -1 1 1 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 4
 ```
 
-<p align="center"><img src="graphics/rtpn_wavefunction_1D.gif"/></p>
-
-</details>
-
-<details> <summary><b> Population - 1. Tully Potential</b></summary>
-
 ```bash
 lines.py POPULATION.mat --legend "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.)" --ylabel "Population"
 ```
-
-<p align="center"><img src="graphics/rtpn_population_1D.png"/></p>
-
-</details>

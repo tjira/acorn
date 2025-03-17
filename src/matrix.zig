@@ -307,15 +307,17 @@ pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !M
     stream.reset(); try reader.streamUntilDelimiter(writer, ' ',  10); const rows = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
     stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 10); const cols = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
 
-    const mat = try Matrix(T).init(rows, cols, allocator);
+    const mat = try Matrix(T).init(rows, cols, allocator); var bytes: [100]u8 = undefined;
 
     for (0..rows * cols) |i| {
 
-        const bytes = try reader.readBytesNoEof(20); try reader.skipBytes(1, .{});
+        var slice: []u8 = bytes[0..0];
 
-        var j: u32 = 0; while (bytes[j] == ' ') : (j += 1) {}
+        while (slice.len == 0) slice = try reader.readUntilDelimiter(bytes[0..], if ((i + 1) % cols == 0) '\n' else ' ');
 
-        mat.data[i] = try std.fmt.parseFloat(T, bytes[j..bytes.len]);
+        var j: u32 = 0; while (slice[j] == ' ') : (j += 1) {}
+
+        mat.data[i] = try std.fmt.parseFloat(T, uncr(slice[j..]));
     }
 
     return mat;

@@ -1,11 +1,12 @@
 const std = @import("std");
 
+const input            = @import("acorn").input;
 const quantum_dynamics = @import("acorn").quantum_dynamics;
 
 const allocator = std.testing.allocator;
 
 test "quantum_dynamics_imaginary_adiabatic-1d" {
-    const opt_harmonic1D_1 = quantum_dynamics.QuantumDynamicsOptions(f64){
+    const opt_harmonic1D_1 = input.QuantumDynamicsOptions(f64){
         .grid = .{
             .limits = &[_]f64{-8, 8}, .points = 64
         },
@@ -57,7 +58,7 @@ test "quantum_dynamics_imaginary_adiabatic-1d" {
 }
 
 test "quantum_dynamics_real_adiabatic-1d" {
-    const opt_harmonic1D_1 = quantum_dynamics.QuantumDynamicsOptions(f64){
+    const opt_harmonic1D_1 = input.QuantumDynamicsOptions(f64){
         .grid = .{
             .limits = &[_]f64{-8, 8}, .points = 64
         },
@@ -80,7 +81,7 @@ test "quantum_dynamics_real_adiabatic-1d" {
 }
 
 test "quantum_dynamics_real_nonadiabatic-1d/2s" {
-    const opt_tully1D_1 = quantum_dynamics.QuantumDynamicsOptions(f64){
+    const opt_tully1D_1 = input.QuantumDynamicsOptions(f64){
         .grid = .{
             .limits = &[_]f64{-16, 32}, .points = 2048
         },

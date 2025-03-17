@@ -1,3 +1,5 @@
+/research
+
 /*.dot*
 /*.jso*
 /*.mat*
@@ -13,14 +15,7 @@ docs/**/*.py*
 
 education/**/*.mat*
 
-research/**/*.gif*
-research/**/*.mat*
-research/**/*.mp4*
-research/**/*.png*
-research/**/*.zip*
-
-research/*.sh*
-
-*zig*/
+*cod*/
 *sit*/
 *tex*/
+*zig*/
