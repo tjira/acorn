@@ -9,16 +9,28 @@ SH_TESTING = 1; URACIL_LVC = 1
 if SH_TESTING:
 
     IS = {
+        "tully1D_1"       : [1, 1],
+        "tully1D_2"       : [1, 1],
+        "tully1D_3"       : [0, 1],
+        "doubleState1D_1" : [1, 1],
         "doubleState1D_2" : [1, 1],
-        "tripleState1D_2" : [2, 2]
+        "tripleState1D_1" : [2, 2],
+        "tripleState1D_2" : [2, 2],
+        "tripleState1D_3" : [1, 2]
     }
 
     NS = {
+        "tully1D_1"       : 2,
+        "tully1D_2"       : 2,
+        "tully1D_3"       : 2,
+        "doubleState1D_1" : 2,
         "doubleState1D_2" : 2,
-        "tripleState1D_2" : 3
+        "tripleState1D_1" : 3,
+        "tripleState1D_2" : 3,
+        "tripleState1D_3" : 3
     }
 
-    for potential in ["doubleState1D_2", "tripleState1D_2"]:
+    for potential in ["tully1D_1", "doubleState1D_2", "tripleState1D_2"]:
 
         dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
         ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
@@ -82,6 +94,9 @@ if SH_TESTING:
         kt_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_{potential}_KTSH.mat"
         lz_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_{potential}_LZSH.mat"
 
+        fs_input["classical_dynamics"]["write"]["time_derivative_coupling_mean"] = f"TDC_{potential}_FSSH.mat"
+        kt_input["classical_dynamics"]["write"]["time_derivative_coupling_mean"] = f"TDC_{potential}_KTSH.mat"
+
         open(f"input.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"zig build run")
@@ -89,7 +104,11 @@ if SH_TESTING:
         open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
 
-        os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S\$_0\$ (EXACT)" "S\$_0\$ (FSSH)" "S\$_0\$ (KTSH)" "S\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_{potential}.png')
+        os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S\$_0\$ (EXACT)" "S\$_0\$ (FSSH)" "S\$_0\$ (KTSH)" "S\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Ground State Population" --output POPULATION_{potential}.png')
+        os.system(f'python python/lines.py TDC_{potential}_FSSH.mat:1 TDC_{potential}_KTSH.mat:1 --legend "T\$_1\$ (NUMERIC)" "T\$_1\$ (BAECKAN)" --xlabel "Time (a.u.)" --ylabel "TDC (??)" --output TDC_{potential}.png')
+
+        if NS[potential] == 2: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,3 --legend "S\$_0\$" "S\$_1\$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
+        if NS[potential] == 3: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,4,8 --legend "S\$_0\$" "S\$_1\$" "S\$_2\$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
 
 # DYNAMICS ON URACIL VC MODEL ================================================================================================================================================================
 

@@ -240,12 +240,15 @@ pub fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const 
 
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
 
-        const di0 = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const dj0 = (U3[0].at(j, j) - U3[1].at(j, j)) / time_step;
-        const di1 = (U3[1].at(i, i) - U3[2].at(i, i)) / time_step; const dj1 = (U3[1].at(j, j) - U3[2].at(j, j)) / time_step;
+        const Z0 = abs(U3[0].at(j, j) - U3[0].at(i, i)); const Z1 = abs(U3[1].at(j, j) - U3[1].at(i, i)); const Z2 = abs(U3[2].at(j, j) - U3[2].at(i, i));
 
-        const ddi = (di0 - di1) / time_step; const ddj = (dj0 - dj1) / time_step; const arg = (ddi - ddj) / (U3[0].at(i, i) - U3[0].at(j, j));
+        const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
 
-        if (arg > 0) {TDC.ptr(i, j).* = 0.5 * std.math.sqrt(arg);} TDC.ptr(j, i).* = -TDC.at(i, j);
+        TDC.ptr(i, j).* = 0.5 * std.math.sqrt(ddZ0 / Z0);
+
+        if (std.math.isNan(TDC.at(i, j))) TDC.ptr(i, j).* = 0;
+
+        TDC.ptr(j, i).* = -TDC.at(i, j);
     };
 }
 
