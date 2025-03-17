@@ -69,9 +69,9 @@ pub fn parse(filebuf: []const u8) !void {
 
     if (inputjs.value.object.contains("prime")) {
 
-        const obj = try std.json.parseFromValue(input.PrimeOptions(u1024), allocator, inputjs.value.object.get("prime").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.PrimeOptions(u64), allocator, inputjs.value.object.get("prime").?, .{}); defer obj.deinit();
 
-        _ = try prime.run(u1024, obj.value, true, allocator);
+        _ = try prime.run(u64, obj.value, true, allocator);
     }
 
     if (inputjs.value.object.contains("quantum_dynamics")) {
@@ -107,8 +107,6 @@ pub fn main() !void {
     default: {if (argc == 0) {
 
         const filebuf = std.fs.cwd().readFileAlloc(allocator, "input.json", fsize) catch break :default;
-
-        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{"input.json"});
 
         try parse(filebuf); allocator.free(filebuf); 
     }}

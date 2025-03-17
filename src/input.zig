@@ -116,7 +116,7 @@ pub fn MollerPlessetOptions(comptime T: type) type {
 pub fn PrimeOptions(comptime T: type) type {
     return struct {
         pub const Generate = struct {
-            count: T, log_interval: T = 1
+            count: u32, log_interval: u32 = 1
         };
 
         mode: []const u8,
