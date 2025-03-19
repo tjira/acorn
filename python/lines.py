@@ -19,17 +19,18 @@ parser.add_argument("--colormap", type=str, default="tab10", help="The colormap 
 parser.add_argument("--dpi", type=int, default=96, help="The DPI of the plot.")
 parser.add_argument("--figsize", type=int, nargs=2, default=[6, 8], help="The dimensions of the plot in inches.")
 parser.add_argument("--fps", type=int, default=30, help="Frames per second for the animation.")
-parser.add_argument("--legend", type=str, nargs="+", help="Add a legend to the plot.")
-parser.add_argument("--title", type=str, help="The title of the plot.")
-parser.add_argument("--xlabel", type=str, help="The an x-axis label.")
-parser.add_argument("--xlim", type=float, nargs=2, help="The x-axis limits of the plot.")
-parser.add_argument("--ylabel", type=str, help="The an y-axis label.")
-parser.add_argument("--ylim", type=float, nargs=2, help="The y-axis limits of the plot.")
+parser.add_argument("--legend", type=str, nargs="+", help="Add a legend to the drawn lines.")
+parser.add_argument("--title", type=str, nargs="+", help="The title of each subplot.")
+parser.add_argument("--xlabel", type=str, nargs="+", help="The an x-axis labels for each subplot.")
+parser.add_argument("--xlim", type=float, nargs="+", help="The x-axis limits for each subplot.")
+parser.add_argument("--ylabel", type=str, nargs="+", help="The an y-axis label for each subplot.")
+parser.add_argument("--ylim", type=float, nargs="+", help="The y-axis limits for each subplot.")
 
 # additional file arguments
 parser.add_argument("--errors", nargs="+", help="Error bars for the plotted lines.")
 parser.add_argument("--offsets", nargs="+", help="Vertical offsets for the plotted lines.")
 parser.add_argument("--scales", nargs="+", help="Scales for the plotted lines.")
+parser.add_argument("--subplots", nargs="+", type=int, help="Divide the lines into subplots.", default=[111])
 
 # add positional arguments and parse the arguments
 parser.add_argument("files", nargs="+", help="The data files to plot."); args = parser.parse_args()
@@ -58,20 +59,22 @@ for (frame, step) in ((frame, args.animate if args.animate else 0) for frame in 
     for i, (data_i, j) in enumerate(dcit(data, data_cols)): data_i[:, j + frame * step + 1] += float(args.offsets[lind_offsets.index(i) + 1]) if i in lind_offsets else 0
 
 # create the figure and the container for plots and error bars
-fig, ax = plt.subplots(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); plots, ebars = [], []
+fig = plt.figure(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); axes, plots, ebars = {}, [], []
+
+# fill the axes dictionary
+for subplot in args.subplots: axes[subplot] = fig.add_subplot(subplot) if subplot not in axes else axes[subplot]
 
 # set the colormap
 cmap = plt.get_cmap(args.colormap)(np.linspace(0.1, 0.9, nline) if (plt.get_cmap(args.colormap).N) > 20 else np.linspace(0, 1, plt.get_cmap(args.colormap).N))
 
-# calculate the y limits
-ymin = np.min([[data_i[:, j + i * (args.animate if args.animate else 0) + 1].min() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])
-ymax = np.max([[data_i[:, j + i * (args.animate if args.animate else 0) + 1].max() for data_i, j in dcit(data, data_cols)] for i in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)])
-
 # loop over data and its columns to plot
-for data_i, j in dcit(data, data_cols):
+for i, (data_i, j) in enumerate(dcit(data, data_cols)):
+
+    # extract the label
+    label = args.legend[i] if args.legend and len(args.legend) > i else ""
 
     # plot the data and append the plot to the list
-    plots.append(ax.plot(data_i[:, 0], data_i[:, j + 1], color=cmap[len(plots) % len(cmap)]))
+    plots.append(axes[args.subplots[len(plots) % len(args.subplots)]].plot(data_i[:, 0], data_i[:, j + 1], color=cmap[len(plots) % len(cmap)], label=label))
 
 # loop over the error bars and their columns
 for (data_errors_i, j) in dcit(data_errors, cols_errors):
@@ -81,27 +84,37 @@ for (data_errors_i, j) in dcit(data_errors, cols_errors):
     bot = plots[lind_errors[len(ebars)]][0].get_ydata() - data_errors_i[:, j + 1]
 
     # fill the area between the top and bottom line and append the plot to the list
-    ebars.append(ax.fill_between(data_errors_i[:, 0], bot, top, color=cmap[lind_errors[len(ebars)] % len(cmap)], alpha=0.2))
+    ebars.append(axes[args.subplots[len(plots) % len(args.subplots)]].fill_between(data_errors_i[:, 0], bot, top, color=cmap[lind_errors[len(ebars)] % len(cmap)], alpha=0.2))
 
-# set the default axis limits
-ax.set_xlim(min([data_i[:, 0 ].min() for data_i in data]), max([data_i[:, 0 ].max() for data_i in data])); ax.set_ylim(ymin, ymax)
+# loop over the axes
+for i, ax in enumerate(axes.values()):
 
-# enlarge the y limit by 5 percent
-ax.set_ylim(ax.get_ylim()[0] - 0.05 * np.diff(ax.get_ylim()), ax.get_ylim()[1] + 0.05 * np.diff(ax.get_ylim()))
+    # list of tuples with the data and its columns to plot on the current axis
+    axis_data_cols = [pair for j, pair in enumerate(dcit(data, data_cols)) if [args.subplots[k % len(args.subplots)] for k in range(len(list(dcit(data, data_cols))))][j] == list(axes.keys())[i]]
 
-# add the legend
-if args.legend: ax.legend(args.legend, frameon=False)
+    # calculate the y limits
+    ymin = np.min([data_i[:, j + frame * (args.animate if args.animate else 0) + 1].min() for frame in range((data[0].shape[1] - 1) // args.animate if args.animate else 1) for data_i, j in axis_data_cols])
+    ymax = np.max([data_i[:, j + frame * (args.animate if args.animate else 0) + 1].max() for frame in range((data[0].shape[1] - 1) // args.animate if args.animate else 1) for data_i, j in axis_data_cols])
 
-# set the title
-if args.title: ax.set_title(args.title)
+    # set the default axis limits
+    ax.set_xlim(min([line.get_xdata().min() for line in ax.lines]), max([line.get_xdata().max() for line in ax.lines])); ax.set_ylim(ymin, ymax)
 
-# set the axis labels
-if args.xlabel: ax.set_xlabel(args.xlabel)
-if args.ylabel: ax.set_ylabel(args.ylabel)
+    # enlarge the y limit by 5 percent
+    ax.set_ylim(ax.get_ylim()[0] - 0.05 * np.diff(ax.get_ylim()), ax.get_ylim()[1] + 0.05 * np.diff(ax.get_ylim()))
 
-# set the axis limits
-if args.xlim: ax.set_xlim(args.xlim)
-if args.ylim: ax.set_ylim(args.ylim)
+    # add the legend
+    if any([line.get_label()[0] != "_" for line in ax.lines]): ax.legend(frameon=False)
+
+    # set the title
+    if args.title and len(args.title) > i: ax.set_title(args.title[i])
+
+    # set the axis labels
+    if args.xlabel and len(args.xlabel) > i: ax.set_xlabel(args.xlabel[i])
+    if args.ylabel and len(args.ylabel) > i: ax.set_ylabel(args.ylabel[i])
+
+    # set the axis limits
+    if args.xlim and len(args.xlim) > 2 * i: ax.set_xlim(args.xlim[2 * i + 0:2 * i + 2])
+    if args.ylim and len(args.ylim) > 2 * i: ax.set_ylim(args.ylim[2 * i + 0:2 * i + 2])
 
 # set the layout
 fig.tight_layout()
@@ -123,7 +136,7 @@ def update(frame):
         bot = plots[lind_errors[i]][0].get_ydata() - data_errors_i[:, j + 1]
 
         # fill the area between the top and bottom line
-        ebars[i].remove(); ebars[i] = ax.fill_between(data_errors_i[:, 0], bot, top, color=cmap[lind_errors[i] % len(cmap)], alpha=0.2)
+        ebars[i].remove(); ebars[i] = axes[args.subplots[i % len(args.subplots)]].fill_between(data_errors_i[:, 0], bot, top, color=cmap[lind_errors[i] % len(cmap)], alpha=0.2)
 
 # create the animation
 anm = anm.FuncAnimation(fig, update, frames=(data[0].shape[1] - 1) // args.animate, init_func=lambda: None, interval=1000 // args.fps) if args.animate else None
