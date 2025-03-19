@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import copy as cp, glob as gl, shutil as sh, json as js, numpy as np, os
+import copy as cp, glob as gl, shutil as sh, json as js, numpy as np, os; esc = "" if os.name == "nt" else "\\"
 
 SH_TESTING = 1; URACIL_LVC = 1
 
@@ -104,11 +104,11 @@ if SH_TESTING:
         open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
 
-        os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S\$_0\$ (EXACT)" "S\$_0\$ (FSSH)" "S\$_0\$ (KTSH)" "S\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Ground State Population" --output POPULATION_{potential}.png')
-        os.system(f'python python/lines.py TDC_{potential}_FSSH.mat:1 TDC_{potential}_KTSH.mat:1 --legend "T\$_1\$ (NUMERIC)" "T\$_1\$ (BAECKAN)" --xlabel "Time (a.u.)" --ylabel "TDC (??)" --output TDC_{potential}.png')
+        os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Ground State Population" --output POPULATION_{potential}.png')
+        os.system(f'python python/lines.py TDC_{potential}_FSSH.mat:1 TDC_{potential}_KTSH.mat:1 --legend "T{esc}$_1{esc}$ (NUMERIC)" "T{esc}$_1{esc}$ (BAECKAN)" --xlabel "Time (a.u.)" --ylabel "TDC (??)" --output TDC_{potential}.png')
 
-        if NS[potential] == 2: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,3 --legend "S\$_0\$" "S\$_1\$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
-        if NS[potential] == 3: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,4,8 --legend "S\$_0\$" "S\$_1\$" "S\$_2\$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
+        if NS[potential] == 2: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,3 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
+        if NS[potential] == 3: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,4,8 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
 
 # DYNAMICS ON URACIL VC MODEL ================================================================================================================================================================
 
@@ -161,7 +161,7 @@ if URACIL_LVC:
 
         np.savetxt("MAITRA.mat", np.array([MAITRA_8D_AFSSH_X, MAITRA_8D_AFSSH_Y]).T, comments="", fmt="%20.14f", header=f"{len(MAITRA_8D_AFSSH_X)} 2")
 
-        os.system(f'python python/lines.py MAITRA.mat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D\$_0\$ (MCTDH)" "D\$_0\$ (FSSH)" "D\$_0\$ (KTSH)" "D\$_0\$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
+        os.system(f'python python/lines.py MAITRA.mat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D{esc}$_0{esc}$ (MCTDH)" "D{esc}$_0{esc}$ (FSSH)" "D{esc}$_0{esc}$ (KTSH)" "D{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
 
 # CLEANUP ====================================================================================================================================================================================
 
