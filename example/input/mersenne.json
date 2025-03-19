@@ -1,0 +1,9 @@
+{
+    "prime" : {
+        "mode" : "mersenne",
+        "generate" : {
+            "count" : 20
+        },
+        "number" : 1
+    }
+}

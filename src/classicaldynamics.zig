@@ -75,15 +75,15 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var vp = try Vector(T).init(ndim, allocator); defer vp.deinit();
         var ap = try Vector(T).init(ndim, allocator); defer ap.deinit();
 
-        var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();
-        var UA  = try Matrix(T).init(nstate, nstate, allocator); defer  UA.deinit();
-        var UC  = try Matrix(T).init(nstate, nstate, allocator); defer  UC.deinit();
-        var UCS = try Matrix(T).init(nstate, nstate, allocator); defer UCS.deinit();
-        var TDC = try Matrix(T).init(nstate, nstate, allocator); defer TDC.deinit();
+        var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();   U.fill(0);
+        var UA  = try Matrix(T).init(nstate, nstate, allocator); defer  UA.deinit();  UA.fill(0);
+        var UC  = try Matrix(T).init(nstate, nstate, allocator); defer  UC.deinit();  UC.fill(0);
+        var UCS = try Matrix(T).init(nstate, nstate, allocator); defer UCS.deinit(); UCS.fill(0);
+        var TDC = try Matrix(T).init(nstate, nstate, allocator); defer TDC.deinit(); TDC.fill(0);
 
-        var P  = try Vector(T         ).init(nstate    ,    allocator); defer P.deinit();
-        var C  = try Vector(Complex(T)).init(nstate    ,    allocator); defer C.deinit();
-        var S  = try Matrix(T         ).init(nstate - 1, 3, allocator); defer S.deinit();
+        var P  = try Vector(T         ).init(nstate    ,    allocator); defer  P.deinit();
+        var C  = try Vector(Complex(T)).init(nstate    ,    allocator); defer  C.deinit();
+        var S  = try Matrix(T         ).init(nstate - 1, 3, allocator); defer  S.deinit();
         var SI = try Matrix(usize     ).init(nstate - 1, 2, allocator); defer SI.deinit();
 
         var KC1 = try Vector(Complex(T)).init(C.rows, allocator); defer KC1.deinit();
@@ -110,13 +110,13 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
             a.fill(0); @memcpy(v.data, p.data); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j];
 
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
-            if (mash) {try initialBlochVector(T, &S, &SI, s, rand_bloc);  }
+            if (mash) {try initialBlochVector(T, &S, &SI, s, rand_bloc);                 }
 
-            @memcpy(S0.data, S.data); var ns = s; var Ekin: T = 0; var Epot: T = 0;
+            @memcpy(S0.data, S.data); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
             for (0..opt.iterations + 1) |j| {
 
-                @memcpy(rp.data, r.data); @memcpy(pp.data, p.data); @memcpy(vp.data, v.data); @memcpy(ap.data, a.data);
+                @memcpy(rp.data, r.data); @memcpy(pp.data, p.data); @memcpy(vp.data, v.data); @memcpy(ap.data, a.data); S3[j % 3] = s;
 
                 if (j > 0) try propagate(T, opt, &r, &v, &a, &U, &UA, &UC, &T1, &T2, s);
 
@@ -124,8 +124,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
-                if (opt.adiabatic and tdc_numeric and j > 0) derivativeCouplingNumeric(T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                opt.time_step);
-                if (opt.adiabatic and tdc_baeckan and j > 1) derivativeCouplingBaeckan(T, &TDC,       &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, opt.time_step);
+                if (opt.adiabatic and tdc_numeric and j > 0) derivativeCouplingNumeric(T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                     opt.time_step);
+                if (opt.adiabatic and tdc_baeckan and j > 1) derivativeCouplingBaeckan(T, &TDC,       &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, &S3, opt.time_step);
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
@@ -235,20 +235,18 @@ pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), U:
 }
 
 /// Calculate the nonadiabatic coupling between two states using the Baeck-An method.
-pub fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), time_step: T) void {
-    TDC.fill(0);
-
+pub fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), S3: []const u32, time_step: T) void {
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
 
         const Z0 = abs(U3[0].at(j, j) - U3[0].at(i, i)); const Z1 = abs(U3[1].at(j, j) - U3[1].at(i, i)); const Z2 = abs(U3[2].at(j, j) - U3[2].at(i, i));
 
         const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
 
-        TDC.ptr(i, j).* = 0.5 * std.math.sqrt(ddZ0 / Z0);
+        var sigma = if (ddZ0 * Z0 > 0) 0.5 * std.math.sqrt(ddZ0 / Z0) else 0;
 
-        if (std.math.isNan(TDC.at(i, j))) TDC.ptr(i, j).* = 0;
+        if (sum(u32, S3) != 3 * S3[0]) sigma = TDC.at(i, j);
 
-        TDC.ptr(j, i).* = -TDC.at(i, j);
+        TDC.ptr(i, j).* = sigma; TDC.ptr(j, i).* = -TDC.at(i, j);
     };
 }
 
@@ -257,11 +255,11 @@ pub fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix
     UCS.fill(0);
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
-        UCS.ptr(i, j).* += UC2[1].at(k, i) * UC2[0].at(k, j);
+        UCS.ptr(i, j).* += UC2[0].at(k, i) * UC2[1].at(k, j);
     };
 
     for (0..TDC.rows) |i| for (0..TDC.cols) |j| {
-        TDC.ptr(i, j).* = (UCS.at(i, j) - UCS.at(j, i)) / (2 * time_step);
+        TDC.ptr(i, j).* = (UCS.at(j, i) - UCS.at(i, j)) / (2 * time_step);
     };
 }
 
