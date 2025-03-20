@@ -4,6 +4,8 @@ import copy as cp, glob as gl, shutil as sh, json as js, numpy as np, os; esc = 
 
 SH_TESTING = 1; URACIL_LVC = 1
 
+TRAJS = 10000
+
 # GENERAL SURFACE HOPPING TESTING ON MODEL POTENTIALS ========================================================================================================================================
 
 if SH_TESTING:
@@ -16,7 +18,8 @@ if SH_TESTING:
         "doubleState1D_2" : [1, 1],
         "tripleState1D_1" : [2, 2],
         "tripleState1D_2" : [2, 2],
-        "tripleState1D_3" : [1, 2]
+        "tripleState1D_3" : [1, 2],
+        "test1D_1"        : [1, 1]
     }
 
     NS = {
@@ -27,10 +30,20 @@ if SH_TESTING:
         "doubleState1D_2" : 2,
         "tripleState1D_1" : 3,
         "tripleState1D_2" : 3,
-        "tripleState1D_3" : 3
+        "tripleState1D_3" : 3,
+        "test1D_1"        : 2
     }
 
-    for potential in ["tully1D_1", "doubleState1D_2", "tripleState1D_2"]:
+    TDCLIM = {
+        "tully1D_1"       : [943, 1543],
+        "doubleState1D_2" : [908, 1508],
+        "tripleState1D_2" : [908, 1508],
+        "test1D_1"        : [943, 1543]
+    }
+
+    DS = ["tully1D_1", "test1D_1"]
+
+    for potential in DS:
 
         dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
         ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
@@ -80,7 +93,8 @@ if SH_TESTING:
                 "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
                 "potential" : potential,
                 "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
-                "trajectories" : 10000
+                "trajectories" : TRAJS,
+                "seed" : 2
             }
         }
 
@@ -105,10 +119,19 @@ if SH_TESTING:
         open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
 
         os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Ground State Population" --output POPULATION_{potential}.png')
-        os.system(f'python python/lines.py TDC_{potential}_FSSH.mat:1 TDC_{potential}_KTSH.mat:1 --legend "T{esc}$_1{esc}$ (NUMERIC)" "T{esc}$_1{esc}$ (BAECKAN)" --xlabel "Time (a.u.)" --ylabel "TDC (??)" --output TDC_{potential}.png')
 
-        if NS[potential] == 2: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,3 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
+        if NS[potential] == 2: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,3 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_ADIABATIC_{potential}.png')
         if NS[potential] == 3: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,4,8 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
+
+        fs_input["classical_dynamics"]["trajectories"] = 1; del fs_input["classical_dynamics"]["write"]["population_mean"]
+        kt_input["classical_dynamics"]["trajectories"] = 1; del kt_input["classical_dynamics"]["write"]["population_mean"]
+
+        open(f"input.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"zig build run")
+        open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
+
+        os.system(f'python python/lines.py TDC_{potential}_FSSH.mat:1 TDC_{potential}_KTSH.mat:1 --legend "T{esc}$_{{0,1}}{esc}$ (NUMERIC)" "T{esc}$_{{0,1}}{esc}$ (BAECKAN)" --xlabel "Time (a.u.)" --xlim {TDCLIM[potential][0]} {TDCLIM[potential][1]} --ylabel "TDC (??)" --output TDC_{potential}.png')
+
+    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 TDC_{DS[0]}_FSSH.mat:1 TDC_{DS[0]}_KTSH.mat:1 POPULATION_{DS[0]}_EXACT.mat:0 POPULATION_{DS[0]}_FSSH.mat:0 POPULATION_{DS[0]}_KTSH.mat:0 POPULATION_{DS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 TDC_{DS[1]}_FSSH.mat:1 TDC_{DS[1]}_KTSH.mat:1 POPULATION_{DS[1]}_EXACT.mat:0 POPULATION_{DS[1]}_FSSH.mat:0 POPULATION_{DS[1]}_KTSH.mat:0 POPULATION_{DS[1]}_LZSH.mat:0 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (NUMERIC)" "T{esc}$_{{0,1}}{esc}$ (BAECKAN)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (NUMERIC)" "T{esc}$_{{0,1}}{esc}$ (BAECKAN)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_DS.png')
 
 # DYNAMICS ON URACIL VC MODEL ================================================================================================================================================================
 
@@ -118,7 +141,7 @@ MAITRA_MCTDH_D0_Y = [0.00911213548,  0.00998573466,  0.01997146932,   0.02710413
 if URACIL_LVC:
 
     omega = {
-        8 : np.array([734, 771, 1193, 1383, 1406, 1673, 1761, 1794]) / 8065.54429 / 27.211324570273
+        8  : np.array([734, 771, 1193, 1383, 1406, 1673, 1761, 1794]) / 8065.54429 / 27.211324570273
     }
 
     ap_input_8_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 0]}}
@@ -143,6 +166,11 @@ if URACIL_LVC:
     ap_input_12_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 10]}}
     ap_input_12_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 11]}}
 
+    ap_input_8_10 ["model_potential"]["constant"][3]["value"] = -4
+    ap_input_8_12 ["model_potential"]["constant"][3]["value"] = -4
+    ap_input_12_10["model_potential"]["constant"][7]["value"] = -4
+    ap_input_12_12["model_potential"]["constant"][7]["value"] = -4
+
     open(f"input.json", "w").write(js.dumps(ap_input_8_10, indent=4)); os.system(f"zig build run")
     open(f"input.json", "w").write(js.dumps(ap_input_8_12, indent=4)); os.system(f"zig build run")
     open(f"input.json", "w").write(js.dumps(ap_input_8_18, indent=4)); os.system(f"zig build run")
@@ -154,6 +182,7 @@ if URACIL_LVC:
 
     open(f"input.json", "w").write(js.dumps(ap_input_12_3,  indent=4)); os.system(f"zig build run")
     open(f"input.json", "w").write(js.dumps(ap_input_12_7,  indent=4)); os.system(f"zig build run")
+    open(f"input.json", "w").write(js.dumps(ap_input_12_10, indent=4)); os.system(f"zig build run")
     open(f"input.json", "w").write(js.dumps(ap_input_12_11, indent=4)); os.system(f"zig build run")
     open(f"input.json", "w").write(js.dumps(ap_input_12_12, indent=4)); os.system(f"zig build run")
     open(f"input.json", "w").write(js.dumps(ap_input_12_18, indent=4)); os.system(f"zig build run")
@@ -184,7 +213,7 @@ if URACIL_LVC:
                 "iterations" : 250,
                 "potential" : f"uracil{i}D_1",
                 "time_step" : 10,
-                "trajectories" : 10000
+                "trajectories" : TRAJS
             }
         }
 
@@ -206,8 +235,8 @@ if URACIL_LVC:
 
         os.system(f'python python/lines.py MAITRA_MCTDH_D0.mat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D{esc}$_0{esc}$ (MCTDH)" "D{esc}$_0{esc}$ (FSSH)" "D{esc}$_0{esc}$ (KTSH)" "D{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
 
-    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat:0,5,10,15 --figsize 6 12 --subplots 241 241 241 241 242 242 242 242 243 243 243 243 244 244 244 244 245 245 245 245 246 246 246 246 247 247 247 247 248 248 248 248 --xlabel 10 12 18 20 21 24 25 26 --output POTENTIAL_ADIABATIC_uracilDimless8D_1.png')
-
+    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat:0,5,10 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat:0,5,10 --figsize 6 8 --subplots 241 241 241 241 242 242 242 242 243 243 243 243 244 244 244 244 245 245 245 245 246 246 246 246 247 247 247 248 248 248 --xlabel "Q{esc}$_{{18}}{esc}$" "Q{esc}$_{{20}}{esc}$" "Q{esc}$_{{21}}{esc}$" "Q{esc}$_{{24}}{esc}$" "Q{esc}$_{{25}}{esc}$" "Q{esc}$_{{26}}{esc}$" "Q{esc}$_{{10}}{esc}$" "Q{esc}$_{{12}}{esc}$" --output POTENTIAL_ADIABATIC_uracilDimless8D_1.png')
+    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_uracilDimless12D_1_Q3.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q7.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q11.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q18.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q19.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q20.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q21.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q24.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q10.mat:0,5,10 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q12.mat:0,5,10 --figsize 9 8 --subplots 341 341 341 341 342 342 342 342 343 343 343 343 344 344 344 344 345 345 345 345 346 346 346 346 347 347 347 347 348 348 348 348 349 349 349 349 3-4-10 3-4-10 3-4-10 3-4-10 3-4-11 3-4-11 3-4-11 3-4-12 3-4-12 3-4-12 --xlabel "Q{esc}$_{{3}}{esc}$" "Q{esc}$_{{7}}{esc}$" "Q{esc}$_{{11}}{esc}$" "Q{esc}$_{{18}}{esc}$" "Q{esc}$_{{19}}{esc}$" "Q{esc}$_{{20}}{esc}$" "Q{esc}$_{{21}}{esc}$" "Q{esc}$_{{24}}{esc}$" "Q{esc}$_{{25}}{esc}$" "Q{esc}$_{{26}}{esc}$" "Q{esc}$_{{10}}{esc}$" "Q{esc}$_{{12}}{esc}$" --output POTENTIAL_ADIABATIC_uracilDimless12D_1.png')
 # CLEANUP ====================================================================================================================================================================================
 
 if os.path.exists("research"): sh.rmtree("research")

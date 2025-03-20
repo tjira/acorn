@@ -30,7 +30,7 @@ parser.add_argument("--ylim", type=float, nargs="+", help="The y-axis limits for
 parser.add_argument("--errors", nargs="+", help="Error bars for the plotted lines.")
 parser.add_argument("--offsets", nargs="+", help="Vertical offsets for the plotted lines.")
 parser.add_argument("--scales", nargs="+", help="Scales for the plotted lines.")
-parser.add_argument("--subplots", nargs="+", type=int, help="Divide the lines into subplots.", default=[111])
+parser.add_argument("--subplots", nargs="+", help="Divide the lines into subplots.", default=["111"])
 
 # add positional arguments and parse the arguments
 parser.add_argument("files", nargs="+", help="The data files to plot."); args = parser.parse_args()
@@ -62,7 +62,7 @@ for (frame, step) in ((frame, args.animate if args.animate else 0) for frame in 
 fig = plt.figure(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); axes, plots, ebars = {}, [], []
 
 # fill the axes dictionary
-for subplot in args.subplots: axes[subplot] = fig.add_subplot(subplot) if subplot not in axes else axes[subplot]
+for subplot in args.subplots: axes[subplot] = (fig.add_subplot(int(subplot)) if len(subplot) == 3 else fig.add_subplot(*[int(num) for num in subplot.split("-")])) if subplot not in axes else axes[subplot]
 
 # set the colormap
 cmap = plt.get_cmap(args.colormap)(np.linspace(0.1, 0.9, nline) if (plt.get_cmap(args.colormap).N) > 20 else np.linspace(0, 1, plt.get_cmap(args.colormap).N))
@@ -73,8 +73,11 @@ for i, (data_i, j) in enumerate(dcit(data, data_cols)):
     # extract the label
     label = args.legend[i] if args.legend and len(args.legend) > i else ""
 
+    # extract the color
+    color = cmap[len(axes[args.subplots[len(plots) % len(args.subplots)]].get_lines()) % len(cmap)]
+
     # plot the data and append the plot to the list
-    plots.append(axes[args.subplots[len(plots) % len(args.subplots)]].plot(data_i[:, 0], data_i[:, j + 1], color=cmap[len(plots) % len(cmap)], label=label))
+    plots.append(axes[args.subplots[len(plots) % len(args.subplots)]].plot(data_i[:, 0], data_i[:, j + 1], color=color, label=label))
 
 # loop over the error bars and their columns
 for (data_errors_i, j) in dcit(data_errors, cols_errors):
@@ -83,8 +86,11 @@ for (data_errors_i, j) in dcit(data_errors, cols_errors):
     top = plots[lind_errors[len(ebars)]][0].get_ydata() + data_errors_i[:, j + 1]
     bot = plots[lind_errors[len(ebars)]][0].get_ydata() - data_errors_i[:, j + 1]
 
+    # extract the color
+    color = cmap[len(axes[args.subplots[len(plots) % len(args.subplots)]].get_lines()) % len(cmap)]
+
     # fill the area between the top and bottom line and append the plot to the list
-    ebars.append(axes[args.subplots[len(plots) % len(args.subplots)]].fill_between(data_errors_i[:, 0], bot, top, color=cmap[lind_errors[len(ebars)] % len(cmap)], alpha=0.2))
+    ebars.append(axes[args.subplots[len(plots) % len(args.subplots)]].fill_between(data_errors_i[:, 0], bot, top, color=cmap, alpha=0.2))
 
 # loop over the axes
 for i, ax in enumerate(axes.values()):
@@ -113,8 +119,8 @@ for i, ax in enumerate(axes.values()):
     if args.ylabel and len(args.ylabel) > i: ax.set_ylabel(args.ylabel[i])
 
     # set the axis limits
-    if args.xlim and len(args.xlim) > 2 * i: ax.set_xlim(args.xlim[2 * i + 0:2 * i + 2])
-    if args.ylim and len(args.ylim) > 2 * i: ax.set_ylim(args.ylim[2 * i + 0:2 * i + 2])
+    if args.xlim and len(args.xlim) > 2 * i and not np.isnan(args.xlim[2 * i]): ax.set_xlim(args.xlim[2 * i + 0:2 * i + 2])
+    if args.ylim and len(args.ylim) > 2 * i and not np.isnan(args.ylim[2 * i]): ax.set_ylim(args.ylim[2 * i + 0:2 * i + 2])
 
 # set the layout
 fig.tight_layout()
