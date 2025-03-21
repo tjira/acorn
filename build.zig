@@ -43,11 +43,12 @@ pub fn build(builder: *std.Build) !void {
                 }).getEmittedDocs(),
             });
 
+            var script_step = builder.step("script", "Generate executable scripts"); script_step.makeFn = script; script_step.dependOn(builder.getInstallStep());
+
             builder.step("docs", "Compile code documentation" ).dependOn(&docs_install                           .step);
             builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
         }
     }
-
 
     const test_executable = builder.addTest(.{
         .name = "test",
@@ -61,4 +62,68 @@ pub fn build(builder: *std.Build) !void {
     test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
 
     builder.step("test", "Run unit tests").dependOn(&builder.addRunArtifact(test_executable).step);
+}
+
+pub fn script(self: *std.Build.Step, progress: std.Progress.Node) !void {
+    _ = self; _ = progress;
+
+    for (targets) |target| if (target.os_tag == .linux) {
+        try linuxScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
+    };
+}
+
+pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
+    const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", target, "/"});
+
+    const file_matsort  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort" }), .{.mode=0o755});
+    const file_mersenne = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne"}), .{.mode=0o755});
+
+    const content_matsort =
+        \\#!/usr/bin/bash
+        \\
+        \\if [ "$#" -ne 1 ]; then
+        \\  echo "USAGE: matsort MATRIX"; exit 1
+        \\fi
+        \\
+        \\clean() {{ rm -f input.json; }}; trap clean SIGINT
+        \\
+        \\echo '{{
+        \\  "sort" : {{
+        \\    "input" : "'"$1"'",
+        \\    "algorithm" : "bubble",
+        \\    "output" : "'"$1.sorted"'"
+        \\  }}
+        \\}}' > input.json
+        \\
+        \\acorn
+        \\
+        \\mv "$1.sorted" "$1" && clean
+    ;
+
+    const content_mersenne =
+        \\#!/usr/bin/bash
+        \\
+        \\if [ "$#" -ne 1 ]; then
+        \\  echo "USAGE: mersenne COUNT"; exit 1
+        \\fi
+        \\
+        \\clean() {{ rm -f input.json; }}; trap clean SIGINT
+        \\
+        \\echo '{{
+        \\  "prime" : {{
+        \\    "mode" : "mersenne",
+        \\    "generate" : {{
+        \\      "count" : '"$1"'
+        \\    }},
+        \\    "number" : 1
+        \\  }}
+        \\}}' > input.json
+        \\
+        \\acorn
+        \\
+        \\clean
+    ;
+
+    try file_matsort .writer().print(content_matsort,  .{}); file_matsort .close();
+    try file_mersenne.writer().print(content_mersenne, .{}); file_mersenne.close();
 }

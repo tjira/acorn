@@ -10,6 +10,7 @@ const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
 const abs     = @import("helper.zig").abs    ;
+const sgn     = @import("helper.zig").sgn    ;
 const asfloat = @import("helper.zig").asfloat;
 
 /// Return the number of dimensions of the potential energy surface.
@@ -273,7 +274,7 @@ pub fn tripleState1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
 
 /// The first Tully model potential energy surface.
 pub fn tully1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
-    U.ptr(0, 0).* = if (r.at(0) > 0) 0.01 * (1 - std.math.exp(-1.6 * r.at(0))) else -0.01 * (1 - std.math.exp(1.6 * r.at(0)));
+    U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.005 * std.math.exp(-r.at(0) * r.at(0));
 
     U.ptr(1, 0).* = U.at(0, 1);
@@ -300,7 +301,7 @@ pub fn tully1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
 
 /// The testing potential
 pub fn test1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
-    U.ptr(0, 0).* = if (r.at(0) > 0) 0.01 * (1 - std.math.exp(-1.6 * r.at(0))) else -0.01 * (1 - std.math.exp(1.6 * r.at(0)));
+    U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.0005 / (200 * r.at(0) * r.at(0) + 1);
 
     U.ptr(1, 0).* = U.at(0, 1);

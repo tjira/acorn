@@ -118,18 +118,11 @@ if SH_TESTING:
         open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
 
-        os.system(f'python python/lines.py POPULATION_{potential}_EXACT.mat:0 POPULATION_{potential}_FSSH.mat:0 POPULATION_{potential}_KTSH.mat:0 POPULATION_{potential}_LZSH.mat:0 --legend "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Ground State Population" --output POPULATION_{potential}.png')
-
-        if NS[potential] == 2: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,3 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_ADIABATIC_{potential}.png')
-        if NS[potential] == 3: os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{potential}.mat:0,4,8 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" --xlabel "Coordinate (a.u.)" --ylabel "Energy (a.u.)" --output POTENTIAL_{potential}.png')
-
         fs_input["classical_dynamics"]["trajectories"] = 1; del fs_input["classical_dynamics"]["write"]["population_mean"]
         kt_input["classical_dynamics"]["trajectories"] = 1; del kt_input["classical_dynamics"]["write"]["population_mean"]
 
         open(f"input.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
-
-        os.system(f'python python/lines.py TDC_{potential}_FSSH.mat:1 TDC_{potential}_KTSH.mat:1 --legend "T{esc}$_{{0,1}}{esc}$ (NUMERIC)" "T{esc}$_{{0,1}}{esc}$ (BAECKAN)" --xlabel "Time (a.u.)" --xlim {TDCLIM[potential][0]} {TDCLIM[potential][1]} --ylabel "TDC (??)" --output TDC_{potential}.png')
 
     os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 TDC_{DS[0]}_FSSH.mat:1 TDC_{DS[0]}_KTSH.mat:1 POPULATION_{DS[0]}_EXACT.mat:0 POPULATION_{DS[0]}_FSSH.mat:0 POPULATION_{DS[0]}_KTSH.mat:0 POPULATION_{DS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 TDC_{DS[1]}_FSSH.mat:1 TDC_{DS[1]}_KTSH.mat:1 POPULATION_{DS[1]}_EXACT.mat:0 POPULATION_{DS[1]}_FSSH.mat:0 POPULATION_{DS[1]}_KTSH.mat:0 POPULATION_{DS[1]}_LZSH.mat:0 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (NUMERIC)" "T{esc}$_{{0,1}}{esc}$ (BAECKAN)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (NUMERIC)" "T{esc}$_{{0,1}}{esc}$ (BAECKAN)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_DS.png')
 
