@@ -52,7 +52,7 @@ s = np.zeros((args.trajectories, args.iterations + 1), dtype=int) + args.state; 
 def fssh(i, substeps=10):
 
     # calculate the eigenvector overlap snd TDC
-    S = Us[-2].swapaxes(1, 2) @ Us[-1]; TDC = (np.transpose(S, (0, 2, 1)) - S) / (2 * args.timestep)
+    S = Us[-2].swapaxes(1, 2) @ Us[-1]; TDC = (S - np.transpose(S, (0, 2, 1))) / (2 * args.timestep)
 
     # define the time derivative of the electronic coefficients
     dC = lambda C: -1j * np.diag(Vs[-1][j]) * C - TDC[j] @ C
@@ -174,6 +174,9 @@ for i in range(args.iterations + 1):
 
     # adiabatize the potential
     E, U = np.linalg.eigh(V); V = np.einsum("ij,jk->ijk", E, np.eye(V.shape[1])); Vs.append(V); Us.append(U)
+
+    # maximize overlap between the current and previous eigenvectors
+    if i > 1: Us[-1] = Us[-1] * np.where(np.sum(Us[-1] * Us[-2], axis=1) < 0, -1, 1)[:, None, :]
 
     # surface hopping algorithm
     if (args.lzsh and i > 1): lzsh(i)
