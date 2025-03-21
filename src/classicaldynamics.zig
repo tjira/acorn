@@ -311,8 +311,8 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: inp.Classic
             C.ptr(j).* = C.at(j).add(K1.at(j).add(K2.at(j).mul(Complex(T).init(2, 0))).add(K3.at(j).mul(Complex(T).init(2, 0))).add(K4.at(j)).mul(Complex(T).init(time_step / 6 / iters, 0)));
         }
 
-        const rn = rand.float(T); var p: T = 0; for (0..C.rows) |j| if (j != ns) {
-            p += 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / std.math.pow(T, C.at(ns).magnitude(), 2) * time_step / iters; if (rn < p) {ns = @intCast(j); break;}
+        const rn = rand.float(T); for (0..C.rows) |j| if (j != ns) {
+            const p = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / (std.math.pow(T, C.at(ns).magnitude(), 2) + 1e-14) * time_step / iters; if (rn < p) {ns = @intCast(j); break;}
         };
 
         for (0..C.rows) |j| if (j != ns) {
