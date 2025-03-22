@@ -75,8 +75,12 @@ pub fn script(self: *std.Build.Step, progress: std.Progress.Node) !void {
 pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", target, "/"});
 
-    const file_matsort  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort" }), .{.mode=0o755});
-    const file_mersenne = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne"}), .{.mode=0o755});
+    const mode = switch (builtin.os.tag) {
+        .wasi => 0, .windows => 0, else => 0o755
+    };
+
+    const file_matsort  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort" }), .{.mode=mode});
+    const file_mersenne = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne"}), .{.mode=mode});
 
     const content_matsort =
         \\#!/usr/bin/bash
