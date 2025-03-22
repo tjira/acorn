@@ -31,6 +31,7 @@ parser.add_argument("-v", "--potential", help="Potential matrix. (default: %(def
 # surface hopping arguments
 parser.add_argument("--lzsh", help="Enable LZSH algorithm. (default: %(default)s)", action=ap.BooleanOptionalAction)
 parser.add_argument("--fssh", help="Enable FSSH algorithm. (default: %(default)s)", action=ap.BooleanOptionalAction)
+parser.add_argument("--mash", help="Enable MASH algorithm. (default: %(default)s)", action=ap.BooleanOptionalAction)
 
 # parse the arguments
 args = parser.parse_args()
@@ -49,11 +50,11 @@ s = np.zeros((args.trajectories, args.iterations + 1), dtype=int) + args.state; 
 # define the Fewest Switches Surface Hopping algorithm
 def fssh(i, substeps=10):
 
-    # compute the eigenvector overlap
-    S = Us[-1].swapaxes(1, 2) @ Us[-2]
+    # compute the eigenvector overlap and the trajectory indices
+    O = Us[-1].swapaxes(1, 2) @ Us[-2]; traji = np.arange(args.trajectories)
 
     # calculate the time derivative coupling
-    TDC = (np.transpose(S, (0, 2, 1)) - S) / (2 * args.timestep)
+    TDC = (np.transpose(O, (0, 2, 1)) - O) / (2 * args.timestep)
     
     # vectorized derivative function
     dC = lambda C: -1j * np.einsum("ijj->ij", Vs[-1]) * C - np.einsum("ijk,ik->ij", TDC, C)
@@ -67,14 +68,14 @@ def fssh(i, substeps=10):
         k3 = dC(C + 0.5 * args.timestep * k2 / substeps)
         k4 = dC(C + 1.0 * args.timestep * k3 / substeps)
 
-        # update the electronic coefficients
-        C[:] = C + args.timestep * (k1 + 2 * k2 + 2 * k3 + k4) / substeps / 6.0
+        # update the electronic coefficients and get trajectory indices
+        C[:] = C + args.timestep * (k1 + 2 * k2 + 2 * k3 + k4) / substeps / 6.0;
 
         # calculate the denominator for the hopping probability
-        denominator = np.abs(C[np.arange(args.trajectories), s[:, i]])**2 + 1e-14
+        denominator = 0.5 * (np.abs(C[traji, s[:, i]])**2 + 1e-14) * substeps / args.timestep
 
         # calculate the hopping probability
-        p = 2 * TDC[np.arange(args.trajectories), s[:, i], :] * (C * np.conjugate(C[np.arange(args.trajectories), s[:, i]][:, None])).real / denominator[:, None] * args.timestep / substeps
+        p = TDC[traji, s[:, i], :] * (C * np.conjugate(C[traji, s[:, i]][:, None])).real / denominator[:, None]
 
         # calculate the hopping mask
         hopmask = (np.random.rand(args.trajectories)[:, None] < p)
@@ -118,17 +119,52 @@ def lzsh(i):
             if rn < p:
                 s[j, i:] = k; break
 
+# define the Mapping Approach to Surface Hopping algorithm
+def mash(i):
+
+    # compute the eigenvector overlap
+    O = Us[-1].swapaxes(1, 2) @ Us[-2]
+
+    # calculate the time derivative coupling
+    TDC = (np.transpose(O, (0, 2, 1)) - O) / (2 * args.timestep)
+
+    # loop over the trajectories
+    for j in range(args.trajectories):
+
+        # calculate the propagator
+        omega = sp.linalg.expm(np.array([
+            [0,                                 Vs[-1][j, 0, 0] - Vs[-1][j, 1, 1], 2 * TDC[j, 0, 1]],
+            [Vs[-1][j, 1, 1] - Vs[-1][j, 0, 0], 0,                                 0               ],
+            [-2 * TDC[j, 0, 1],                 0,                                 0               ]
+        ]) * args.timestep)
+
+        # propagate the Bloch vector
+        Szp = S[j, 2]; S[j] = omega @ S[j]
+
+        # hop to another state if the condition is met
+        if Szp * S[j, 2] < 0: s[j, i:] = 1 - s[j, i - 1]
+
 # PERFORM THE CLASSICAL DYNAMICS =================================================================================================
 
 # create the initial conditions for the trajectories
 r = np.column_stack([np.random.normal(mu, sigma, len(s)) for mu, sigma in zip(args.position[0::2], args.position[1::2])])
 v = np.column_stack([np.random.normal(mu, sigma, len(s)) for mu, sigma in zip(args.momentum[0::2], args.momentum[1::2])])
 
-# create the electronic coefficients
+# create the electronic coefficients and Bloch vectors
 C = np.zeros((args.trajectories, np.array(eval(args.potential)).shape[0]), dtype=complex)
+S = np.zeros((args.trajectories, 3                            ),           dtype=float  )
 
 # initialize the electronic coefficients
 for j in range(args.trajectories): C[j, s[j, 0]] = 1
+
+# sample the bloch vectors
+for j in range(args.trajectories):
+
+    # define the angles
+    p, ct = 2 * np.pi * np.random.rand(), np.sqrt(np.random.rand()); st = np.sqrt(1 - ct**2)
+
+    # fill the row
+    S[j] = np.array([st * np.cos(p), st * np.sin(p), ct])
 
 # divide momentum by mass and define acceleration
 v /= args.mass; a = np.zeros_like(r); diff = 0.0001;
@@ -176,8 +212,9 @@ for i in range(args.iterations + 1):
     if i > 1: Us[-1] = Us[-1] * np.where(np.sum(Us[-1] * Us[-2], axis=1) < 0, -1, 1)[:, None, :]
 
     # surface hopping algorithm
-    if (args.lzsh and i > 1): lzsh(i)
     if (args.fssh and i > 0): fssh(i)
+    if (args.lzsh and i > 1): lzsh(i)
+    if (args.mash and i > 0): mash(i)
 
     # calculate the potential and kinetic energy for each trajectory
     Epot = V[np.arange(args.trajectories), s[:, i], s[:, i]]; Ekin = 0.5 * args.mass * np.sum(v**2, axis=1)
