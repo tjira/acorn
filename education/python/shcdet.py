@@ -6,6 +6,8 @@ np.set_printoptions(edgeitems=30, linewidth=100000, formatter=dict(float=lambda 
 
 # EXAMPLES
 # ./shcdet.py -p 10 1 -r -10 0.5 -s 1 -m 2000 -t 1 -i 5000 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2)],[0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" --adiabatic -n 1000 --lzsh
+# ./shcdet.py -p 10 1 -r -10 0.5 -s 2 -m 2000 -t 1 -i 5000 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2),0*r1],[0.001*np.exp(-r1**2),0*r1,0.001*np.exp(-r1**2)],[0*r1,0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" --adiabatic -n 1000 --fssh
+# ./shcdet.py -p 15 1 -r -15 0.5 -s 2 -m 2000 -t 1 -i 5000 -v "[[0.03*(np.tanh(1.6*r1)+np.tanh(1.6*(r1+7))),0.005*np.exp(-r1**2),0.005*np.exp(-(r1+7)**2)],[0.005*np.exp(-r1**2),-0.03*(np.tanh(1.6*r1)+np.tanh(1.6*(r1-7))),0.005*np.exp(-(r1-7)**2)],[0.005*np.exp(-(r1+7)**2),0.005*np.exp(-(r1-7)**2),-0.03*(np.tanh(1.6*(r1+7))-np.tanh(1.6*(r1-7)))]]" --adiabatic -n 1000 --fssh
 
 # SECTION FOR PARSING COMMAND LINE ARGUMENTS ===========================================================================
 
@@ -49,6 +51,10 @@ s = np.zeros((args.trajectories, args.iterations + 1), dtype=int) + args.state; 
 
 # define the Fewest Switches Surface Hopping algorithm
 def fssh(i, substeps=10):
+
+    # fill the coefficients on the first iteration
+    if i == 1: 
+        for j in range(args.trajectories): C[j, s[j, 0]] = 1
 
     # compute the eigenvector overlap and the trajectory indices
     O = Us[-1].swapaxes(1, 2) @ Us[-2]; traji = np.arange(args.trajectories)
@@ -122,8 +128,17 @@ def lzsh(i):
 # define the Mapping Approach to Surface Hopping algorithm
 def mash(i):
 
-    # compute the eigenvector overlap
-    O = Us[-1].swapaxes(1, 2) @ Us[-2]
+    # sample the bloch vectors if i == 1
+    for j in (k for k in range(args.trajectories) if i == 1):
+
+        # define the angles
+        p, ct = 2 * np.pi * np.random.rand(), np.sqrt(np.random.rand()); st = np.sqrt(1 - ct**2)
+
+        # fill the row
+        for l in range(len(SPHR)): SPHR[l, j] = np.array([st * np.cos(p), st * np.sin(p), ct])
+
+    # compute the eigenvector overlap and store spheres
+    O = Us[-1].swapaxes(1, 2) @ Us[-2]; SPHRP = SPHR.copy()
 
     # calculate the time derivative coupling
     TDC = (np.transpose(O, (0, 2, 1)) - O) / (2 * args.timestep)
@@ -131,18 +146,34 @@ def mash(i):
     # loop over the trajectories
     for j in range(args.trajectories):
 
-        # calculate the propagator
-        omega = sp.linalg.expm(np.array([
-            [0,                                 Vs[-1][j, 0, 0] - Vs[-1][j, 1, 1], 2 * TDC[j, 0, 1]],
-            [Vs[-1][j, 1, 1] - Vs[-1][j, 0, 0], 0,                                 0               ],
-            [-2 * TDC[j, 0, 1],                 0,                                 0               ]
-        ]) * args.timestep)
+        # loop over all spheres
+        for k in range(len(SPHR)):
 
-        # propagate the Bloch vector
-        Szp = S[j, 2]; S[j] = omega @ S[j]
+            # get upper and lower index
+            su, sd = max(SIND[j, k]), min(SIND[j, k])
 
-        # hop to another state if the condition is met
-        if Szp * S[j, 2] < 0: s[j, i:] = 1 - s[j, i - 1]
+            # calculate the propagator
+            omega = sp.linalg.expm(np.array([
+                [0,                                     Vs[-1][j, sd, sd] - Vs[-1][j, su, su], 2 * TDC[j, sd, su]],
+                [Vs[-1][j, su, su] - Vs[-1][j, sd, sd], 0,                                     0                 ],
+                [-2 * TDC[j, sd, su],                   0,                                     0                 ]
+            ]) * args.timestep)
+
+            # propagate the Bloch vector
+            SPHR[k, j] = omega @ SPHR[k, j]
+
+        # loop over spheres
+        for k in range(len(SPHR)):
+
+            # perform the jump if the sphere crossed the equator
+            if SPHRP[k, j, 2] * SPHR[k, j, 2] < 0: s[j, i:] = SIND[j, k][0] if SIND[j, k][1] == s[j, i] else SIND[j, k][1]
+
+        # loop over sphere indices if the jump occured
+        for k in (l for l in range(len(SIND[j])) if s[j, i] != s[j, i - 1]):
+
+            # update the indices of the spheres
+            if SIND[j, k][0] == s[j, i - 1] and SIND[j, k][1] != s[j, i]: SIND[j, k][0] = s[j, i]
+            if SIND[j, k][1] == s[j, i - 1] and SIND[j, k][0] != s[j, i]: SIND[j, k][1] = s[j, i]
 
 # PERFORM THE CLASSICAL DYNAMICS =================================================================================================
 
@@ -150,27 +181,22 @@ def mash(i):
 r = np.column_stack([np.random.normal(mu, sigma, len(s)) for mu, sigma in zip(args.position[0::2], args.position[1::2])])
 v = np.column_stack([np.random.normal(mu, sigma, len(s)) for mu, sigma in zip(args.momentum[0::2], args.momentum[1::2])])
 
-# create the electronic coefficients and Bloch vectors
-C = np.zeros((args.trajectories, np.array(eval(args.potential)).shape[0]), dtype=complex)
-S = np.zeros((args.trajectories, 3                            ),           dtype=float  )
+# extract the number of states
+nstate = np.array(eval(args.potential)).shape[0]
 
-# initialize the electronic coefficients
-for j in range(args.trajectories): C[j, s[j, 0]] = 1
+# create the electronic coefficients and one Bloch sphere
+C = np.zeros((args.trajectories, nstate), dtype=complex)
+S = np.zeros((args.trajectories, 3     ), dtype=float  )
 
-# sample the bloch vectors
-for j in range(args.trajectories):
-
-    # define the angles
-    p, ct = 2 * np.pi * np.random.rand(), np.sqrt(np.random.rand()); st = np.sqrt(1 - ct**2)
-
-    # fill the row
-    S[j] = np.array([st * np.cos(p), st * np.sin(p), ct])
+# create the array of spheres and sphere indices for the MASH algorithm
+SPHR = np.array([ S.copy()     for i in range(nstate - 1)                ]                                   )
+SIND = np.array([[[s[0, 0], i] for i in range(nstate - 0) if i != s[0, 0]] for j in range(args.trajectories)])
 
 # divide momentum by mass and define acceleration
 v /= args.mass; a = np.zeros_like(r); diff = 0.0001;
 
 # print the propagation header
-print("%6s %12s %12s %12s" % ("ITER", "EKIN", "EPOT", "ETOT", ))
+print("%6s %12s %12s %12s" % ("ITER", "EKIN", "EPOT", "ETOT"))
 
 # loop over the iterations
 for i in range(args.iterations + 1):

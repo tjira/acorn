@@ -7,6 +7,8 @@ np.set_printoptions(edgeitems=30, linewidth=100000, formatter=dict(float=lambda 
 # EXAMPLES
 # ./neqdet.py -g "[np.exp(-(r1-1)**2-(r2-1)**2)]" -v "[[0.5*(r1**2+r2**2)]]"
 # ./neqdet.py -d 0 -f 0.01 -p 8192 -l 32 -m 2000 -t 10 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2)],[0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" -g "[0,np.exp(-(r1+10)**2+10j*r1)]" --align --adiabatic
+# ./neqdet.py -d 0 -f 0.01 -p 8192 -l 32 -m 2000 -t 10 -v "[[0.01*np.tanh(0.6*r1),0.001*np.exp(-r1**2),0*r1],[0.001*np.exp(-r1**2),0*r1,0.001*np.exp(-r1**2)],[0*r1,0.001*np.exp(-r1**2),-0.01*np.tanh(0.6*r1)]]" -g "[0,0,np.exp(-(r1+10)**2+10j*r1)]" --align --adiabatic
+# ./neqdet.py -d 0 -f 0.01 -i 5000 -p 8192 -l 64 -m 2000 -t 1 -v "[[0.03*(np.tanh(1.6*r1)+np.tanh(1.6*(r1+7))),0.005*np.exp(-r1**2),0.005*np.exp(-(r1+7)**2)],[0.005*np.exp(-r1**2),-0.03*(np.tanh(1.6*r1)+np.tanh(1.6*(r1-7))),0.005*np.exp(-(r1-7)**2)],[0.005*np.exp(-(r1+7)**2),0.005*np.exp(-(r1-7)**2),-0.03*(np.tanh(1.6*(r1+7))-np.tanh(1.6*(r1-7)))]]" -g "[0,np.exp(-(r1+15)**2+15j*r1),0]" --align --adiabatic
 
 # SECTION FOR PARSING COMMAND LINE ARGUMENTS =====================================================================================
 
@@ -119,7 +121,7 @@ for i in range(args.imaginary if args.imaginary else 1):
         if (j): psi = np.einsum("ijk,ik->ij", R, psi)
 
         # orthogonalize the wavefunction
-        for i in range(len(wfnopt)): psi -= np.sum(wfnopt[i].conj() * psi) * wfnopt[i] * dr
+        for k in range(len(wfnopt)): psi -= np.sum(wfnopt[k].conj() * psi) * wfnopt[k] * dr
 
         # normalize the wavefunction
         if args.imaginary: psi /= np.sqrt(dr * np.einsum("ij,ij->", psi.conj(), psi))
@@ -160,11 +162,12 @@ for i in range(args.imaginary if args.imaginary else 1):
 # ADIABATIC TRANSFORM AND SPECTRUM ===============================================================================================
 
 # calculate the adiabatic eigenstates
+A = [np.linalg.eigh(V[i])[0] for i in range(V.shape[0])]
 U = [np.linalg.eigh(V[i])[1] for i in range(V.shape[0])]
 
 # adiabatize the potential and wavefunctions
-V   = np.einsum("ijk,ikl,ilm->ijm", U, V,   U) if args.adiabatic else np.array(V  )
-wfn = np.einsum("ikl,jik->jil",     U, wfn   ) if args.adiabatic else np.array(wfn)
+V   = np.array ([np.diag(a) for a in A]) if args.adiabatic else np.array(V  )
+wfn = np.einsum("ikl,jik->jil", U, wfn ) if args.adiabatic else np.array(wfn)
 
 # calculate the density matrices and acf
 density = np.einsum("jia,jib->jab", wfn,           wfn.conj()).real * dr
