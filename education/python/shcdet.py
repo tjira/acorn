@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-import argparse as ap, itertools as it, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, scipy as sp
-
-import scipy.integrate, scipy.linalg
+import argparse as ap, itertools as it, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np, scipy as sp, scipy.linalg
 
 np.set_printoptions(edgeitems=30, linewidth=100000, formatter=dict(float=lambda x: "%20.14f" % x)); np.random.seed(0)
 
@@ -51,39 +49,38 @@ s = np.zeros((args.trajectories, args.iterations + 1), dtype=int) + args.state; 
 # define the Fewest Switches Surface Hopping algorithm
 def fssh(i, substeps=10):
 
-    # calculate the eigenvector overlap snd TDC
-    S = Us[-1].swapaxes(1, 2) @ Us[-2]; TDC = (np.transpose(S, (0, 2, 1)) - S) / (2 * args.timestep)
+    # compute the eigenvector overlap
+    S = Us[-1].swapaxes(1, 2) @ Us[-2]
 
-    # define the time derivative of the electronic coefficients
-    dC = lambda C: -1j * np.diag(Vs[-1][j]) * C - TDC[j] @ C
+    # calculate the time derivative coupling
+    TDC = (np.transpose(S, (0, 2, 1)) - S) / (2 * args.timestep)
+    
+    # vectorized derivative function
+    dC = lambda C: -1j * np.einsum("ijj->ij", Vs[-1]) * C - np.einsum("ijk,ik->ij", TDC, C)
 
-    # loop over the trajectories
-    for j in range(args.trajectories):
+    # loop over the substeps
+    for _ in range(substeps):
 
-        # loop over the substeps
-        for _ in range(substeps):
+        # calculate the Runge-Kutta coefficients
+        k1 = dC(C                                      )
+        k2 = dC(C + 0.5 * args.timestep * k1 / substeps)
+        k3 = dC(C + 0.5 * args.timestep * k2 / substeps)
+        k4 = dC(C + 1.0 * args.timestep * k3 / substeps)
 
-            # generate random number
-            rn = np.random.rand()
+        # update the electronic coefficients
+        C[:] = C + args.timestep * (k1 + 2 * k2 + 2 * k3 + k4) / substeps / 6.0
 
-            # calculate the Runge-Kutta coefficients
-            k1 = dC(C[j]                                      )
-            k2 = dC(C[j] + 0.5 * args.timestep * k1 / substeps)
-            k3 = dC(C[j] + 0.5 * args.timestep * k2 / substeps)
-            k4 = dC(C[j] + 1.0 * args.timestep * k3 / substeps)
+        # calculate the denominator for the hopping probability
+        denominator = np.abs(C[np.arange(args.trajectories), s[:, i]])**2 + 1e-14
 
-            # update the electronic coefficients
-            C[j] = C[j] + args.timestep * (k1 + 2 * k2 + 2 * k3 + k4) / substeps / 6
+        # calculate the hopping probability
+        p = 2 * TDC[np.arange(args.trajectories), s[:, i], :] * (C * np.conjugate(C[np.arange(args.trajectories), s[:, i]][:, None])).real / denominator[:, None] * args.timestep / substeps
 
-            # loop over the states
-            for k in (l for l in range(V.shape[1]) if l != s[j, i]):
+        # calculate the hopping mask
+        hopmask = (np.random.rand(args.trajectories)[:, None] < p)
 
-                # calculate the hopping probability
-                p = 2 * TDC[j, s[j, i], k] * (C[j, k] * C[j, s[j, i]].conj()).real / (np.abs(C[j, s[j, i]])**2 + 1e-14) * args.timestep / substeps
-
-                # hop to another state
-                if rn < p:
-                    s[j, i:] = k; break
+        # perform the hop using the mask
+        if hopmask.any(): s[hopmask.any(axis=1), i:] = np.argmax(hopmask, axis=1)[hopmask.any(axis=1), None]
 
 # define the Landau-Zener Surface Hopping algorithm
 def lzsh(i):
@@ -200,13 +197,13 @@ for i in range(args.iterations + 1):
 # PRINT AND PLOT THE RESULTS =====================================================================================================
 
 # print the final populations
-print(); print("FINAL POPULATION: %s" % (np.bincount(s[:, -1]) / s.shape[0]))
+print(); print("FINAL POPULATION: %s" % (np.array([(s[:, -1] == j).sum() / s.shape[0] for j in range(V.shape[1])])))
 
 # create the subplots
 fig, axs = plt.subplots(1, 1, figsize=(8, 6));
 
 # plot the population
-axs.plot(np.arange(args.iterations + 1) * args.timestep, [np.bincount(s[:, i]) / s.shape[0] for i in range(s.shape[1])])
+axs.plot(np.arange(args.iterations + 1) * args.timestep, [[(s[:, i] == j).sum() / s.shape[0] for j in range(V.shape[1])] for i in range(s.shape[1])])
 
 # set the labels
 axs.set_xlabel("Time (a.u.)"); axs.set_ylabel("Population")
