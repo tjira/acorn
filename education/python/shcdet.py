@@ -55,7 +55,7 @@ def fssh(i, substeps=10):
 
     # calculate the time derivative coupling
     TDC = (np.transpose(O, (0, 2, 1)) - O) / (2 * args.timestep)
-    
+
     # vectorized derivative function
     dC = lambda C: -1j * np.einsum("ijj->ij", Vs[-1]) * C - np.einsum("ijk,ik->ij", TDC, C)
 
