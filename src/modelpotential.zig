@@ -25,10 +25,13 @@ pub fn dims(potential: []const u8) !u32 {
     if (std.mem.eql(u8, potential, "tripleState1D_1"))  return 1;
     if (std.mem.eql(u8, potential, "tripleState1D_2"))  return 1;
     if (std.mem.eql(u8, potential, "tripleState1D_3"))  return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_4"))  return 1;
     if (std.mem.eql(u8, potential,       "tully1D_1"))  return 1;
     if (std.mem.eql(u8, potential,       "tully1D_2"))  return 1;
     if (std.mem.eql(u8, potential,       "tully1D_3"))  return 1;
+
     if (std.mem.eql(u8, potential,        "test1D_1"))  return 1;
+    if (std.mem.eql(u8, potential,        "test1D_2"))  return 1;
 
     if (std.mem.eql(u8, potential,  "uracilDimless8D_1")) return  8;
     if (std.mem.eql(u8, potential, "uracilDimless12D_1")) return 12;
@@ -50,10 +53,13 @@ pub fn eval(comptime T: type, U: *Matrix(T), potential: []const u8, r: Vector(T)
     if (std.mem.eql(u8, potential, "tripleState1D_1")) return tripleState1D_1(T, U, r);
     if (std.mem.eql(u8, potential, "tripleState1D_2")) return tripleState1D_2(T, U, r);
     if (std.mem.eql(u8, potential, "tripleState1D_3")) return tripleState1D_3(T, U, r);
+    if (std.mem.eql(u8, potential, "tripleState1D_4")) return tripleState1D_4(T, U, r);
     if (std.mem.eql(u8, potential,       "tully1D_1"))       return tully1D_1(T, U, r);
     if (std.mem.eql(u8, potential,       "tully1D_2"))       return tully1D_2(T, U, r);
     if (std.mem.eql(u8, potential,       "tully1D_3"))       return tully1D_3(T, U, r);
-    if (std.mem.eql(u8, potential,        "test1D_1"))       return  test1D_1(T, U, r);
+
+    if (std.mem.eql(u8, potential, "test1D_1")) return test1D_1(T, U, r);
+    if (std.mem.eql(u8, potential, "test1D_2")) return test1D_2(T, U, r);
 
     if (std.mem.eql(u8, potential,  "uracilDimless8D_1")) return  uracilDimless8D_1(T, U, r);
     if (std.mem.eql(u8, potential, "uracilDimless12D_1")) return uracilDimless12D_1(T, U, r);
@@ -75,10 +81,13 @@ pub fn states(potential: []const u8) !u32 {
     if (std.mem.eql(u8, potential, "tripleState1D_1")) return 3;
     if (std.mem.eql(u8, potential, "tripleState1D_2")) return 3;
     if (std.mem.eql(u8, potential, "tripleState1D_3")) return 3;
+    if (std.mem.eql(u8, potential, "tripleState1D_4")) return 3;
     if (std.mem.eql(u8, potential,       "tully1D_1")) return 2;
     if (std.mem.eql(u8, potential,       "tully1D_2")) return 2;
     if (std.mem.eql(u8, potential,       "tully1D_3")) return 2;
-    if (std.mem.eql(u8, potential,        "test1D_1")) return 2;
+
+    if (std.mem.eql(u8, potential, "test1D_1")) return 2;
+    if (std.mem.eql(u8, potential, "test1D_2")) return 3;
 
     if (std.mem.eql(u8, potential,  "uracilDimless8D_1")) return 4;
     if (std.mem.eql(u8, potential, "uracilDimless12D_1")) return 4;
@@ -272,6 +281,21 @@ pub fn tripleState1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(2, 2).* = -0.03 * (std.math.tanh(1.6 * (r.at(0) + 7)) - std.math.tanh(1.6 * (r.at(0) - 7)));
 }
 
+/// The fourth triple-state model potential energy surface.
+pub fn tripleState1D_4(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
+    U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
+    U.ptr(0, 1).* = 0.003 * std.math.exp(-r.at(0) * r.at(0));
+    U.ptr(0, 2).* = 0;
+
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = 0;
+    U.ptr(1, 2).* = U.at(0, 1);
+
+    U.ptr(2, 0).* = U.at(0, 2);
+    U.ptr(2, 1).* = U.at(1, 2);
+    U.ptr(2, 2).* = -U.at(0, 0);
+}
+
 /// The first Tully model potential energy surface.
 pub fn tully1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
@@ -306,6 +330,21 @@ pub fn test1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
 
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = -U.at(0, 0);
+}
+
+/// The testing potential
+pub fn test1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
+    U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
+    U.ptr(0, 1).* = 0.0005 / (100 * r.at(0) * r.at(0) + 1);
+    U.ptr(0, 2).* = 0;
+
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = 0;
+    U.ptr(1, 2).* = U.at(0, 1);
+
+    U.ptr(2, 0).* = U.at(0, 2);
+    U.ptr(2, 1).* = U.at(1, 2);
+    U.ptr(2, 2).* = -U.at(0, 0);
 }
 
 /// The 8-dimensional uracil model potential energy surface.

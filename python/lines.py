@@ -87,10 +87,10 @@ for (data_errors_i, j) in dcit(data_errors, cols_errors):
     bot = plots[lind_errors[len(ebars)]][0].get_ydata() - data_errors_i[:, j + 1]
 
     # extract the color
-    color = cmap[len(axes[args.subplots[len(plots) % len(args.subplots)]].get_lines()) % len(cmap)]
+    color = plots[lind_errors[len(ebars)]][0].get_color()
 
     # fill the area between the top and bottom line and append the plot to the list
-    ebars.append(axes[args.subplots[len(plots) % len(args.subplots)]].fill_between(data_errors_i[:, 0], bot, top, color=cmap, alpha=0.2))
+    ebars.append(axes[args.subplots[len(ebars) % len(args.subplots)]].fill_between(data_errors_i[:, 0], bot, top, color=color, alpha=0.2))
 
 # loop over the axes
 for i, ax in enumerate(axes.values()):

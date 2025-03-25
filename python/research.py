@@ -19,7 +19,9 @@ if SH_TESTING:
         "tripleState1D_1" : [2, 2],
         "tripleState1D_2" : [2, 2],
         "tripleState1D_3" : [1, 2],
-        "test1D_1"        : [1, 1]
+        "tripleState1D_4" : [2, 2],
+        "test1D_1"        : [1, 1],
+        "test1D_2"        : [2, 2]
     }
 
     NS = {
@@ -31,19 +33,22 @@ if SH_TESTING:
         "tripleState1D_1" : 3,
         "tripleState1D_2" : 3,
         "tripleState1D_3" : 3,
-        "test1D_1"        : 2
+        "tripleState1D_4" : 3,
+        "test1D_1"        : 2,
+        "test1D_2"        : 3
     }
 
     TDCLIM = {
-        "tully1D_1"       : [943, 1543],
-        "doubleState1D_2" : [908, 1508],
-        "tripleState1D_2" : [908, 1508],
-        "test1D_1"        : [943, 1543]
+        "tully1D_1"       : [1117, 1717],
+        "tripleState1D_2" : [1117, 1717],
+        "tripleState1D_4" : [1117, 1717],
+        "test1D_1"        : [1117, 1717],
+        "test1D_2"        : [1117, 1717]
     }
 
-    DS = ["tully1D_1", "test1D_1"]
+    DS, TS = ["tully1D_1", "test1D_1"], ["tripleState1D_2", "test1D_2"]
 
-    for potential in DS:
+    for potential in DS + TS:
 
         dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
         ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
@@ -94,7 +99,7 @@ if SH_TESTING:
                 "potential" : potential,
                 "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
                 "trajectories" : TRAJS,
-                "seed" : 2
+                "seed" : 30
             }
         }
 
@@ -124,7 +129,8 @@ if SH_TESTING:
         open(f"input.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"zig build run")
         open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
 
-    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 TDC_{DS[0]}_FSSH.mat:1 TDC_{DS[0]}_KTSH.mat:1 POPULATION_{DS[0]}_EXACT.mat:0 POPULATION_{DS[0]}_FSSH.mat:0 POPULATION_{DS[0]}_KTSH.mat:0 POPULATION_{DS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 TDC_{DS[1]}_FSSH.mat:1 TDC_{DS[1]}_KTSH.mat:1 POPULATION_{DS[1]}_EXACT.mat:0 POPULATION_{DS[1]}_FSSH.mat:0 POPULATION_{DS[1]}_KTSH.mat:0 POPULATION_{DS[1]}_LZSH.mat:0 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (NUMERIC)" "T{esc}$_{{0,1}}{esc}$ (BAECKAN)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (NUMERIC)" "T{esc}$_{{0,1}}{esc}$ (BAECKAN)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (KTSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_DS.png')
+    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 TDC_{DS[0]}_FSSH.mat:1 TDC_{DS[0]}_KTSH.mat:1 POPULATION_{DS[0]}_EXACT.mat:0 POPULATION_{DS[0]}_FSSH.mat:0 POPULATION_{DS[0]}_KTSH.mat:0 POPULATION_{DS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 TDC_{DS[1]}_FSSH.mat:1 TDC_{DS[1]}_KTSH.mat:1 POPULATION_{DS[1]}_EXACT.mat:0 POPULATION_{DS[1]}_FSSH.mat:0 POPULATION_{DS[1]}_KTSH.mat:0 POPULATION_{DS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_DS.png')
+    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{TS[0]}.mat:0,4,8 TDC_{TS[0]}_FSSH.mat:1,2 TDC_{TS[0]}_KTSH.mat:1 POPULATION_{TS[0]}_EXACT.mat:0 POPULATION_{TS[0]}_FSSH.mat:0 POPULATION_{TS[0]}_KTSH.mat:0 POPULATION_{TS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{TS[1]}.mat:0,4,8 TDC_{TS[1]}_FSSH.mat:1,2 TDC_{TS[1]}_KTSH.mat:1 POPULATION_{TS[1]}_EXACT.mat:0 POPULATION_{TS[1]}_FSSH.mat:0 POPULATION_{TS[1]}_KTSH.mat:0 POPULATION_{TS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 231 232 232 232 233 233 233 233 234 234 234 235 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{1,2}}{esc}$ (HST)" "T{esc}$_{{0,2}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{0,2}}{esc}$=T{esc}$_{{1,2}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{1,2}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{0,2}}{esc}$=T{esc}$_{{1,2}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[TS[0]][0]} {TDCLIM[TS[0]][1]} nan nan nan nan {TDCLIM[TS[1]][0]} {TDCLIM[TS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_TS.png')
 
 # DYNAMICS ON URACIL VC MODEL ================================================================================================================================================================
 
@@ -226,7 +232,7 @@ if URACIL_LVC:
 
         np.savetxt("MAITRA_MCTDH_D0.mat", np.array([MAITRA_MCTDH_D0_X, MAITRA_MCTDH_D0_Y]).T, comments="", fmt="%20.14f", header=f"{len(MAITRA_MCTDH_D0_X)} 2")
 
-        os.system(f'python python/lines.py MAITRA_MCTDH_D0.mat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D{esc}$_0{esc}$ (MCTDH)" "D{esc}$_0{esc}$ (FSSH)" "D{esc}$_0{esc}$ (KTSH)" "D{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
+        os.system(f'python python/lines.py MAITRA_MCTDH_D0.mat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D{esc}$_0{esc}$ (MCTDH)" "D{esc}$_0{esc}$ (FSSH)" "D{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "D{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
 
     os.system(f'python python/lines.py POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat:0,5,10 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat:0,5,10 --figsize 6 8 --subplots 241 241 241 241 242 242 242 242 243 243 243 243 244 244 244 244 245 245 245 245 246 246 246 246 247 247 247 248 248 248 --xlabel "Q{esc}$_{{18}}{esc}$" "Q{esc}$_{{20}}{esc}$" "Q{esc}$_{{21}}{esc}$" "Q{esc}$_{{24}}{esc}$" "Q{esc}$_{{25}}{esc}$" "Q{esc}$_{{26}}{esc}$" "Q{esc}$_{{10}}{esc}$" "Q{esc}$_{{12}}{esc}$" --output POTENTIAL_ADIABATIC_uracilDimless8D_1.png')
     os.system(f'python python/lines.py POTENTIAL_ADIABATIC_uracilDimless12D_1_Q3.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q7.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q11.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q18.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q19.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q20.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q21.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q24.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q10.mat:0,5,10 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q12.mat:0,5,10 --figsize 9 8 --subplots 341 341 341 341 342 342 342 342 343 343 343 343 344 344 344 344 345 345 345 345 346 346 346 346 347 347 347 347 348 348 348 348 349 349 349 349 3-4-10 3-4-10 3-4-10 3-4-10 3-4-11 3-4-11 3-4-11 3-4-12 3-4-12 3-4-12 --xlabel "Q{esc}$_{{3}}{esc}$" "Q{esc}$_{{7}}{esc}$" "Q{esc}$_{{11}}{esc}$" "Q{esc}$_{{18}}{esc}$" "Q{esc}$_{{19}}{esc}$" "Q{esc}$_{{20}}{esc}$" "Q{esc}$_{{21}}{esc}$" "Q{esc}$_{{24}}{esc}$" "Q{esc}$_{{25}}{esc}$" "Q{esc}$_{{26}}{esc}$" "Q{esc}$_{{10}}{esc}$" "Q{esc}$_{{12}}{esc}$" --output POTENTIAL_ADIABATIC_uracilDimless12D_1.png')
