@@ -11,7 +11,7 @@ ClearAll["Global`*"]
 SortedEigensystem[H_,I_]:=Module[{S=Eigensystem@H},Transpose@Table[{S[[1,i]],S[[2,i]]/Sqrt[S[[2,i]] . S[[2,i]]]},{i,I}]]
 
 
-NonadiabaticCouplingMatrix[U_]:=Table[FullSimplify[U[[i]] . D[U[[j]],x]],{i,1,Length@U},{j,1,Length@U}]
+NonadiabaticCouplingMatrix[U_]:=Table[FullSimplify[Dot[U[[i]],D[U[[j]],x]]],{i,1,Length@U},{j,1,Length@U}]
 
 
 (* ::Subsection:: *)
@@ -39,6 +39,13 @@ H={{H11[x],H12[x]},{H12[x],-H11[x]}};H//MatrixForm
 If[#===0,0,Nonzero]&/@#&/@NonadiabaticCouplingMatrix@U//MatrixForm
 
 
+(* ::Subsubsection:: *)
+(*Ratio ddZ/Z*)
+
+
+R=Flatten[Table[D[A[[j]]-A[[i]],{x,2}]/(A[[j]]-A[[i]]),{i,1,Length@A},{j,i+1,Length@A}],1];R//MatrixForm
+
+
 (* ::Subsection:: *)
 (*Symmetric Three-State Crossing*)
 
@@ -62,3 +69,10 @@ H={{H11[x],H12[x],0},{H12[x],0,H12[x]},{0,H12[x],-H11[x]}};H//MatrixForm
 
 
 If[#===0,0,Nonzero]&/@#&/@NonadiabaticCouplingMatrix@U//MatrixForm
+
+
+(* ::Subsubsection:: *)
+(*Ratio ddZ/Z*)
+
+
+R=Flatten[Table[D[A[[j]]-A[[i]],{x,2}]/(A[[j]]-A[[i]]),{i,1,Length@A},{j,i+1,Length@A}],1];R//MatrixForm

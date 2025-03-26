@@ -15,23 +15,23 @@ const asfloat = @import("helper.zig").asfloat;
 
 /// Return the number of dimensions of the potential energy surface.
 pub fn dims(potential: []const u8) !u32 {
-    if (std.mem.eql(u8, potential,    "harmonic1D_1"))  return 1;
-    if (std.mem.eql(u8, potential,    "harmonic2D_1"))  return 2;
-    if (std.mem.eql(u8, potential,    "harmonic3D_1"))  return 3;
-    if (std.mem.eql(u8, potential,    "harmonic4D_1"))  return 4;
-    if (std.mem.eql(u8, potential,  "doubleWell1D_1"))  return 1;
-    if (std.mem.eql(u8, potential, "doubleState1D_1"))  return 1;
-    if (std.mem.eql(u8, potential, "doubleState1D_2"))  return 1;
-    if (std.mem.eql(u8, potential, "tripleState1D_1"))  return 1;
-    if (std.mem.eql(u8, potential, "tripleState1D_2"))  return 1;
-    if (std.mem.eql(u8, potential, "tripleState1D_3"))  return 1;
-    if (std.mem.eql(u8, potential, "tripleState1D_4"))  return 1;
-    if (std.mem.eql(u8, potential,       "tully1D_1"))  return 1;
-    if (std.mem.eql(u8, potential,       "tully1D_2"))  return 1;
-    if (std.mem.eql(u8, potential,       "tully1D_3"))  return 1;
+    if (std.mem.eql(u8, potential,    "harmonic1D_1")) return 1;
+    if (std.mem.eql(u8, potential,    "harmonic2D_1")) return 2;
+    if (std.mem.eql(u8, potential,    "harmonic3D_1")) return 3;
+    if (std.mem.eql(u8, potential,    "harmonic4D_1")) return 4;
+    if (std.mem.eql(u8, potential,  "doubleWell1D_1")) return 1;
+    if (std.mem.eql(u8, potential, "doubleState1D_1")) return 1;
+    if (std.mem.eql(u8, potential, "doubleState1D_2")) return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_1")) return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_2")) return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_3")) return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_4")) return 1;
+    if (std.mem.eql(u8, potential,       "tully1D_1")) return 1;
+    if (std.mem.eql(u8, potential,       "tully1D_2")) return 1;
+    if (std.mem.eql(u8, potential,       "tully1D_3")) return 1;
 
-    if (std.mem.eql(u8, potential,        "test1D_1"))  return 1;
-    if (std.mem.eql(u8, potential,        "test1D_2"))  return 1;
+    if (std.mem.eql(u8, potential,       "tully1D_1_lorentz")) return 1;
+    if (std.mem.eql(u8, potential, "tripleState1D_4_lorentz")) return 1;
 
     if (std.mem.eql(u8, potential,  "uracilDimless8D_1")) return  8;
     if (std.mem.eql(u8, potential, "uracilDimless12D_1")) return 12;
@@ -58,8 +58,8 @@ pub fn eval(comptime T: type, U: *Matrix(T), potential: []const u8, r: Vector(T)
     if (std.mem.eql(u8, potential,       "tully1D_2"))       return tully1D_2(T, U, r);
     if (std.mem.eql(u8, potential,       "tully1D_3"))       return tully1D_3(T, U, r);
 
-    if (std.mem.eql(u8, potential, "test1D_1")) return test1D_1(T, U, r);
-    if (std.mem.eql(u8, potential, "test1D_2")) return test1D_2(T, U, r);
+    if (std.mem.eql(u8, potential,       "tully1D_1_lorentz")) return       tully1D_1_lorentz(T, U, r);
+    if (std.mem.eql(u8, potential, "tripleState1D_4_lorentz")) return tripleState1D_4_lorentz(T, U, r);
 
     if (std.mem.eql(u8, potential,  "uracilDimless8D_1")) return  uracilDimless8D_1(T, U, r);
     if (std.mem.eql(u8, potential, "uracilDimless12D_1")) return uracilDimless12D_1(T, U, r);
@@ -86,8 +86,8 @@ pub fn states(potential: []const u8) !u32 {
     if (std.mem.eql(u8, potential,       "tully1D_2")) return 2;
     if (std.mem.eql(u8, potential,       "tully1D_3")) return 2;
 
-    if (std.mem.eql(u8, potential, "test1D_1")) return 2;
-    if (std.mem.eql(u8, potential, "test1D_2")) return 3;
+    if (std.mem.eql(u8, potential,       "tully1D_1_lorentz")) return 2;
+    if (std.mem.eql(u8, potential, "tripleState1D_4_lorentz")) return 3;
 
     if (std.mem.eql(u8, potential,  "uracilDimless8D_1")) return 4;
     if (std.mem.eql(u8, potential, "uracilDimless12D_1")) return 4;
@@ -323,8 +323,8 @@ pub fn tully1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(1, 1).* = -U.at(0, 0);
 }
 
-/// The testing potential
-pub fn test1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
+/// The tully1D_1 potential with a Lorentzian coupling.
+pub fn tully1D_1_lorentz(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.0005 / (200 * r.at(0) * r.at(0) + 1);
 
@@ -332,8 +332,8 @@ pub fn test1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(1, 1).* = -U.at(0, 0);
 }
 
-/// The testing potential
-pub fn test1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
+/// The tripleState1D_1 potential with a Lorentzian coupling.
+pub fn tripleState1D_4_lorentz(comptime T: type, U: *Matrix(T), r: Vector(T)) !void {
     U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.0005 / (100 * r.at(0) * r.at(0) + 1);
     U.ptr(0, 2).* = 0;

@@ -128,7 +128,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (opt.adiabatic and tdc_baeckan and j > 1) derivativeCouplingBaeckan(T, &TDC,       &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, &S3, opt.time_step);
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
-                if (fssh and j > 1) ns = try fewestSwitches(T, &C, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
+                if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
                 if (mash and j > 1) ns = try spinMapping(T, &S, &SI, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
                 if (s != ns and Ekin >= U.at(ns, ns) - U.at(s, s)) {
@@ -264,8 +264,8 @@ pub fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix
 }
 
 /// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.
-pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: inp.ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
-    const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s;
+pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
+    const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s; P.fill(0);
 
     const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
         for (0..FC.rows) |i| {
@@ -311,8 +311,18 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), opt: inp.Classic
             C.ptr(j).* = C.at(j).add(K1.at(j).add(K2.at(j).mul(Complex(T).init(2, 0))).add(K3.at(j).mul(Complex(T).init(2, 0))).add(K4.at(j)).mul(Complex(T).init(time_step / 6 / iters, 0)));
         }
 
-        const rn = rand.float(T); for (0..C.rows) |j| if (j != ns) {
-            const p = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / (std.math.pow(T, C.at(ns).magnitude(), 2) + 1e-14) * time_step / iters; if (rn < p) {ns = @intCast(j); break;}
+        const rn = rand.float(T);
+
+        for (0..C.rows) |j| if (j != ns) {
+            P.ptr(j).* = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / (std.math.pow(T, C.at(ns).magnitude(), 2) + 1e-14) * time_step / iters;
+        };
+
+        if (sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= sum(T, P.data);};
+
+        for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
+
+        if (sum(T, P.data) > 0) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+            ns = @intCast(i);
         };
 
         for (0..C.rows) |j| if (j != ns) {

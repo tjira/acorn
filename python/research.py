@@ -11,42 +11,27 @@ TRAJS = 10000
 if SH_TESTING:
 
     IS = {
-        "tully1D_1"       : [1, 1],
-        "tully1D_2"       : [1, 1],
-        "tully1D_3"       : [0, 1],
-        "doubleState1D_1" : [1, 1],
-        "doubleState1D_2" : [1, 1],
-        "tripleState1D_1" : [2, 2],
-        "tripleState1D_2" : [2, 2],
-        "tripleState1D_3" : [1, 2],
-        "tripleState1D_4" : [2, 2],
-        "test1D_1"        : [1, 1],
-        "test1D_2"        : [2, 2]
+        "tully1D_1"               : [1, 1],
+        "tully1D_1_lorentz"       : [1, 1],
+        "tripleState1D_4"         : [2, 2],
+        "tripleState1D_4_lorentz" : [2, 2]
     }
 
     NS = {
-        "tully1D_1"       : 2,
-        "tully1D_2"       : 2,
-        "tully1D_3"       : 2,
-        "doubleState1D_1" : 2,
-        "doubleState1D_2" : 2,
-        "tripleState1D_1" : 3,
-        "tripleState1D_2" : 3,
-        "tripleState1D_3" : 3,
-        "tripleState1D_4" : 3,
-        "test1D_1"        : 2,
-        "test1D_2"        : 3
+        "tully1D_1"               : 2,
+        "tully1D_1_lorentz"       : 2,
+        "tripleState1D_4"         : 3,
+        "tripleState1D_4_lorentz" : 3
     }
 
     TDCLIM = {
-        "tully1D_1"       : [1117, 1717],
-        "tripleState1D_2" : [1117, 1717],
-        "tripleState1D_4" : [1117, 1717],
-        "test1D_1"        : [1117, 1717],
-        "test1D_2"        : [1117, 1717]
+        "tully1D_1"               : [1117, 1717],
+        "tully1D_1_lorentz"       : [1117, 1717],
+        "tripleState1D_4"         : [1117, 1717],
+        "tripleState1D_4_lorentz" : [1117, 1717]
     }
 
-    DS, TS = ["tully1D_1", "test1D_1"], ["tripleState1D_2", "test1D_2"]
+    DS, TS = ["tully1D_1", "tully1D_1_lorentz"], ["tripleState1D_4", "tripleState1D_4_lorentz"]
 
     for potential in DS + TS:
 
@@ -116,18 +101,18 @@ if SH_TESTING:
         fs_input["classical_dynamics"]["write"]["time_derivative_coupling_mean"] = f"TDC_{potential}_FSSH.mat"
         kt_input["classical_dynamics"]["write"]["time_derivative_coupling_mean"] = f"TDC_{potential}_KTSH.mat"
 
-        open(f"input.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"zig build run")
-        open(f"input.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"zig build run")
-        open(f"input.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"zig build run")
-        open(f"input.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"zig build run")
-        open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
-        open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
+        open(f"input_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_dp_{potential}.json")
+        open(f"input_ap_{potential}.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"acorn input_ap_{potential}.json")
+        open(f"input_qd_{potential}.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"acorn input_qd_{potential}.json")
+        open(f"input_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_fs_{potential}.json")
+        open(f"input_kt_{potential}.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_kt_{potential}.json")
+        open(f"input_lz_{potential}.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_lz_{potential}.json")
 
         fs_input["classical_dynamics"]["trajectories"] = 1; del fs_input["classical_dynamics"]["write"]["population_mean"]
         kt_input["classical_dynamics"]["trajectories"] = 1; del kt_input["classical_dynamics"]["write"]["population_mean"]
 
-        open(f"input.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"zig build run")
-        open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
+        open(f"input_fs_{potential}_onetraj.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_fs_{potential}_onetraj.json")
+        open(f"input_kt_{potential}_onetraj.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_kt_{potential}_onetraj.json")
 
     os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 TDC_{DS[0]}_FSSH.mat:1 TDC_{DS[0]}_KTSH.mat:1 POPULATION_{DS[0]}_EXACT.mat:0 POPULATION_{DS[0]}_FSSH.mat:0 POPULATION_{DS[0]}_KTSH.mat:0 POPULATION_{DS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 TDC_{DS[1]}_FSSH.mat:1 TDC_{DS[1]}_KTSH.mat:1 POPULATION_{DS[1]}_EXACT.mat:0 POPULATION_{DS[1]}_FSSH.mat:0 POPULATION_{DS[1]}_KTSH.mat:0 POPULATION_{DS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_DS.png')
     os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{TS[0]}.mat:0,4,8 TDC_{TS[0]}_FSSH.mat:1,2 TDC_{TS[0]}_KTSH.mat:1 POPULATION_{TS[0]}_EXACT.mat:0 POPULATION_{TS[0]}_FSSH.mat:0 POPULATION_{TS[0]}_KTSH.mat:0 POPULATION_{TS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{TS[1]}.mat:0,4,8 TDC_{TS[1]}_FSSH.mat:1,2 TDC_{TS[1]}_KTSH.mat:1 POPULATION_{TS[1]}_EXACT.mat:0 POPULATION_{TS[1]}_FSSH.mat:0 POPULATION_{TS[1]}_KTSH.mat:0 POPULATION_{TS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 231 232 232 232 233 233 233 233 234 234 234 235 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{1,2}}{esc}$ (HST)" "T{esc}$_{{0,2}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{0,2}}{esc}$=T{esc}$_{{1,2}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{1,2}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{0,2}}{esc}$=T{esc}$_{{1,2}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[TS[0]][0]} {TDCLIM[TS[0]][1]} nan nan nan nan {TDCLIM[TS[1]][0]} {TDCLIM[TS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_TS.png')
@@ -170,27 +155,27 @@ if URACIL_LVC:
     ap_input_12_10["model_potential"]["constant"][7]["value"] = -4
     ap_input_12_12["model_potential"]["constant"][7]["value"] = -4
 
-    open(f"input.json", "w").write(js.dumps(ap_input_8_10, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_8_12, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_8_18, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_8_20, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_8_21, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_8_24, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_8_25, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_8_26, indent=4)); os.system(f"zig build run")
+    open(f"input_ap_uracil8D_1_10.json", "w").write(js.dumps(ap_input_8_10, indent=4)); os.system(f"acorn input_ap_uracil8D_1_10.json")
+    open(f"input_ap_uracil8D_1_12.json", "w").write(js.dumps(ap_input_8_12, indent=4)); os.system(f"acorn input_ap_uracil8D_1_12.json")
+    open(f"input_ap_uracil8D_1_18.json", "w").write(js.dumps(ap_input_8_18, indent=4)); os.system(f"acorn input_ap_uracil8D_1_18.json")
+    open(f"input_ap_uracil8D_1_20.json", "w").write(js.dumps(ap_input_8_20, indent=4)); os.system(f"acorn input_ap_uracil8D_1_20.json")
+    open(f"input_ap_uracil8D_1_21.json", "w").write(js.dumps(ap_input_8_21, indent=4)); os.system(f"acorn input_ap_uracil8D_1_21.json")
+    open(f"input_ap_uracil8D_1_24.json", "w").write(js.dumps(ap_input_8_24, indent=4)); os.system(f"acorn input_ap_uracil8D_1_24.json")
+    open(f"input_ap_uracil8D_1_25.json", "w").write(js.dumps(ap_input_8_25, indent=4)); os.system(f"acorn input_ap_uracil8D_1_25.json")
+    open(f"input_ap_uracil8D_1_26.json", "w").write(js.dumps(ap_input_8_26, indent=4)); os.system(f"acorn input_ap_uracil8D_1_26.json")
 
-    open(f"input.json", "w").write(js.dumps(ap_input_12_3,  indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_7,  indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_10, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_11, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_12, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_18, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_19, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_20, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_21, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_24, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_25, indent=4)); os.system(f"zig build run")
-    open(f"input.json", "w").write(js.dumps(ap_input_12_26, indent=4)); os.system(f"zig build run")
+    open(f"input_ap_uracil12D_1_3.json",  "w").write(js.dumps(ap_input_12_3,  indent=4)); os.system(f"acorn input_ap_uracil12D_1_3.json" )
+    open(f"input_ap_uracil12D_1_7.json",  "w").write(js.dumps(ap_input_12_7,  indent=4)); os.system(f"acorn input_ap_uracil12D_1_7.json" )
+    open(f"input_ap_uracil12D_1_10.json", "w").write(js.dumps(ap_input_12_10, indent=4)); os.system(f"acorn input_ap_uracil12D_1_10.json")
+    open(f"input_ap_uracil12D_1_11.json", "w").write(js.dumps(ap_input_12_11, indent=4)); os.system(f"acorn input_ap_uracil12D_1_11.json")
+    open(f"input_ap_uracil12D_1_12.json", "w").write(js.dumps(ap_input_12_12, indent=4)); os.system(f"acorn input_ap_uracil12D_1_12.json")
+    open(f"input_ap_uracil12D_1_18.json", "w").write(js.dumps(ap_input_12_18, indent=4)); os.system(f"acorn input_ap_uracil12D_1_18.json")
+    open(f"input_ap_uracil12D_1_19.json", "w").write(js.dumps(ap_input_12_19, indent=4)); os.system(f"acorn input_ap_uracil12D_1_19.json")
+    open(f"input_ap_uracil12D_1_20.json", "w").write(js.dumps(ap_input_12_20, indent=4)); os.system(f"acorn input_ap_uracil12D_1_20.json")
+    open(f"input_ap_uracil12D_1_21.json", "w").write(js.dumps(ap_input_12_21, indent=4)); os.system(f"acorn input_ap_uracil12D_1_21.json")
+    open(f"input_ap_uracil12D_1_24.json", "w").write(js.dumps(ap_input_12_24, indent=4)); os.system(f"acorn input_ap_uracil12D_1_24.json")
+    open(f"input_ap_uracil12D_1_25.json", "w").write(js.dumps(ap_input_12_25, indent=4)); os.system(f"acorn input_ap_uracil12D_1_25.json")
+    open(f"input_ap_uracil12D_1_26.json", "w").write(js.dumps(ap_input_12_26, indent=4)); os.system(f"acorn input_ap_uracil12D_1_26.json")
 
     for i in [8]:
 
@@ -226,9 +211,9 @@ if URACIL_LVC:
         kt_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_uracil{i}D_1_KTSH.mat"
         lz_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_uracil{i}D_1_LZSH.mat"
 
-        open(f"input.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"zig build run")
-        open(f"input.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"zig build run")
-        open(f"input.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"zig build run")
+        open(f"input_fs_uracil8D_1.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_fs_uracil8D_1.json")
+        open(f"input_kt_uracil8D_1.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_kt_uracil8D_1.json")
+        open(f"input_lz_uracil8D_1.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_lz_uracil8D_1.json")
 
         np.savetxt("MAITRA_MCTDH_D0.mat", np.array([MAITRA_MCTDH_D0_X, MAITRA_MCTDH_D0_Y]).T, comments="", fmt="%20.14f", header=f"{len(MAITRA_MCTDH_D0_X)} 2")
 
@@ -242,5 +227,6 @@ if os.path.exists("research"): sh.rmtree("research")
 
 os.mkdir("research"); os.mkdir("research/source"); os.mkdir("research/output")
 
+for file in gl.glob("*.json"): sh.move(file, "research/source")
 for file in gl.glob("*.mat" ): sh.move(file, "research/source")
 for file in gl.glob("*.png" ): sh.move(file, "research/output")
