@@ -86,8 +86,8 @@ def fssh(i, substeps=10):
         # calculate the hopping mask
         hopmask = (np.random.rand(args.trajectories)[:, None] < p)
 
-        # perform the hop using the mask
-        if hopmask.any(): s[hopmask.any(axis=1), i:] = np.argmax(hopmask, axis=1)[hopmask.any(axis=1), None]
+        # perform the hop using the mask to the state that has maximum hopping probability
+        if hopmask.any(): s[hopmask.any(axis=1), i:] = np.argmax(p, axis=1)[hopmask.any(axis=1), None]
 
 # define the Landau-Zener Surface Hopping algorithm
 def lzsh(i):

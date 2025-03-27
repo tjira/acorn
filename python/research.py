@@ -2,13 +2,13 @@
 
 import copy as cp, glob as gl, shutil as sh, json as js, numpy as np, os; esc = "" if os.name == "nt" else "\\"
 
-SH_TESTING = 1; URACIL_LVC = 1
+KTSH_TESTING = 1; SH_COMPARE = 1; URACIL_LVC = 1
 
 TRAJS = 10000
 
-# GENERAL SURFACE HOPPING TESTING ON MODEL POTENTIALS ========================================================================================================================================
+# KTSH TESTING ON MODEL POTENTIALS ===========================================================================================================================================================
 
-if SH_TESTING:
+if KTSH_TESTING:
 
     IS = {
         "tully1D_1"               : [1, 1],
@@ -35,8 +35,8 @@ if SH_TESTING:
 
     for potential in DS + TS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"KTSH_TESTING_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"KTSH_TESTING_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -53,7 +53,7 @@ if SH_TESTING:
                 },
 
                 "write" : {
-                    "population" : f"POPULATION_{potential}_EXACT.mat"
+                    "population" : f"KTSH_TESTING_POPULATION_{potential}_EXACT.mat"
                 },
 
                 "adiabatic" : True,
@@ -94,28 +94,113 @@ if SH_TESTING:
 
         kt_input["classical_dynamics"]["time_derivative_coupling"] = "baeckan"
 
-        fs_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_{potential}_FSSH.mat"
-        kt_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_{potential}_KTSH.mat"
-        lz_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_{potential}_LZSH.mat"
+        fs_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_{potential}_FSSH.mat"
+        kt_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_{potential}_KTSH.mat"
+        lz_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_{potential}_LZSH.mat"
 
-        fs_input["classical_dynamics"]["write"]["time_derivative_coupling_mean"] = f"TDC_{potential}_FSSH.mat"
-        kt_input["classical_dynamics"]["write"]["time_derivative_coupling_mean"] = f"TDC_{potential}_KTSH.mat"
+        fs_input["classical_dynamics"]["write"]["time_derivative_coupling_mean"] = f"KTSH_TESTING_TDC_{potential}_FSSH.mat"
+        kt_input["classical_dynamics"]["write"]["time_derivative_coupling_mean"] = f"KTSH_TESTING_TDC_{potential}_KTSH.mat"
 
-        open(f"input_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_dp_{potential}.json")
-        open(f"input_ap_{potential}.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"acorn input_ap_{potential}.json")
-        open(f"input_qd_{potential}.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"acorn input_qd_{potential}.json")
-        open(f"input_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_fs_{potential}.json")
-        open(f"input_kt_{potential}.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_kt_{potential}.json")
-        open(f"input_lz_{potential}.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_lz_{potential}.json")
+        open(f"input_KTSH_TESTING_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_dp_{potential}.json")
+        open(f"input_KTSH_TESTING_ap_{potential}.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_ap_{potential}.json")
+        open(f"input_KTSH_TESTING_qd_{potential}.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_qd_{potential}.json")
+        open(f"input_KTSH_TESTING_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_fs_{potential}.json")
+        open(f"input_KTSH_TESTING_kt_{potential}.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_kt_{potential}.json")
+        open(f"input_KTSH_TESTING_lz_{potential}.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_lz_{potential}.json")
 
         fs_input["classical_dynamics"]["trajectories"] = 1; del fs_input["classical_dynamics"]["write"]["population_mean"]
         kt_input["classical_dynamics"]["trajectories"] = 1; del kt_input["classical_dynamics"]["write"]["population_mean"]
 
-        open(f"input_fs_{potential}_onetraj.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_fs_{potential}_onetraj.json")
-        open(f"input_kt_{potential}_onetraj.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_kt_{potential}_onetraj.json")
+        open(f"input_KTSH_TESTING_fs_{potential}_onetraj.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_fs_{potential}_onetraj.json")
+        open(f"input_KTSH_TESTING_kt_{potential}_onetraj.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_kt_{potential}_onetraj.json")
 
-    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 TDC_{DS[0]}_FSSH.mat:1 TDC_{DS[0]}_KTSH.mat:1 POPULATION_{DS[0]}_EXACT.mat:0 POPULATION_{DS[0]}_FSSH.mat:0 POPULATION_{DS[0]}_KTSH.mat:0 POPULATION_{DS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 TDC_{DS[1]}_FSSH.mat:1 TDC_{DS[1]}_KTSH.mat:1 POPULATION_{DS[1]}_EXACT.mat:0 POPULATION_{DS[1]}_FSSH.mat:0 POPULATION_{DS[1]}_KTSH.mat:0 POPULATION_{DS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_DS.png')
-    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_{TS[0]}.mat:0,4,8 TDC_{TS[0]}_FSSH.mat:1,2 TDC_{TS[0]}_KTSH.mat:1 POPULATION_{TS[0]}_EXACT.mat:0 POPULATION_{TS[0]}_FSSH.mat:0 POPULATION_{TS[0]}_KTSH.mat:0 POPULATION_{TS[0]}_LZSH.mat:0 POTENTIAL_ADIABATIC_{TS[1]}.mat:0,4,8 TDC_{TS[1]}_FSSH.mat:1,2 TDC_{TS[1]}_KTSH.mat:1 POPULATION_{TS[1]}_EXACT.mat:0 POPULATION_{TS[1]}_FSSH.mat:0 POPULATION_{TS[1]}_KTSH.mat:0 POPULATION_{TS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 231 232 232 232 233 233 233 233 234 234 234 235 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{1,2}}{esc}$ (HST)" "T{esc}$_{{0,2}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{0,2}}{esc}$=T{esc}$_{{1,2}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{1,2}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{0,2}}{esc}$=T{esc}$_{{1,2}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[TS[0]][0]} {TDCLIM[TS[0]][1]} nan nan nan nan {TDCLIM[TS[1]][0]} {TDCLIM[TS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_TS.png')
+    os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 KTSH_TESTING_TDC_{DS[0]}_FSSH.mat:1 KTSH_TESTING_TDC_{DS[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{DS[0]}_EXACT.mat:0 KTSH_TESTING_POPULATION_{DS[0]}_FSSH.mat:0 KTSH_TESTING_POPULATION_{DS[0]}_KTSH.mat:0 KTSH_TESTING_POPULATION_{DS[0]}_LZSH.mat:0 KTSH_TESTING_POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 KTSH_TESTING_TDC_{DS[1]}_FSSH.mat:1 KTSH_TESTING_TDC_{DS[1]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{DS[1]}_EXACT.mat:0 KTSH_TESTING_POPULATION_{DS[1]}_FSSH.mat:0 KTSH_TESTING_POPULATION_{DS[1]}_KTSH.mat:0 KTSH_TESTING_POPULATION_{DS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "T{esc}$_{{0,1}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_DS.png')
+    os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{TS[0]}.mat:0,4,8 KTSH_TESTING_TDC_{TS[0]}_FSSH.mat:1,2 KTSH_TESTING_TDC_{TS[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{TS[0]}_EXACT.mat:0 KTSH_TESTING_POPULATION_{TS[0]}_FSSH.mat:0 KTSH_TESTING_POPULATION_{TS[0]}_KTSH.mat:0 KTSH_TESTING_POPULATION_{TS[0]}_LZSH.mat:0 KTSH_TESTING_POTENTIAL_ADIABATIC_{TS[1]}.mat:0,4,8 KTSH_TESTING_TDC_{TS[1]}_FSSH.mat:1,2 KTSH_TESTING_TDC_{TS[1]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{TS[1]}_EXACT.mat:0 KTSH_TESTING_POPULATION_{TS[1]}_FSSH.mat:0 KTSH_TESTING_POPULATION_{TS[1]}_KTSH.mat:0 KTSH_TESTING_POPULATION_{TS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 231 232 232 232 233 233 233 233 234 234 234 235 235 235 236 236 236 236 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{1,2}}{esc}$ (HST)" "T{esc}$_{{0,2}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{0,2}}{esc}$=T{esc}$_{{1,2}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_2{esc}$" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{1,2}}{esc}$ (HST)" "T{esc}$_{{0,1}}{esc}$ (BA)" "T{esc}$_{{0,1}}{esc}$=T{esc}$_{{0,2}}{esc}$=T{esc}$_{{1,2}}{esc}$ (BA)" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "S{esc}$_0{esc}$ (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[TS[0]][0]} {TDCLIM[TS[0]][1]} nan nan nan nan {TDCLIM[TS[1]][0]} {TDCLIM[TS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_TS.png')
+
+# GENERAL SURFACE HOPPING TESTING ON MODEL POTENTIALS ========================================================================================================================================
+
+if SH_COMPARE:
+
+    IS = {
+        "doubleState1D_2" : [1, 1]
+    }
+
+    NS = {
+        "doubleState1D_2" : 2
+    }
+
+    POTENTIALS = ["doubleState1D_2"]
+
+    for potential in POTENTIALS:
+
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
+
+        qd_input = {
+            "quantum_dynamics" : {
+                "log_intervals" : {
+                    "iteration" : 50
+                },
+
+                "grid" : {
+                    "limits" : [-24, 48], "points" : 8192
+                },
+
+                "initial_conditions" : {
+                    "position" : [-10], "momentum" : [15], "gamma" : 2, "state" : IS[potential][0], "mass" : 2000
+                },
+
+                "write" : {
+                    "population" : f"SH_COMPARE_POPULATION_{potential}_EXACT.mat"
+                },
+
+                "adiabatic" : True,
+                "iterations" : 300,
+                "mode" : [0, 1],
+                "potential" : potential,
+                "time_step" : 10
+            }
+        }
+
+        cd_input = {
+            "classical_dynamics" : {
+                "log_intervals" : {
+                    "iteration" : 1000, "trajectory" : 1000
+                },
+
+                "initial_conditions" : {
+                    "position_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["position"], "position_std"  : [0.5],
+                    "momentum_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["momentum"], "momentum_std"  : [1.0],
+                    "state" : [int(i == IS[potential][1]) for i in range(NS[potential])],
+                    "mass" : [qd_input["quantum_dynamics"]["initial_conditions"]["mass"]]
+                },
+
+                "write" : {},
+
+                "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
+                "potential" : potential,
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
+                "trajectories" : TRAJS
+            }
+        }
+
+        fs_input = cp.deepcopy(cd_input); fs_input["classical_dynamics"]["fewest_switches"] = {}
+        lz_input = cp.deepcopy(cd_input); lz_input["classical_dynamics"]["landau_zener"]    = {}
+        ma_input = cp.deepcopy(cd_input); ma_input["classical_dynamics"]["spin_mapping"]    = {}
+
+        fs_input["classical_dynamics"]["write"]["population_mean"] = f"SH_COMPARE_POPULATION_{potential}_FSSH.mat"
+        lz_input["classical_dynamics"]["write"]["population_mean"] = f"SH_COMPARE_POPULATION_{potential}_LZSH.mat"
+        ma_input["classical_dynamics"]["write"]["population_mean"] = f"SH_COMPARE_POPULATION_{potential}_MASH.mat"
+
+        open(f"input_SH_COMPARE_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_SH_COMPARE_dp_{potential}.json")
+        open(f"input_SH_COMPARE_ap_{potential}.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"acorn input_SH_COMPARE_ap_{potential}.json")
+        open(f"input_SH_COMPARE_qd_{potential}.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"acorn input_SH_COMPARE_qd_{potential}.json")
+        open(f"input_SH_COMPARE_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_SH_COMPARE_fs_{potential}.json")
+        open(f"input_SH_COMPARE_lz_{potential}.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_SH_COMPARE_lz_{potential}.json")
+        open(f"input_SH_COMPARE_ma_{potential}.json", "w").write(js.dumps(ma_input, indent=4)); os.system(f"acorn input_SH_COMPARE_ma_{potential}.json")
+
+    os.system(f'python python/lines.py SH_COMPARE_POTENTIAL_ADIABATIC_{POTENTIALS[0]}.mat:0,3 SH_COMPARE_POPULATION_{POTENTIALS[0]}_EXACT.mat:0 SH_COMPARE_POPULATION_{POTENTIALS[0]}_FSSH.mat:0 SH_COMPARE_POPULATION_{POTENTIALS[0]}_LZSH.mat:0 SH_COMPARE_POPULATION_{POTENTIALS[0]}_MASH.mat:0 --dpi 256 --figsize 6 16 --subplots 121 121 122 122 122 122 --legend "S{esc}$_0{esc}$" "S{esc}$_1{esc}$" "S{esc}$_0{esc}$ (EXACT)" "S{esc}$_0{esc}$ (FSSH)" "S{esc}$_0{esc}$ (LZSH)" "S{esc}$_0{esc}$ (MASH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" --ylabel "Energy (a.u.)" "Ground State Population" --output SH_COMPARE.png')
 
 # DYNAMICS ON URACIL VC MODEL ================================================================================================================================================================
 
@@ -128,54 +213,54 @@ if URACIL_LVC:
         8  : np.array([734, 771, 1193, 1383, 1406, 1673, 1761, 1794]) / 8065.54429 / 27.211324570273
     }
 
-    ap_input_8_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 0]}}
-    ap_input_8_12 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 1]}}
-    ap_input_8_18 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 2]}}
-    ap_input_8_20 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 3]}}
-    ap_input_8_21 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 4]}}
-    ap_input_8_24 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 5]}}
-    ap_input_8_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 6]}}
-    ap_input_8_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 7]}}
+    ap_input_8_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 0]}}
+    ap_input_8_12 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 1]}}
+    ap_input_8_18 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 2]}}
+    ap_input_8_20 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 3]}}
+    ap_input_8_21 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 4]}}
+    ap_input_8_24 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 5]}}
+    ap_input_8_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 6]}}
+    ap_input_8_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 7]}}
 
-    ap_input_12_3  = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q3.mat",  "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  0]}}
-    ap_input_12_7  = {"model_potential" : {"adiabatic" : True, "limits" : [-3.0, 3.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q7.mat",  "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  1]}}
-    ap_input_12_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q10.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  2]}}
-    ap_input_12_11 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.0, 3.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q11.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  3]}}
-    ap_input_12_12 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q12.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  4]}}
-    ap_input_12_18 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q18.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  5]}}
-    ap_input_12_19 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q19.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  6]}}
-    ap_input_12_20 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q20.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  7]}}
-    ap_input_12_21 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q21.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  8]}}
-    ap_input_12_24 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q24.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  9]}}
-    ap_input_12_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 10]}}
-    ap_input_12_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 11]}}
+    ap_input_12_3  = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q3.mat",  "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  0]}}
+    ap_input_12_7  = {"model_potential" : {"adiabatic" : True, "limits" : [-3.0, 3.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q7.mat",  "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  1]}}
+    ap_input_12_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q10.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  2]}}
+    ap_input_12_11 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.0, 3.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q11.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  3]}}
+    ap_input_12_12 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q12.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  4]}}
+    ap_input_12_18 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q18.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  5]}}
+    ap_input_12_19 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q19.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  6]}}
+    ap_input_12_20 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q20.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  7]}}
+    ap_input_12_21 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q21.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  8]}}
+    ap_input_12_24 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q24.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  9]}}
+    ap_input_12_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 10]}}
+    ap_input_12_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 11]}}
 
     ap_input_8_10 ["model_potential"]["constant"][3]["value"] = -4
     ap_input_8_12 ["model_potential"]["constant"][3]["value"] = -4
     ap_input_12_10["model_potential"]["constant"][7]["value"] = -4
     ap_input_12_12["model_potential"]["constant"][7]["value"] = -4
 
-    open(f"input_ap_uracil8D_1_10.json", "w").write(js.dumps(ap_input_8_10, indent=4)); os.system(f"acorn input_ap_uracil8D_1_10.json")
-    open(f"input_ap_uracil8D_1_12.json", "w").write(js.dumps(ap_input_8_12, indent=4)); os.system(f"acorn input_ap_uracil8D_1_12.json")
-    open(f"input_ap_uracil8D_1_18.json", "w").write(js.dumps(ap_input_8_18, indent=4)); os.system(f"acorn input_ap_uracil8D_1_18.json")
-    open(f"input_ap_uracil8D_1_20.json", "w").write(js.dumps(ap_input_8_20, indent=4)); os.system(f"acorn input_ap_uracil8D_1_20.json")
-    open(f"input_ap_uracil8D_1_21.json", "w").write(js.dumps(ap_input_8_21, indent=4)); os.system(f"acorn input_ap_uracil8D_1_21.json")
-    open(f"input_ap_uracil8D_1_24.json", "w").write(js.dumps(ap_input_8_24, indent=4)); os.system(f"acorn input_ap_uracil8D_1_24.json")
-    open(f"input_ap_uracil8D_1_25.json", "w").write(js.dumps(ap_input_8_25, indent=4)); os.system(f"acorn input_ap_uracil8D_1_25.json")
-    open(f"input_ap_uracil8D_1_26.json", "w").write(js.dumps(ap_input_8_26, indent=4)); os.system(f"acorn input_ap_uracil8D_1_26.json")
+    open(f"input_URACIL_LVC_ap_uracil8D_1_10.json", "w").write(js.dumps(ap_input_8_10, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil8D_1_10.json")
+    open(f"input_URACIL_LVC_ap_uracil8D_1_12.json", "w").write(js.dumps(ap_input_8_12, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil8D_1_12.json")
+    open(f"input_URACIL_LVC_ap_uracil8D_1_18.json", "w").write(js.dumps(ap_input_8_18, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil8D_1_18.json")
+    open(f"input_URACIL_LVC_ap_uracil8D_1_20.json", "w").write(js.dumps(ap_input_8_20, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil8D_1_20.json")
+    open(f"input_URACIL_LVC_ap_uracil8D_1_21.json", "w").write(js.dumps(ap_input_8_21, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil8D_1_21.json")
+    open(f"input_URACIL_LVC_ap_uracil8D_1_24.json", "w").write(js.dumps(ap_input_8_24, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil8D_1_24.json")
+    open(f"input_URACIL_LVC_ap_uracil8D_1_25.json", "w").write(js.dumps(ap_input_8_25, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil8D_1_25.json")
+    open(f"input_URACIL_LVC_ap_uracil8D_1_26.json", "w").write(js.dumps(ap_input_8_26, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil8D_1_26.json")
 
-    open(f"input_ap_uracil12D_1_3.json",  "w").write(js.dumps(ap_input_12_3,  indent=4)); os.system(f"acorn input_ap_uracil12D_1_3.json" )
-    open(f"input_ap_uracil12D_1_7.json",  "w").write(js.dumps(ap_input_12_7,  indent=4)); os.system(f"acorn input_ap_uracil12D_1_7.json" )
-    open(f"input_ap_uracil12D_1_10.json", "w").write(js.dumps(ap_input_12_10, indent=4)); os.system(f"acorn input_ap_uracil12D_1_10.json")
-    open(f"input_ap_uracil12D_1_11.json", "w").write(js.dumps(ap_input_12_11, indent=4)); os.system(f"acorn input_ap_uracil12D_1_11.json")
-    open(f"input_ap_uracil12D_1_12.json", "w").write(js.dumps(ap_input_12_12, indent=4)); os.system(f"acorn input_ap_uracil12D_1_12.json")
-    open(f"input_ap_uracil12D_1_18.json", "w").write(js.dumps(ap_input_12_18, indent=4)); os.system(f"acorn input_ap_uracil12D_1_18.json")
-    open(f"input_ap_uracil12D_1_19.json", "w").write(js.dumps(ap_input_12_19, indent=4)); os.system(f"acorn input_ap_uracil12D_1_19.json")
-    open(f"input_ap_uracil12D_1_20.json", "w").write(js.dumps(ap_input_12_20, indent=4)); os.system(f"acorn input_ap_uracil12D_1_20.json")
-    open(f"input_ap_uracil12D_1_21.json", "w").write(js.dumps(ap_input_12_21, indent=4)); os.system(f"acorn input_ap_uracil12D_1_21.json")
-    open(f"input_ap_uracil12D_1_24.json", "w").write(js.dumps(ap_input_12_24, indent=4)); os.system(f"acorn input_ap_uracil12D_1_24.json")
-    open(f"input_ap_uracil12D_1_25.json", "w").write(js.dumps(ap_input_12_25, indent=4)); os.system(f"acorn input_ap_uracil12D_1_25.json")
-    open(f"input_ap_uracil12D_1_26.json", "w").write(js.dumps(ap_input_12_26, indent=4)); os.system(f"acorn input_ap_uracil12D_1_26.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_3.json",  "w").write(js.dumps(ap_input_12_3,  indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_3.json" )
+    open(f"input_URACIL_LVC_ap_uracil12D_1_7.json",  "w").write(js.dumps(ap_input_12_7,  indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_7.json" )
+    open(f"input_URACIL_LVC_ap_uracil12D_1_10.json", "w").write(js.dumps(ap_input_12_10, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_10.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_11.json", "w").write(js.dumps(ap_input_12_11, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_11.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_12.json", "w").write(js.dumps(ap_input_12_12, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_12.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_18.json", "w").write(js.dumps(ap_input_12_18, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_18.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_19.json", "w").write(js.dumps(ap_input_12_19, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_19.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_20.json", "w").write(js.dumps(ap_input_12_20, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_20.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_21.json", "w").write(js.dumps(ap_input_12_21, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_21.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_24.json", "w").write(js.dumps(ap_input_12_24, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_24.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_25.json", "w").write(js.dumps(ap_input_12_25, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_25.json")
+    open(f"input_URACIL_LVC_ap_uracil12D_1_26.json", "w").write(js.dumps(ap_input_12_26, indent=4)); os.system(f"acorn input_URACIL_LVC_ap_uracil12D_1_26.json")
 
     for i in [8]:
 
@@ -207,20 +292,20 @@ if URACIL_LVC:
 
         kt_input["classical_dynamics"]["time_derivative_coupling"] = "baeckan"
 
-        fs_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_uracil{i}D_1_FSSH.mat"
-        kt_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_uracil{i}D_1_KTSH.mat"
-        lz_input["classical_dynamics"]["write"]["population_mean"] = f"POPULATION_uracil{i}D_1_LZSH.mat"
+        fs_input["classical_dynamics"]["write"]["population_mean"] = f"URACIL_LVC_POPULATION_uracil{i}D_1_FSSH.mat"
+        kt_input["classical_dynamics"]["write"]["population_mean"] = f"URACIL_LVC_POPULATION_uracil{i}D_1_KTSH.mat"
+        lz_input["classical_dynamics"]["write"]["population_mean"] = f"URACIL_LVC_POPULATION_uracil{i}D_1_LZSH.mat"
 
-        open(f"input_fs_uracil8D_1.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_fs_uracil8D_1.json")
-        open(f"input_kt_uracil8D_1.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_kt_uracil8D_1.json")
-        open(f"input_lz_uracil8D_1.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_lz_uracil8D_1.json")
+        open(f"input_URACIL_LVC_fs_uracil8D_1.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_URACIL_LVC_fs_uracil8D_1.json")
+        open(f"input_URACIL_LVC_kt_uracil8D_1.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_URACIL_LVC_kt_uracil8D_1.json")
+        open(f"input_URACIL_LVC_lz_uracil8D_1.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_URACIL_LVC_lz_uracil8D_1.json")
 
-        np.savetxt("MAITRA_MCTDH_D0.mat", np.array([MAITRA_MCTDH_D0_X, MAITRA_MCTDH_D0_Y]).T, comments="", fmt="%20.14f", header=f"{len(MAITRA_MCTDH_D0_X)} 2")
+        np.savetxt("URACIL_LVC_MAITRA_MCTDH_D0.mat", np.array([MAITRA_MCTDH_D0_X, MAITRA_MCTDH_D0_Y]).T, comments="", fmt="%20.14f", header=f"{len(MAITRA_MCTDH_D0_X)} 2")
 
-        os.system(f'python python/lines.py MAITRA_MCTDH_D0.mat POPULATION_uracil{i}D_1_FSSH.mat:0 POPULATION_uracil{i}D_1_KTSH.mat:0 POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D{esc}$_0{esc}$ (MCTDH)" "D{esc}$_0{esc}$ (FSSH)" "D{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "D{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
+        os.system(f'python python/lines.py URACIL_LVC_MAITRA_MCTDH_D0.mat URACIL_LVC_POPULATION_uracil{i}D_1_FSSH.mat:0 URACIL_LVC_POPULATION_uracil{i}D_1_KTSH.mat:0 URACIL_LVC_POPULATION_uracil{i}D_1_LZSH.mat:0 --legend "D{esc}$_0{esc}$ (MCTDH)" "D{esc}$_0{esc}$ (FSSH)" "D{esc}$_0{esc}$ ({esc}$\kappa{esc}$TSH)" "D{esc}$_0{esc}$ (LZSH)" --xlabel "Time (a.u.)" --ylabel "Population" --output POPULATION_uracil{i}D_1.png')
 
-    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat:0,5,10 POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat:0,5,10 --figsize 6 8 --subplots 241 241 241 241 242 242 242 242 243 243 243 243 244 244 244 244 245 245 245 245 246 246 246 246 247 247 247 248 248 248 --xlabel "Q{esc}$_{{18}}{esc}$" "Q{esc}$_{{20}}{esc}$" "Q{esc}$_{{21}}{esc}$" "Q{esc}$_{{24}}{esc}$" "Q{esc}$_{{25}}{esc}$" "Q{esc}$_{{26}}{esc}$" "Q{esc}$_{{10}}{esc}$" "Q{esc}$_{{12}}{esc}$" --output POTENTIAL_ADIABATIC_uracilDimless8D_1.png')
-    os.system(f'python python/lines.py POTENTIAL_ADIABATIC_uracilDimless12D_1_Q3.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q7.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q11.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q18.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q19.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q20.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q21.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q24.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat:0,5,10,15 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q10.mat:0,5,10 POTENTIAL_ADIABATIC_uracilDimless12D_1_Q12.mat:0,5,10 --figsize 9 8 --subplots 341 341 341 341 342 342 342 342 343 343 343 343 344 344 344 344 345 345 345 345 346 346 346 346 347 347 347 347 348 348 348 348 349 349 349 349 3-4-10 3-4-10 3-4-10 3-4-10 3-4-11 3-4-11 3-4-11 3-4-12 3-4-12 3-4-12 --xlabel "Q{esc}$_{{3}}{esc}$" "Q{esc}$_{{7}}{esc}$" "Q{esc}$_{{11}}{esc}$" "Q{esc}$_{{18}}{esc}$" "Q{esc}$_{{19}}{esc}$" "Q{esc}$_{{20}}{esc}$" "Q{esc}$_{{21}}{esc}$" "Q{esc}$_{{24}}{esc}$" "Q{esc}$_{{25}}{esc}$" "Q{esc}$_{{26}}{esc}$" "Q{esc}$_{{10}}{esc}$" "Q{esc}$_{{12}}{esc}$" --output POTENTIAL_ADIABATIC_uracilDimless12D_1.png')
+    os.system(f'python python/lines.py URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat:0,5,10 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat:0,5,10 --figsize 6 8 --subplots 241 241 241 241 242 242 242 242 243 243 243 243 244 244 244 244 245 245 245 245 246 246 246 246 247 247 247 248 248 248 --xlabel "Q{esc}$_{{18}}{esc}$" "Q{esc}$_{{20}}{esc}$" "Q{esc}$_{{21}}{esc}$" "Q{esc}$_{{24}}{esc}$" "Q{esc}$_{{25}}{esc}$" "Q{esc}$_{{26}}{esc}$" "Q{esc}$_{{10}}{esc}$" "Q{esc}$_{{12}}{esc}$" --output POTENTIAL_ADIABATIC_uracilDimless8D_1.png')
+    os.system(f'python python/lines.py URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q3.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q7.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q11.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q18.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q19.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q20.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q21.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q24.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat:0,5,10,15 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q10.mat:0,5,10 URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q12.mat:0,5,10 --figsize 9 8 --subplots 341 341 341 341 342 342 342 342 343 343 343 343 344 344 344 344 345 345 345 345 346 346 346 346 347 347 347 347 348 348 348 348 349 349 349 349 3-4-10 3-4-10 3-4-10 3-4-10 3-4-11 3-4-11 3-4-11 3-4-12 3-4-12 3-4-12 --xlabel "Q{esc}$_{{3}}{esc}$" "Q{esc}$_{{7}}{esc}$" "Q{esc}$_{{11}}{esc}$" "Q{esc}$_{{18}}{esc}$" "Q{esc}$_{{19}}{esc}$" "Q{esc}$_{{20}}{esc}$" "Q{esc}$_{{21}}{esc}$" "Q{esc}$_{{24}}{esc}$" "Q{esc}$_{{25}}{esc}$" "Q{esc}$_{{26}}{esc}$" "Q{esc}$_{{10}}{esc}$" "Q{esc}$_{{12}}{esc}$" --output POTENTIAL_ADIABATIC_uracilDimless12D_1.png')
 # CLEANUP ====================================================================================================================================================================================
 
 if os.path.exists("research"): sh.rmtree("research")
