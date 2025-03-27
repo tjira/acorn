@@ -33,13 +33,21 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             trajectory: u32 = 1, iteration: u32 = 1
         };
         pub const Write = struct {
-            fssh_coefficient_mean:         ?[]const u8 = null,
+            coefficient:                   ?[]const u8 = null,
+            coefficient_mean:              ?[]const u8 = null,
+            kinetic_energy:                ?[]const u8 = null,
             kinetic_energy_mean:           ?[]const u8 = null,
+            momentum:                      ?[]const u8 = null,
             momentum_mean:                 ?[]const u8 = null,
+            population:                    ?[]const u8 = null,
             population_mean:               ?[]const u8 = null,
+            position:                      ?[]const u8 = null,
             position_mean:                 ?[]const u8 = null,
+            potential_energy:              ?[]const u8 = null,
             potential_energy_mean:         ?[]const u8 = null,
+            time_derivative_coupling:      ?[]const u8 = null,
             time_derivative_coupling_mean: ?[]const u8 = null,
+            total_energy:                  ?[]const u8 = null,
             total_energy_mean:             ?[]const u8 = null
         };
 

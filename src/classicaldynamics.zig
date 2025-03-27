@@ -37,14 +37,48 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
     var prng_bloc = std.Random.DefaultPrng.init(opt.seed); const rand_bloc = prng_bloc.random();
 
-    var coef     = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer     coef.deinit(); coef    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     ekin.deinit(); ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     epot.deinit(); epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var etot     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     etot.deinit(); etot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer momentum.deinit(); momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer      pop.deinit(); pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var position = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer position.deinit(); position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var tdc      = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer      tdc.deinit(); tdc     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var coef_mean     = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer     coef_mean.deinit(); coef_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var ekin_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     ekin_mean.deinit(); ekin_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var epot_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     epot_mean.deinit(); epot_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var etot_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     etot_mean.deinit(); etot_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var momentum_mean = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer momentum_mean.deinit(); momentum_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var pop_mean      = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer      pop_mean.deinit(); pop_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var position_mean = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer position_mean.deinit(); position_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var tdc_mean      = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer      tdc_mean.deinit(); tdc_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+
+    var coef:     Matrix(T) = undefined;
+    var ekin:     Matrix(T) = undefined;
+    var epot:     Matrix(T) = undefined;
+    var etot:     Matrix(T) = undefined;
+    var momentum: Matrix(T) = undefined;
+    var pop:      Matrix(T) = undefined;
+    var position: Matrix(T) = undefined;
+    var tdc:      Matrix(T) = undefined;
+
+    if (opt.write.coefficient != null) {
+        coef = try Matrix(T).init(opt.iterations + 1, 1 + nstate * opt.trajectories, allocator); coef.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
+    if (opt.write.kinetic_energy != null) {
+        ekin = try Matrix(T).init(opt.iterations + 1, 1 + opt.trajectories, allocator); ekin.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
+    if (opt.write.potential_energy != null) {
+        epot = try Matrix(T).init(opt.iterations + 1, 1 + opt.trajectories, allocator); epot.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
+    if (opt.write.total_energy != null) {
+        etot = try Matrix(T).init(opt.iterations + 1, 1 + opt.trajectories, allocator); etot.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
+    if (opt.write.momentum != null) {
+        momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim * opt.trajectories, allocator); momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
+    if (opt.write.population != null) {
+        pop = try Matrix(T).init(opt.iterations + 1, 1 + nstate * opt.trajectories, allocator); pop.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
+    if (opt.write.position != null) {
+        position = try Matrix(T).init(opt.iterations + 1, 1 + ndim * opt.trajectories, allocator); position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
+    if (opt.write.time_derivative_coupling != null) {
+        tdc = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate * opt.trajectories, allocator); tdc.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
 
     const fssh = opt.fewest_switches != null;
     const lzsh = opt.landau_zener    != null;
@@ -137,14 +171,23 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 if (mash and opt.spin_mapping.?.resample != null) try resampleBlochVector(T, opt.spin_mapping.?.resample.?, &S, &SI, v, vp, s, rand_bloc);
 
-                if (opt.write.population_mean               != null)  pop.ptr(j, 1 + s).* += 1                                                                  ;
-                if (opt.write.kinetic_energy_mean           != null) ekin.ptr(j, 1 + 0).* += Ekin                                                               ;
-                if (opt.write.potential_energy_mean         != null) epot.ptr(j, 1 + 0).* += Epot                                                               ;
-                if (opt.write.total_energy_mean             != null) etot.ptr(j, 1 + 0).* += Ekin + Epot                                                        ;
-                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position.ptr(j, 1 + k).* += r.at(k);}                                 ;
-                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum.ptr(j, 1 + k).* += v.at(k) * opt.initial_conditions.mass[k];};
-                if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k).* += TDC.data[k];}                     ;
-                if (opt.write.fssh_coefficient_mean         != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();}   ;
+                if (opt.write.coefficient_mean              != null) for (0..C.rows) |k| {coef_mean.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();}   ;
+                if (opt.write.kinetic_energy_mean           != null) ekin_mean.ptr(j, 1 + 0).* += Ekin                                                               ;
+                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum_mean.ptr(j, 1 + k).* += v.at(k) * opt.initial_conditions.mass[k];};
+                if (opt.write.population_mean               != null)  pop_mean.ptr(j, 1 + s).* += 1                                                                  ;
+                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position_mean.ptr(j, 1 + k).* += r.at(k);}                                 ;
+                if (opt.write.potential_energy_mean         != null) epot_mean.ptr(j, 1 + 0).* += Epot                                                               ;
+                if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc_mean.ptr(j, 1 + k).* += TDC.data[k];}                     ;
+                if (opt.write.total_energy_mean             != null) etot_mean.ptr(j, 1 + 0).* += Ekin + Epot                                                        ;
+
+                if (opt.write.coefficient              != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k + i * nstate).* = C.at(k).magnitude() * C.at(k).magnitude();} ;
+                if (opt.write.kinetic_energy           != null) ekin.ptr(j, 1 + i).* = Ekin                                                                          ;
+                if (opt.write.momentum                 != null) for (0..v.rows) |k| {momentum.ptr(j, 1 + k + i * ndim).* = v.at(k) * opt.initial_conditions.mass[k];};
+                if (opt.write.population               != null) pop.ptr(j, 1 + s + i * nstate).* = 1                                                                 ;
+                if (opt.write.position                 != null) for (0..r.rows) |k| {position.ptr(j, 1 + k + i * ndim).* = r.at(k);}                                 ;
+                if (opt.write.potential_energy         != null) epot.ptr(j, 1 + i).* = Epot                                                                          ;
+                if (opt.write.total_energy             != null) etot.ptr(j, 1 + i).* = Ekin + Epot                                                                   ;
+                if (opt.write.time_derivative_coupling != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k + i * nstate * nstate).* = TDC.data[k];}          ;
 
                 if (j == opt.iterations) assignOutput(T, &output, r, v, s, Ekin, Epot, opt.initial_conditions.mass);
 
@@ -155,14 +198,14 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         }
     }
 
-    for (0..opt.iterations + 1) |i| {for (1..pop.cols     ) |j|      pop.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..ekin.cols    ) |j|     ekin.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..epot.cols    ) |j|     epot.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..etot.cols    ) |j|     etot.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..position.cols) |j| position.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..momentum.cols) |j| momentum.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..tdc.cols     ) |j|      tdc.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..coef.cols    ) |j|     coef.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..pop_mean.cols     ) |j|      pop_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..ekin_mean.cols    ) |j|     ekin_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..epot_mean.cols    ) |j|     epot_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..etot_mean.cols    ) |j|     etot_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..position_mean.cols) |j| position_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..momentum_mean.cols) |j| momentum_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..tdc_mean.cols     ) |j|      tdc_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..coef_mean.cols    ) |j|     coef_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
 
     for (0..output.pop.rows) |i| output.pop.ptr(i).* /= asfloat(T, opt.trajectories);
     for (0..output.r.rows  ) |i|   output.r.ptr(i).* /= asfloat(T, opt.trajectories);
@@ -175,14 +218,31 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         if (print) try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.pop.at(i)});
     }
 
-    if (opt.write.kinetic_energy_mean          ) |path| try     ekin.write(path);
-    if (opt.write.population_mean              ) |path| try      pop.write(path);
-    if (opt.write.potential_energy_mean        ) |path| try     epot.write(path);
-    if (opt.write.total_energy_mean            ) |path| try     etot.write(path);
-    if (opt.write.position_mean                ) |path| try position.write(path);
-    if (opt.write.momentum_mean                ) |path| try momentum.write(path);
-    if (opt.write.time_derivative_coupling_mean) |path| try      tdc.write(path);
-    if (opt.write.fssh_coefficient_mean        ) |path| try     coef.write(path);
+    if (opt.write.coefficient                  ) |path| try          coef.write(path);
+    if (opt.write.coefficient_mean             ) |path| try     coef_mean.write(path);
+    if (opt.write.kinetic_energy               ) |path| try          ekin.write(path);
+    if (opt.write.kinetic_energy_mean          ) |path| try     ekin_mean.write(path);
+    if (opt.write.momentum                     ) |path| try      momentum.write(path);
+    if (opt.write.momentum_mean                ) |path| try momentum_mean.write(path);
+    if (opt.write.population                   ) |path| try           pop.write(path);
+    if (opt.write.population_mean              ) |path| try      pop_mean.write(path);
+    if (opt.write.position                     ) |path| try      position.write(path);
+    if (opt.write.position_mean                ) |path| try position_mean.write(path);
+    if (opt.write.potential_energy             ) |path| try          epot.write(path);
+    if (opt.write.potential_energy_mean        ) |path| try     epot_mean.write(path);
+    if (opt.write.time_derivative_coupling     ) |path| try           tdc.write(path);
+    if (opt.write.time_derivative_coupling_mean) |path| try      tdc_mean.write(path);
+    if (opt.write.total_energy                 ) |path| try          etot.write(path);
+    if (opt.write.total_energy_mean            ) |path| try     etot_mean.write(path);
+
+    if (opt.write.coefficient              != null)     coef.deinit();
+    if (opt.write.kinetic_energy           != null)     ekin.deinit();
+    if (opt.write.momentum                 != null) momentum.deinit();
+    if (opt.write.population               != null)      pop.deinit();
+    if (opt.write.position                 != null) position.deinit();
+    if (opt.write.potential_energy         != null)     epot.deinit();
+    if (opt.write.time_derivative_coupling != null)      tdc.deinit();
+    if (opt.write.total_energy             != null)     etot.deinit();
 
     return output;
 }

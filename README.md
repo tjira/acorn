@@ -43,14 +43,22 @@ Quantum Acorn, a collection of electronic structure methods compiled into a depe
 
 Below are all the important features of Acorn divided into categories.
 
-### Quantum Mechanical Methods
+### Time-Independent Quantum Mechanics
 
-* Numerically Exact Adiabatic & Nonadiabatic Quantum Dynamics with Arbitrary Number of States & Dimensions
-* Restricted Hartree–Fock Method, Møller–Plesset Perturbation Theory & Configuration Interaction Methods
+* Restricted Hartree–Fock Method with DIIS
+* Møller–Plesset Perturbation Theory
+* Full Configuration Interaction
+
+### Time-Dependent Quantum Mechanics
+
+* Quantum Dynamics with Arbitrary Number of States & Dimensions
+* Fewest Switches Surface Hopping Dynamics
+* Landau–Zener Surface Hopping Dynamics
+* Mapping Approach to Surface Hopping Dynamics
 
 ## Compilation
 
-Since the software is coded in zig, you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download). After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
+Since the software is coded in zig, you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download) or install it from your favourite package manager. After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
 
 ```bash
 zig build

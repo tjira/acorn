@@ -19,13 +19,21 @@
             "trajectory" : 100
         },
         "write" : {
-            "fssh_coefficient_mean" : "FSSH_COEFFICIENT_MEAN.mat",
-            "time_derivative_coupling_mean" : "TDC_MEAN.mat",
+            "coefficient" : "COEFFICIENT.mat",
+            "coefficient_mean" : "COEFFICIENT_MEAN.mat",
+            "kinetic_energy" : "KINETIC_ENERGY.mat",
             "kinetic_energy_mean" : "KINETIC_ENERGY_MEAN.mat",
+            "momentum" : "MOMENTUM.mat",
             "momentum_mean" : "MOMENTUM_MEAN.mat",
+            "population" : "POPULATION.mat",
             "population_mean" : "POPULATION_MEAN.mat",
+            "position" : "POSITION.mat",
             "position_mean" : "POSITION_MEAN.mat",
+            "potential_energy" : "POTENTIAL_ENERGY.mat",
             "potential_energy_mean" : "POTENTIAL_ENERGY_MEAN.mat",
+            "time_derivative_coupling" : "TDC.mat",
+            "time_derivative_coupling_mean" : "TDC_MEAN.mat",
+            "total_energy" : "TOTAL_ENERGY.mat",
             "total_energy_mean" : "TOTAL_ENERGY_MEAN.mat"
         },
         "potential" : "tully1D_1",
