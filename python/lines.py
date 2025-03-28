@@ -19,7 +19,6 @@ parser.add_argument("--colormap", type=str, default="tab10", help="The colormap 
 parser.add_argument("--dpi", type=int, default=96, help="The DPI of the plot.")
 parser.add_argument("--figsize", type=int, nargs=2, default=[6, 8], help="The dimensions of the plot in inches.")
 parser.add_argument("--fps", type=int, default=30, help="Frames per second for the animation.")
-parser.add_argument("--legend", type=str, nargs="+", help="Add a legend to the drawn lines.")
 parser.add_argument("--title", type=str, nargs="+", help="The title of each subplot.")
 parser.add_argument("--xlabel", type=str, nargs="+", help="The an x-axis labels for each subplot.")
 parser.add_argument("--xlim", type=float, nargs="+", help="The x-axis limits for each subplot.")
@@ -27,19 +26,23 @@ parser.add_argument("--ylabel", type=str, nargs="+", help="The an y-axis label f
 parser.add_argument("--ylim", type=float, nargs="+", help="The y-axis limits for each subplot.")
 
 # additional file arguments
+parser.add_argument("--alphas", nargs="+", help="Alpha values for the plotted lines.")
+parser.add_argument("--colors", nargs="+", help="Individual colors for the plotted lines.")
 parser.add_argument("--errors", nargs="+", help="Error bars for the plotted lines.")
+parser.add_argument("--legends", nargs="+", help="Labels of the plotted lines.")
+parser.add_argument("--markers", nargs="+", help="Markers for the plotted lines.")
 parser.add_argument("--offsets", nargs="+", help="Vertical offsets for the plotted lines.")
 parser.add_argument("--scales", nargs="+", help="Scales for the plotted lines.")
+parser.add_argument("--styles", nargs="+", help="Styles for the plotted lines.")
+parser.add_argument("--widths", nargs="+", help="Widths of the plotted lines.")
 parser.add_argument("--subplots", nargs="+", help="Divide the lines into subplots.", default=["111"])
 
 # add positional arguments and parse the arguments
 parser.add_argument("files", nargs="+", help="The data files to plot."); args = parser.parse_args()
 
-# function to load the data from the input string as well as the columns to plot
+# function to load the data from the input string as well as the columns to plot and also some helper functions
 def load(fname): tmp = fname.split(":"); data = np.loadtxt(tmp[0], ndmin=2, skiprows=1); return data, np.array(tmp[1].split(","), int) if len(tmp) == 2 and tmp[1] else np.arange(data.shape[1] - 1)
-
-# function to return the iterator for the data and columns
-dcit = lambda d, c: ((d_i, j) for i, (d_i, c_i) in enumerate(zip(d, c)) for j in c_i)
+dcit, indc, trng = lambda d, c: ((x, j) for x, y in zip(d, c) for j in y), lambda l, e: [i for i, sl in enumerate(l) if e in sl], lambda s: range((a := list(map(int, s.split("-"))))[0], a[-1] + 1)
 
 # load the data with plotted columns and get the total number of lines
 data, data_cols = zip(*[load(file) for file in args.files]); nline = sum(len(data_cols[i]) for i in range(len(data_cols)))
@@ -47,16 +50,22 @@ data, data_cols = zip(*[load(file) for file in args.files]); nline = sum(len(dat
 # load the error bars if provided
 data_errors, cols_errors = zip(*[load(file) for file in args.errors[1:]]) if args.errors else ((), ())
 
-# get the line indices for the error bars
-lind_errors  = (list(map(lambda x: int(x), args.errors [0].split(","))) if args.errors [0] != "all" else range(sum([len(col) for col in cols_errors]))) if args.errors  else []
-lind_offsets = (list(map(lambda x: int(x), args.offsets[0].split(","))) if args.offsets[0] != "all" else range(len(args.offsets) - 1                 )) if args.offsets else []
-lind_scales  = (list(map(lambda x: int(x), args.scales [0].split(","))) if args.scales [0] != "all" else range(len(args.scales ) - 1                 )) if args.scales  else []
+# get the line indices for the error bars, colors, offsets, scales, and alphas
+lind_errors  = (list(map(lambda x: int(x),  args.errors [0].split(","))) if args.errors [0] not in ["all", "every"] else np.arange(sum([len(col) for col in cols_errors]))        ) if args.errors  else []
+lind_colors  = (list(map(lambda x: trng(x), args.colors [0].split(","))) if args.colors [0] not in ["all", "every"] else np.arange(len(list(dcit(data, data_cols))))[np.newaxis].T) if args.colors  else []
+lind_offsets = (list(map(lambda x: trng(x), args.offsets[0].split(","))) if args.offsets[0] not in ["all", "every"] else np.arange(len(list(dcit(data, data_cols))))[np.newaxis].T) if args.offsets else []
+lind_scales  = (list(map(lambda x: trng(x), args.scales [0].split(","))) if args.scales [0] not in ["all", "every"] else np.arange(len(list(dcit(data, data_cols))))[np.newaxis].T) if args.scales  else []
+line_alphas  = (list(map(lambda x: trng(x), args.alphas [0].split(","))) if args.alphas [0] not in ["all", "every"] else np.arange(len(list(dcit(data, data_cols))))[np.newaxis].T) if args.alphas  else []
+line_legends = (list(map(lambda x: trng(x), args.legends[0].split(","))) if args.legends[0] not in ["all", "every"] else np.arange(len(list(dcit(data, data_cols))))[np.newaxis].T) if args.legends else []
+line_widths  = (list(map(lambda x: trng(x), args.widths [0].split(","))) if args.widths [0] not in ["all", "every"] else np.arange(len(list(dcit(data, data_cols))))[np.newaxis].T) if args.widths  else []
+line_styles  = (list(map(lambda x: trng(x), args.styles [0].split(","))) if args.styles [0] not in ["all", "every"] else np.arange(len(list(dcit(data, data_cols))))[np.newaxis].T) if args.styles  else []
+line_markers = (list(map(lambda x: trng(x), args.markers[0].split(","))) if args.markers[0] not in ["all", "every"] else np.arange(len(list(dcit(data, data_cols))))[np.newaxis].T) if args.markers else []
 
 # add the scales and offsets to the initial lines in the data
-for (frame, step) in ((frame, args.animate if args.animate else 0) for frame in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)):
-    for i, (data_i, j) in enumerate(dcit(data, data_cols)): data_i[:, j + frame * step + 1] *= float(args.scales [lind_scales .index(i) + 1]) if i in lind_scales  else 1
-for (frame, step) in ((frame, args.animate if args.animate else 0) for frame in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)):
-    for i, (data_i, j) in enumerate(dcit(data, data_cols)): data_i[:, j + frame * step + 1] += float(args.offsets[lind_offsets.index(i) + 1]) if i in lind_offsets else 0
+for (f, s) in ((frame, args.animate if args.animate else 0) for frame in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)):
+    for i, (data_i, j) in enumerate(dcit(data, data_cols)): data_i[:, j + f * s + 1] *= float(args.scales [indc(lind_scales,  i)[0] + 1 if args.scales[0]  != "all" else 1]) if indc(lind_scales,  i) else 1
+for (f, s) in ((frame, args.animate if args.animate else 0) for frame in range((data[0].shape[1] - 1) // args.animate if args.animate else 1)):
+    for i, (data_i, j) in enumerate(dcit(data, data_cols)): data_i[:, j + f * s + 1] += float(args.offsets[indc(lind_offsets, i)[0] + 1 if args.offsets[0] != "all" else 1]) if indc(lind_offsets, i) else 0
 
 # create the figure and the container for plots and error bars
 fig = plt.figure(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); axes, plots, ebars = {}, [], []
@@ -70,14 +79,19 @@ cmap = plt.get_cmap(args.colormap)(np.linspace(0.1, 0.9, nline) if (plt.get_cmap
 # loop over data and its columns to plot
 for i, (data_i, j) in enumerate(dcit(data, data_cols)):
 
-    # extract the label
-    label = args.legend[i] if args.legend and len(args.legend) > i else ""
+    # extract the color from the colormap
+    color = cmap[len([line for line in axes[args.subplots[len(plots) % len(args.subplots)]].get_lines() if not isinstance(line.get_color(), str)]) % len(cmap)]
 
-    # extract the color
-    color = cmap[len(axes[args.subplots[len(plots) % len(args.subplots)]].get_lines()) % len(cmap)]
+    # set the color and alpha if provided
+    alpha  = float(args.alphas [indc(line_alphas,  i)[0] + 1 if args.alphas [0] != "all" else 1]) if indc(line_alphas,  i) else 1
+    color  =   str(args.colors [indc(lind_colors,  i)[0] + 1 if args.colors [0] != "all" else 1]) if indc(lind_colors,  i) else color
+    legend =   str(args.legends[indc(line_legends, i)[0] + 1 if args.legends[0] != "all" else 1]) if indc(line_legends, i) else ""
+    marker =   str(args.markers[indc(line_markers, i)[0] + 1 if args.markers[0] != "all" else 1]) if indc(line_markers, i) else ""
+    style  =   str(args.styles [indc(line_styles,  i)[0] + 1 if args.styles [0] != "all" else 1]) if indc(line_styles,  i) else "-"
+    width  = float(args.widths [indc(line_widths,  i)[0] + 1 if args.widths [0] != "all" else 1]) if indc(line_widths,  i) else 1.8
 
     # plot the data and append the plot to the list
-    plots.append(axes[args.subplots[len(plots) % len(args.subplots)]].plot(data_i[:, 0], data_i[:, j + 1], color=color, label=label))
+    plots.append(axes[args.subplots[len(plots) % len(args.subplots)]].plot(data_i[:, 0], data_i[:, j + 1], alpha=alpha, color=color, label=legend, linestyle=style, linewidth=width, marker=marker))
 
 # loop over the error bars and their columns
 for (data_errors_i, j) in dcit(data_errors, cols_errors):

@@ -81,53 +81,114 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
 
     const file_matsort  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort" }), .{.mode=mode});
     const file_mersenne = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne"}), .{.mode=mode});
+    const file_prime    = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime"   }), .{.mode=mode});
 
-    const content_matsort =
+    const header =
         \\#!/usr/bin/bash
         \\
-        \\if [ "$#" -ne 1 ]; then
-        \\  echo "USAGE: matsort MATRIX"; exit 1
-        \\fi
-        \\
         \\clean() {{ rm -f input.json; }}; trap clean SIGINT
+    ;
+
+    const content_matsort =
+        \\usage() {{ cat <<EOF | sed 's/^[[:space:]]*//'
+        \\  Usage: $(basename "$0") [options]
+        \\
+        \\  Options:
+        \\    -m <count> Matrix to sort.
+        \\    -h         Display this help message and exit.
+        \\EOF
+        \\}}
+        \\
+        \\while getopts "m:h" OPT; do
+        \\  case "$OPT" in
+        \\    m ) MATRIX="$OPTARG" ;;
+        \\    h ) usage && exit 0 ;;
+        \\  esac
+        \\done
         \\
         \\echo '{{
         \\  "sort" : {{
-        \\    "input" : "'"$1"'",
+        \\    "input" : "'"$MATRIX"'",
         \\    "algorithm" : "bubble",
-        \\    "output" : "'"$1.sorted"'"
+        \\    "output" : "'"$MATRIX"'"
         \\  }}
         \\}}' > input.json
-        \\
-        \\acorn
-        \\
-        \\mv "$1.sorted" "$1" && clean
     ;
 
     const content_mersenne =
-        \\#!/usr/bin/bash
+        \\COUNT=10; OUTPUT="mersenne.mat"; START=1
         \\
-        \\if [ "$#" -ne 1 ]; then
-        \\  echo "USAGE: mersenne COUNT"; exit 1
-        \\fi
+        \\usage() {{ cat <<EOF | sed 's/^[[:space:]]*//'
+        \\  Usage: $(basename "$0") [options]
         \\
-        \\clean() {{ rm -f input.json; }}; trap clean SIGINT
+        \\  Options:
+        \\    -c <count>  Number of Mersenne primes to generate. (default: ${{COUNT}})
+        \\    -o <output> Output file. (default: ${{OUTPUT}})
+        \\    -s <start>  Starting number. (default: ${{START}})
+        \\    -h          Display this help message and exit.
+        \\EOF
+        \\}}
+        \\
+        \\while getopts "c:o:s:h" OPT; do
+        \\  case "$OPT" in
+        \\    c ) COUNT="$OPTARG" ;;
+        \\    o ) OUTPUT="$OPTARG" ;;
+        \\    s ) START="$OPTARG" ;;
+        \\    h ) usage && exit 0 ;;
+        \\  esac
+        \\done
         \\
         \\echo '{{
         \\  "prime" : {{
         \\    "mode" : "mersenne",
         \\    "generate" : {{
-        \\      "count" : '"$1"'
+        \\      "count" : '"$COUNT"',
+        \\      "output" : "'"$OUTPUT"'"
         \\    }},
-        \\    "number" : 1
+        \\    "number" : '"$START"'
         \\  }}
         \\}}' > input.json
-        \\
-        \\acorn
-        \\
-        \\clean
     ;
 
-    try file_matsort .writer().print(content_matsort,  .{}); file_matsort .close();
-    try file_mersenne.writer().print(content_mersenne, .{}); file_mersenne.close();
+    const content_prime =
+        \\COUNT=10; LOG_INTERVAL=1; OUTPUT="primes.mat"; START=1
+        \\
+        \\usage() {{ cat <<EOF | sed 's/^[[:space:]]*//'
+        \\   Usage: $(basename "$0") [options]
+        \\
+        \\   Options:
+        \\     -c <count>        Number of primes to generate. (default: ${{COUNT}})
+        \\     -l <log_interval> Log interval for output. (default: ${{LOG_INTERVAL}})
+        \\     -o <output>       Output file. (default: ${{OUTPUT}})
+        \\     -s <start>        Starting number. (default: ${{START}})
+        \\     -h                Display this help message and exit.
+        \\EOF
+        \\}}
+        \\
+        \\while getopts "c:l:o:s:h" OPT; do
+        \\  case "$OPT" in
+        \\    c ) COUNT="$OPTARG" ;;
+        \\    l ) LOG_INTERVAL="$OPTARG" ;;
+        \\    o ) OUTPUT="$OPTARG" ;;
+        \\    s ) START="$OPTARG" ;;
+        \\    h ) usage && exit 0 ;;
+        \\  esac
+        \\done
+        \\
+        \\echo '{{
+        \\  "prime" : {{
+        \\    "mode" : "basic",
+        \\    "generate" : {{
+        \\      "count" : '"$COUNT"',
+        \\      "log_interval" : '"$LOG_INTERVAL"',
+        \\      "output" : "'"$OUTPUT"'"
+        \\    }},
+        \\    "number" : '"$START"'
+        \\  }}
+        \\}}' > input.json
+    ;
+
+    try file_matsort .writer().print(header ++ "\n\n" ++ content_matsort  ++ "\n\nacorn && clean", .{}); file_matsort .close();
+    try file_mersenne.writer().print(header ++ "\n\n" ++ content_mersenne ++ "\n\nacorn && clean", .{}); file_mersenne.close();
+    try file_prime   .writer().print(header ++ "\n\n" ++ content_prime    ++ "\n\nacorn && clean", .{});    file_prime.close();
 }

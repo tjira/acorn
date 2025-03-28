@@ -120,11 +120,11 @@ pub fn MollerPlessetOptions(comptime T: type) type {
     };
 }
 
-/// The prime generation ang checking options
+/// The prime generation and checking options
 pub fn PrimeOptions(comptime T: type) type {
     return struct {
         pub const Generate = struct {
-            count: u32, log_interval: u32 = 1
+            count: u32, log_interval: u32 = 1, output: ?[]const u8 = null
         };
 
         mode: []const u8,

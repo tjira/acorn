@@ -189,7 +189,7 @@ This example demonstrates the real-time quantum dynamics of a first Tully potent
 This simulation is fast and should complete approximately in a second. You can visualize the wavefunction and state population with the commands below. The wavefunctions on each states are vertically separated for better visualization.
 
 ```bash
-lines.py WAVEFUNCTION.mat:0,1,2,3 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re(\$\Psi_1\$)" "Im(\$\Psi_1\$)" --offsets all -1 -1 1 1 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 4
+lines.py WAVEFUNCTION.mat:0,1,2,3 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re(\$\Psi_1\$)" "Im(\$\Psi_1\$)" --offsets every -1 -1 1 1 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 4
 ```
 
 ```bash

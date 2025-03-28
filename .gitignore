@@ -7,6 +7,7 @@
 /*.out*
 /*.pdf*
 /*.png*
+/*.txt*
 /*.xyz*
 
 docs/**/*.lo*
