@@ -112,11 +112,11 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\    "algorithm" : "bubble",
         \\    "output" : "'"$MATRIX"'"
         \\  }}
-        \\}}' > input.json
+        \\}}' > .input.json
     ;
 
     const content_mersenne =
-        \\COUNT=10; OUTPUT="mersenne.mat"; START=1
+        \\COUNT=10; OUTPUT=null; START=1
         \\
         \\usage() {{ cat <<EOF | sed 's/^[[:space:]]*//'
         \\  Usage: $(basename "$0") [options]
@@ -138,20 +138,22 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\  esac
         \\done
         \\
+        \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
+        \\
         \\echo '{{
         \\  "prime" : {{
         \\    "mode" : "mersenne",
         \\    "generate" : {{
         \\      "count" : '"$COUNT"',
-        \\      "output" : "'"$OUTPUT"'"
+        \\      "output" : '"$OUTPUT"'
         \\    }},
         \\    "number" : '"$START"'
         \\  }}
-        \\}}' > input.json
+        \\}}' > .input.json
     ;
 
     const content_prime =
-        \\COUNT=10; LOG_INTERVAL=1; OUTPUT="primes.mat"; START=1
+        \\COUNT=10; LOG_INTERVAL=1; OUTPUT=null; START=1
         \\
         \\usage() {{ cat <<EOF | sed 's/^[[:space:]]*//'
         \\   Usage: $(basename "$0") [options]
@@ -175,20 +177,22 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\  esac
         \\done
         \\
+        \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
+        \\
         \\echo '{{
         \\  "prime" : {{
         \\    "mode" : "basic",
         \\    "generate" : {{
         \\      "count" : '"$COUNT"',
         \\      "log_interval" : '"$LOG_INTERVAL"',
-        \\      "output" : "'"$OUTPUT"'"
+        \\      "output" : '"$OUTPUT"'
         \\    }},
         \\    "number" : '"$START"'
         \\  }}
-        \\}}' > input.json
+        \\}}' > .input.json
     ;
 
-    try file_matsort .writer().print(header ++ "\n\n" ++ content_matsort  ++ "\n\nacorn && clean", .{}); file_matsort .close();
-    try file_mersenne.writer().print(header ++ "\n\n" ++ content_mersenne ++ "\n\nacorn && clean", .{}); file_mersenne.close();
-    try file_prime   .writer().print(header ++ "\n\n" ++ content_prime    ++ "\n\nacorn && clean", .{});    file_prime.close();
+    try file_matsort .writer().print(header ++ "\n\n" ++ content_matsort  ++ "\n\nacorn .input.json && clean", .{}); file_matsort .close();
+    try file_mersenne.writer().print(header ++ "\n\n" ++ content_mersenne ++ "\n\nacorn .input.json && clean", .{}); file_mersenne.close();
+    try file_prime   .writer().print(header ++ "\n\n" ++ content_prime    ++ "\n\nacorn .input.json && clean", .{});    file_prime.close();
 }
