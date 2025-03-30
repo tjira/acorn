@@ -70,6 +70,10 @@ pub fn script(self: *std.Build.Step, progress: std.Progress.Node) !void {
     for (targets) |target| if (target.os_tag == .linux) {
         try linuxScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
     };
+
+    for (targets) |target| if (target.os_tag == .windows) {
+        try windowsScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
+    };
 }
 
 pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
@@ -86,16 +90,16 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     const header =
         \\#!/usr/bin/bash
         \\
-        \\clean() {{ rm -f input.json; }}; trap clean SIGINT
+        \\clean() {{ rm -f .input.json; }}; trap clean SIGINT
     ;
 
     const content_matsort =
-        \\usage() {{ cat <<EOF | sed 's/^[[:space:]]*//'
-        \\  Usage: $(basename "$0") [options]
+        \\usage() {{ cat <<EOF
+        \\Usage: matsort [options]
         \\
-        \\  Options:
-        \\    -m <count> Matrix to sort.
-        \\    -h         Display this help message and exit.
+        \\Options:
+        \\  -m <count> Matrix to sort.
+        \\  -h         Display this help message and exit.
         \\EOF
         \\}}
         \\
@@ -118,14 +122,15 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     const content_mersenne =
         \\COUNT=10; OUTPUT=null; START=1
         \\
-        \\usage() {{ cat <<EOF | sed 's/^[[:space:]]*//'
-        \\  Usage: $(basename "$0") [options]
+        \\usage() {{
+        \\  cat <<EOF
+        \\Usage: mersenne [options]
         \\
-        \\  Options:
-        \\    -c <count>  Number of Mersenne primes to generate. (default: ${{COUNT}})
-        \\    -o <output> Output file. (default: ${{OUTPUT}})
-        \\    -s <start>  Starting number. (default: ${{START}})
-        \\    -h          Display this help message and exit.
+        \\Options:
+        \\  -c <count>  Number of Mersenne primes to generate. (default: ${{COUNT}})
+        \\  -o <output> Output file. (default: ${{OUTPUT}})
+        \\  -s <start>  Starting number. (default: ${{START}})
+        \\  -h          Display this help message and exit.
         \\EOF
         \\}}
         \\
@@ -155,15 +160,16 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     const content_prime =
         \\COUNT=10; LOG_INTERVAL=1; OUTPUT=null; START=1
         \\
-        \\usage() {{ cat <<EOF | sed 's/^[[:space:]]*//'
-        \\   Usage: $(basename "$0") [options]
+        \\usage() {{
+        \\  cat <<EOF
+        \\Usage: mersenne [options]
         \\
-        \\   Options:
-        \\     -c <count>        Number of primes to generate. (default: ${{COUNT}})
-        \\     -l <log_interval> Log interval for output. (default: ${{LOG_INTERVAL}})
-        \\     -o <output>       Output file. (default: ${{OUTPUT}})
-        \\     -s <start>        Starting number. (default: ${{START}})
-        \\     -h                Display this help message and exit.
+        \\Options:
+        \\  -c <count>        Number of primes to generate. (default: ${{COUNT}})
+        \\  -l <log_interval> Log interval for output. (default: ${{LOG_INTERVAL}})
+        \\  -o <output>       Output file. (default: ${{OUTPUT}})
+        \\  -s <start>        Starting number. (default: ${{START}})
+        \\  -h                Display this help message and exit.
         \\EOF
         \\}}
         \\
@@ -195,4 +201,160 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     try file_matsort .writer().print(header ++ "\n\n" ++ content_matsort  ++ "\n\nacorn .input.json && clean", .{}); file_matsort .close();
     try file_mersenne.writer().print(header ++ "\n\n" ++ content_mersenne ++ "\n\nacorn .input.json && clean", .{}); file_mersenne.close();
     try file_prime   .writer().print(header ++ "\n\n" ++ content_prime    ++ "\n\nacorn .input.json && clean", .{});    file_prime.close();
+}
+
+pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
+    const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", target, "/"});
+
+    const mode = switch (builtin.os.tag) {
+        .wasi => 0, .windows => 0, else => 0o755
+    };
+
+    const file_matsort  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort.ps1" }), .{.mode=mode});
+    const file_mersenne = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne.ps1"}), .{.mode=mode});
+    const file_prime    = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime.ps1"   }), .{.mode=mode});
+
+    const content_matsort =
+        \\$IDX = 0
+        \\
+        \\function Show-Usage {{
+        \\  $USAGE = @"
+        \\Usage: matsort [options]
+        \\
+        \\Options:
+        \\  -m <start> Matrix to sort.
+        \\  -h         Display this help message and exit.
+        \\"@
+        \\  Write-Output $USAGE.Trim()
+        \\}}
+        \\
+        \\while ($IDX -lt $args.Count) {{
+        \\  switch ($args[$IDX]) {{
+        \\    '-m' {{ $IDX++; if ($IDX -lt $args.Count) {{ $MATRIX = $args[$IDX] }} }}
+        \\    '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
+        \\  }}
+        \\  $IDX++
+        \\}}
+        \\
+        \\if ($MATRIX -ne "null") {{ $MATRIX = '"' + $MATRIX + '"' }}
+        \\
+        \\$CONTENT = "{{`n" +
+        \\"  `"sort`" : {{`n" +
+        \\"    `"input`" : $MATRIX,`n" +
+        \\"    `"algorithm`" : `"bubble`",`n" +
+        \\"    `"output`" : $MATRIX`n" +
+        \\"  }}`n" +
+        \\"}}"
+        \\
+        \\[System.IO.File]::WriteAllText(".input.json", $CONTENT, [System.Text.UTF8Encoding]::new($false))
+        \\
+        \\& acorn .input.json
+        \\
+        \\if ($LASTEXITCODE -eq 0) {{
+        \\  Remove-Item -Force input.json -ErrorAction SilentlyContinue
+        \\}}
+    ;
+
+    const content_mersenne =
+        \\$COUNT = 10; $OUTPUT = "null"; $START = 1; $IDX = 0
+        \\
+        \\function Show-Usage {{
+        \\  $USAGE = @"
+        \\Usage: mersenne [options]
+        \\
+        \\Options:
+        \\  -c <count>  Number of Mersenne primes to generate. (default: $COUNT)
+        \\  -o <output> Output file. (default: $OUTPUT)
+        \\  -s <start>  Starting number. (default: $START)
+        \\  -h          Display this help message and exit.
+        \\"@
+        \\  Write-Output $USAGE.Trim()
+        \\}}
+        \\
+        \\while ($IDX -lt $args.Count) {{
+        \\  switch ($args[$IDX]) {{
+        \\    '-c' {{ $IDX++; if ($IDX -lt $args.Count) {{ $COUNT = $args[$IDX] }} }}
+        \\    '-o' {{ $IDX++; if ($IDX -lt $args.Count) {{ $OUTPUT = $args[$IDX] }} }}
+        \\    '-s' {{ $IDX++; if ($IDX -lt $args.Count) {{ $START = $args[$IDX] }} }}
+        \\    '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
+        \\  }}
+        \\  $IDX++
+        \\}}
+        \\
+        \\if ($OUTPUT -ne "null") {{ $OUTPUT = '"' + $OUTPUT + '"' }}
+        \\
+        \\$CONTENT = "{{`n" +
+        \\"  `"prime`" : {{`n" +
+        \\"    `"mode`" : `"mersenne`",`n" +
+        \\"    `"generate`" : {{`n" +
+        \\"      `"count`" : $COUNT,`n" +
+        \\"      `"output`" : $OUTPUT`n" +
+        \\"    }},`n" +
+        \\"    `"number`" : $START`n" +
+        \\"  }}`n" +
+        \\"}}"
+        \\
+        \\[System.IO.File]::WriteAllText(".input.json", $CONTENT, [System.Text.UTF8Encoding]::new($false))
+        \\
+        \\& acorn .input.json
+        \\
+        \\if ($LASTEXITCODE -eq 0) {{
+        \\  Remove-Item -Force input.json -ErrorAction SilentlyContinue
+        \\}}
+    ;
+
+    const content_prime =
+        \\$COUNT = 10; $LOG_INTERVAL = 1; $OUTPUT = "null"; $START = 1; $IDX = 0
+        \\
+        \\function Show-Usage {{
+        \\  $USAGE = @"
+        \\Usage: prime [options]
+        \\
+        \\Options:
+        \\  -c <count>        Number of primes to generate. (default: $COUNT)
+        \\  -l <log_interval> Log interval for output. (default: $LOG_INTERVAL)
+        \\  -o <output>       Output file. (default: $OUTPUT)
+        \\  -s <start>        Starting number. (default: $START)
+        \\  -h                Display this help message and exit.
+        \\"@
+        \\  Write-Output $USAGE.Trim()
+        \\}}
+        \\
+        \\while ($IDX -lt $args.Count) {{
+        \\  switch ($args[$IDX]) {{
+        \\    '-c' {{ $IDX++; if ($IDX -lt $args.Count) {{ $COUNT = $args[$IDX] }} }}
+        \\    '-l' {{ $IDX++; if ($IDX -lt $args.Count) {{ $LOG_INTERVAL = $args[$IDX] }} }}
+        \\    '-o' {{ $IDX++; if ($IDX -lt $args.Count) {{ $OUTPUT = $args[$IDX] }} }}
+        \\    '-s' {{ $IDX++; if ($IDX -lt $args.Count) {{ $START = $args[$IDX] }} }}
+        \\    '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
+        \\  }}
+        \\  $IDX++
+        \\}}
+        \\
+        \\if ($OUTPUT -ne "null") {{ $OUTPUT = '"' + $OUTPUT + '"' }}
+        \\
+        \\$CONTENT = "{{`n" +
+        \\"  `"prime`" : {{`n" +
+        \\"    `"mode`" : `"basic`",`n" +
+        \\"    `"generate`" : {{`n" +
+        \\"      `"count`" : $COUNT,`n" +
+        \\"      `"log_interval`" : $LOG_INTERVAL,`n" +
+        \\"      `"output`" : $OUTPUT`n" +
+        \\"    }},`n" +
+        \\"    `"number`" : $START`n" +
+        \\"  }}`n" +
+        \\"}}"
+        \\
+        \\[System.IO.File]::WriteAllText(".input.json", $CONTENT, [System.Text.UTF8Encoding]::new($false))
+        \\
+        \\& acorn .input.json
+        \\
+        \\if ($LASTEXITCODE -eq 0) {{
+        \\  Remove-Item -Force input.json -ErrorAction SilentlyContinue
+        \\}}
+    ;
+
+    try file_matsort .writer().print(content_matsort,  .{}); file_matsort .close();
+    try file_mersenne.writer().print(content_mersenne, .{}); file_mersenne.close();
+    try file_prime   .writer().print(content_prime,    .{});    file_prime.close();
 }
