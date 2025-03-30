@@ -105,8 +105,9 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\
         \\while getopts "m:h" OPT; do
         \\  case "$OPT" in
-        \\    m ) MATRIX="$OPTARG" ;;
-        \\    h ) usage && exit 0 ;;
+        \\     m ) MATRIX="$OPTARG" ;;
+        \\     h ) usage && exit 0 ;;
+        \\    \? ) usage && exit 1 ;;
         \\  esac
         \\done
         \\
@@ -136,10 +137,11 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\
         \\while getopts "c:o:s:h" OPT; do
         \\  case "$OPT" in
-        \\    c ) COUNT="$OPTARG" ;;
-        \\    o ) OUTPUT="$OPTARG" ;;
-        \\    s ) START="$OPTARG" ;;
-        \\    h ) usage && exit 0 ;;
+        \\     c ) COUNT="$OPTARG" ;;
+        \\     o ) OUTPUT="$OPTARG" ;;
+        \\     s ) START="$OPTARG" ;;
+        \\     h ) usage && exit 0 ;;
+        \\    \? ) usage && exit 1 ;;
         \\  esac
         \\done
         \\
@@ -175,11 +177,12 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\
         \\while getopts "c:l:o:s:h" OPT; do
         \\  case "$OPT" in
-        \\    c ) COUNT="$OPTARG" ;;
-        \\    l ) LOG_INTERVAL="$OPTARG" ;;
-        \\    o ) OUTPUT="$OPTARG" ;;
-        \\    s ) START="$OPTARG" ;;
-        \\    h ) usage && exit 0 ;;
+        \\     c ) COUNT="$OPTARG" ;;
+        \\     l ) LOG_INTERVAL="$OPTARG" ;;
+        \\     o ) OUTPUT="$OPTARG" ;;
+        \\     s ) START="$OPTARG" ;;
+        \\     h ) usage && exit 0 ;;
+        \\    \? ) usage && exit 1 ;;
         \\  esac
         \\done
         \\
