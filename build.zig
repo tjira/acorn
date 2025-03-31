@@ -217,27 +217,38 @@ pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     const file_mersenne = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne.ps1"}), .{.mode=mode});
     const file_prime    = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime.ps1"   }), .{.mode=mode});
 
-    const content_matsort =
+    const header =
         \\$IDX = 0
         \\
         \\function Show-Usage {{
+        \\  $NAME = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
         \\  $USAGE = @"
-        \\Usage: matsort [options]
+        \\Usage: $NAME [options]
         \\
         \\Options:
+    ;
+
+    const footer =
+        \\[System.IO.File]::WriteAllText(".input.json", $CONTENT, [System.Text.UTF8Encoding]::new($false))
+        \\
+        \\& acorn .input.json
+        \\
+        \\if ($LASTEXITCODE -eq 0) {{
+        \\  Remove-Item -Force input.json -ErrorAction SilentlyContinue
+        \\}}
+    ;
+
+    const content_matsort =
         \\  -m <start> Matrix to sort.
         \\  -h         Display this help message and exit.
         \\"@
         \\  Write-Output $USAGE.Trim()
         \\}}
         \\
-        \\while ($IDX -lt $args.Count) {{
-        \\  switch ($args[$IDX]) {{
-        \\    '-m' {{ $IDX++; if ($IDX -lt $args.Count) {{ $MATRIX = $args[$IDX] }} }}
-        \\    '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
-        \\  }}
-        \\  $IDX++
-        \\}}
+        \\while ($IDX -lt $args.Count) {{ switch ($args[$IDX]) {{
+        \\  '-m' {{ $IDX++; if ($IDX -lt $args.Count) {{ $MATRIX = $args[$IDX] }} }}
+        \\  '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
+        \\}} $IDX++ }}
         \\
         \\if ($MATRIX -ne "null") {{ $MATRIX = '"' + $MATRIX + '"' }}
         \\
@@ -248,24 +259,9 @@ pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\"    `"output`" : $MATRIX`n" +
         \\"  }}`n" +
         \\"}}"
-        \\
-        \\[System.IO.File]::WriteAllText(".input.json", $CONTENT, [System.Text.UTF8Encoding]::new($false))
-        \\
-        \\& acorn .input.json
-        \\
-        \\if ($LASTEXITCODE -eq 0) {{
-        \\  Remove-Item -Force input.json -ErrorAction SilentlyContinue
-        \\}}
     ;
 
     const content_mersenne =
-        \\$COUNT = 10; $OUTPUT = "null"; $START = 1; $IDX = 0
-        \\
-        \\function Show-Usage {{
-        \\  $USAGE = @"
-        \\Usage: mersenne [options]
-        \\
-        \\Options:
         \\  -c <count>  Number of Mersenne primes to generate. (default: $COUNT)
         \\  -o <output> Output file. (default: $OUTPUT)
         \\  -s <start>  Starting number. (default: $START)
@@ -274,15 +270,14 @@ pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\  Write-Output $USAGE.Trim()
         \\}}
         \\
-        \\while ($IDX -lt $args.Count) {{
-        \\  switch ($args[$IDX]) {{
-        \\    '-c' {{ $IDX++; if ($IDX -lt $args.Count) {{ $COUNT = $args[$IDX] }} }}
-        \\    '-o' {{ $IDX++; if ($IDX -lt $args.Count) {{ $OUTPUT = $args[$IDX] }} }}
-        \\    '-s' {{ $IDX++; if ($IDX -lt $args.Count) {{ $START = $args[$IDX] }} }}
-        \\    '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
-        \\  }}
-        \\  $IDX++
-        \\}}
+        \\$COUNT = 10; $OUTPUT = "null"; $START = 1
+        \\
+        \\while ($IDX -lt $args.Count) {{ switch ($args[$IDX]) {{
+        \\  '-c' {{ $IDX++; if ($IDX -lt $args.Count) {{ $COUNT = $args[$IDX] }} }}
+        \\  '-o' {{ $IDX++; if ($IDX -lt $args.Count) {{ $OUTPUT = $args[$IDX] }} }}
+        \\  '-s' {{ $IDX++; if ($IDX -lt $args.Count) {{ $START = $args[$IDX] }} }}
+        \\  '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
+        \\}} $IDX++ }}
         \\
         \\if ($OUTPUT -ne "null") {{ $OUTPUT = '"' + $OUTPUT + '"' }}
         \\
@@ -296,24 +291,9 @@ pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\"    `"number`" : $START`n" +
         \\"  }}`n" +
         \\"}}"
-        \\
-        \\[System.IO.File]::WriteAllText(".input.json", $CONTENT, [System.Text.UTF8Encoding]::new($false))
-        \\
-        \\& acorn .input.json
-        \\
-        \\if ($LASTEXITCODE -eq 0) {{
-        \\  Remove-Item -Force input.json -ErrorAction SilentlyContinue
-        \\}}
     ;
 
     const content_prime =
-        \\$COUNT = 10; $LOG_INTERVAL = 1; $OUTPUT = "null"; $START = 1; $IDX = 0
-        \\
-        \\function Show-Usage {{
-        \\  $USAGE = @"
-        \\Usage: prime [options]
-        \\
-        \\Options:
         \\  -c <count>        Number of primes to generate. (default: $COUNT)
         \\  -l <log_interval> Log interval for output. (default: $LOG_INTERVAL)
         \\  -o <output>       Output file. (default: $OUTPUT)
@@ -323,16 +303,15 @@ pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\  Write-Output $USAGE.Trim()
         \\}}
         \\
-        \\while ($IDX -lt $args.Count) {{
-        \\  switch ($args[$IDX]) {{
-        \\    '-c' {{ $IDX++; if ($IDX -lt $args.Count) {{ $COUNT = $args[$IDX] }} }}
-        \\    '-l' {{ $IDX++; if ($IDX -lt $args.Count) {{ $LOG_INTERVAL = $args[$IDX] }} }}
-        \\    '-o' {{ $IDX++; if ($IDX -lt $args.Count) {{ $OUTPUT = $args[$IDX] }} }}
-        \\    '-s' {{ $IDX++; if ($IDX -lt $args.Count) {{ $START = $args[$IDX] }} }}
-        \\    '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
-        \\  }}
-        \\  $IDX++
-        \\}}
+        \\$COUNT = 10; $LOG_INTERVAL = 1; $OUTPUT = "null"; $START = 1
+        \\
+        \\while ($IDX -lt $args.Count) {{ switch ($args[$IDX]) {{
+        \\  '-c' {{ $IDX++; if ($IDX -lt $args.Count) {{ $COUNT = $args[$IDX] }} }}
+        \\  '-l' {{ $IDX++; if ($IDX -lt $args.Count) {{ $LOG_INTERVAL = $args[$IDX] }} }}
+        \\  '-o' {{ $IDX++; if ($IDX -lt $args.Count) {{ $OUTPUT = $args[$IDX] }} }}
+        \\  '-s' {{ $IDX++; if ($IDX -lt $args.Count) {{ $START = $args[$IDX] }} }}
+        \\  '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
+        \\}} $IDX++ }}
         \\
         \\if ($OUTPUT -ne "null") {{ $OUTPUT = '"' + $OUTPUT + '"' }}
         \\
@@ -347,17 +326,9 @@ pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\"    `"number`" : $START`n" +
         \\"  }}`n" +
         \\"}}"
-        \\
-        \\[System.IO.File]::WriteAllText(".input.json", $CONTENT, [System.Text.UTF8Encoding]::new($false))
-        \\
-        \\& acorn .input.json
-        \\
-        \\if ($LASTEXITCODE -eq 0) {{
-        \\  Remove-Item -Force input.json -ErrorAction SilentlyContinue
-        \\}}
     ;
 
-    try file_matsort .writer().print(content_matsort,  .{}); file_matsort .close();
-    try file_mersenne.writer().print(content_mersenne, .{}); file_mersenne.close();
-    try file_prime   .writer().print(content_prime,    .{});    file_prime.close();
+    try file_matsort .writer().print(header ++ "\n\n" ++ content_matsort  ++ "\n\n" ++ footer, .{}); file_matsort .close();
+    try file_mersenne.writer().print(header ++ "\n\n" ++ content_mersenne ++ "\n\n" ++ footer, .{}); file_mersenne.close();
+    try file_prime   .writer().print(header ++ "\n\n" ++ content_prime    ++ "\n\n" ++ footer, .{});    file_prime.close();
 }
