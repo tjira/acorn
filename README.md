@@ -93,7 +93,7 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
 {
     "quantum_dynamics" : {
         "adiabatic" : false,
-        "iterations" : 500,
+        "iterations" : 1000,
         "mode" : [0, 1],
         "time_step" : 0.1,
         "grid" : {
@@ -108,17 +108,23 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
             "gamma" : 2
         },
         "write" : {
-            "wavefunction" : "WAVEFUNCTION.mat"
+            "wavefunction" : "WAVEFUNCTION.mat",
+            "autocorrelation_function" : "ACF.mat",
+            "spectrum" : "SPECTRUM.mat"
         },
         "potential" : "harmonic1D_1"
     }
 }
 ```
 
-The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction with the command below.
+The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction, autocorrelation function or the vibrational spectrum with the commands below.
 
 ```bash
-lines.py WAVEFUNCTION.mat:0,1 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 2
+lines.py WAVEFUNCTION.mat:0,1 --legends every "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 2
+```
+
+```bash
+lines.py ACF.mat:0,1 SPECTRUM.mat --figsize 6 16 --legends 0,1 "Re(\$<\Psi_0|\Psi>\$)" "Im(\$<\Psi_0|\Psi>\$)" --subplots 121 121 122 --xlabel "Time (a.u.)" "Energy (a.u.)" --xlim nan nan 0 6 --ylabel "ACF" "Intensity"
 ```
 
 Acorn also supports higher dimensions. As an example you can simulate a 2D wavefunction in a 2D harmonic potential using the following input.
@@ -127,7 +133,7 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
 {
     "quantum_dynamics" : {
         "adiabatic" : false,
-        "iterations" : 500,
+        "iterations" : 1000,
         "mode" : [0, 1],
         "time_step" : 0.1,
         "grid" : {
@@ -142,17 +148,23 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
             "gamma" : 2
         },
         "write" : {
-            "wavefunction" : "WAVEFUNCTION.mat"
+            "wavefunction" : "WAVEFUNCTION.mat",
+            "autocorrelation_function" : "ACF.mat",
+            "spectrum" : "SPECTRUM.mat"
         },
         "potential" : "harmonic2D_1"
     }
 }
 ```
 
-This simulation takes a few seconds, since the time complexity increases exponentially. Visualizing the 3D complex wavefunction is a little tricky. One way is to plot the square of the wavefunction on a 2D heatmap. You can visualize the wavefunction this way with the command below.
+This simulation takes a few seconds, since the time complexity increases exponentially. Visualizing the 3D complex wavefunction is a little tricky. One way is to plot the square of the wavefunction on a 2D heatmap. You can visualize the wavefunction this way and ACF with spectrum the same way as above with the commands below.
 
 ```bash
 heatmap.py WAVEFUNCTION.mat:0,1 --xlabel "Coordinate (a.u.)" --ylabel "Coordinate (a.u.)" --transform norm --animate 2
+```
+
+```bash
+lines.py ACF.mat:0,1 SPECTRUM.mat --figsize 6 16 --legends 0,1 "Re(\$<\Psi_0|\Psi>\$)" "Im(\$<\Psi_0|\Psi>\$)" --subplots 121 121 122 --xlabel "Time (a.u.)" "Energy (a.u.)" --xlim nan nan 0 9 --ylabel "ACF" "Intensity"
 ```
 
 ### Real Time Nonadiabatic Quantum Dynamics
@@ -189,9 +201,47 @@ This example demonstrates the real-time quantum dynamics of a first Tully potent
 This simulation is fast and should complete approximately in a second. You can visualize the wavefunction and state population with the commands below. The wavefunctions on each states are vertically separated for better visualization.
 
 ```bash
-lines.py WAVEFUNCTION.mat:0,1,2,3 --legend "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re(\$\Psi_1\$)" "Im(\$\Psi_1\$)" --offsets every -1 -1 1 1 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 4
+lines.py WAVEFUNCTION.mat:0,1,2,3 --legends every "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" "Re(\$\Psi_1\$)" "Im(\$\Psi_1\$)" --offsets every -1 -1 1 1 --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 4
 ```
 
 ```bash
-lines.py POPULATION.mat --legend "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.)" --ylabel "Population"
+lines.py POPULATION.mat --legends every "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.)" --ylabel "Population"
+```
+
+### Surface Hopping Dynamics
+
+This example demonstrates how to run a surface hopping dynamics. The below example executes a Fewest Switches Surface Hopping (FSSH) dynamics on the same potential as the real-time nonadiabatic dynamics example above.
+
+```
+{
+    "classical_dynamics" : {
+        "adiabatic" : true,
+        "iterations" : 5000,
+        "time_step" : 1,
+        "trajectories" : 1000,
+        "initial_conditions" : {
+            "mass" : [2000],
+            "momentum_mean" : [10],
+            "momentum_std" : [1],
+            "position_mean" : [-10],
+            "position_std" : [0.5],
+            "state" : [0, 1]
+        },
+        "log_intervals" : {
+            "iteration" : 500,
+            "trajectory" : 100
+        },
+        "write" : {
+            "population_mean" : "POPULATION_MEAN.mat"
+        },
+        "potential" : "tully1D_1",
+        "fewest_switches" : {}
+    }
+}
+```
+
+This simulation is slow and will take a few second to complete. You can visualize the mean population of each state with the command below.
+
+```bash
+lines.py POPULATION_MEAN.mat --legends every "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.)" --ylabel "Population"
 ```

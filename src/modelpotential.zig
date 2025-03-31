@@ -24,6 +24,7 @@ pub fn Potential(comptime T: type) type {
 pub fn getMap(comptime T: type, allocator: std.mem.Allocator) !std.StringHashMap(Potential(T)) {
     var map = std.StringHashMap(Potential(T)).init(allocator);
 
+    try map.put("doubleHarmonic1D_1",      Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {     doubleHarmonic1D_1(T, U, r);}}.get});
     try map.put("doubleState1D_1",         Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        doubleState1D_1(T, U, r);}}.get});
     try map.put("doubleState1D_2",         Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        doubleState1D_2(T, U, r);}}.get});
     try map.put("doubleWell1D_1",          Potential(T){.dims = 1,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {         doubleWell1D_1(T, U, r);}}.get});
@@ -144,29 +145,13 @@ pub fn UracilLinearVibronicCoupling(comptime T: type) type {
     };
 }
 
-/// One-dimensional harmonic oscillator potential energy surface.
-pub fn harmonic1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.5 * r.at(0) * r.at(0);
-}
+/// The double harmonic oscillator potential energy surface.
+pub fn doubleHarmonic1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.005 * (r.at(0) + 10) * (r.at(0) + 10);
+    U.ptr(0, 1).* = 0.01 * std.math.exp(-0.05 * r.at(0) * r.at(0));
 
-/// Two-dimensional harmonic oscillator potential energy surface.
-pub fn harmonic2D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1));
-}
-
-/// Three-dimensional harmonic oscillator potential energy surface.
-pub fn harmonic3D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1) + r.at(2) * r.at(2));
-}
-
-/// Four-dimensional harmonic oscillator potential energy surface.
-pub fn harmonic4D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1) + r.at(2) * r.at(2) + r.at(3) * r.at(3));
-}
-
-/// One dimensional double well potential.
-pub fn doubleWell1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.05 * std.math.pow(T, 0.6 * r.at(0) * r.at(0) - 16, 2);
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = 0.005 * (r.at(0) - 10) * (r.at(0) - 10);
 }
 
 /// The first double-state model potential energy surface.
@@ -185,6 +170,31 @@ pub fn doubleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = -0.01 * std.math.tanh(0.6 * r.at(0));
+}
+
+/// One dimensional double well potential.
+pub fn doubleWell1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.05 * std.math.pow(T, 0.6 * r.at(0) * r.at(0) - 16, 2);
+}
+
+/// One-dimensional harmonic oscillator potential energy surface.
+pub fn harmonic1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.5 * r.at(0) * r.at(0);
+}
+
+/// Two-dimensional harmonic oscillator potential energy surface.
+pub fn harmonic2D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1));
+}
+
+/// Three-dimensional harmonic oscillator potential energy surface.
+pub fn harmonic3D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1) + r.at(2) * r.at(2));
+}
+
+/// Four-dimensional harmonic oscillator potential energy surface.
+pub fn harmonic4D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1) + r.at(2) * r.at(2) + r.at(3) * r.at(3));
 }
 
 /// The first triple-state model potential energy surface.
