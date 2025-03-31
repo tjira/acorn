@@ -7,6 +7,7 @@ const allocator = std.heap.page_allocator; const fsize = 2048;
 pub const classical_dynamics        = @import("classicaldynamics.zig"       );
 pub const configuration_interaction = @import("configurationinteraction.zig");
 pub const constant                  = @import("constant.zig"                );
+pub const fibonacci                 = @import("fibonacci.zig"               );
 pub const fourier_transform         = @import("fouriertransform.zig"        );
 pub const hartree_fock              = @import("hartreefock.zig"             );
 pub const helper                    = @import("helper.zig"                  );
@@ -46,6 +47,13 @@ pub fn parse(filebuf: []const u8) !void {
         _ = try configuration_interaction.run(f64, obj.value, true, allocator);
     }
 
+    if (inputjs.value.object.contains("fibonacci")) {
+
+        const obj = try std.json.parseFromValue(input.FibonacciOptions(u128), allocator, inputjs.value.object.get("fibonacci").?, .{}); defer obj.deinit();
+
+        _ = try fibonacci.run(u128, obj.value, true, allocator);
+    }
+
     if (inputjs.value.object.contains("hartree_fock")) {
 
         const obj = try std.json.parseFromValue(input.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
@@ -69,9 +77,9 @@ pub fn parse(filebuf: []const u8) !void {
 
     if (inputjs.value.object.contains("prime")) {
 
-        const obj = try std.json.parseFromValue(input.PrimeOptions(u64), allocator, inputjs.value.object.get("prime").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.PrimeOptions(u128), allocator, inputjs.value.object.get("prime").?, .{}); defer obj.deinit();
 
-        _ = try prime.run(u64, obj.value, true, allocator);
+        _ = try prime.run(u128, obj.value, true, allocator);
     }
 
     if (inputjs.value.object.contains("quantum_dynamics")) {

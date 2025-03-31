@@ -105,7 +105,7 @@ pub fn isPrime(p: anytype) bool {
     return true;
 }
 
-/// The find the next mersenne prime.
+/// The find the next Mersenne prime.
 pub fn nextMersenne(allocator: std.mem.Allocator, p: anytype) !@TypeOf(p) {
     if (p < 2) return 2; var np = p + 1 + p % 2;
 

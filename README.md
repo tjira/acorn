@@ -84,6 +84,7 @@ Below are some examples of the quantum mechanical methods implemented in Acorn. 
 
 - [Real Time Adiabatic Quantum Dynamics](#real-time-adiabatic-quantum-dynamics)
 - [Real Time Nonadiabatic Quantum Dynamics](#real-time-nonadiabatic-quantum-dynamics)
+- [Surface Hopping Dynamics](#surface-hopping-dynamics)
 
 ### Real Time Adiabatic Quantum Dynamics
 

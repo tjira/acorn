@@ -75,6 +75,16 @@ pub fn ConfigurationInteractionOptions(comptime T: type) type {
     };
 }
 
+/// The Fibonacci options.
+pub fn FibonacciOptions(comptime T: type) type {
+    return struct {
+        count: u32,
+        log_interval: u32 = 1,
+        output: ?[]const u8 = null,
+        start: []const T = &[_]T{0, 1}
+    };
+}
+
 /// The Hartree-Fock options
 pub fn HartreeFockOptions(comptime T: type) type {
     return struct {

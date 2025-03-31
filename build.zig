@@ -83,9 +83,10 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         .wasi => 0, .windows => 0, else => 0o755
     };
 
-    const file_matsort  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort" }), .{.mode=mode});
-    const file_mersenne = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne"}), .{.mode=mode});
-    const file_prime    = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime"   }), .{.mode=mode});
+    const file_fibonacci = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "fibonacci"}), .{.mode=mode});
+    const file_matsort   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort"  }), .{.mode=mode});
+    const file_mersenne  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne" }), .{.mode=mode});
+    const file_prime     = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime"    }), .{.mode=mode});
 
     const header =
         \\#!/usr/bin/bash
@@ -97,6 +98,30 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\Usage: $(basename $0) [options]
         \\
         \\Options:
+    ;
+
+    const content_fibonacci =
+        \\  -c <count>        Number of Fibonacci numbers to generate. (default: ${{COUNT}})
+        \\  -l <log_interval> Log interval for output. (default: ${{LOG_INTERVAL}})
+        \\  -o <output>       Output file. (default: ${{OUTPUT}})
+        \\  -h                Display this help message and exit.
+        \\EOF
+        \\
+        \\}}; COUNT=10; LOG_INTERVAL=1; OUTPUT=null
+        \\
+        \\while getopts "c:l:o:h" OPT; do case "$OPT" in
+        \\  c ) COUNT="$OPTARG" ;; l ) LOG_INTERVAL="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\esac done
+        \\
+        \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
+        \\
+        \\echo '{{
+        \\  "fibonacci" : {{
+        \\    "count" : '"$COUNT"',
+        \\    "log_interval" : '"$LOG_INTERVAL"',
+        \\    "output" : '"$OUTPUT"'
+        \\  }}
+        \\}}' > .input.json
     ;
 
     const content_matsort =
@@ -175,9 +200,10 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\}}' > .input.json
     ;
 
-    try file_matsort .writer().print(header ++ "\n" ++ content_matsort  ++ "\n\nacorn .input.json && clean", .{}); file_matsort .close();
-    try file_mersenne.writer().print(header ++ "\n" ++ content_mersenne ++ "\n\nacorn .input.json && clean", .{}); file_mersenne.close();
-    try file_prime   .writer().print(header ++ "\n" ++ content_prime    ++ "\n\nacorn .input.json && clean", .{});    file_prime.close();
+    try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nacorn .input.json && clean", .{}); file_fibonacci.close();
+    try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nacorn .input.json && clean", .{});  file_matsort .close();
+    try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nacorn .input.json && clean", .{});  file_mersenne.close();
+    try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nacorn .input.json && clean", .{});     file_prime.close();
 }
 
 pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
