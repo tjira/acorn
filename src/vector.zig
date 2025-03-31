@@ -95,7 +95,7 @@ pub fn Vector(comptime T: type) type {
     };
 }
 
-/// Add two vectors. The output vector is stored in the vector w.
+/// Add two vectors element-wise. The output vector is stored in the vector w.
 pub fn add(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
     if (comptime !istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i) + v.at(i);
@@ -103,6 +103,17 @@ pub fn add(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
 
     if (comptime istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i).add(v.at(i));
+    };
+}
+
+/// Divide two vectors element-wise. The output vector is stored in the vector w.
+pub fn div(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
+    if (comptime !istruct(T)) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i) / v.at(i);
+    };
+
+    if (comptime istruct(T)) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i).div(v.at(i));
     };
 }
 

@@ -16,14 +16,14 @@ const Wavefunction = @import("wavefunction.zig").Wavefunction;
 
 const asfloat = @import("helper.zig").asfloat;
 
-
 /// The main function to run the quantum dynamics simulation.
 pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.QuantumDynamicsOutput(T) {
-    if (opt.initial_conditions.state > try mpt.states(opt.potential) - 1  ) return error.InvalidInitialState;
-    if (opt.initial_conditions.position.len != try mpt.dims(opt.potential)) return error.InvalidInitialPosition;
-    if (opt.initial_conditions.momentum.len != try mpt.dims(opt.potential)) return error.InvalidInitialMomentum;
+    const pot = (try mpt.getMap(T, allocator)).get(opt.potential); const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim);
 
-    const ndim = try mpt.dims(opt.potential); const nstate = try mpt.states(opt.potential); const rdim = std.math.pow(u32, opt.grid.points, ndim);
+    if (pot == null                                ) return error.UnknownPotential      ;
+    if (opt.initial_conditions.state > nstate - 1  ) return error.InvalidInitialState   ;
+    if (opt.initial_conditions.position.len != ndim) return error.InvalidInitialPosition;
+    if (opt.initial_conditions.momentum.len != ndim) return error.InvalidInitialMomentum;
 
     var spectrum_points = std.math.pow(u32, 2, std.math.log2(opt.iterations + 1) + opt.spectrum.nearest_power_of_two); if (opt.spectrum.flip) spectrum_points *= 2;
 
@@ -72,7 +72,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
 
-        const VS = try rgridPotentials(T, opt.potential, rvec, allocator); var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
+        const VS = try rgridPotentials(T, pot.?, rvec, allocator); var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
 
         var R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              opt.mode[0] > 0, allocator); defer R.deinit();
         var K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.mode[0] > 0, allocator); defer K.deinit();
@@ -243,8 +243,8 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
 }
 
 /// Returns the potential matrices for each point in the space.
-pub fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(Complex(T))) {
-    const nstate = try mpt.states(potential);
+pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(Complex(T))) {
+    const nstate = pot.states;
 
     var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
@@ -262,7 +262,7 @@ pub fn rgridPotentials(comptime T: type, potential: []const u8, rvec: Matrix(T),
 
         @memcpy(UCP.data, UC.data);
 
-        try mpt.eval(T, &U, potential, rvec.row(i).vector()); mat.eigh(T, &UA, &UC, U, &T1, &T2);
+        pot.eval_fn(&U, rvec.row(i).vector()); mat.eigh(T, &UA, &UC, U, &T1, &T2);
 
         if (i > 0) for (0..UC.cols) |j| {
             var overlap: T = 0; for (0..UC.rows) |k| {overlap += UC.at(k, j) * UCP.at(k, j);} if (overlap < 0) for (0..UC.rows) |k| {UC.ptr(k, j).* *= -1;};

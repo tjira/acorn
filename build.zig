@@ -91,25 +91,24 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\#!/usr/bin/bash
         \\
         \\clean() {{ rm -f .input.json; }}; trap clean SIGINT
+        \\
+        \\usage() {{
+        \\  cat <<EOF
+        \\Usage: $(basename $0) [options]
+        \\
+        \\Options:
     ;
 
     const content_matsort =
-        \\usage() {{ cat <<EOF
-        \\Usage: matsort [options]
-        \\
-        \\Options:
         \\  -m <count> Matrix to sort.
         \\  -h         Display this help message and exit.
         \\EOF
+        \\
         \\}}
         \\
-        \\while getopts "m:h" OPT; do
-        \\  case "$OPT" in
-        \\     m ) MATRIX="$OPTARG" ;;
-        \\     h ) usage && exit 0 ;;
-        \\    \? ) usage && exit 1 ;;
-        \\  esac
-        \\done
+        \\while getopts "m:h" OPT; do case "$OPT" in
+        \\  m ) MATRIX="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\esac done
         \\
         \\echo '{{
         \\  "sort" : {{
@@ -121,29 +120,17 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     ;
 
     const content_mersenne =
-        \\COUNT=10; OUTPUT=null; START=1
-        \\
-        \\usage() {{
-        \\  cat <<EOF
-        \\Usage: mersenne [options]
-        \\
-        \\Options:
         \\  -c <count>  Number of Mersenne primes to generate. (default: ${{COUNT}})
         \\  -o <output> Output file. (default: ${{OUTPUT}})
         \\  -s <start>  Starting number. (default: ${{START}})
         \\  -h          Display this help message and exit.
         \\EOF
-        \\}}
         \\
-        \\while getopts "c:o:s:h" OPT; do
-        \\  case "$OPT" in
-        \\     c ) COUNT="$OPTARG" ;;
-        \\     o ) OUTPUT="$OPTARG" ;;
-        \\     s ) START="$OPTARG" ;;
-        \\     h ) usage && exit 0 ;;
-        \\    \? ) usage && exit 1 ;;
-        \\  esac
-        \\done
+        \\}}; COUNT=10; OUTPUT=null; START=1
+        \\
+        \\while getopts "c:o:s:h" OPT; do case "$OPT" in
+        \\  c ) COUNT="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; s ) START="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
         \\
@@ -160,31 +147,18 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     ;
 
     const content_prime =
-        \\COUNT=10; LOG_INTERVAL=1; OUTPUT=null; START=1
-        \\
-        \\usage() {{
-        \\  cat <<EOF
-        \\Usage: mersenne [options]
-        \\
-        \\Options:
         \\  -c <count>        Number of primes to generate. (default: ${{COUNT}})
         \\  -l <log_interval> Log interval for output. (default: ${{LOG_INTERVAL}})
         \\  -o <output>       Output file. (default: ${{OUTPUT}})
         \\  -s <start>        Starting number. (default: ${{START}})
         \\  -h                Display this help message and exit.
         \\EOF
-        \\}}
         \\
-        \\while getopts "c:l:o:s:h" OPT; do
-        \\  case "$OPT" in
-        \\     c ) COUNT="$OPTARG" ;;
-        \\     l ) LOG_INTERVAL="$OPTARG" ;;
-        \\     o ) OUTPUT="$OPTARG" ;;
-        \\     s ) START="$OPTARG" ;;
-        \\     h ) usage && exit 0 ;;
-        \\    \? ) usage && exit 1 ;;
-        \\  esac
-        \\done
+        \\}}; COUNT=10; LOG_INTERVAL=1; OUTPUT=null; START=1
+        \\
+        \\while getopts "c:l:o:s:h" OPT; do case "$OPT" in
+        \\  c ) COUNT="$OPTARG" ;; l ) LOG_INTERVAL="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; s ) START="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
         \\
@@ -201,9 +175,9 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
         \\}}' > .input.json
     ;
 
-    try file_matsort .writer().print(header ++ "\n\n" ++ content_matsort  ++ "\n\nacorn .input.json && clean", .{}); file_matsort .close();
-    try file_mersenne.writer().print(header ++ "\n\n" ++ content_mersenne ++ "\n\nacorn .input.json && clean", .{}); file_mersenne.close();
-    try file_prime   .writer().print(header ++ "\n\n" ++ content_prime    ++ "\n\nacorn .input.json && clean", .{});    file_prime.close();
+    try file_matsort .writer().print(header ++ "\n" ++ content_matsort  ++ "\n\nacorn .input.json && clean", .{}); file_matsort .close();
+    try file_mersenne.writer().print(header ++ "\n" ++ content_mersenne ++ "\n\nacorn .input.json && clean", .{}); file_mersenne.close();
+    try file_prime   .writer().print(header ++ "\n" ++ content_prime    ++ "\n\nacorn .input.json && clean", .{});    file_prime.close();
 }
 
 pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
