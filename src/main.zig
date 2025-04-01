@@ -4,9 +4,11 @@ const std = @import("std"); const builtin = @import("builtin"); const Complex = 
 
 const allocator = std.heap.page_allocator; const fsize = 2048;
 
+pub const basis                     = @import("basis.zig"                   );
 pub const classical_dynamics        = @import("classicaldynamics.zig"       );
 pub const configuration_interaction = @import("configurationinteraction.zig");
 pub const constant                  = @import("constant.zig"                );
+pub const contracted_gaussian       = @import("contractedgaussian.zig"      );
 pub const fibonacci                 = @import("fibonacci.zig"               );
 pub const fourier_transform         = @import("fouriertransform.zig"        );
 pub const hartree_fock              = @import("hartreefock.zig"             );
@@ -20,9 +22,11 @@ pub const prime                     = @import("prime.zig"                   );
 pub const quantum_dynamics          = @import("quantumdynamics.zig"         );
 pub const sort                      = @import("sort.zig"                    );
 pub const strided_array             = @import("stridedarray.zig"            );
+pub const system                    = @import("system.zig"                  );
 pub const tensor                    = @import("tensor.zig"                  );
 pub const transform                 = @import("transform.zig"               );
 pub const vector                    = @import("vector.zig"                  );
+pub const integral                  = @import("integral.zig"                );
 pub const wavefunction              = @import("wavefunction.zig"            );
 
 pub const Matrix = @import("matrix.zig").Matrix;
@@ -120,4 +124,12 @@ pub fn main() !void {
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+
+    // const mol = try system.System(f64).read("molecule.xyz", allocator); defer mol.deinit();
+    // const bs  = try basis .Basis (f64).get (mol, "STO-3G",  allocator); defer  bs.deinit();
+    // const S = try integral.overlap(f64, bs,      allocator); defer S.deinit();
+    // const T = try integral.kinetic(f64, bs,      allocator); defer T.deinit();
+    // const V = try integral.nuclear(f64, bs, mol, allocator); defer V.deinit();
+    // const J = try integral.coulomb(f64, bs,      allocator); defer J.deinit();
+    // try S.print(std.io.getStdOut().writer());
 }

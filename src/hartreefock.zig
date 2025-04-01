@@ -5,26 +5,38 @@ const std = @import("std");
 const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
-const inp = @import("input.zig" );
-const mat = @import("matrix.zig");
-const out = @import("output.zig");
-const ten = @import("tensor.zig");
-const vec = @import("vector.zig");
+const inp = @import("input.zig"   );
+const int = @import("integral.zig");
+const mat = @import("matrix.zig"  );
+const out = @import("output.zig"  );
+const ten = @import("tensor.zig"  );
+const vec = @import("vector.zig"  );
 
-const Matrix = @import("matrix.zig").Matrix;
-const Vector = @import("vector.zig").Vector;
-const Tensor = @import("tensor.zig").Tensor;
+const ContractedGaussian = @import("contractedgaussian.zig").ContractedGaussian;
+const Basis              = @import("basis.zig" ).Basis                         ;
+const Matrix             = @import("matrix.zig").Matrix                        ;
+const System             = @import("system.zig").System                        ;
+const Tensor             = @import("tensor.zig").Tensor                        ;
+const Vector             = @import("vector.zig").Vector                        ;
 
 const asfloat = @import("helper.zig").asfloat;
 const uncr    = @import("helper.zig").uncr   ;
 
 /// Run the Hartree-Fock calculation with the given options.
 pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
-    const S_AO = try mat.read(T, opt.integral.overlap, allocator); defer S_AO.deinit();
+    if (opt.integral.basis == null and (opt.integral.overlap == null or opt.integral.kinetic == null or opt.integral.nuclear == null or opt.integral.coulomb == null)) return error.MissingIntegral;
 
-    const system = try parseSystem(T, opt.molecule, print, allocator);
+    const system = try System(T).read(opt.molecule, allocator);          defer system.deinit();
+    var   basis  = std.ArrayList(ContractedGaussian(T)).init(allocator); defer  basis.deinit();
 
-    const nbf = S_AO.cols; const nocc = system.nocc; const VNN = system.VNN;
+    if (opt.integral.basis != null) basis = try Basis(T).get(system, opt.integral.basis.?, allocator);
+
+    const S_AO = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?,    allocator) else try int.overlap(T, basis,         allocator);
+    const T_AO = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try int.kinetic(T, basis,         allocator);
+    const V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try int.nuclear(T, basis, system, allocator);
+    const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try int.coulomb(T, basis,         allocator);
+
+    const nbf = S_AO.cols; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
 
     var T1 = try Matrix(T).init(nbf, nbf, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(nbf, nbf, allocator); defer T2.deinit();
@@ -46,10 +58,6 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     };
 
     {
-        const T_AO = try mat.read(T, opt.integral.kinetic,    allocator); defer T_AO.deinit();
-        const V_AO = try mat.read(T, opt.integral.nuclear,    allocator); defer V_AO.deinit();
-        const J_AO = try ten.read(T, opt.integral.coulomb, 4, allocator); defer J_AO.deinit();
-
         var XJ = try Matrix(T).init(nbf, nbf, allocator); defer XJ.deinit();
         var XC = try Matrix(T).init(nbf, nbf, allocator); defer XC.deinit();
 
@@ -114,7 +122,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
 
     return out.HartreeFockOutput(T){
-        .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .VNN = VNN, .nbf = nbf, .nocc = nocc
+        .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .VNN = VNN, .nbf = nbf, .nocc = nocc
     };
 }
 
@@ -152,58 +160,4 @@ pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayLis
             };
         }
     }
-}
-
-/// Parse the .xyz system from the given path.
-pub fn parseSystem(comptime T: type, path: []const u8, print: bool, allocator: std.mem.Allocator) !struct {natom: u32, nocc: u32, VNN: T} {
-    const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [64]u8 = undefined;
-
-    var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
-    var stream   = std.io.fixedBufferStream(&buffer);  const writer =   stream.writer();
-
-    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
-
-    const natom = try std.fmt.parseInt(u32, uncr(stream.getWritten()), 10);
-
-    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
-
-    var coords = try Matrix(T).init(natom, 3, allocator); defer coords.deinit(); coords.fill(0);
-    var atoms  = try Vector(T).init(natom,    allocator); defer  atoms.deinit();  atoms.fill(0);
-
-    for (0..natom) |i| {
-
-        stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
-
-        var it = std.mem.splitScalar(u8, uncr(stream.getWritten()), ' '); 
-
-        while (it.next()) |token| if (token.len > 0 and atoms.at(i) == 0) {
-            atoms.ptr(i).* = asfloat(T, SM2AN.get(token).?); break;
-        };
-
-        var j: i32 = 0;
-
-        while (it.next()) |token| : (j += if (token.len > 0) 1 else 0) if (token.len > 0) {
-            coords.ptr(i, @as(usize, @intCast(j))).* = try std.fmt.parseFloat(T, token);
-        };
-    }
-
-    var VNN: T = 0; var nocc: u32 = 0; for (0..natom) |i| nocc +=  @intFromFloat(atoms.at(i));
-
-    for (0..natom) |i| for (0..natom) |j| if (i != j) {
-
-        const x1 = coords.at(i, 0); const y1 = coords.at(i, 1); const z1 = coords.at(i, 2);
-        const x2 = coords.at(j, 0); const y2 = coords.at(j, 1); const z2 = coords.at(j, 2);
-
-        const r = std.math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2)) * A2AU;
-
-        VNN += 0.5 * atoms.at(i) * atoms.at(j) / r;
-    };
-
-    if (print) try std.io.getStdOut().writer().print("\nMOLECULE: {s}\n", .{path});
-
-    if (print) for (0..natom) |i| {
-        try std.io.getStdOut().writer().print("{d:2} {d:14.8} {d:14.8} {d:14.8}\n", .{@as(u32, @intFromFloat(atoms.at(i))), coords.at(i, 0), coords.at(i, 1), coords.at(i, 2)});
-    };
-
-    return .{.natom = natom, .nocc = nocc / 2, .VNN = VNN};
 }

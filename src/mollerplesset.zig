@@ -19,11 +19,7 @@ pub fn run(comptime T: type, opt: inp.MollerPlessetOptions(T), print: bool, allo
 
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
     
-    {
-        const J_AO = try ten.read(T, opt.hartree_fock.integral.coulomb, 4, allocator); defer J_AO.deinit();
-
-        try transform(T, &J_MS_A, J_AO, hf.C_MO, allocator);
-    }
+    try transform(T, &J_MS_A, hf.J_AO, hf.C_MO, allocator);
 
     var E: T = 0;
 

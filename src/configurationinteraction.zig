@@ -26,13 +26,7 @@ pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print:
 
     var H_MS = try Matrix(T).init(nbf, nbf, allocator); defer H_MS.deinit();
 
-    {
-        const T_AO = try mat.read(T, opt.hartree_fock.integral.kinetic,    allocator); defer T_AO.deinit();
-        const V_AO = try mat.read(T, opt.hartree_fock.integral.nuclear,    allocator); defer V_AO.deinit();
-        const J_AO = try ten.read(T, opt.hartree_fock.integral.coulomb, 4, allocator); defer J_AO.deinit();
-
-        try transform(T, &H_MS, &J_MS_A, T_AO, V_AO, J_AO, hf.C_MO, allocator);
-    }
+    try transform(T, &H_MS, &J_MS_A, hf.T_AO, hf.V_AO, hf.J_AO, hf.C_MO, allocator);
 
     try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{ndet});
 

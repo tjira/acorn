@@ -89,10 +89,11 @@ pub fn FibonacciOptions(comptime T: type) type {
 pub fn HartreeFockOptions(comptime T: type) type {
     return struct {
         pub const Integral = struct {
-            overlap: []const u8 = "S_AO.mat",
-            kinetic: []const u8 = "T_AO.mat",
-            nuclear: []const u8 = "V_AO.mat",
-            coulomb: []const u8 = "J_AO.mat"
+            overlap: ?[]const u8 = "S_AO.mat",
+            kinetic: ?[]const u8 = "T_AO.mat",
+            nuclear: ?[]const u8 = "V_AO.mat",
+            coulomb: ?[]const u8 = "J_AO.mat",
+            basis:   ?[]const u8 = null
         };
 
         molecule: []const u8 = "molecule.xyz",

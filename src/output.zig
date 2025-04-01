@@ -4,6 +4,7 @@ const std = @import("std");
 
 const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
+const Tensor = @import("tensor.zig").Tensor;
 
 /// The classical dynamics output.
 pub fn ClassicalDynamicsOutput(comptime T: type) type {
@@ -46,7 +47,10 @@ pub fn ConfigurationInteractionOutput(comptime T: type) type {
 /// The Hartree-Fock output.
 pub fn HartreeFockOutput(comptime T: type) type {
     return struct {
-        C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T), E: T, VNN: T, nbf: usize, nocc: usize,
+        S_AO: Matrix(T), T_AO: Matrix(T), V_AO: Matrix(T), J_AO: Tensor(T),
+        C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T),
+
+        E: T, VNN: T, nbf: usize, nocc: usize,
 
         /// Free the memory allocated for the Hartree-Fock output.
         pub fn deinit(self: HartreeFockOutput(T)) void {
