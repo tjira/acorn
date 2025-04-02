@@ -5,7 +5,8 @@ const std = @import("std");
 const PrimitiveGaussian = @import("primitivegaussian.zig").PrimitiveGaussian;
 const System            = @import("system.zig"           ).System           ;
 
-const sum = @import("helper.zig").sum;
+const dfact = @import("helper.zig").dfact;
+const sum   = @import("helper.zig").sum  ;
 
 /// Contracted Gaussian type.
 pub fn ContractedGaussian(comptime T: type) type {
@@ -19,7 +20,9 @@ pub fn ContractedGaussian(comptime T: type) type {
 
             @memcpy(g.c, c); @memcpy(g.alpha, alpha);
 
-            for (g.c, 0..) |*ci, i| ci.* *= std.math.pow(T, 2 * g.alpha[i] / std.math.pi, 0.75);
+            for (g.c, 0..) |*ci, i| {
+                ci.* *= std.math.sqrt(std.math.pow(T, 4 * alpha[i], sum(T, &a)) * std.math.pow(T, 2 * alpha[i] / std.math.pi, 1.5) / dfact(2 * a[0] - 1) / dfact(2 * a[1] - 1) / dfact(2 * a[2] - 1));
+            }
 
             return g;
         }

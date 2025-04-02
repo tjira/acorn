@@ -27,7 +27,12 @@ pub fn contains(comptime T: type, v: []const T, value: T) bool {
     for (v) |element| {if (element == value) return true;} return false;
 }
 
-// Calculate the factorial of a number.
+/// Calculate the double factorial of a number.
+pub fn dfact(n: anytype) @TypeOf(n) {
+    if (n == -1 or n == 0 or n == 1) {return 1;} else if (n == 2) {return 2;} else return n * dfact(n - 2);
+}
+
+/// Calculate the factorial of a number.
 pub fn fact(n: usize) @TypeOf(n) {
     var result: @TypeOf(n) = 1; for (2..n + 1) |i| {result *= i;} return result;
 }
