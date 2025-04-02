@@ -33,7 +33,7 @@ pub fn ContractedGaussian(comptime T: type) type {
         }
 
         /// Compute the Coulomb integral between four contracted Gaussians.
-        pub fn coulomb(self: ContractedGaussian(T), other1: ContractedGaussian(T), other2: ContractedGaussian(T), other3: ContractedGaussian(T)) !T {
+        pub fn coulomb(self: ContractedGaussian(T), other1: ContractedGaussian(T), other2: ContractedGaussian(T), other3: ContractedGaussian(T)) T {
             var e: T = 0;
 
             for (self.c, 0..) |ci, i| for (other1.c, 0..) |cj, j| for (other2.c, 0..) |ck, k| for (other3.c, 0..) |cl, l| {
@@ -43,14 +43,14 @@ pub fn ContractedGaussian(comptime T: type) type {
                 const pgk = PrimitiveGaussian(T){.A = other2.A, .a = other2.a, .alpha = other2.alpha[k], .l = other2.l};
                 const pgl = PrimitiveGaussian(T){.A = other3.A, .a = other3.a, .alpha = other3.alpha[l], .l = other3.l};
 
-                e += ci * cj * ck * cl * try pgi.coulomb(pgj, pgk, pgl);
+                e += ci * cj * ck * cl * pgi.coulomb(pgj, pgk, pgl);
             };
 
             return e;
         }
 
         /// Compute the kinetic integral between two contracted Gaussians.
-        pub fn kinetic(self: ContractedGaussian(T), other: ContractedGaussian(T)) !T {
+        pub fn kinetic(self: ContractedGaussian(T), other: ContractedGaussian(T)) T {
             var t: T = 0;
 
             for (self.c, 0..) |ci, i| for (other.c, 0..) |cj, j| {
@@ -58,14 +58,14 @@ pub fn ContractedGaussian(comptime T: type) type {
                 const pgi = PrimitiveGaussian(T){.A =  self.A, .a =  self.a, .alpha =  self.alpha[i], .l =  self.l};
                 const pgj = PrimitiveGaussian(T){.A = other.A, .a = other.a, .alpha = other.alpha[j], .l = other.l};
 
-                t += ci * cj * try pgi.kinetic(pgj);
+                t += ci * cj * pgi.kinetic(pgj);
             };
 
             return t;
         }
 
         /// Compute the nuclear integral between two contracted Gaussians.
-        pub fn nuclear(self: ContractedGaussian(T), other: ContractedGaussian(T), system: System(T)) !T {
+        pub fn nuclear(self: ContractedGaussian(T), other: ContractedGaussian(T), system: System(T)) T {
             var v: T = 0;
 
             for (self.c, 0..) |ci, i| for (other.c, 0..) |cj, j| {
@@ -73,14 +73,14 @@ pub fn ContractedGaussian(comptime T: type) type {
                 const pgi = PrimitiveGaussian(T){.A =  self.A, .a =  self.a, .alpha =  self.alpha[i], .l =  self.l};
                 const pgj = PrimitiveGaussian(T){.A = other.A, .a = other.a, .alpha = other.alpha[j], .l = other.l};
 
-                v += ci * cj * try pgi.nuclear(pgj, system);
+                v += ci * cj * pgi.nuclear(pgj, system);
             };
 
             return v;
         }
 
         /// Compute the overlap integral between two contracted Gaussians.
-        pub fn overlap(self: ContractedGaussian(T), other: ContractedGaussian(T)) !T {
+        pub fn overlap(self: ContractedGaussian(T), other: ContractedGaussian(T)) T {
             var s: T = 0;
 
             for (self.c, 0..) |ci, i| for (other.c, 0..) |cj, j| {
@@ -88,7 +88,7 @@ pub fn ContractedGaussian(comptime T: type) type {
                 const pgi = PrimitiveGaussian(T){.A =  self.A, .a =  self.a, .alpha =  self.alpha[i], .l =  self.l};
                 const pgj = PrimitiveGaussian(T){.A = other.A, .a = other.a, .alpha = other.alpha[j], .l = other.l};
 
-                s += ci * cj * try pgi.overlap(pgj);
+                s += ci * cj * pgi.overlap(pgj);
             };
 
             return s;
