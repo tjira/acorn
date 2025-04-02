@@ -29,12 +29,12 @@ pub fn Basis(comptime T: type) type {
 
                 switch (@as(u32, @intFromFloat(system.atoms.at(i)))) {
                     1  => {
-                        try     a.append( [3]T{ 0.0,              0.0,               0.0           });
+                        try     a.append( [3]T{ 0.0,              0.0,              0.0           });
                         try     c.append(&[_]T{ 0.1543289673e+0,  0.5353281423e+0,  0.4446345422e+0});
                         try alpha.append(&[_]T{ 0.3425250914e+1,  0.6239137298e+0,  0.1688554040e+0});
                     },
                     6  => {
-                        try     a.append( [3]T{ 0.0,              0.0,               0.0           });
+                        try     a.append( [3]T{ 0.0,              0.0,              0.0           });
                         try     c.append(&[_]T{ 0.1543289673e+0,  0.5353281423e+0,  0.4446345422e+0});
                         try alpha.append(&[_]T{ 0.7161683735e+2,  0.1304509632e+2,  0.3530512160e+1});
 

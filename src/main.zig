@@ -126,11 +126,20 @@ pub fn main() !void {
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
-    const mol = try system.System (f64).read("molecule.xyz", allocator); defer mol.deinit();
-    const bs  = try basis .Basis  (f64).get (mol, "STO-3G",  allocator); defer  bs.deinit();
-    const S = try integral.overlap(f64, bs,      allocator); defer S.deinit();
-    const T = try integral.kinetic(f64, bs,      allocator); defer T.deinit();
-    const V = try integral.nuclear(f64, bs, mol, allocator); defer V.deinit();
-    const J = try integral.coulomb(f64, bs,      allocator); defer J.deinit();
-    try S.print(std.io.getStdOut().writer());
+    // const mol = try system.System (f64).read("molecule.xyz", allocator); defer mol.deinit();
+    // const bs  = try basis .Basis  (f64).get (mol, "STO-3G",  allocator); defer  bs.deinit();
+    // const S = try integral.overlap(f64, bs,      allocator); defer S.deinit();
+    // const T = try integral.kinetic(f64, bs,      allocator); defer T.deinit();
+    // const V = try integral.nuclear(f64, bs, mol, allocator); defer V.deinit();
+    // const J = try integral.coulomb(f64, bs,      allocator); defer J.deinit();
+    // try S.print(std.io.getStdOut().writer());
+    //
+    // const cg = try contracted_gaussian.ContractedGaussian(f64).init([3]f64{0.0, 0.0, 0.0}, [3]f64{0.0, 0.0, 0.0},
+    //     &[_]f64{0.5, 0.5}, &[_]f64{0.1, 0.2},
+    // allocator); defer cg.deinit();
+    //
+    // const pg = primitive_gaussian.PrimitiveGaussian(f64){.A = [3]f64{0.0, 0.0, 0.0}, .a = [3]f64{0.0, 0.0, 0.0}, .alpha = 0.1, .l = 0};
+    //
+    // std.debug.print("{any}\n", .{pg.overlap(pg) / (pg.norm() * pg.norm())});
+    // std.debug.print("{any}\n", .{cg.overlap(cg)});
 }

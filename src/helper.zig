@@ -57,6 +57,11 @@ pub fn min(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a < b) a else b;
 }
 
+/// Calculate the power of a number.
+pub fn powi(a: anytype, b: u32) @TypeOf(a) {
+    var result: @TypeOf(a) = 1; for (0..b) |_| {result *= a;} return result;
+}
+
 /// Calculate the product of an array.
 pub fn prod(comptime T: type, v: []const T) T {
     var result: T = 1; for (v) |value| result *= value; return result;

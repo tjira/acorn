@@ -4,7 +4,9 @@ const std = @import("std");
 
 const System = @import("system.zig").System;
 
-const sum = @import("helper.zig").sum;
+const dfact = @import("helper.zig").dfact;
+const powi  = @import("helper.zig").powi ;
+const sum   = @import("helper.zig").sum  ;
 
 /// Primitive Gaussian type.
 pub fn PrimitiveGaussian(comptime T: type) type {
@@ -80,6 +82,15 @@ pub fn PrimitiveGaussian(comptime T: type) type {
             }
 
             else return 0;
+        }
+
+        /// Calculate the norm of the primitive gaussian.
+        pub fn norm(self: PrimitiveGaussian(T)) T {
+            const Nij = dfact(2 * self.a[0] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[0])));
+            const Nkl = dfact(2 * self.a[1] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[1])));
+            const Nmn = dfact(2 * self.a[2] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[2])));
+
+            return std.math.sqrt(Nij * Nkl * Nmn);
         }
 
         /// Compute the nuclear integral between two primitive Gaussians.
