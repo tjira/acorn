@@ -6,7 +6,7 @@ const asfloat = @import("helper.zig").asfloat;
 
 /// Boys function with zero n.
 pub fn boys(x: anytype, a: @TypeOf(x)) @TypeOf(x) {
-    return if (x > 0) 0.5 * gamma(a + 0.5) * gammainc(x, a + 0.5) / std.math.pow(@TypeOf(x), x, a + 0.5) else 1;
+    return if (x > 0) 0.5 * gamma(a + 0.5) * gammainc(x, a + 0.5) / std.math.pow(@TypeOf(x), x, a + 0.5) else 1 / (2 * a + 1);
 }
 
 /// Calculate the combination number.
