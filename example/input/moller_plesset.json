@@ -3,10 +3,7 @@
         "hartree_fock" : {
             "molecule" : "molecule.xyz",
             "integral" : {
-                "overlap" : "S_AO.mat",
-                "kinetic" : "T_AO.mat",
-                "nuclear" : "V_AO.mat",
-                "coulomb" : "J_AO.mat"
+                "basis" : "STO-3G"
             },
             "threshold" : 1e-8,
             "maxiter" : 100,

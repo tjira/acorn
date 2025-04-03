@@ -13,7 +13,47 @@ pub fn PrimitiveGaussian(comptime T: type) type {
 
         /// Compute the coulomb integral between four primitive Gaussians.
         pub fn coulomb(self: PrimitiveGaussian(T), other1: PrimitiveGaussian(T), other2: PrimitiveGaussian(T), other3: PrimitiveGaussian(T)) T {
-            _ = self; _ = other1; _ = other2; _ = other3; return 0;
+            const p = self.alpha + other1.alpha; const q = other2.alpha + other3.alpha; const beta = p * q / (p + q); var j: T = 0;
+
+            const RP: [3]T = .{
+                (self.alpha * self.A[0] + other1.alpha * other1.A[0]) / (self.alpha + other1.alpha),
+                (self.alpha * self.A[1] + other1.alpha * other1.A[1]) / (self.alpha + other1.alpha),
+                (self.alpha * self.A[2] + other1.alpha * other1.A[2]) / (self.alpha + other1.alpha)
+            };
+
+            const RQ: [3]T = .{
+                (other2.alpha * other2.A[0] + other3.alpha * other3.A[0]) / (other2.alpha + other3.alpha),
+                (other2.alpha * other2.A[1] + other3.alpha * other3.A[1]) / (other2.alpha + other3.alpha),
+                (other2.alpha * other2.A[2] + other3.alpha * other3.A[2]) / (other2.alpha + other3.alpha)
+            };
+
+            const RPQ: [3]T = .{RP[0] - RQ[0], RP[1] - RQ[1], RP[2] - RQ[2]};
+
+            for (0..@as(usize, @intFromFloat(  self.a[0] + other1.a[0])) + 1) |t  | {
+                for (0..@as(usize, @intFromFloat(  self.a[1] + other1.a[1])) + 1) |u  | {
+                    for (0..@as(usize, @intFromFloat(  self.a[2] + other1.a[2])) + 1) |v  | {
+                        for (0..@as(usize, @intFromFloat(other2.a[0] + other3.a[0])) + 1) |tau| {
+                            for (0..@as(usize, @intFromFloat(other2.a[1] + other3.a[1])) + 1) |nu | {
+                                for (0..@as(usize, @intFromFloat(other2.a[2] + other3.a[2])) + 1) |phi| {
+
+                                    const Eij = hermitec(.{  self.a[0], other1.a[0]}, .{  self.alpha, other1.alpha},   self.A[0] - other1.A[0], @floatFromInt(t  ));
+                                    const Ekl = hermitec(.{  self.a[1], other1.a[1]}, .{  self.alpha, other1.alpha},   self.A[1] - other1.A[1], @floatFromInt(u  ));
+                                    const Emn = hermitec(.{  self.a[2], other1.a[2]}, .{  self.alpha, other1.alpha},   self.A[2] - other1.A[2], @floatFromInt(v  ));
+                                    const Eop = hermitec(.{other2.a[0], other3.a[0]}, .{other2.alpha, other3.alpha}, other2.A[0] - other3.A[0], @floatFromInt(tau));
+                                    const Eqr = hermitec(.{other2.a[1], other3.a[1]}, .{other2.alpha, other3.alpha}, other2.A[1] - other3.A[1], @floatFromInt(nu ));
+                                    const Est = hermitec(.{other2.a[2], other3.a[2]}, .{other2.alpha, other3.alpha}, other2.A[2] - other3.A[2], @floatFromInt(phi));
+
+                                    const sign = std.math.pow(T, -1, @as(T, @floatFromInt(tau + nu + phi)));
+
+                                    j += sign * Eij * Ekl * Emn * Eop * Eqr * Est * hermitei([3]T{@floatFromInt(t + tau), @floatFromInt(u + nu), @floatFromInt(v + phi)}, RPQ, beta, 0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return 2 * std.math.pow(T, std.math.pi, 2.5) / (p * q * std.math.sqrt(p + q)) * j;
         }
 
         /// Compute the Hermite Gaussian coefficients in one dimension.

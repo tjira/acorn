@@ -126,14 +126,4 @@ pub fn main() !void {
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
-
-    // const mol = try system.System (f64).read("molecule.xyz", allocator); defer mol.deinit();
-    // const bs  = try basis .Basis  (f64).get (mol, "STO-3G",  allocator); defer  bs.deinit();
-    // const S = try integral.overlap(f64, bs,      allocator); defer S.deinit();
-    // const T = try integral.kinetic(f64, bs,      allocator); defer T.deinit();
-    // const V = try integral.nuclear(f64, bs, mol, allocator); defer V.deinit();
-    // const J = try integral.coulomb(f64, bs,      allocator); defer J.deinit();
-    // try S.print(std.io.getStdOut().writer());
-    // try T.print(std.io.getStdOut().writer());
-    // try V.print(std.io.getStdOut().writer());
 }
