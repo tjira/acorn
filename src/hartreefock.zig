@@ -98,7 +98,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
             @memcpy(DIIS_F.items[@intCast(@mod(@as(i32, @intCast(iter)) - 1, @as(i32, @intCast(DIIS_F.items.len))))].data, F_AO.data);
             @memcpy(DIIS_E.items[@intCast(@mod(@as(i32, @intCast(iter)) - 1, @as(i32, @intCast(DIIS_E.items.len))))].data,  ERR.data);
 
-            try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
+            if (iter >= opt.dsize.? - 1) try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
         }
 
         mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); mat.eigh(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);

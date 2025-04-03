@@ -5,12 +5,11 @@ const std = @import("std"); const Complex = std.math.Complex;
 const inp = @import("input.zig"   );
 const cnt = @import("constant.zig");
 const mat = @import("matrix.zig"  );
+const mth = @import("math.zig"    );
 
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
-const abs     = @import("helper.zig").abs    ;
-const sgn     = @import("helper.zig").sgn    ;
 const asfloat = @import("helper.zig").asfloat;
 
 /// Potential struct.
@@ -244,7 +243,7 @@ pub fn tripleState1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 
 /// The fourth triple-state model potential energy surface.
 pub fn tripleState1D_4(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
+    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.003 * std.math.exp(-r.at(0) * r.at(0));
     U.ptr(0, 2).* = 0;
 
@@ -259,7 +258,7 @@ pub fn tripleState1D_4(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 
 /// The tripleState1D_1 potential with a Lorentzian coupling.
 pub fn tripleState1D_4_lorentz(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
+    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.0005 / (100 * r.at(0) * r.at(0) + 1);
     U.ptr(0, 2).* = 0;
 
@@ -274,7 +273,7 @@ pub fn tripleState1D_4_lorentz(comptime T: type, U: *Matrix(T), r: Vector(T)) vo
 
 /// The first Tully model potential energy surface.
 pub fn tully1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
+    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.005 * std.math.exp(-r.at(0) * r.at(0));
 
     U.ptr(1, 0).* = U.at(0, 1);
@@ -283,7 +282,7 @@ pub fn tully1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 
 /// The tully1D_1 potential with a Lorentzian coupling.
 pub fn tully1D_1_lorentz(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * sgn(r.at(0)) * r.at(0)));
+    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.0005 / (200 * r.at(0) * r.at(0) + 1);
 
     U.ptr(1, 0).* = U.at(0, 1);

@@ -2,12 +2,13 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
+const mth = @import("math.zig");
+
 const StridedArray = @import("stridedarray.zig").StridedArray;
 const Vector       = @import("vector.zig"      ).Vector      ;
 
 const asfloat = @import("helper.zig").asfloat;
 const istruct = @import("helper.zig").istruct;
-const min     = @import("helper.zig").min    ;
 const uncr    = @import("helper.zig").uncr   ;
 
 /// Matrix class.
@@ -74,7 +75,7 @@ pub fn Matrix(comptime T: type) type {
         pub fn identity(self: Matrix(T)) void {
             self.fill(0);
 
-            for (0..min(self.rows, self.cols)) |i| {
+            for (0..mth.min(self.rows, self.cols)) |i| {
                 self.ptr(i, i).* = 1;
             }
         }

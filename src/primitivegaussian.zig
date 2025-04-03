@@ -2,11 +2,9 @@
 
 const std = @import("std");
 
-const System = @import("system.zig").System;
+const mth = @import("math.zig");
 
-const dfact = @import("helper.zig").dfact;
-const powi  = @import("helper.zig").powi ;
-const sum   = @import("helper.zig").sum  ;
+const System = @import("system.zig").System;
 
 /// Primitive Gaussian type.
 pub fn PrimitiveGaussian(comptime T: type) type {
@@ -20,87 +18,34 @@ pub fn PrimitiveGaussian(comptime T: type) type {
 
         /// Compute the kinetic integral between two primitive Gaussians.
         pub fn kinetic(self: PrimitiveGaussian(T), other: PrimitiveGaussian(T)) T {
-            const p = self.alpha + other.alpha; const mu = self.alpha * other.alpha / p;
+            const pgpl = PrimitiveGaussian(T){.A = other.A, .a = .{other.a[0] + 2, other.a[1], other.a[2]}, .alpha = other.alpha, .l = other.l + 2};
+            const pgpm = PrimitiveGaussian(T){.A = other.A, .a = .{other.a[0], other.a[1] + 2, other.a[2]}, .alpha = other.alpha, .l = other.l + 2};
+            const pgpn = PrimitiveGaussian(T){.A = other.A, .a = .{other.a[0], other.a[1], other.a[2] + 2}, .alpha = other.alpha, .l = other.l + 2};
+            const pgml = PrimitiveGaussian(T){.A = other.A, .a = .{other.a[0] - 2, other.a[1], other.a[2]}, .alpha = other.alpha, .l = other.l - 2};
+            const pgmm = PrimitiveGaussian(T){.A = other.A, .a = .{other.a[0], other.a[1] - 2, other.a[2]}, .alpha = other.alpha, .l = other.l - 2};
+            const pgmn = PrimitiveGaussian(T){.A = other.A, .a = .{other.a[0], other.a[1], other.a[2] - 2}, .alpha = other.alpha, .l = other.l - 2};
 
-            const XAB: [3]T = .{
-                self.A[0] - other.A[0],
-                self.A[1] - other.A[1],
-                self.A[2] - other.A[2]
-            };
+            const T0 = other.alpha * (2 * mth.sum(T, &other.a) + 3) * self.overlap(other);
 
-            const XPA: [3]T = .{
-                (self.alpha * self.A[0] + other.alpha * other.A[0]) / p - self.A[0],
-                (self.alpha * self.A[1] + other.alpha * other.A[1]) / p - self.A[1],
-                (self.alpha * self.A[2] + other.alpha * other.A[2]) / p - self.A[2]
-            };
+            const T1 = -2 * std.math.pow(T, other.alpha, 2.0) * (self.overlap(pgpl) + self.overlap(pgpm) + self.overlap(pgpn));
 
-            const XPB: [3]T = .{
-                (self.alpha * self.A[0] + other.alpha * other.A[0]) / p - other.A[0],
-                (self.alpha * self.A[1] + other.alpha * other.A[1]) / p - other.A[1],
-                (self.alpha * self.A[2] + other.alpha * other.A[2]) / p - other.A[2]
-            };
+            const T2 = -0.5 * (other.a[0] * (other.a[0] - 1) * self.overlap(pgml) + other.a[1] * (other.a[1] - 1) * self.overlap(pgmm) + other.a[2] * (other.a[2] - 1) * self.overlap(pgmn));
 
-            const Sij = overlapSingle(.{self.a[0], other.a[0]}, p, mu, XAB[0], XPA[0], XPB[0]);
-            const Skl = overlapSingle(.{self.a[1], other.a[1]}, p, mu, XAB[1], XPA[1], XPB[1]);
-            const Smn = overlapSingle(.{self.a[2], other.a[2]}, p, mu, XAB[2], XPA[2], XPB[2]);
-
-            const Tij = kineticSingle(.{self.a[0], other.a[0]}, .{self.alpha, other.alpha}, p, mu, XAB[0], XPA[0], XPB[0]);
-            const Tkl = kineticSingle(.{self.a[1], other.a[1]}, .{self.alpha, other.alpha}, p, mu, XAB[1], XPA[1], XPB[1]);
-            const Tmn = kineticSingle(.{self.a[2], other.a[2]}, .{self.alpha, other.alpha}, p, mu, XAB[2], XPA[2], XPB[2]);
-
-            return Tij * Skl * Smn + Sij * Tkl * Smn + Sij * Skl * Tmn;
-        }
-
-        /// Compute the kinetic integral between two primitive Gaussians in one dimension using the Obara-Saika recursion.
-        pub fn kineticSingle(ij: [2]T, ab: [2]T, p: T, mu: T, XAB: T, XPA: T, XPB: T) T {
-            if (ij[0] == 0 and ij[1] == 0) {
-                return (ab[0] - 2 * ab[0] * ab[0] * (XPA * XPA + 1 / (2 * p))) * overlapSingle(.{ij[0], ij[1]}, p, mu, XAB, XPA, XPB);
-            }
-
-            if (ij[0] > 0) {
-
-                const Tij0 = kineticSingle(.{ij[0] - 1, ij[1]    }, ab, p, mu, XAB, XPA, XPB);
-                const Tij1 = kineticSingle(.{ij[0] - 2, ij[1]    }, ab, p, mu, XAB, XPA, XPB);
-                const Tij2 = kineticSingle(.{ij[0] - 1, ij[1] - 1}, ab, p, mu, XAB, XPA, XPB);
-
-                const Sij0 = overlapSingle(.{ij[0]    , ij[1]    }, p, mu, XAB, XPA, XPB);
-                const Sij1 = overlapSingle(.{ij[0] - 2, ij[1]    }, p, mu, XAB, XPA, XPB);
-
-                return XPA * Tij0 + 1 / (2 * p) * ((ij[0] - 1) * Tij1 + ij[1] * Tij2) + ab[1] / p * (2 * ab[0] * Sij0 - (ij[0] - 1) * Sij1);
-            }
-
-            if (ij[1] > 0) {
-
-                const Tij0 = kineticSingle(.{ij[0]    , ij[1] - 1}, ab, p, mu, XAB, XPA, XPB);
-                const Tij1 = kineticSingle(.{ij[0] - 1, ij[1] - 1}, ab, p, mu, XAB, XPA, XPB);
-                const Tij2 = kineticSingle(.{ij[0]    , ij[1] - 2}, ab, p, mu, XAB, XPA, XPB);
-
-                const Sij0 = overlapSingle(.{ij[0]    , ij[1]    }, p, mu, XAB, XPA, XPB);
-                const Sij1 = overlapSingle(.{ij[0]    , ij[1] - 2}, p, mu, XAB, XPA, XPB);
-
-                return XPB * Tij0 + 1 / (2 * p) * (ij[0] * Tij1 + (ij[1] - 1) * Tij2) + ab[0] / p * (2 * ab[1] * Sij0 - (ij[1] - 1) * Sij1);
-            }
-
-            else return 0;
+            return T0 + T1 + T2;
         }
 
         /// Calculate the norm of the primitive gaussian.
         pub fn norm(self: PrimitiveGaussian(T)) T {
-            const Nij = dfact(2 * self.a[0] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[0])));
-            const Nkl = dfact(2 * self.a[1] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[1])));
-            const Nmn = dfact(2 * self.a[2] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[2])));
+            const Nij = mth.dfact(2 * self.a[0] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[0])));
+            const Nkl = mth.dfact(2 * self.a[1] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[1])));
+            const Nmn = mth.dfact(2 * self.a[2] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[2])));
 
             return std.math.sqrt(Nij * Nkl * Nmn);
         }
 
         /// Compute the nuclear integral between two primitive Gaussians.
         pub fn nuclear(self: PrimitiveGaussian(T), other: PrimitiveGaussian(T), system: System(T)) T {
-            _ = self; _ = other; _ = system; return 0;
-        }
-
-        /// Compute the overlap integral between two primitive Gaussians.
-        pub fn overlap(self: PrimitiveGaussian(T), other: PrimitiveGaussian(T)) T {
-            const p = self.alpha + other.alpha; const mu = self.alpha * other.alpha / p;
+            const p = self.alpha + other.alpha; var n: T = 0;
 
             const XAB: [3]T = .{
                 self.A[0] - other.A[0],
@@ -108,48 +53,94 @@ pub fn PrimitiveGaussian(comptime T: type) type {
                 self.A[2] - other.A[2]
             };
 
-            const XPA: [3]T = .{
-                (self.alpha * self.A[0] + other.alpha * other.A[0]) / p - self.A[0],
-                (self.alpha * self.A[1] + other.alpha * other.A[1]) / p - self.A[1],
-                (self.alpha * self.A[2] + other.alpha * other.A[2]) / p - self.A[2]
-            };
+            for (0..system.atoms.rows) |i| {
 
-            const XPB: [3]T = .{
-                (self.alpha * self.A[0] + other.alpha * other.A[0]) / p - other.A[0],
-                (self.alpha * self.A[1] + other.alpha * other.A[1]) / p - other.A[1],
-                (self.alpha * self.A[2] + other.alpha * other.A[2]) / p - other.A[2]
-            };
+                const XPC: [3]T = .{
+                    (self.alpha * self.A[0] + other.alpha * other.A[0]) / p - system.coords.at(i, 0),
+                    (self.alpha * self.A[1] + other.alpha * other.A[1]) / p - system.coords.at(i, 1),
+                    (self.alpha * self.A[2] + other.alpha * other.A[2]) / p - system.coords.at(i, 2)
+                };
 
-            const Sij = overlapSingle(.{self.a[0], other.a[0]}, p, mu, XAB[0], XPA[0], XPB[0]);
-            const Skl = overlapSingle(.{self.a[1], other.a[1]}, p, mu, XAB[1], XPA[1], XPB[1]);
-            const Smn = overlapSingle(.{self.a[2], other.a[2]}, p, mu, XAB[2], XPA[2], XPB[2]);
+                for (0..@as(usize, @intFromFloat(self.a[0] + other.a[0])) + 1) |t| {
+                    for (0..@as(usize, @intFromFloat(self.a[1] + other.a[1])) + 1) |u| {
+                        for (0..@as(usize, @intFromFloat(self.a[2] + other.a[2])) + 1) |v| {
 
-            return Sij * Skl * Smn;
+                            const Eij = hermitec(.{self.a[0], other.a[0]}, .{self.alpha, other.alpha}, XAB[0], @floatFromInt(t));
+                            const Ekl = hermitec(.{self.a[1], other.a[1]}, .{self.alpha, other.alpha}, XAB[1], @floatFromInt(u));
+                            const Emn = hermitec(.{self.a[2], other.a[2]}, .{self.alpha, other.alpha}, XAB[2], @floatFromInt(v));
+
+                            n -= system.atoms.at(i) * Eij * Ekl * Emn * hermiteint([3]T{@floatFromInt(t), @floatFromInt(u), @floatFromInt(v)}, XPC, p, 0);
+                        }
+                    }
+                }
+            }
+
+            return 2 * std.math.pi / p * n;
         }
 
-        /// Compute the overlap integral between two primitive Gaussians in one dimension using the Obara-Saika recursion.
-        pub fn overlapSingle(ij: [2]T, p: T, mu: T, XAB: T, XPA: T, XPB: T) T {
-            if (ij[0] == 0 and ij[1] == 0) {return std.math.sqrt(std.math.pi / p) * std.math.exp(-mu * XAB * XAB);}
+        /// Compute the Hermite Gaussian coefficients in one dimension.
+        pub fn hermitec(ij: [2]T, ab: [2]T, Q: T, t: T) T {
+            const p = ab[0] + ab[1]; const q = ab[0] * ab[1] / p;
 
-            else if (ij[0] > 0) {
+            if (t < 0 or t > ij[0] + ij[1]) {return 0;}
 
-                const Sij0 = overlapSingle(.{ij[0] - 1, ij[1]    }, p, mu, XAB, XPA, XPB);
-                const Sij1 = overlapSingle(.{ij[0] - 2, ij[1]    }, p, mu, XAB, XPA, XPB);
-                const Sij2 = overlapSingle(.{ij[0] - 1, ij[1] - 1}, p, mu, XAB, XPA, XPB);
+            else if (ij[0] == 0 and ij[1] == 0 and t == 0) {return std.math.exp(-q * Q * Q);}
 
-                return XPA * Sij0 + 1 / (2 * p) * ((ij[0] - 1) * Sij1 + ij[1] * Sij2);
+            else if (ij[1] == 0) {
+
+                const E1 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t - 1);
+                const E2 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t    );
+                const E3 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t + 1);
+
+                return (1 / (2 * p)) * E1 - (q * Q / ab[0]) * E2 + (t + 1) * E3;
             }
 
-            else if (ij[1] > 0) {
+            const E1 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t - 1);
+            const E2 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t    );
+            const E3 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t + 1);
 
-                const Sij0 = overlapSingle(.{ij[0]    , ij[1] - 1}, p, mu, XAB, XPA, XPB);
-                const Sij1 = overlapSingle(.{ij[0] - 1, ij[1] - 1}, p, mu, XAB, XPA, XPB);
-                const Sij2 = overlapSingle(.{ij[0]    , ij[1] - 2}, p, mu, XAB, XPA, XPB);
+            return (1 / (2 * p)) * E1 + (q * Q / ab[1]) * E2 + (t + 1) * E3;
+        }
 
-                return XPB * Sij0 + 1 / (2 * p) * (ij[0] * Sij1 + (ij[1] - 1) * Sij2);
+        /// Compute the Hermite integrals.
+        pub fn hermiteint(tuv: [3]T, XPC: [3]T, p: T, n: T) T {
+            var I: T = 0;
+
+            if (tuv[0] == 0 and tuv[1] == 0 and tuv[2] == 0) {
+                I += std.math.pow(T, -2 * p, n) * mth.boys(p * (XPC[0] * XPC[0] + XPC[1] * XPC[1] + XPC[2] * XPC[2]), n);
             }
 
-            else return 0;
+            else if (tuv[0] == 0 and tuv[1] == 0) {
+                if (tuv[2] > 1) {
+                    I += (tuv[2] - 1) * hermiteint(.{tuv[0], tuv[1], tuv[2] - 2}, XPC, p, n + 1);
+                }
+                I += XPC[2] * hermiteint(.{tuv[0], tuv[1], tuv[2] - 1}, XPC, p, n + 1);
+            }
+
+            else if (tuv[0] == 0) {
+                if (tuv[1] > 1) {
+                    I += (tuv[1] - 1) * hermiteint(.{tuv[0], tuv[1] - 2, tuv[2]}, XPC, p, n + 1);
+                }
+                I += XPC[1] * hermiteint(.{tuv[0], tuv[1] - 1, tuv[2]}, XPC, p, n + 1);
+            }
+
+            else {
+                if (tuv[0] > 1) {
+                    I += (tuv[0] - 1) * hermiteint(.{tuv[0] - 2, tuv[1], tuv[2]}, XPC, p, n + 1);
+                }
+                I += XPC[0] * hermiteint(.{tuv[0] - 1, tuv[1], tuv[2]}, XPC, p, n + 1);
+            }
+
+            return I;
+        }
+
+        /// Compute the overlap integral between two primitive Gaussians.
+        pub fn overlap(self: PrimitiveGaussian(T), other: PrimitiveGaussian(T)) T {
+            const Sij = hermitec(.{self.a[0], other.a[0]}, .{self.alpha, other.alpha}, self.A[0] - other.A[0], 0);
+            const Skl = hermitec(.{self.a[1], other.a[1]}, .{self.alpha, other.alpha}, self.A[1] - other.A[1], 0);
+            const Smn = hermitec(.{self.a[2], other.a[2]}, .{self.alpha, other.alpha}, self.A[2] - other.A[2], 0);
+
+            return Sij * Skl * Smn * std.math.pow(T, std.math.pi / (self.alpha + other.alpha), 1.5);
         }
     };
 }

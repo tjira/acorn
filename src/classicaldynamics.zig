@@ -5,6 +5,7 @@ const std = @import("std"); const Complex = std.math.Complex;
 const inp = @import("input.zig"         );
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
+const mth = @import("math.zig"          );
 const out = @import("output.zig"        );
 const vec = @import("vector.zig"        );
 
@@ -12,11 +13,6 @@ const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
 const contains = @import("helper.zig").contains;
-const      abs = @import("helper.zig").abs     ;
-const      max = @import("helper.zig").max     ;
-const      min = @import("helper.zig").min     ;
-const      sgn = @import("helper.zig").sgn     ;
-const      sum = @import("helper.zig").sum     ;
 const  asfloat = @import("helper.zig").asfloat ;
 
 /// Main function for running classical dynamics simulations.
@@ -30,7 +26,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     if (opt.initial_conditions.momentum_mean.len != ndim  ) return error.InvalidMeanMomentum;
     if (opt.initial_conditions.momentum_std.len  != ndim  ) return error.InvalidStdMomentum ;
     if (opt.initial_conditions.mass.len          != ndim  ) return error.InvalidMass        ;
-    if (sum(T, opt.initial_conditions.state)     != 1     ) return error.InvalidStateSum    ;
+    if (mth.sum(T, opt.initial_conditions.state) != 1     ) return error.InvalidStateSum    ;
 
     var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator);
 
@@ -137,7 +133,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
         for (0..opt.trajectories) |i| {
 
-            var s: u32 = undefined; for (0..nstate) |j| if (asfloat(T, i + 1) / asfloat(T, opt.trajectories) <= sum(T, opt.initial_conditions.state[0..j + 1])) {s = @intCast(j); break;};
+            var s: u32 = undefined; for (0..nstate) |j| if (asfloat(T, i + 1) / asfloat(T, opt.trajectories) <= mth.sum(T, opt.initial_conditions.state[0..j + 1])) {s = @intCast(j); break;};
 
             for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
             for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
@@ -299,13 +295,13 @@ pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), po
 pub fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), S3: []const u32, time_step: T) void {
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
 
-        const Z0 = abs(U3[0].at(j, j) - U3[0].at(i, i)); const Z1 = abs(U3[1].at(j, j) - U3[1].at(i, i)); const Z2 = abs(U3[2].at(j, j) - U3[2].at(i, i));
+        const Z0 = @abs(U3[0].at(j, j) - U3[0].at(i, i)); const Z1 = @abs(U3[1].at(j, j) - U3[1].at(i, i)); const Z2 = @abs(U3[2].at(j, j) - U3[2].at(i, i));
 
         const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
 
         var sigma = if (ddZ0 * Z0 > 0) 0.5 * std.math.sqrt(ddZ0 / Z0) else 0;
 
-        if (sum(u32, S3) != 3 * S3[0]) sigma = TDC.at(i, j);
+        if (mth.sum(u32, S3) != 3 * S3[0]) sigma = TDC.at(i, j);
 
         TDC.ptr(i, j).* = sigma; TDC.ptr(j, i).* = -TDC.at(i, j);
     };
@@ -378,11 +374,11 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), o
             P.ptr(j).* = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / (std.math.pow(T, C.at(ns).magnitude(), 2) + 1e-14) * time_step / iters;
         };
 
-        if (sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= sum(T, P.data);};
+        if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
 
         for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
 
-        if (sum(T, P.data) > 0) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+        if (mth.sum(T, P.data) > 0) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
             ns = @intCast(i);
         };
 
@@ -421,7 +417,7 @@ pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), s
 
 /// Function to resample the Bloch sphere at apecified time points.
 pub fn resampleBlochVector(comptime T: type, opt: inp.ClassicalDynamicsOptions(T).SpinMapping.Resample, S: *Matrix(T), SI: *Matrix(usize), v: Vector(T), vp: Vector(T), s: u32, rand: std.Random) !void {
-    for (0..S.rows) |k| if (abs(S.at(k, 0)) < opt.threshold and abs(S.at(k, 1)) < opt.threshold) {
+    for (0..S.rows) |k| if (@abs(S.at(k, 0)) < opt.threshold and @abs(S.at(k, 1)) < opt.threshold) {
         try initialBlochVector(T, S, SI, s, rand); break;
     };
 
@@ -452,7 +448,7 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matri
 
     for (0..S.rows) |i| {
 
-        const nu = max(SI.at(i, 0), SI.at(i, 1)); const nd = min(SI.at(i, 0), SI.at(i, 1));
+        const nu = mth.max(SI.at(i, 0), SI.at(i, 1)); const nd = mth.min(SI.at(i, 0), SI.at(i, 1));
         
         OmegaExp.get(SP, (U.at(nu, nu) - U.at(nd, nd)) * time_step, TDC.at(nd, nu) * time_step);
 
@@ -494,7 +490,7 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
 
     if (adiabatic) for (0..U3[0].rows) |i| if (i != s) {
 
-        const Z0 = abs(U3[0].at(i, i) - U3[0].at(s, s)); const Z1 = abs(U3[1].at(i, i) - U3[1].at(s, s)); const Z2 = abs(U3[2].at(i, i) - U3[2].at(s, s));
+        const Z0 = @abs(U3[0].at(i, i) - U3[0].at(s, s)); const Z1 = @abs(U3[1].at(i, i) - U3[1].at(s, s)); const Z2 = @abs(U3[2].at(i, i) - U3[2].at(s, s));
 
         const dZ0 = (Z0 - Z1) / time_step; const dZ1 = (Z1 - Z2) / time_step;
 
@@ -526,7 +522,7 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
 pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Matrix(T), mass: []const T, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, s});
 
-    for (0..min(r.rows, 3)) |k| {
+    for (0..mth.min(r.rows, 3)) |k| {
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", r.at(k)});
     }
 
@@ -534,7 +530,7 @@ pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: 
 
     try std.io.getStdOut().writer().print("] [", .{});
 
-    for (0..min(v.rows, 3)) |k| {
+    for (0..mth.min(v.rows, 3)) |k| {
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", v.at(k) * mass[k]});
     }
 
@@ -557,16 +553,16 @@ pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: 
 pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});
 
-    if (ndim > 1) for (0..min(ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
+    if (ndim > 1) for (0..mth.min(ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
 
     if (ndim > 3) try std.io.getStdOut().writer().print("     ", .{}); try std.io.getStdOut().writer().print(" {s:11}", .{"POSITION"});
 
-    if (ndim > 1) for (0..min(ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
+    if (ndim > 1) for (0..mth.min(ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
 
     if (ndim > 3) try std.io.getStdOut().writer().print("     ", .{}); try std.io.getStdOut().writer().print(" {s:11}", .{"MOMENTUM"});
 
-    if (fssh) {for (0..min(nstate, 4) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});} try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}
-    if (mash) {for (0..2                 ) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});} try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}
+    if (fssh) {for (0..mth.min(nstate, 4) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});} try std.io.getStdOut().writer().print(" {s:11}", .{"|COEFS|^2" });}
+    if (mash) {for (0..2                     ) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});} try std.io.getStdOut().writer().print(" {s:11}", .{"|BLOCHV|^2"});}
 
     try std.io.getStdOut().writer().print("\n", .{});
 }

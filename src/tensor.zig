@@ -2,9 +2,9 @@
 
 const std = @import("std");
 
-const Matrix = @import("matrix.zig").Matrix;
+const mth = @import("math.zig");
 
-const prod = @import("helper.zig").prod;
+const Matrix = @import("matrix.zig").Matrix;
 
 /// Tensor class.
 pub fn Tensor(comptime T: type) type {
@@ -14,7 +14,7 @@ pub fn Tensor(comptime T: type) type {
         /// Initialize a new tensor with the specified shape. Returns an error if the allocation fails.
         pub fn init(shape: []const usize, allocator: std.mem.Allocator) !Tensor(T) {
             const ten = Tensor(T){
-                .data = try allocator.alloc(T, prod(usize, shape)),
+                .data = try allocator.alloc(T, mth.prod(usize, shape)),
                 .shape = try allocator.alloc(usize, shape.len),
                 .stride = try allocator.alloc(usize, shape.len),
                 .allocator = allocator
@@ -23,7 +23,7 @@ pub fn Tensor(comptime T: type) type {
             @memcpy(ten.shape, shape);
 
             for (0..shape.len) |i| {
-                ten.stride[i] = prod(usize, shape[i + 1..shape.len]);
+                ten.stride[i] = mth.prod(usize, shape[i + 1..shape.len]);
             }
 
             return ten;
@@ -124,7 +124,7 @@ pub fn read(comptime T: type, path: []const u8, dim: usize, allocator: std.mem.A
 
     const ten = try Tensor(T).init(shape, allocator);
 
-    for (0..prod(usize, shape)) |i| {
+    for (0..mth.prod(usize, shape)) |i| {
 
         const bytes = try reader.readBytesNoEof(20); try reader.skipBytes(1, .{});
 

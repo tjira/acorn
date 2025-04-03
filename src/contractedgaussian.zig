@@ -2,11 +2,12 @@
 
 const std = @import("std");
 
+const mth = @import("math.zig");
+
 const PrimitiveGaussian = @import("primitivegaussian.zig").PrimitiveGaussian;
 const System            = @import("system.zig"           ).System           ;
 
 const dfact = @import("helper.zig").dfact;
-const sum   = @import("helper.zig").sum  ;
 
 /// Contracted Gaussian type.
 pub fn ContractedGaussian(comptime T: type) type {
@@ -17,7 +18,7 @@ pub fn ContractedGaussian(comptime T: type) type {
         pub fn init(A: [3]T, a: [3]T, c: []const T, alpha: []const T, allocator: std.mem.Allocator) !ContractedGaussian(T) {
 
             const g = ContractedGaussian(T) {
-                .A = A, .a = a, .c = try allocator.alloc(T, c.len), .alpha = try allocator.alloc(T, alpha.len), .l = @as(i8, @intFromFloat(sum(T, &a))), .allocator = allocator
+                .A = A, .a = a, .c = try allocator.alloc(T, c.len), .alpha = try allocator.alloc(T, alpha.len), .l = @as(i8, @intFromFloat(mth.sum(T, &a))), .allocator = allocator
             };
 
             @memcpy(g.c, c); @memcpy(g.alpha, alpha); var N: T = 0;
