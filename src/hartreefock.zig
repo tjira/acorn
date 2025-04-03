@@ -31,10 +31,14 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (opt.integral.basis != null) basis = try Basis(T).get(system, opt.integral.basis.?, allocator);
 
+    var timer = try std.time.Timer.start();
+
     const S_AO = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?,    allocator) else try int.overlap(T, basis,         allocator);
     const T_AO = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try int.kinetic(T, basis,         allocator);
     const V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try int.nuclear(T, basis, system, allocator);
     const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try int.coulomb(T, basis,         allocator);
+
+    if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
     const nbf = S_AO.cols; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
 

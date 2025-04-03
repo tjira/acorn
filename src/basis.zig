@@ -12,7 +12,11 @@ pub fn Basis(comptime T: type) type {
         /// Get the basis set for the given system and name.
         pub fn get(system: System(T), name: []const u8, allocator: std.mem.Allocator) !std.ArrayList(ContractedGaussian(T)) {
 
-            if (std.mem.eql(u8, name, "STO-3G")) return STO_3G(system, allocator);
+            const lower = try allocator.alloc(u8, name.len); defer allocator.free(lower);
+
+            _ = std.ascii.lowerString(lower, name);
+
+            if (std.mem.eql(u8, lower, "sto-3g")) return STO_3G(system, allocator);
 
             return error.InvalidBasisName;
         }

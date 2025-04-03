@@ -3,7 +3,7 @@
         "hartree_fock" : {
             "molecule" : "molecule.xyz",
             "integral" : {
-                "basis" : "STO-3G"
+                "basis" : "sto-3g"
             },
             "threshold" : 1e-8,
             "maxiter" : 100,
