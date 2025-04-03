@@ -213,7 +213,7 @@ lines.py POPULATION.mat --legends every "S\$_0\$" "S\$_1\$" --xlabel "Time (a.u.
 
 This example demonstrates how to run a surface hopping dynamics. The below example executes a Fewest Switches Surface Hopping (FSSH) dynamics on the same potential as the real-time nonadiabatic dynamics example above.
 
-```
+```json
 {
     "classical_dynamics" : {
         "adiabatic" : true,

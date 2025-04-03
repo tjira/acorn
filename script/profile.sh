@@ -1,6 +1,6 @@
 #!/bin/bash
 
-zig build
+zig build -DDEBUG
 
 valgrind --callgrind-out-file=callgrind.out --tool=callgrind acorn $1
 
