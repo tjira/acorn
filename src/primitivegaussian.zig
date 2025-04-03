@@ -16,6 +16,59 @@ pub fn PrimitiveGaussian(comptime T: type) type {
             _ = self; _ = other1; _ = other2; _ = other3; return 0;
         }
 
+        /// Compute the Hermite Gaussian coefficients in one dimension.
+        pub fn hermitec(ij: [2]T, ab: [2]T, Q: T, t: T) T {
+            const p = ab[0] + ab[1]; const q = ab[0] * ab[1] / p; var E: T = 0;
+
+            if (ij[0] == 0 and ij[1] == 0 and t == 0) {E += std.math.exp(-q * Q * Q);}
+
+            else if (ij[0] > 0) {
+
+                const E1 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t - 1);
+                const E2 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t    );
+                const E3 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t + 1);
+
+                E += (1 / (2 * p)) * E1 - (q * Q / ab[0]) * E2 + (t + 1) * E3;
+            }
+
+            else if (ij[1] > 0) {
+
+                const E1 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t - 1);
+                const E2 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t    );
+                const E3 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t + 1);
+
+                E += (1 / (2 * p)) * E1 + (q * Q / ab[1]) * E2 + (t + 1) * E3;
+            }
+
+            return E;
+        }
+
+        /// Compute the Hermite integrals.
+        pub fn hermitei(tuv: [3]T, RPC: [3]T, p: T, n: T) T {
+            var I: T = 0;
+
+            if (tuv[0] == 0 and tuv[1] == 0 and tuv[2] == 0) {
+                I += std.math.pow(T, -2 * p, n) * mth.boys(p * (RPC[0] * RPC[0] + RPC[1] * RPC[1] + RPC[2] * RPC[2]), n);
+            }
+
+            else if (tuv[0] > 0){
+                I += (tuv[0] - 1) * hermitei(.{tuv[0] - 2, tuv[1], tuv[2]}, RPC, p, n + 1);
+                I +=       RPC[0] * hermitei(.{tuv[0] - 1, tuv[1], tuv[2]}, RPC, p, n + 1);
+            }
+
+            else if (tuv[1] > 0) {
+                I += (tuv[1] - 1) * hermitei(.{tuv[0], tuv[1] - 2, tuv[2]}, RPC, p, n + 1);
+                I +=       RPC[1] * hermitei(.{tuv[0], tuv[1] - 1, tuv[2]}, RPC, p, n + 1);
+            }
+
+            else if (tuv[2] > 0) {
+                I += (tuv[2] - 1) * hermitei(.{tuv[0], tuv[1], tuv[2] - 2}, RPC, p, n + 1);
+                I +=       RPC[2] * hermitei(.{tuv[0], tuv[1], tuv[2] - 1}, RPC, p, n + 1);
+            }
+
+            return I;
+        }
+
         /// Compute the kinetic integral between two primitive Gaussians.
         pub fn kinetic(self: PrimitiveGaussian(T), other: PrimitiveGaussian(T)) T {
             const pgpl = PrimitiveGaussian(T){.A = other.A, .a = .{other.a[0] + 2, other.a[1], other.a[2]}, .alpha = other.alpha, .l = other.l + 2};
@@ -45,93 +98,31 @@ pub fn PrimitiveGaussian(comptime T: type) type {
 
         /// Compute the nuclear integral between two primitive Gaussians.
         pub fn nuclear(self: PrimitiveGaussian(T), other: PrimitiveGaussian(T), system: System(T)) T {
-            const p = self.alpha + other.alpha; var n: T = 0;
-
-            const XAB: [3]T = .{
-                self.A[0] - other.A[0],
-                self.A[1] - other.A[1],
-                self.A[2] - other.A[2]
-            };
+            var n: T = 0;
 
             for (0..system.atoms.rows) |i| {
 
-                const XPC: [3]T = .{
-                    (self.alpha * self.A[0] + other.alpha * other.A[0]) / p - system.coords.at(i, 0),
-                    (self.alpha * self.A[1] + other.alpha * other.A[1]) / p - system.coords.at(i, 1),
-                    (self.alpha * self.A[2] + other.alpha * other.A[2]) / p - system.coords.at(i, 2)
+                const RPC: [3]T = .{
+                    (self.alpha * self.A[0] + other.alpha * other.A[0]) / (self.alpha + other.alpha) - system.coords.at(i, 0),
+                    (self.alpha * self.A[1] + other.alpha * other.A[1]) / (self.alpha + other.alpha) - system.coords.at(i, 1),
+                    (self.alpha * self.A[2] + other.alpha * other.A[2]) / (self.alpha + other.alpha) - system.coords.at(i, 2)
                 };
 
                 for (0..@as(usize, @intFromFloat(self.a[0] + other.a[0])) + 1) |t| {
                     for (0..@as(usize, @intFromFloat(self.a[1] + other.a[1])) + 1) |u| {
                         for (0..@as(usize, @intFromFloat(self.a[2] + other.a[2])) + 1) |v| {
 
-                            const Eij = hermitec(.{self.a[0], other.a[0]}, .{self.alpha, other.alpha}, XAB[0], @floatFromInt(t));
-                            const Ekl = hermitec(.{self.a[1], other.a[1]}, .{self.alpha, other.alpha}, XAB[1], @floatFromInt(u));
-                            const Emn = hermitec(.{self.a[2], other.a[2]}, .{self.alpha, other.alpha}, XAB[2], @floatFromInt(v));
+                            const Eij = hermitec(.{self.a[0], other.a[0]}, .{self.alpha, other.alpha}, self.A[0] - other.A[0], @floatFromInt(t));
+                            const Ekl = hermitec(.{self.a[1], other.a[1]}, .{self.alpha, other.alpha}, self.A[1] - other.A[1], @floatFromInt(u));
+                            const Emn = hermitec(.{self.a[2], other.a[2]}, .{self.alpha, other.alpha}, self.A[2] - other.A[2], @floatFromInt(v));
 
-                            n -= system.atoms.at(i) * Eij * Ekl * Emn * hermiteint([3]T{@floatFromInt(t), @floatFromInt(u), @floatFromInt(v)}, XPC, p, 0);
+                            n -= system.atoms.at(i) * Eij * Ekl * Emn * hermitei([3]T{@floatFromInt(t), @floatFromInt(u), @floatFromInt(v)}, RPC, self.alpha + other.alpha, 0);
                         }
                     }
                 }
             }
 
-            return 2 * std.math.pi / p * n;
-        }
-
-        /// Compute the Hermite Gaussian coefficients in one dimension.
-        pub fn hermitec(ij: [2]T, ab: [2]T, Q: T, t: T) T {
-            const p = ab[0] + ab[1]; const q = ab[0] * ab[1] / p;
-
-            if (t < 0 or t > ij[0] + ij[1]) {return 0;}
-
-            else if (ij[0] == 0 and ij[1] == 0 and t == 0) {return std.math.exp(-q * Q * Q);}
-
-            else if (ij[1] == 0) {
-
-                const E1 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t - 1);
-                const E2 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t    );
-                const E3 = hermitec(.{ij[0] - 1, ij[1]}, ab, Q, t + 1);
-
-                return (1 / (2 * p)) * E1 - (q * Q / ab[0]) * E2 + (t + 1) * E3;
-            }
-
-            const E1 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t - 1);
-            const E2 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t    );
-            const E3 = hermitec(.{ij[0], ij[1] - 1}, ab, Q, t + 1);
-
-            return (1 / (2 * p)) * E1 + (q * Q / ab[1]) * E2 + (t + 1) * E3;
-        }
-
-        /// Compute the Hermite integrals.
-        pub fn hermiteint(tuv: [3]T, XPC: [3]T, p: T, n: T) T {
-            var I: T = 0;
-
-            if (tuv[0] == 0 and tuv[1] == 0 and tuv[2] == 0) {
-                I += std.math.pow(T, -2 * p, n) * mth.boys(p * (XPC[0] * XPC[0] + XPC[1] * XPC[1] + XPC[2] * XPC[2]), n);
-            }
-
-            else if (tuv[0] == 0 and tuv[1] == 0) {
-                if (tuv[2] > 1) {
-                    I += (tuv[2] - 1) * hermiteint(.{tuv[0], tuv[1], tuv[2] - 2}, XPC, p, n + 1);
-                }
-                I += XPC[2] * hermiteint(.{tuv[0], tuv[1], tuv[2] - 1}, XPC, p, n + 1);
-            }
-
-            else if (tuv[0] == 0) {
-                if (tuv[1] > 1) {
-                    I += (tuv[1] - 1) * hermiteint(.{tuv[0], tuv[1] - 2, tuv[2]}, XPC, p, n + 1);
-                }
-                I += XPC[1] * hermiteint(.{tuv[0], tuv[1] - 1, tuv[2]}, XPC, p, n + 1);
-            }
-
-            else {
-                if (tuv[0] > 1) {
-                    I += (tuv[0] - 1) * hermiteint(.{tuv[0] - 2, tuv[1], tuv[2]}, XPC, p, n + 1);
-                }
-                I += XPC[0] * hermiteint(.{tuv[0] - 1, tuv[1], tuv[2]}, XPC, p, n + 1);
-            }
-
-            return I;
+            return 2 * std.math.pi / (self.alpha + other.alpha) * n;
         }
 
         /// Compute the overlap integral between two primitive Gaussians.
