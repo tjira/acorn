@@ -5,6 +5,7 @@ const std = @import("std"); const builtin = @import("builtin"); const Complex = 
 const allocator = std.heap.page_allocator; const fsize = 2048;
 
 pub const basis                     = @import("basis.zig"                   );
+pub const bse                       = @import("bse.zig"                     );
 pub const classical_dynamics        = @import("classicaldynamics.zig"       );
 pub const configuration_interaction = @import("configurationinteraction.zig");
 pub const constant                  = @import("constant.zig"                );
