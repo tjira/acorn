@@ -86,7 +86,7 @@ pub fn PrimitiveGaussian(comptime T: type) type {
         /// Compute the Hermite integrals.
         pub fn hermitei(tuv: [3]T, RPC: [3]T, p: T, n: T) T {
             if (tuv[0] == 0 and tuv[1] == 0 and tuv[2] == 0) {
-                return std.math.pow(T, -2 * p, n) * mth.boys(p * (RPC[0] * RPC[0] + RPC[1] * RPC[1] + RPC[2] * RPC[2]), n);
+                return std.math.pow(T, -2 * p, n) * mth.boys(T, p * (RPC[0] * RPC[0] + RPC[1] * RPC[1] + RPC[2] * RPC[2]), n);
             }
 
             else if (tuv[0] > 0){

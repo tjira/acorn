@@ -8,6 +8,7 @@ const SM2AN = @import("constant.zig").SM2AN;
 const inp = @import("input.zig"   );
 const int = @import("integral.zig");
 const mat = @import("matrix.zig"  );
+const mth = @import("math.zig"    );
 const out = @import("output.zig"  );
 const ten = @import("tensor.zig"  );
 const vec = @import("vector.zig"  );
@@ -26,10 +27,29 @@ const uncr    = @import("helper.zig").uncr   ;
 pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
     if (opt.integral.basis == null and (opt.integral.overlap == null or opt.integral.kinetic == null or opt.integral.nuclear == null or opt.integral.coulomb == null)) return error.MissingIntegral;
 
-    const system = try System(T).read(opt.molecule, allocator);          defer system.deinit();
-    var   basis  = std.ArrayList(ContractedGaussian(T)).init(allocator); defer  basis.deinit();
+    if (opt.system_file == null and (opt.system.coords == null or opt.system.atoms == null)) return error.SystemNotFullySpecified;
 
-    if (opt.integral.basis != null) basis = try Basis(T).get(system, opt.integral.basis.?, allocator);
+    var basis: std.ArrayList(ContractedGaussian(T)) = undefined; var system: System(T) = undefined;
+
+    if (opt.system_file == null and opt.system.coords != null) {
+
+        system = System(T){
+            .coords = try Matrix(T).init(opt.system.coords.?.len, 3, allocator),
+            .atoms  = try Vector(T).init(opt.system.atoms .?.len,    allocator),
+            .nocc   = (mth.sum(u8, opt.system.atoms.?) - opt.system.charge) / 2,
+        };
+
+        for (0..opt.system.atoms.?.len) |i| {
+            system.atoms.ptr(i).* = @as(T, @floatFromInt(opt.system.atoms.?[i]));
+        }
+
+        for (0..opt.system.coords.?.len) |i| for (0..3) |j| {
+            system.coords.ptr(i, j).* = opt.system.coords.?[i][j] * A2AU;
+        };
+    }
+
+    if (opt.system_file != null   ) system = try System(T).read(opt.system_file.?,            allocator);
+    if (opt.integral.basis != null) basis  = try Basis(T).get  (system, opt.integral.basis.?, allocator);
 
     var timer = try std.time.Timer.start();
 
@@ -40,7 +60,12 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
-    const nbf = S_AO.cols; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+    const nbf = S_AO.cols; var npg: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+
+    for (0..nbf) |i| npg += basis.items[i].c.len;
+
+    if (print) try std.io.getStdOut().writer().print("\n# OF BASIS FUNCTIONS:      {d}\n", .{nbf});
+    if (print) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE GAUSSIANS:  {d}\n", .{npg});
 
     var T1 = try Matrix(T).init(nbf, nbf, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(nbf, nbf, allocator); defer T2.deinit();
@@ -124,6 +149,8 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
+
+    if (opt.integral.basis != null) basis.deinit();
 
     return out.HartreeFockOutput(T){
         .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .VNN = VNN, .nbf = nbf, .nocc = nocc

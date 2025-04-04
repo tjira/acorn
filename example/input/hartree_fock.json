@@ -1,6 +1,13 @@
 {
     "hartree_fock" : {
-        "molecule" : "molecule.xyz",
+        "system" : {
+            "atoms" : [8, 1, 1],
+            "coords" : [
+                [-0.04, -0.01, -0.01],
+                [ 0.65, -0.51,  0.47],
+                [ 0.38,  0.87, -0.06]
+            ]
+        },
         "integral" : {
             "basis" : "sto-3g"
         },

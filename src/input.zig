@@ -95,13 +95,19 @@ pub fn HartreeFockOptions(comptime T: type) type {
             coulomb: ?[]const u8 = null,
             basis:   ?[]const u8 = "STO-3G"
         };
+        pub const System = struct {
+            atoms: ?[]const u8 = null,
+            charge: u32 = 0,
+            coords: ?[][]const T = null,
+            multiplicity: u32 = 1
+        };
 
-        molecule: []const u8 = "molecule.xyz",
+        system_file: ?[]const u8 = null,
         threshold: T = 1e-12,
         maxiter: u32 = 100,
         dsize: ?u32 = 5,
 
-        integral: Integral = .{}
+        integral: Integral = .{}, system: System = .{},
     };
 }
 
