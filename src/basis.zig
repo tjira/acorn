@@ -2,9 +2,6 @@
 
 const std = @import("std");
 
-const BSE   = @import("bse.zig"     ).BSE  ;
-const SM2AN = @import("constant.zig").SM2AN;
-
 const ContractedGaussian = @import("contractedgaussian.zig").ContractedGaussian;
 const System             = @import("system.zig"            ).System            ;
 
@@ -14,44 +11,43 @@ pub fn Basis(comptime T: type) type {
 
         /// Get the basis set for the given system and name.
         pub fn get(system: System(T), name: []const u8, allocator: std.mem.Allocator) !std.ArrayList(ContractedGaussian(T)) {
-            var basis = std.ArrayList(ContractedGaussian(T)).init(allocator);
+            var basis = std.ArrayList(ContractedGaussian(T)).init(allocator); var parsed: std.json.Parsed(std.json.Value) = undefined; defer parsed.deinit();
 
             const lower = try allocator.alloc(u8, name.len); defer allocator.free(lower); _ = std.ascii.lowerString(lower, name);
 
-            if (BSE.get(lower) == null) return error.BasisNotFound;
+            if      (std.mem.eql(u8, lower, "sto-3g")) {parsed = try std.json.parseFromSlice(std.json.Value, allocator, @embedFile("basis/sto-3g.json"), .{});}
+            else if (std.mem.eql(u8, lower, "6-31g" )) {parsed = try std.json.parseFromSlice(std.json.Value, allocator, @embedFile("basis/6-31g.json" ), .{});}
+
+            else return error.BasisNameNotFound;
 
             for (0..system.atoms.rows) |i| {
 
-                var a     = std.ArrayList([3]      T).init(allocator); defer     a.deinit();
-                var c     = std.ArrayList([ ]const T).init(allocator); defer     c.deinit();
-                var alpha = std.ArrayList([ ]const T).init(allocator); defer alpha.deinit();
+                var an: [3]u8 = undefined; const ans = std.fmt.formatIntBuf(&an, @as(u8, @intFromFloat(system.atoms.at(i))), 10, std.fmt.Case.lower, .{});
 
-                for (SM2AN.keys()) |symbol| if (SM2AN.get(symbol).? == @as(u32, @intFromFloat(system.atoms.at(i)))) {
+                if (parsed.value.object.get("elements").?.object.get(an[0..ans]) == null) return error.AtomNotFoundInBasis;
 
-                    if (BSE.get(lower).?.get(symbol) == null) return error.AtomNotFoundInBasis;
+                const shells = parsed.value.object.get("elements").?.object.get(an[0..ans]).?.object.get("electron_shells").?.array.items;
 
-                    const array = BSE.get(lower).?.get(symbol).?; const ncgs = @as(usize, @intFromFloat(array[0]));
+                for (shells) |shell| {
 
-                    for (0..ncgs) |j| {
+                    const am        = shell.object.get("angular_momentum").?.array.items[0].integer    ;
+                    const exponents = shell.object.get("exponents"       ).?.array.items               ;
+                    const coefs     = shell.object.get("coefficients"    ).?.array.items[0].array.items;
 
-                        const npgs = @as(usize, @intFromFloat(array[1 + j])); var li = 1 + ncgs;
+                    var a     = try allocator.alloc(T, 3            ); defer     allocator.free(a);
+                    var c     = try allocator.alloc(T, coefs.len    ); defer     allocator.free(c);
+                    var alpha = try allocator.alloc(T, exponents.len); defer allocator.free(alpha);
 
-                        for (0..j) |k| li += 2 * @as(usize, @intFromFloat(array[1 + k])) + 1;
+                    for (0..@as(usize, @intCast(2 * am + 1))) |j| {
 
-                        const l = @as(usize, @intFromFloat(array[li]));
+                        a[0] = 0; a[1] = 0; a[2] = 0; if (am == 1) {a[j] = @as(T, @floatFromInt(am));} else if (am > 1) return error.InvalidAngularMomentum;
 
-                        for (0..2 * l + 1) |k| {
+                        for (0..c.len    ) |k| c[k]     = try std.fmt.parseFloat(T,     coefs[k].string);
+                        for (0..alpha.len) |k| alpha[k] = try std.fmt.parseFloat(T, exponents[k].string);
 
-                            var ak: [3]T = .{0, 0, 0};
-
-                            if (l == 1) {ak[k] = 1;} else if (l > 1) return error.InvalidAngularMomentum;
-
-                            try a.append(ak); try c.append(array[li + 1..li + npgs + 1]); try alpha.append(array[li + npgs + 1..li + 2 * npgs + 1]);
-                        }
+                        try basis.append(try ContractedGaussian(T).init(system.getCoords(i), .{a[0], a[1], a[2]}, c, alpha, allocator));
                     }
-                };
-
-                for (0..a.items.len) |j| try basis.append(try ContractedGaussian(T).init(system.getCoords(i), a.items[j], c.items[j], alpha.items[j], allocator));
+                }
             }
 
             return basis;
