@@ -41,15 +41,11 @@ pub fn Tensor(comptime T: type) type {
             return self.ptr(indices).*;
         }
 
-        /// Returns the element at the specified indices as a mutable reference.
-        pub fn ptr(self: Tensor(T), indices: []const usize) *T {
-            var index: usize = 0;
-
-            for (0..indices.len) |i| {
-                index += indices[i] * self.stride[i];
+        /// Fill the tensor with the specified value.
+        pub fn fill(self: *Tensor(T), value: T) void {
+            for (0..self.data.len) |i| {
+                self.data[i] = value;
             }
-
-            return &self.data[index];
         }
 
         /// Returns the tensor as a matrix. No memory is allocated. Currently only works for 4D tensors.
@@ -62,11 +58,37 @@ pub fn Tensor(comptime T: type) type {
             };
         }
 
-        /// Fill the tensor with the specified value.
-        pub fn fill(self: *Tensor(T), value: T) void {
-            for (0..self.data.len) |i| {
-                self.data[i] = value;
+        /// Print the matrix to the given device.
+        pub fn print(self: Tensor(T), device: anytype) !void {
+            var buffered = std.io.bufferedWriter(device); var writer = buffered.writer();
+
+            for (0..self.shape.len) |i| {
+                try writer.print("{d}{s}", .{self.shape[i], if(i < self.shape.len - 1) " " else "\n"});
             }
+
+            for (self.data, 1..) |e, i| {
+                try writer.print("{d:20.14}{s}", .{e, if(i % (self.shape[2] * self.shape[3]) == 0) "\n" else " "});
+            }
+
+            try buffered.flush();
+        }
+
+        /// Returns the element at the specified indices as a mutable reference.
+        pub fn ptr(self: Tensor(T), indices: []const usize) *T {
+            var index: usize = 0;
+
+            for (0..indices.len) |i| {
+                index += indices[i] * self.stride[i];
+            }
+
+            return &self.data[index];
+        }
+
+        /// Write the tensor to a file.
+        pub fn write(self: Tensor(T), path: []const u8) !void {
+            const file = try std.fs.cwd().createFile(path, .{}); defer file.close();
+
+            try self.print(file.writer());
         }
     };
 }

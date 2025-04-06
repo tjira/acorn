@@ -20,7 +20,9 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
     const hf = try hfm.run(T, opt.hartree_fock, print, allocator);
 
-    const nbf = 2 * hf.S_AO.rows; const nocc = 2 * hf.system.nocc; const ndet = mth.comb(nbf, nocc);
+    const D = try generateDeterminants(hf.S_AO.rows, hf.system.nocc, allocator); defer D.deinit();
+
+    const nbf = 2 * hf.S_AO.rows; const nocc = 2 * hf.system.nocc;
 
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
 
@@ -28,20 +30,19 @@ pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print:
 
     try transform(T, &H_MS, &J_MS_A, hf.T_AO, hf.V_AO, hf.J_AO, hf.C_MO, allocator);
 
-    if (print) try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{ndet});
+    if (print) try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{D.rows});
 
-    var T1 = try Matrix(T).init(ndet, ndet, allocator); defer T1.deinit();
-    var T2 = try Matrix(T).init(ndet, ndet, allocator); defer T2.deinit();
+    var T1 = try Matrix(T).init(D.rows, D.rows, allocator); defer T1.deinit();
+    var T2 = try Matrix(T).init(D.rows, D.rows, allocator); defer T2.deinit();
 
-    var A = try Vector(usize).init(nocc,       allocator); defer A.deinit();
-    var D = try Matrix(usize).init(ndet, nocc, allocator); defer D.deinit();
-    var H = try Matrix(T    ).init(ndet, ndet, allocator); defer H.deinit();
-    var E = try Matrix(T    ).init(ndet, ndet, allocator); defer E.deinit();
-    var C = try Matrix(T    ).init(ndet, ndet, allocator); defer C.deinit();
+    var A = try Vector(usize).init(nocc,           allocator); defer A.deinit();
+    var H = try Matrix(T    ).init(D.rows, D.rows, allocator); defer H.deinit();
+    var E = try Matrix(T    ).init(D.rows, D.rows, allocator); defer E.deinit();
+    var C = try Matrix(T    ).init(D.rows, D.rows, allocator); defer C.deinit();
 
-    generateDeterminants(&D, nbf); H.fill(0);
+    H.fill(0);
 
-    for (0..ndet) |i| for (i..ndet) |j| {
+    for (0..D.rows) |i| for (i..D.rows) |j| {
 
         var so: [4]usize = undefined; var diff: u32 = 0; var k: usize = 0;
 
@@ -85,19 +86,24 @@ fn alignDeterminant(A: *Vector(usize), B: Vector(usize), C: Vector(usize)) !i32 
 }
 
 /// Generates the determinants for the CI calculations.
-fn generateDeterminants(D: *Matrix(usize), nbf: usize) void {
-    for (0..D.cols) |i| D.ptr(0, i).* = i;
+fn generateDeterminants(nbf: usize, nocc: usize, allocator: std.mem.Allocator) !Matrix(usize) {
+    const data_alpha = try allocator.alloc(usize, nbf); defer allocator.free(data_alpha);
+    const data_beta  = try allocator.alloc(usize, nbf); defer allocator.free(data_beta );
+    
+    for (0..data_alpha.len) |i| data_alpha[i] = 2 * i + 0;
+    for (0..data_beta.len ) |i| data_beta[i]  = 2 * i + 1;
 
-    for (1..D.rows) |i| {
+    const dets_alpha = try mth.combinations(usize, data_alpha, nocc, allocator); defer dets_alpha.deinit();
+    const dets_beta  = try mth.combinations(usize, data_beta,  nocc, allocator); defer  dets_beta.deinit();
 
-        @memcpy(D.row(i).data, D.row(i - 1).data); var index: usize = undefined;
+    const D = try Matrix(usize).init(dets_alpha.items.len * dets_beta.items.len, 2 * nocc, allocator);
 
-        for (0..D.cols) |j| if (D.at(i, D.cols - j - 1) != nbf - j - 1) {
-            D.ptr(i, D.cols - j - 1).* += 1; index = D.cols - j - 1; break;
-        };
+    for (0..dets_alpha.items.len) |i| for (0..dets_beta.items.len) |j| for (0..nocc) |k| {
+        D.ptr(i * dets_beta.items.len + j, k       ).* = dets_alpha.items[i][k];
+        D.ptr(i * dets_beta.items.len + j, k + nocc).* =  dets_beta.items[j][k];
+    };
 
-        for (index + 1..D.cols) |j| D.ptr(i, j).* = D.at(i, j - 1) + 1;
-    }
+    return D;
 }
 
 /// Slater-Condon rules for the CI calculations.

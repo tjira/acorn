@@ -101,13 +101,21 @@ pub fn HartreeFockOptions(comptime T: type) type {
             coords: ?[]const [3]T = null,
             multiplicity: u32 = 1
         };
+        pub const Write = struct {
+            coefficient_ao: ?[]const u8 = null,
+            density_ao:     ?[]const u8 = null,
+            nuclear_ao:     ?[]const u8 = null,
+            kinetic_ao:     ?[]const u8 = null,
+            coulomb_ao:     ?[]const u8 = null,
+            overlap_ao:     ?[]const u8 = null,
+        };
 
         system_file: ?[]const u8 = null,
         threshold: T = 1e-12,
         maxiter: u32 = 100,
         dsize: ?u32 = 5,
 
-        integral: Integral = .{}, system: System = .{},
+        integral: Integral = .{}, system: System = .{}, write: Write = .{}
     };
 }
 

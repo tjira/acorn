@@ -120,7 +120,7 @@ for i, j in ((i, j) for i, j in it.product(range(natoms), range(natoms)) if i !=
     VNN += 0.5 * atoms[i] * atoms[j] / np.linalg.norm(coords[i, :] - coords[j, :])
 
 # print the results
-print("    RHF ENERGY: {:.8f} ({} ITERATIONS)".format(E_HF + VNN, iter))
+print("    RHF ENERGY: {:.8f} ({} ITERATIONS  )".format(E_HF + VNN, iter))
 
 # INTEGRAL TRANSFORMS FOR POST-HARTREE-FOCK METHODS ==============================================================================
 if args.mp2 or args.mp3 or args.ccd or args.ccsd or args.fci:
@@ -323,12 +323,15 @@ if args.ccd or args.ccsd:
 
         # print the CCSD energy
         print("   CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
-
 # CONFIGURATION INTERACTION ======================================================================================================
 if args.fci:
 
-    # generate the determiants
-    dets = [np.array(det) for det in it.combinations(range(2 * nbf), 2 * nocc)]
+    # generate all combinations for alpha and beta electrons separately
+    dets_alpha = list(it.combinations(range(0, 2 * nbf, 2), nocc))
+    dets_beta  = list(it.combinations(range(1, 2 * nbf, 2), nocc))
+
+    # generate the singlet determinants
+    dets = np.array([alpha + beta for alpha in dets_alpha for beta in dets_beta])
 
     # define the CI Hamiltonian
     Hci = np.zeros([len(dets), len(dets)])
@@ -372,4 +375,4 @@ if args.fci:
     eci, Cci = np.linalg.eigh(Hci); E_FCI = eci[0] - E_HF
 
     # print the results
-    print("    FCI ENERGY: {:.8f}".format(E_HF + E_FCI + VNN))
+    print("    FCI ENERGY: {:.8f} ({} DETERMINANTS)".format(E_HF + E_FCI + VNN, len(dets)))

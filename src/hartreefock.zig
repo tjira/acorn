@@ -152,11 +152,19 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (opt.integral.basis != null) basis.deinit();
 
+    if (opt.write.coefficient_ao != null) try C_MO.write(opt.write.coefficient_ao.?);
+    if (opt.write.coulomb_ao     != null) try J_AO.write(opt.write.coulomb_ao.?    );
+    if (opt.write.density_ao     != null) try D_MO.write(opt.write.density_ao.?    );
+    if (opt.write.kinetic_ao     != null) try T_AO.write(opt.write.kinetic_ao.?    );
+    if (opt.write.nuclear_ao     != null) try V_AO.write(opt.write.nuclear_ao.?    );
+    if (opt.write.overlap_ao     != null) try S_AO.write(opt.write.overlap_ao.?    );
+
     return out.HartreeFockOutput(T){
         .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .system = system
     };
 }
 
+/// Extrapolate the DIIS error to obtain a new Fock matrix.
 pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayList(Matrix(T)), DIIS_E: *std.ArrayList(Matrix(T)), iter: u32, allocator: std.mem.Allocator) !void {
     if (iter > 0) {
 

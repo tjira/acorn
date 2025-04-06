@@ -19,6 +19,30 @@ pub fn comb(n: anytype, k: @TypeOf(n)) @TypeOf(n) {
     return nck;
 }
 
+/// Generate all combinations of n elements from an array.
+pub fn combinations(comptime T: type, array: []const T, n: usize, allocator: std.mem.Allocator) !std.ArrayList([]T) {
+    var result = std.ArrayList([]T).init(allocator); var current = std.ArrayList(usize).init(allocator); defer current.deinit();
+
+    const Backtrack = struct { fn get(res: *std.ArrayList([]T), arr: []const T, m: usize, curr: *std.ArrayList(usize), start: usize, alloc: std.mem.Allocator) !void {
+        if (curr.items.len == m) {
+
+            var last = try alloc.alloc(T, m);
+
+            for (curr.items, 0..) |index, i| {
+                last[i] = arr[index];
+            }
+
+            try res.append(last); return;
+        }
+
+        for (start..arr.len) |i| {
+            try curr.append(i); try get(res, arr, m, curr, i + 1, alloc); _ = curr.pop();
+        }
+    }};
+
+    try Backtrack.get(&result, array, n, &current, 0, allocator); return result;
+}
+
 /// Calculate the double factorial of a number.
 pub fn dfact(n: anytype) @TypeOf(n) {
     if (n == -1 or n == 0 or n == 1) return 1;
