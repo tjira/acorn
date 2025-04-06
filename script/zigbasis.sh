@@ -4,6 +4,7 @@ BASES=(
     "sto-3g"
     "6-31g"
     "cc-pvdz"
+    "cc-pvtz"
 )
 
 for BASIS in ${BASES[@]}; do
