@@ -4,6 +4,7 @@ const std = @import("std");
 
 const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
+const System = @import("system.zig").System;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// The classical dynamics output.
@@ -40,7 +41,12 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
 /// The CI output.
 pub fn ConfigurationInteractionOutput(comptime T: type) type {
     return struct {
-        E: T
+        E: T,
+
+        /// Free the memory allocated for the CI output.
+        pub fn deinit(self: ConfigurationInteractionOutput(T)) void {
+            _ = self;
+        }
     };
 }
 
@@ -50,11 +56,14 @@ pub fn HartreeFockOutput(comptime T: type) type {
         S_AO: Matrix(T), T_AO: Matrix(T), V_AO: Matrix(T), J_AO: Tensor(T),
         C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T),
 
-        E: T, VNN: T, nbf: usize, nocc: usize,
+        system: System(T), E: T, 
 
         /// Free the memory allocated for the Hartree-Fock output.
         pub fn deinit(self: HartreeFockOutput(T)) void {
+            self.S_AO.deinit(); self.T_AO.deinit(); self.V_AO.deinit(); self.J_AO.deinit();
             self.C_MO.deinit(); self.D_MO.deinit(); self.E_MO.deinit(); self.F_AO.deinit();
+
+            self.system.deinit();
         }
     };
 }
@@ -62,7 +71,12 @@ pub fn HartreeFockOutput(comptime T: type) type {
 /// The Moller-Plesset output.
 pub fn MollerPlessetOutput(comptime T: type) type {
     return struct {
-        E: T
+        E: T,
+
+        /// Free the memory allocated for the Moller-Plesset output.
+        pub fn deinit(self: MollerPlessetOutput(T)) void {
+            _ = self;
+        }
     };
 }
 

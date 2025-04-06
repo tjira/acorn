@@ -15,7 +15,7 @@ const Tensor = @import("tensor.zig").Tensor;
 pub fn run(comptime T: type, opt: inp.MollerPlessetOptions(T), print: bool, allocator: std.mem.Allocator) !out.MollerPlessetOutput(T) {
     if (opt.order != 2) return error.PerturbationOrderNotImplemented;
 
-    const hf = try hfm.run(T, opt.hartree_fock, print, allocator); const nbf = 2 * hf.nbf; const nocc = 2 * hf.nocc;
+    const hf = try hfm.run(T, opt.hartree_fock, print, allocator); const nbf = 2 * hf.S_AO.rows; const nocc = 2 * hf.system.nocc;
 
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
     

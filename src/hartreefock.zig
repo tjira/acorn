@@ -51,6 +51,13 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     if (opt.system_file != null   ) system = try System(T).read(opt.system_file.?,            allocator);
     if (opt.integral.basis != null) basis  = try Basis(T).get  (system, opt.integral.basis.?, allocator);
 
+    const nbf = basis.items.len; var npg: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+
+    for (0..nbf) |i| npg += basis.items[i].c.len;
+
+    if (print) try std.io.getStdOut().writer().print("\n# OF BASIS FUNCTIONS:      {d}\n", .{nbf});
+    if (print) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE GAUSSIANS:  {d}\n", .{npg});
+
     var timer = try std.time.Timer.start();
 
     const S_AO = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?,    allocator) else try int.overlap(T, basis,         allocator);
@@ -59,13 +66,6 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try int.coulomb(T, basis,         allocator);
 
     if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
-
-    const nbf = S_AO.cols; var npg: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
-
-    for (0..nbf) |i| npg += basis.items[i].c.len;
-
-    if (print) try std.io.getStdOut().writer().print("\n# OF BASIS FUNCTIONS:      {d}\n", .{nbf});
-    if (print) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE GAUSSIANS:  {d}\n", .{npg});
 
     var T1 = try Matrix(T).init(nbf, nbf, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(nbf, nbf, allocator); defer T2.deinit();
@@ -153,7 +153,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     if (opt.integral.basis != null) basis.deinit();
 
     return out.HartreeFockOutput(T){
-        .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .VNN = VNN, .nbf = nbf, .nocc = nocc
+        .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .system = system
     };
 }
 
@@ -180,7 +180,7 @@ pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayLis
             };
         };
 
-        mat.linsolve(T, &c, &A, &b); F_AO.fill(0);
+        mat.linsolve(T, &c, &A, &b); if (std.math.isNan(mth.sum(T, c.data))) return; F_AO.fill(0); 
 
         for (0..size) |i| {
 

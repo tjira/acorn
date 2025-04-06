@@ -20,7 +20,7 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
     const hf = try hfm.run(T, opt.hartree_fock, print, allocator);
 
-    const nbf = 2 * hf.nbf; const nocc = 2 * hf.nocc; const ndet = mth.comb(nbf, nocc);
+    const nbf = 2 * hf.S_AO.rows; const nocc = 2 * hf.system.nocc; const ndet = mth.comb(nbf, nocc);
 
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
 
@@ -28,7 +28,7 @@ pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print:
 
     try transform(T, &H_MS, &J_MS_A, hf.T_AO, hf.V_AO, hf.J_AO, hf.C_MO, allocator);
 
-    try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{ndet});
+    if (print) try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{ndet});
 
     var T1 = try Matrix(T).init(ndet, ndet, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(ndet, ndet, allocator); defer T2.deinit();
@@ -64,10 +64,10 @@ pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print:
 
     mat.eigh(T, &E, &C, H, &T1, &T2);
 
-    std.debug.print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + hf.VNN});
+    if (print) try std.io.getStdOut().writer().print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + hf.system.nuclearRepulsion()});
 
     return .{
-        .E = E.at(0, 0) + hf.VNN,
+        .E = E.at(0, 0) + hf.system.nuclearRepulsion(),
     };
 }
 

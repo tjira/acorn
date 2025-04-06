@@ -98,14 +98,14 @@ pub fn HartreeFockOptions(comptime T: type) type {
         pub const System = struct {
             atoms: ?[]const u8 = null,
             charge: u32 = 0,
-            coords: ?[][]const T = null,
+            coords: ?[]const [3]T = null,
             multiplicity: u32 = 1
         };
 
         system_file: ?[]const u8 = null,
         threshold: T = 1e-12,
         maxiter: u32 = 100,
-        dsize: ?u32 = 5,
+        dsize: ?u32 = null,
 
         integral: Integral = .{}, system: System = .{},
     };
