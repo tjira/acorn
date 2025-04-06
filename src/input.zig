@@ -93,7 +93,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
             kinetic: ?[]const u8 = null,
             nuclear: ?[]const u8 = null,
             coulomb: ?[]const u8 = null,
-            basis:   ?[]const u8 = "STO-3G"
+            basis:   ?[]const u8 = "sto-3g"
         };
         pub const System = struct {
             atoms: ?[]const u8 = null,
@@ -105,7 +105,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
         system_file: ?[]const u8 = null,
         threshold: T = 1e-12,
         maxiter: u32 = 100,
-        dsize: ?u32 = null,
+        dsize: ?u32 = 5,
 
         integral: Integral = .{}, system: System = .{},
     };
