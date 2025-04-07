@@ -126,4 +126,30 @@ pub fn main() !void {
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+
+    // const N = 30; const k = 1;
+    //
+    // var A  = try matrix.Matrix(f64).init(N, N, allocator); defer  A.deinit();
+    // var AJ = try matrix.Matrix(f64).init(N, N, allocator); defer AJ.deinit();
+    // var AC = try matrix.Matrix(f64).init(N, N, allocator); defer AC.deinit();
+    // var AT = try matrix.Matrix(f64).init(N, N, allocator); defer AT.deinit();
+    // var DJ = try matrix.Matrix(f64).init(N, N, allocator); defer DJ.deinit();
+    // var DC = try matrix.Matrix(f64).init(N, N, allocator); defer DC.deinit();
+    //
+    // var T1 = try matrix.Matrix(f64).init(N, N, allocator); defer T1.deinit();
+    // var T2 = try matrix.Matrix(f64).init(N, N, allocator); defer T1.deinit();
+    //
+    // A.randn(0.0, 1.0, 1); matrix.transpose(f64, &AT, A); matrix.add(f64, &A, A, AT); matrix.muls(f64, &A, A, 0.5);
+    //
+    // matrix.eigh(f64, &AJ, &AC, A, &T1, &T2);
+    // try matrix.davidson(f64, &DJ, &DC, A, k, N);
+    //
+    // std.debug.print("{d:20.14}\n", .{AJ.at(0, 0)});
+    // std.debug.print("{d:20.14}\n", .{DJ.at(0, 0)});
+
+    // try AJ.print(std.io.getStdOut().writer());
+    // try  A.print(std.io.getStdOut().writer());
+    // try AC.print(std.io.getStdOut().writer());
+    // try DJ.print(std.io.getStdOut().writer());
+    // try DC.print(std.io.getStdOut().writer());
 }

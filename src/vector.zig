@@ -69,6 +69,17 @@ pub fn Vector(comptime T: type) type {
             };
         }
 
+        /// Calculate the norm of the vector.
+        pub fn norm(self: Vector(T)) T {
+            var sum: T = 0;
+
+            for (0..self.data.len) |i| {
+                sum += self.data[i] * self.data[i];
+            }
+
+            return std.math.sqrt(sum);
+        }
+
         /// Return the element at the specified index as a mutable reference.
         pub fn ptr(self: Vector(T), i: usize) *T {
             return &self.data[i];
