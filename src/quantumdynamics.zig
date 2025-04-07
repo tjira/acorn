@@ -265,7 +265,12 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T),
         pot.eval_fn(&U, rvec.row(i).vector()); mat.eigh(T, &UA, &UC, U, &T1, &T2);
 
         if (i > 0) for (0..UC.cols) |j| {
-            var overlap: T = 0; for (0..UC.rows) |k| {overlap += UC.at(k, j) * UCP.at(k, j);} if (overlap < 0) for (0..UC.rows) |k| {UC.ptr(k, j).* *= -1;};
+
+            var overlap: T = 0;
+
+            for (0..UC.rows) |k| overlap += UC.at(k, j) * UCP.at(k, j);
+
+            if (overlap < 0) for (0..UC.rows) |k| {UC.ptr(k, j).* *= -1;};
         };
 
         try V.append(try U.complex()); try VA.append(try UA.complex()); try VC.append(try UC.complex());

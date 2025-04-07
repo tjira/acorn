@@ -26,6 +26,7 @@ pub fn getMap(comptime T: type, allocator: std.mem.Allocator) !std.StringHashMap
     try map.put("doubleHarmonic1D_1",      Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {     doubleHarmonic1D_1(T, U, r);}}.get});
     try map.put("doubleState1D_1",         Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        doubleState1D_1(T, U, r);}}.get});
     try map.put("doubleState1D_2",         Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        doubleState1D_2(T, U, r);}}.get});
+    try map.put("doubleState2D_1",         Potential(T){.dims = 2,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        doubleState2D_1(T, U, r);}}.get});
     try map.put("doubleWell1D_1",          Potential(T){.dims = 1,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {         doubleWell1D_1(T, U, r);}}.get});
     try map.put("harmonic1D_1",            Potential(T){.dims = 1,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {           harmonic1D_1(T, U, r);}}.get});
     try map.put("harmonic2D_1",            Potential(T){.dims = 2,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {           harmonic2D_1(T, U, r);}}.get});
@@ -169,6 +170,15 @@ pub fn doubleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = -0.01 * std.math.tanh(0.6 * r.at(0));
+}
+
+/// The first 2D double-state model potential energy surface.
+pub fn doubleState2D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = (0.5 * r.at(0) * r.at(0)) + (5 + 0.25 * r.at(1) * r.at(1));
+    U.ptr(0, 1).* = 0;
+
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = (0.5 * r.at(1) * r.at(1)) + (5 + 0.25 * r.at(0) * r.at(0));
 }
 
 /// One dimensional double well potential.
