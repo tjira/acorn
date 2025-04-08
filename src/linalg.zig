@@ -9,8 +9,6 @@ const vec = @import("vector.zig");
 const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
 
-
-
 /// The Davidson algorithm for finding the eigenvalues and eigenvectors of a real symmetric matrix A.
 pub fn davidson(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), k: usize, m: usize, allocator: std.mem.Allocator) !void {
     const tolerance: T = 1e-12;
@@ -259,13 +257,13 @@ pub fn tridiagonalize(comptime T: type, D: *Matrix(T), Q: *Matrix(T), A: Matrix(
             if (j != k) D.ptr(j, k).* = (D.at(j, k) + D.at(k, j)) / 2;
         };
 
-        for (0..A.rows - i) |j| {
+        for (0..A.rows) |j| {
 
             var wj: T = 0;
 
-            for (0..A.rows - i - 1) |k| wj += x.at(k) * Q.at(i + j, i + k + 1);
+            for (0..A.rows - i - 1) |k| wj += x.at(k) * Q.at(j, i + k + 1);
 
-            for (0..A.rows - i - 1) |k| Q.ptr(i + j, i + k + 1).* -= 2 * wj * x.at(k);
+            for (0..A.rows - i - 1) |k| Q.ptr(j, i + k + 1).* -= 2 * wj * x.at(k);
         }
     }
 }

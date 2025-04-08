@@ -128,23 +128,23 @@ pub fn main() !void {
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
-    const N = 4; var k: u32 = 1; k = k;
-
-    var A  = try matrix.Matrix(f64).init(N, N, allocator); defer  A.deinit();
-    var Q  = try matrix.Matrix(f64).init(N, N, allocator); defer  Q.deinit();
-    var R  = try matrix.Matrix(f64).init(N, N, allocator); defer  R.deinit();
-    var AJ = try matrix.Matrix(f64).init(N, N, allocator); defer AJ.deinit();
-    var AC = try matrix.Matrix(f64).init(N, N, allocator); defer AC.deinit();
-    var AT = try matrix.Matrix(f64).init(N, N, allocator); defer AT.deinit();
-    var DJ = try matrix.Matrix(f64).init(N, N, allocator); defer DJ.deinit();
-    var DC = try matrix.Matrix(f64).init(N, N, allocator); defer DC.deinit();
-    var QJ = try matrix.Matrix(f64).init(N, N, allocator); defer QJ.deinit();
-    var QC = try matrix.Matrix(f64).init(N, N, allocator); defer QC.deinit();
-
-    var T1 = try matrix.Matrix(f64).init(N, N, allocator); defer T1.deinit();
-    var T2 = try matrix.Matrix(f64).init(N, N, allocator); defer T2.deinit();
-    var T3 = try vector.Vector(f64).init(N, allocator); defer T3.deinit();
-
+    // const N = 5; var k: u32 = 1; k = k;
+    //
+    // var A  = try matrix.Matrix(f64).init(N, N, allocator); defer  A.deinit();
+    // var Q  = try matrix.Matrix(f64).init(N, N, allocator); defer  Q.deinit();
+    // var R  = try matrix.Matrix(f64).init(N, N, allocator); defer  R.deinit();
+    // var AJ = try matrix.Matrix(f64).init(N, N, allocator); defer AJ.deinit();
+    // var AC = try matrix.Matrix(f64).init(N, N, allocator); defer AC.deinit();
+    // var AT = try matrix.Matrix(f64).init(N, N, allocator); defer AT.deinit();
+    // var DJ = try matrix.Matrix(f64).init(N, N, allocator); defer DJ.deinit();
+    // var DC = try matrix.Matrix(f64).init(N, N, allocator); defer DC.deinit();
+    // var QJ = try matrix.Matrix(f64).init(N, N, allocator); defer QJ.deinit();
+    // var QC = try matrix.Matrix(f64).init(N, N, allocator); defer QC.deinit();
+    //
+    // var T1 = try matrix.Matrix(f64).init(N, N, allocator); defer T1.deinit();
+    // var T2 = try matrix.Matrix(f64).init(N, N, allocator); defer T2.deinit();
+    // var T3 = try vector.Vector(f64).init(N, allocator); defer T3.deinit();
+    //
     // A.randn(0.0, 1.0, 1); matrix.transpose(f64, &AT, A); matrix.add(f64, &A, A, AT); matrix.muls(f64, &A, A, 0.5);
     //
     // // A.ptr(0, 0).* = 1.0; A.ptr(0, 1).* = 2.0; A.ptr(0, 2).* = 3.0;
@@ -155,14 +155,14 @@ pub fn main() !void {
     // linear_algebra.eighJacobi(f64, &AJ, &AC, A, &T1, &T2);
     // try linear_algebra.davidson(f64, &DJ, &DC, A, k, N, allocator);
     //
-    // // try  A.print(std.io.getStdOut().writer());
+    // try  A.print(std.io.getStdOut().writer());
     // // try  Q.print(std.io.getStdOut().writer());
     // // try  R.print(std.io.getStdOut().writer());
     // // try AJ.print(std.io.getStdOut().writer());
     // // try QJ.print(std.io.getStdOut().writer());
     // // try DJ.print(std.io.getStdOut().writer());
-    // try AC.print(std.io.getStdOut().writer());
-    // try QC.print(std.io.getStdOut().writer());
+    // // try AC.print(std.io.getStdOut().writer());
+    // // try QC.print(std.io.getStdOut().writer());
     // // try DC.print(std.io.getStdOut().writer());
     //
     // std.debug.print("\n", .{});
