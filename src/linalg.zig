@@ -39,8 +39,7 @@ pub fn davidson(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), k:
 
         mat.mam(T, &T3, V, A); mat.mm(T, &K, T3, V); @memcpy(JP.data , J.data);
 
-        // try eighQr(T, &KJ, &KC, K, allocator);
-        eighJacobi(T, &KJ, &KC, K, &T1, &T2);
+        try eighQr(T, &KJ, &KC, K, allocator);
 
         for (0..KJ.rows) |i| {J.ptr(i, i).* = KJ.at(i, i);} for (0..KC.rows) |i| for (0..KC.cols) |j| {C.ptr(i, j).* = KC.at(i, j);};
 
@@ -127,13 +126,14 @@ pub fn eighJacobi(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), 
 
 /// Eigenvalue finder using QR decomposition. The eigenvalues are stored in the diagonal of the matrix J, and the eigenvectors are stored in the columns of the matrix C.
 pub fn eighQr(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), allocator: std.mem.Allocator) !void {
-    const maxiter: usize = 100000; const tolerance: T = 1e-14;
+    const maxiter: usize = 100000; const tolerance: T = 1e-12;
 
+    var QT = try Matrix(T).init(A.rows, A.cols, allocator); defer QT.deinit();
     var T1 = try Matrix(T).init(A.rows, A.cols, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(A.rows, A.cols, allocator); defer T2.deinit();
     var T3 = try Vector(T).init(A.rows,         allocator); defer T3.deinit();
 
-    try tridiagonalize(T, J, &T2, A, &T3); C.identity();
+    try tridiagonalize(T, J, &QT, A, &T3); C.identity();
 
     for (0..maxiter) |i| {
 
@@ -151,6 +151,8 @@ pub fn eighQr(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), allo
 
         if (i == maxiter - 1) return error.EighQrIterationsExceeded;
     }
+
+    mat.mm(T, &T2, QT, C.*); @memcpy(C.data, T2.data);
 
     for (0..A.rows) |i| for (i + 1..A.cols) |j| if (J.at(i, i) > J.at(j, j)) {
 
@@ -223,7 +225,7 @@ pub fn qr(comptime T: type, Q: *Matrix(T), R: *Matrix(T), A: Matrix(T), T1: *Vec
 
 /// Tridiagonalize the matrix A using Householder reflections into the matrix D such that A = Q * D * Q^T, where Q is an orthogonal matrix and D is a tridiagonal matrix. The output matrices Q and D are stored in the matrices Q and D, respectively.
 pub fn tridiagonalize(comptime T: type, D: *Matrix(T), Q: *Matrix(T), A: Matrix(T), T1: *Vector(T)) !void {
-    const tolerance: T = 1e-12; @memcpy(D.data, A.data); Q.identity();
+    const tolerance: T = 1e-12; @memcpy(D.data, A.data); Q.identity(); if (A.rows < 3) return;
 
     for (0..A.rows - 2) |i| {
 

@@ -98,7 +98,7 @@ pub fn Vector(comptime T: type) type {
         pub fn slice(self: Vector(T), start: usize, end: usize) Vector(T) {
             return Vector(T){
                 .data = self.data[start..end],
-                .rows = self.rows,
+                .rows = self.data[start..end].len,
                 .allocator = self.allocator
             };
         }
