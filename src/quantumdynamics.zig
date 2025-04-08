@@ -4,6 +4,7 @@ const std = @import("std"); const Complex = std.math.Complex;
 
 const ftr = @import("fouriertransform.zig");
 const inp = @import("input.zig"           );
+const lag = @import("linalg.zig"          );
 const mat = @import("matrix.zig"          );
 const mpt = @import("modelpotential.zig"  );
 const out = @import("output.zig"          );
@@ -262,7 +263,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T),
 
         @memcpy(UCP.data, UC.data);
 
-        pot.eval_fn(&U, rvec.row(i).vector()); mat.eigh(T, &UA, &UC, U, &T1, &T2);
+        pot.eval_fn(&U, rvec.row(i).vector()); lag.eighJacobi(T, &UA, &UC, U, &T1, &T2);
 
         if (i > 0) for (0..UC.cols) |j| {
 

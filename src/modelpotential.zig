@@ -2,8 +2,9 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
-const inp = @import("input.zig"   );
 const cnt = @import("constant.zig");
+const inp = @import("input.zig"   );
+const lag = @import("linalg.zig"  );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
 
@@ -405,7 +406,7 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
         pot.?.eval_fn(&U, r);
 
         if (opt.adiabatic) {
-            mat.eigh(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);
+            lag.eighJacobi(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);
         }
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;

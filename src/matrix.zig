@@ -2,7 +2,8 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
-const mth = @import("math.zig");
+const mth = @import("math.zig"  );
+const vec = @import("vector.zig");
 
 const StridedArray = @import("stridedarray.zig").StridedArray;
 const Vector       = @import("vector.zig"      ).Vector      ;
@@ -166,144 +167,9 @@ pub fn adds(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
     };
 }
 
-/// The Davidson algorithm for finding the eigenvalues and eigenvectors of a real symmetric matrix A.
-pub fn davidson(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), k: usize, mmax: usize) !void {
-   var d = try Vector(T).init(A.rows, A.allocator); defer d.deinit();
-   var basis = std.ArrayList(Vector(T)).init(A.allocator); defer basis.deinit();
-   var JP = try Matrix(T).init(J.rows, J.cols, A.allocator); defer JP.deinit();
-
-   for (0..k) |i| {
-       var e = try Vector(T).init(A.rows, A.allocator); e.fill(0); e.ptr(i).* = 1; try basis.append(e);
-   }
-
-   diag(T, &d, A);
-
-   for (0..J.cols) |i| J.ptr(i, i).* = std.math.inf(T);
-
-   while (basis.items.len <= mmax) {
-       try std.io.getStdOut().writer().print("{d} basis vectors\n", .{basis.items.len});
-
-       var V = try Matrix(T).init(A.rows, basis.items.len, A.allocator); defer V.deinit();
-
-       for (0..basis.items.len) |i| {
-           for (0..A.rows) |j| {
-               V.ptr(j, i).* = basis.items[i].at(j);
-           }
-       }
-
-       var TT = try Matrix(T).init(basis.items.len, basis.items.len, A.allocator); defer TT.deinit();
-       var T1 = try Matrix(T).init(basis.items.len, A.rows, A.allocator); defer T1.deinit();
-
-       mam(T, &T1, V, A); mm(T, &TT, T1, V);
-
-       @memcpy(JP.data , J.data);
-
-       var TTJ   = try Matrix(T).init(basis.items.len, basis.items.len, A.allocator); defer TTJ.deinit();
-       var TTC   = try Matrix(T).init(basis.items.len, basis.items.len, A.allocator); defer TTC.deinit();
-       var TT_T1 = try Matrix(T).init(basis.items.len, basis.items.len, A.allocator); defer TT_T1.deinit();
-       var TT_T2 = try Matrix(T).init(basis.items.len, basis.items.len, A.allocator); defer TT_T2.deinit();
-
-       eigh(T, &TTJ, &TTC, TT, &TT_T1, &TT_T2);
-
-       for (0..TTJ.rows) |i| J.ptr(i, i).* = TTJ.at(i, i);
-
-       for (0..TTC.rows) |i| {
-           for (0..TTC.cols) |j| {
-               C.ptr(i, j).* = TTC.at(i, j);
-           }
-       }
-
-       var sumsq: T = 0;
-
-       for (0..k) |i| {
-           sumsq += std.math.sqrt((J.at(i, i) - JP.at(i, i)) * (J.at(i, i) - JP.at(i, i)));
-       }
-
-       if (sumsq < 1e-14) break;
-
-       for (0..k) |j| {
-
-           var x = try Vector(T).init(V.rows, A.allocator); defer x.deinit(); x.fill(0);
-           var r = try Vector(T).init(V.rows, A.allocator); r.fill(0);
-
-           for (0..A.rows) |i| for (0..basis.items.len) |l| {
-               x.ptr(i).* += V.at(i, l) * TTC.at(l, j);
-           };
-
-           for (0..A.rows) |i| for (0..x.rows) |l| {
-               r.ptr(i).* += A.at(i, l) * x.at(l);
-           };
-
-           for (0..x.rows) |i| {
-               r.ptr(i).* -= J.at(j, j) * x.at(i);
-               r.ptr(i).* /= (J.at(j, j) - d.at(i) + 1e-14);
-           }
-
-           for (0..basis.items.len) |l| {
-
-               var dot: T = 0;
-
-               for (0..A.rows) |i| {
-                   dot += basis.items[l].at(i) * r.at(i);
-               }
-
-               for (0..A.rows) |i| {
-                   r.ptr(i).* -= dot * basis.items[l].at(i);
-               }
-           }
-
-           const rnorm = r.norm();
-
-           if (rnorm > 1e-14) {
-               for (0..r.rows) |i| {
-                   r.ptr(i).* /= rnorm;
-               }
-
-               try basis.append(r);
-           }
-       }
-   }
-
-   for (basis.items) |v| v.deinit();
-}
-
 /// Extracts the diagonal of a matrix A. The output vector is stored in the vector D.
 pub fn diag(comptime T: type, D: *Vector(T), A: Matrix(T)) void {
     for (0..A.rows) |i| D.ptr(i).* = A.at(i, i);
-}
-
-/// Find the eigenvalues and eigenvectors of a real symmetric matrix A. The eigenvalues are stored in the diagonal of the matrix J, and the eigenvectors are stored in the columns of the matrix C. The matrices T1 and T2 are temporary matrices used in the computation.
-pub fn eigh(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *Matrix(T), T2: *Matrix(T)) void {
-    var maxi: usize = 0; var maxj: usize = 1; var maxv: T = 0; var phi: T = undefined; @memcpy(J.data, A.data); C.identity();
-
-    for (0..A.rows) |i| for (i + 1..A.cols) |j| if (@abs(J.at(i, j)) > @abs(maxv)) {
-        maxi = i; maxj = j; maxv = J.at(i, j);
-    };
-
-    while (@abs(maxv) > 1e-14) {
-
-        phi = 0.5 * std.math.atan(2 * maxv / (J.at(maxi, maxi) - J.at(maxj, maxj))); T1.identity();
-
-        T1.ptr(maxi, maxi).* = std.math.cos(phi); T1.ptr(maxj, maxj).* =  T1.at(maxi, maxi);
-        T1.ptr(maxj, maxi).* = std.math.sin(phi); T1.ptr(maxi, maxj).* = -T1.at(maxj, maxi);
-
-        mm(T, T2, J.*, T1.*); mam(T, J, T1.*, T2.*); mm(T, T2, C.*, T1.*); @memcpy(C.data, T2.data);
-
-        maxv = 0;
-
-        for (0..A.rows) |i| for (i + 1..A.cols) |j| if (@abs(J.at(i, j)) > @abs(maxv)) {
-            maxi = i; maxj = j; maxv = J.at(i, j);
-        };
-    }
-
-    for (0..A.rows) |i| for (i + 1..A.cols) |j| if (J.at(i, i) > J.at(j, j)) {
-
-        std.mem.swap(T, J.ptr(i, i), J.ptr(j, j));
-
-        for (0..A.rows) |k| {
-            std.mem.swap(T, C.ptr(k, i), C.ptr(k, j));
-        }
-    };
 }
 
 /// Horizontally concatenate two matrices. The output matrix is stored in the matrix C.
@@ -317,29 +183,6 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
         for (0..B.cols) |j| {
             C.ptr(i, A.cols + j).* = B.at(i, j);
         }
-    }
-}
-
-/// Solve the linear system Ax = b. The output vector is stored in the vector x. The matrix A is converted to a row-echelon form. Vector b is also modified.
-pub fn linsolve(comptime T: type, x: *Vector(T), A: *Matrix(T), b: *Vector(T)) void {
-    for (0..A.cols - 1) |j| for (j + 1..A.rows) |i| {
-
-        const factor = A.at(i, j) / A.at(j, j);
-
-        for (j..A.cols) |k| {
-            A.ptr(i, k).* -= factor * A.at(j, k);
-        }
-
-        b.ptr(i).* -= factor * b.at(j);
-    };
-
-    for (0..x.rows) |i| {
-
-        for (0..i) |j| {
-            b.ptr(b.rows - i - 1).* -= A.at(A.rows - i - 1, A.cols - j - 1) * x.at(x.rows - j - 1);
-        }
-
-        x.ptr(x.rows - i - 1).* = b.at(x.rows - i - 1) / A.at(x.rows - i - 1, x.rows - i - 1);
     }
 }
 

@@ -2,8 +2,9 @@
 
 const std = @import("std");
 
-const inp = @import("input.zig"      );
 const hfm = @import("hartreefock.zig");
+const inp = @import("input.zig"      );
+const lag = @import("linalg.zig"     );
 const mat = @import("matrix.zig"     );
 const mth = @import("math.zig"       );
 const out = @import("output.zig"     );
@@ -63,7 +64,7 @@ pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print:
         H.ptr(i, j).* = asfloat(T, sign) * try slater(T, A, so[0..diff * 2], H_MS, J_MS_A); H.ptr(j, i).* = H.at(i, j);
     };
 
-    mat.eigh(T, &E, &C, H, &T1, &T2);
+    lag.eighJacobi(T, &E, &C, H, &T1, &T2);
 
     if (print) try std.io.getStdOut().writer().print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + hf.system.nuclearRepulsion()});
 

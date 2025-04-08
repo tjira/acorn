@@ -94,6 +94,15 @@ pub fn Vector(comptime T: type) type {
             }
         }
 
+        /// Return the slice of the vector. No memory is allocated.
+        pub fn slice(self: Vector(T), start: usize, end: usize) Vector(T) {
+            return Vector(T){
+                .data = self.data[start..end],
+                .rows = self.rows,
+                .allocator = self.allocator
+            };
+        }
+
         /// Returns the transposed column vector as a matrix with one row. No memory is allocated.
         pub fn transposed(self: Vector(T)) Matrix(T) {
             return Matrix(T){
@@ -125,6 +134,17 @@ pub fn div(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
 
     if (comptime istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i).div(v.at(i));
+    };
+}
+
+/// Divide a vector by a scalar. The output vector is stored in the vector w.
+pub fn divs(comptime T: type, w: *Vector(T), u: Vector(T), s: T) void {
+    if (comptime !istruct(T)) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i) / s;
+    };
+
+    if (comptime istruct(T)) for (0..u.rows) |i| {
+        w.ptr(i).* = u.at(i).div(s);
     };
 }
 

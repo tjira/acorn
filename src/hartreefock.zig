@@ -7,6 +7,7 @@ const SM2AN = @import("constant.zig").SM2AN;
 
 const inp = @import("input.zig"   );
 const int = @import("integral.zig");
+const lag = @import("linalg.zig"  );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
 const out = @import("output.zig"  );
@@ -94,7 +95,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
         ten.transpose(T, &K_AO, J_AO, &[_]usize{0, 3, 2, 1}); ten.muls(T, &K_AO, K_AO, 0.5); ten.sub(T, &J_AO_A, J_AO, K_AO);
 
-        mat.eigh(T, &XJ, &XC, S_AO, &T1, &T2); for (0..nbf) |i| XJ.ptr(i, i).* = 1.0 / std.math.sqrt(XJ.at(i, i));
+        lag.eighJacobi(T, &XJ, &XC, S_AO, &T1, &T2); for (0..nbf) |i| XJ.ptr(i, i).* = 1.0 / std.math.sqrt(XJ.at(i, i));
 
         mat.mm(T, &T1, XC, XJ); mat.transpose(T, &T2, XC); mat.mm(T, &X, T1, T2);
 
@@ -130,7 +131,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
             try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
         }
 
-        mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); mat.eigh(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
+        mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); lag.eighJacobi(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
 
         D_MO.fill(0); EP = E; E = 0;
 
@@ -188,7 +189,7 @@ pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayLis
             };
         };
 
-        mat.linsolve(T, &c, &A, &b); if (std.math.isNan(mth.sum(T, c.data))) return; F_AO.fill(0); 
+        lag.linsolve(T, &c, &A, &b); if (std.math.isNan(mth.sum(T, c.data))) return; F_AO.fill(0); 
 
         for (0..size) |i| {
 

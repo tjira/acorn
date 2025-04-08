@@ -3,6 +3,7 @@
 const std = @import("std"); const Complex = std.math.Complex;
 
 const inp = @import("input.zig"         );
+const lag = @import("linalg.zig"        );
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
 const mth = @import("math.zig"          );
@@ -246,7 +247,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
 /// Diagonalize the potential, assign it to the original potential and correct the sign.
 pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), T1: *Matrix(T), T2: *Matrix(T), i: usize) void {
-    mat.eigh(T, UA, UC, U.*, T1, T2);
+    lag.eighJacobi(T, UA, UC, U.*, T1, T2);
 
     @memcpy(U.data, UA.data); @memcpy(UC2[i % 2].data, UC.data);
 
@@ -280,11 +281,11 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), T1: *Matrix(T), T2: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
     r.ptr(c).* += 1 * opt.derivative_step; pot.eval_fn(U, r.*);
 
-    if (opt.adiabatic) {mat.eigh(T, UA, UC, U.*, T1, T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+    if (opt.adiabatic) {lag.eighJacobi(T, UA, UC, U.*, T1, T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
 
     r.ptr(c).* -= 2 * opt.derivative_step; pot.eval_fn(U, r.*);
 
-    if (opt.adiabatic) {mat.eigh(T, UA, UC, U.*, T1, T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
+    if (opt.adiabatic) {lag.eighJacobi(T, UA, UC, U.*, T1, T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
     r.ptr(c).* += opt.derivative_step;
 
