@@ -155,7 +155,7 @@ pub fn main() !void {
     // linear_algebra.eighJacobi(f64, &AJ, &AC, A, &T1, &T2);
     // try linear_algebra.davidson(f64, &DJ, &DC, A, k, N, allocator);
     //
-    // try  A.print(std.io.getStdOut().writer());
+    // // try  A.print(std.io.getStdOut().writer());
     // // try  Q.print(std.io.getStdOut().writer());
     // // try  R.print(std.io.getStdOut().writer());
     // // try AJ.print(std.io.getStdOut().writer());
