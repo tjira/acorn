@@ -152,17 +152,14 @@ pub fn eighDac(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), all
         if (beta > 0 and i == A.rows - 1) {a = D.at(A.rows - 1, A.rows - 1)      ; b = D.at(A.rows - 1, A.rows - 1) + 1e6;}
         if (beta > 0 and i != A.rows - 1) {a = D.at(i,          i         )      ; b = D.at(i + 1,      i + 1     )      ;}
 
-        a += tol; b -= tol; var x = (a + b) / 2;
+        var x = (a + b) / 2;
 
-        if (SecularD0.get(a, beta, W, D) * SecularD0.get(b, beta, W, D) > 0) return error.EighDacNoSecularRoot;
+        if (@abs(b - a) > tol) for (0..maxiter) |j| {
 
-        for (0..maxiter) |j| {
-
-            const fa  = SecularD0.get(a, beta, W, D);
             const fx  = SecularD0.get(x, beta, W, D);
             const dfx = SecularD1.get(x, beta, W, D);
 
-            if (fa * fx < 0) {b = x;} else a = x; const xp = x;
+            if (fx * beta > 0) {b = x;} else a = x; const xp = x;
 
             if (@abs(dfx) > tol) {x = x - fx / dfx;} else x = (a + b) / 2;
 
@@ -171,14 +168,14 @@ pub fn eighDac(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), all
             if (@abs(x - xp) < tol) break;
 
             if (j == maxiter - 1) return error.EighDacSecularIterationsExceeded;
-        }
+        };
 
         J.ptr(i, i).* = x;
     }
 
     for (0..A.rows) |i| {
 
-        for (0..U.rows) |j| U.ptr(j).* = W.at(j) / (D.at(j, j) - J.at(i, i));
+        for (0..U.rows) |j| U.ptr(j).* = W.at(j) / (D.at(j, j) - J.at(i, i) + 1e-14);
 
         vec.divs(T, &U, U, U.norm());
 

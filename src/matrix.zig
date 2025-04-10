@@ -172,6 +172,17 @@ pub fn diag(comptime T: type, D: *Vector(T), A: Matrix(T)) void {
     for (0..A.rows) |i| D.ptr(i).* = A.at(i, i);
 }
 
+/// Compares the two matrices with tolerance. The function returns true if the matrices are equal, false otherwise.
+pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), tol: T) bool {
+    if (A.rows != B.rows or A.cols != B.cols) return false;
+
+    if (comptime !istruct(T)) for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > tol) return false;
+
+    if (comptime istruct(T)) for (0..A.data.len) |i| if (A.data[i].sub(B.data[i]).abs() > tol) return false;
+
+    return true;
+}
+
 /// Horizontally concatenate two matrices. The output matrix is stored in the matrix C.
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     for (0..A.rows) |i| {
