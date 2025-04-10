@@ -132,6 +132,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
         }
 
         mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); lag.eighJacobi(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
+        // mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); try lag.eighDac(T, &E_MO, &T2, T1, allocator); mat.mm(T, &C_MO, X, T2);
 
         D_MO.fill(0); EP = E; E = 0;
 

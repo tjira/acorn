@@ -77,7 +77,7 @@ pub fn davidson(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), k:
 
             const rnorm = r.norm(); x.deinit();
 
-            if (rnorm > 1e-14) {
+            if (rnorm > tolerance) {
                 for (0..r.rows) |j| {r.ptr(j).* /= rnorm;} try basis.append(r);
             }
         }
@@ -86,9 +86,115 @@ pub fn davidson(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), k:
     for (basis.items) |v| v.deinit();
 }
 
+/// The recursive divide-and-conquer algorithm for finding the eigenvalues and eigenvectors of a real symmetric matrix A. The eigenvalues are stored in the diagonal of the matrix J, and the eigenvectors are stored in the columns of the matrix C.
+pub fn eighDac(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), allocator: std.mem.Allocator) !void {
+    const maxiter: usize = 1000000; const tol: T = 1e-14;
+
+    var D   = try Matrix(T).init(A.rows,           A.cols,           allocator); defer   D.deinit();
+    var Q   = try Matrix(T).init(A.rows,           A.cols,           allocator); defer   Q.deinit();
+    var TD  = try Matrix(T).init(A.rows,           A.cols,           allocator); defer  TD.deinit();
+    var TQ  = try Matrix(T).init(A.rows,           A.cols,           allocator); defer  TQ.deinit();
+    var T1  = try Matrix(T).init(A.rows / 2,       A.cols / 2,       allocator); defer  T1.deinit();
+    var T1J = try Matrix(T).init(A.rows / 2,       A.cols / 2,       allocator); defer T1J.deinit();
+    var T1C = try Matrix(T).init(A.rows / 2,       A.cols / 2,       allocator); defer T1C.deinit();
+    var T2  = try Matrix(T).init(A.rows - T1.rows, A.cols - T1.cols, allocator); defer  T2.deinit();
+    var T2J = try Matrix(T).init(A.rows - T1.rows, A.cols - T1.cols, allocator); defer T2J.deinit();
+    var T2C = try Matrix(T).init(A.rows - T1.rows, A.cols - T1.cols, allocator); defer T2C.deinit();
+    var T3  = try Matrix(T).init(A.rows,           A.cols,           allocator); defer  T3.deinit();
+    var T4  = try Matrix(T).init(A.rows,           A.cols,           allocator); defer  T4.deinit();
+    var T5  = try Vector(T).init(A.rows,                             allocator); defer  T5.deinit();
+    var U   = try Vector(T).init(A.rows,                             allocator); defer   U.deinit();
+    var W   = try Vector(T).init(A.rows,                             allocator); defer   W.deinit();
+
+    if (A.rows == 1) {J.ptr(0, 0).* = A.at(0, 0); C.ptr(0, 0).* = 1; return;}
+
+    try tridiagonalize(T, &TD, &TQ, A, &T5); C.fill(0);
+
+    for (0..T1.rows) |i| for (0..T1.cols) |j| {T1.ptr(i, j).* = TD.at(i,           j          );};
+    for (0..T2.rows) |i| for (0..T2.cols) |j| {T2.ptr(i, j).* = TD.at(i + T1.rows, j + T1.cols);};
+
+    const beta = TD.at(A.rows / 2 - 1, A.cols / 2); T1.ptr(T1.rows - 1, T1.cols - 1).* -= beta; T2.ptr(0, 0).* -= beta;
+
+    try eighDac(T, &T1J, &T1C, T1, allocator);
+    try eighDac(T, &T2J, &T2C, T2, allocator);
+
+    for (0..T1.rows) |i| for (0..T1.cols) |j| {D.ptr(i,           j          ).* = T1J.at(i, j);};
+    for (0..T2.rows) |i| for (0..T2.cols) |j| {D.ptr(i + T1.rows, j + T1.cols).* = T2J.at(i, j);};
+    for (0..T1.rows) |i| for (0..T1.cols) |j| {Q.ptr(i,           j          ).* = T1C.at(i, j);};
+    for (0..T2.rows) |i| for (0..T2.cols) |j| {Q.ptr(i + T1.rows, j + T1.cols).* = T2C.at(i, j);};
+
+    for (0..T1.cols) |i| W.ptr(i          ).* = T1C.at(T1.rows - 1, i);
+    for (0..T2.cols) |i| W.ptr(i + T1.rows).* = T2C.at(0,           i);
+
+    for (0..A.rows) |i| for (i + 1..A.cols) |j| if (D.at(i, i) > D.at(j, j)) {
+
+        std.mem.swap(T, D.ptr(i, i), D.ptr(j, j));
+        std.mem.swap(T, W.ptr(i   ), W.ptr(j   ));
+
+        for (0..A.rows) |k| {
+            std.mem.swap(T, Q.ptr(k, i), Q.ptr(k, j));
+        }
+    };
+
+    const SecularD0 = struct { fn get (lambda: T, rho: T, WW: Vector(T), DD: Matrix(T)) T {
+        var sum: T = 0; for (0..WW.rows) |i| sum += WW.at(i) * WW.at(i) / (DD.at(i, i) - lambda); return 1 + rho * sum;
+    }};
+    const SecularD1 = struct { fn get (lambda: T, rho: T, WW: Vector(T), DD: Matrix(T)) T {
+        var sum: T = 0; for (0..WW.rows) |i| sum += WW.at(i) * WW.at(i) / ((DD.at(i, i) - lambda) * (DD.at(i, i) - lambda)); return rho * sum;
+    }};
+
+    for (0..A.rows) |i| {
+
+        var a: T = 0; var b: T = 0;
+
+        if (beta < 0 and i == 0         ) {a = D.at(0,          0         ) - 1e6; b = D.at(0,          0         )      ;}
+        if (beta < 0 and i != 0         ) {a = D.at(i - 1,      i - 1     )      ; b = D.at(i,          i         )      ;}
+        if (beta > 0 and i == A.rows - 1) {a = D.at(A.rows - 1, A.rows - 1)      ; b = D.at(A.rows - 1, A.rows - 1) + 1e6;}
+        if (beta > 0 and i != A.rows - 1) {a = D.at(i,          i         )      ; b = D.at(i + 1,      i + 1     )      ;}
+
+        a += tol; b -= tol; var x = (a + b) / 2;
+
+        if (SecularD0.get(a, beta, W, D) * SecularD0.get(b, beta, W, D) > 0) return error.EighDacNoSecularRoot;
+
+        for (0..maxiter) |j| {
+
+            const fa  = SecularD0.get(a, beta, W, D);
+            const fx  = SecularD0.get(x, beta, W, D);
+            const dfx = SecularD1.get(x, beta, W, D);
+
+            if (fa * fx < 0) {b = x;} else a = x; const xp = x;
+
+            if (@abs(dfx) > tol) {x = x - fx / dfx;} else x = (a + b) / 2;
+
+            if (x < a or x > b) {x = (a + b) / 2;}
+
+            if (@abs(x - xp) < tol) break;
+
+            if (j == maxiter - 1) return error.EighDacSecularIterationsExceeded;
+        }
+
+        J.ptr(i, i).* = x;
+    }
+
+    for (0..A.rows) |i| {
+
+        for (0..U.rows) |j| U.ptr(j).* = W.at(j) / (D.at(j, j) - J.at(i, i));
+
+        vec.divs(T, &U, U, U.norm());
+
+        for (0..A.rows) |j| {
+            for (0..A.rows) |k| {
+                C.ptr(j, i).* += Q.at(j, k) * U.at(k);
+            }
+        }
+    }
+
+    mat.mm(T, &T3, TQ, C.*); @memcpy(C.data, T3.data);
+}
+
 /// Find the eigenvalues and eigenvectors of a real symmetric matrix A. The eigenvalues are stored in the diagonal of the matrix J, and the eigenvectors are stored in the columns of the matrix C. The matrices T1 and T2 are temporary matrices used in the computation.
 pub fn eighJacobi(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), T1: *Matrix(T), T2: *Matrix(T)) void {
-    const tolerance: T = 1e-14;
+    const tol: T = 1e-14;
 
     var maxi: usize = 0; var maxj: usize = 1; var maxv: T = 0; var phi: T = undefined; @memcpy(J.data, A.data); C.identity();
 
@@ -96,7 +202,7 @@ pub fn eighJacobi(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), 
         maxi = i; maxj = j; maxv = J.at(i, j);
     };
 
-    while (@abs(maxv) > tolerance) {
+    while (@abs(maxv) > tol) {
 
         phi = 0.5 * std.math.atan(2 * maxv / (J.at(maxi, maxi) - J.at(maxj, maxj))); T1.identity();
 
