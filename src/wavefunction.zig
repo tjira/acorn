@@ -2,6 +2,7 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
+const bls = @import("blas.zig"            );
 const ftr = @import("fouriertransform.zig");
 const mat = @import("matrix.zig"          );
 
@@ -40,10 +41,7 @@ pub fn Wavefunction(comptime T: type) type {
 /// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction W and stores the result in WA.
 pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(Complex(T)))) void {
     for (0..W.data.rows) |i| {
-
-        var rowa = WA.data.row(i).vector().matrix();
-
-        mat.mam(Complex(T), &rowa, VC.items[i], W.data.row(i).vector().matrix());
+        var rowa = WA.data.row(i).vector().matrix(); bls.zgemm(&rowa, VC.items[i], true, rowa, false);
     }
 }
 

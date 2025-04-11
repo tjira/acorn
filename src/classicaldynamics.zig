@@ -2,8 +2,9 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
+const bls = @import("blas.zig"          );
 const inp = @import("input.zig"         );
-const lag = @import("linalg.zig"        );
+const lpk = @import("lapack.zig"        );
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
 const mth = @import("math.zig"          );
@@ -150,9 +151,9 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 @memcpy(rp.data, r.data); @memcpy(pp.data, p.data); @memcpy(vp.data, v.data); @memcpy(ap.data, a.data); S3[j % 3] = s;
 
-                if (j > 0) try propagate(T, opt, pot.?, &r, &v, &a, &U, &UA, &UC, &T1, &T2, s);
+                if (j > 0) try propagate(T, opt, pot.?, &r, &v, &a, &U, &UA, &UC, s);
 
-                pot.?.eval_fn(&U, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, &T1, &T2, j);
+                pot.?.eval_fn(&U, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
 
                 @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
@@ -246,8 +247,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 }
 
 /// Diagonalize the potential, assign it to the original potential and correct the sign.
-pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), T1: *Matrix(T), T2: *Matrix(T), i: usize) void {
-    lag.eighJacobi(T, UA, UC, U.*, T1, T2);
+pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), i: usize) void {
+    lpk.dsyevd(UA, UC, U.*);
 
     @memcpy(U.data, UA.data); @memcpy(UC2[i % 2].data, UC.data);
 
@@ -278,14 +279,14 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
-pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), T1: *Matrix(T), T2: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
+pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
     r.ptr(c).* += 1 * opt.derivative_step; pot.eval_fn(U, r.*);
 
-    if (opt.adiabatic) {lag.eighJacobi(T, UA, UC, U.*, T1, T2); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+    if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
 
     r.ptr(c).* -= 2 * opt.derivative_step; pot.eval_fn(U, r.*);
 
-    if (opt.adiabatic) {lag.eighJacobi(T, UA, UC, U.*, T1, T2); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
+    if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
     r.ptr(c).* += opt.derivative_step;
 
@@ -455,7 +456,7 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matri
 
         var SM = S.row(i); var SNM = SN.row(i); std.mem.swap(usize, &SM.rows, &SM.cols); std.mem.swap(usize, &SNM.rows, &SNM.cols);
 
-        mat.mm(T, &SNM, SP.*, SM);
+        bls.dgemm(&SNM, SP.*, false, SM, false);
     }
 
     for (0..S.rows) |i| if (S.at(i, 2) * SN.at(i, 2) < 0) {
@@ -569,10 +570,10 @@ pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
 }
 
 /// Function to propagate the classical coordinates in time on an "s" state.
-pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), T1: *Matrix(T), T2: *Matrix(T), s: u32) !void {
+pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), s: u32) !void {
     for (0..r.rows) |i| {
 
-        const F = try calculateForce(T, opt, pot, U, UA, UC, T1, T2, r, i, s);
+        const F = try calculateForce(T, opt, pot, U, UA, UC, r, i, s);
 
         const ap = a.at(i);
 

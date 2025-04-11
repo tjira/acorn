@@ -167,22 +167,6 @@ pub fn adds(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
     };
 }
 
-/// Extracts the diagonal of a matrix A. The output vector is stored in the vector D.
-pub fn diag(comptime T: type, D: *Vector(T), A: Matrix(T)) void {
-    for (0..A.rows) |i| D.ptr(i).* = A.at(i, i);
-}
-
-/// Compares the two matrices with tolerance. The function returns true if the matrices are equal, false otherwise.
-pub fn eq(comptime T: type, A: Matrix(T), B: Matrix(T), tol: T) bool {
-    if (A.rows != B.rows or A.cols != B.cols) return false;
-
-    if (comptime !istruct(T)) for (0..A.data.len) |i| if (@abs(A.data[i] - B.data[i]) > tol) return false;
-
-    if (comptime istruct(T)) for (0..A.data.len) |i| if (A.data[i].sub(B.data[i]).abs() > tol) return false;
-
-    return true;
-}
-
 /// Horizontally concatenate two matrices. The output matrix is stored in the matrix C.
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     for (0..A.rows) |i| {
@@ -195,45 +179,6 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
             C.ptr(i, A.cols + j).* = B.at(i, j);
         }
     }
-}
-
-/// Matrix multiplication of the adjoint of matrix A and matrix B. The output matrix is stored in the matrix C.
-pub fn mam(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (comptime istruct(T)) C.fill(T.init(0, 0)) else C.fill(0);
-
-    if (comptime !istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
-        C.ptr(i, j).* += A.at(k, i) * B.at(k, j);
-    };
-
-    if (comptime istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.rows) |k| {
-        C.ptr(i, j).* = C.at(i, j).add(A.at(k, i).conjugate().mul(B.at(k, j)));
-    };
-}
-
-/// Matrix multiplication of matrix A and matrix B. The output matrix is stored in the matrix C.
-pub fn mm(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (comptime istruct(T)) C.fill(T.init(0, 0)) else C.fill(0);
-
-    if (comptime !istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
-        C.ptr(i, j).* += A.at(i, k) * B.at(k, j);
-    };
-
-    if (comptime istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
-        C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(k, j)));
-    };
-}
-
-/// Matrix multiplication of matrix A and the adjoint of matrix B. The output matrix is stored in the matrix C.
-pub fn mma(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (comptime istruct(T)) C.fill(T.init(0, 0)) else C.fill(0);
-
-    if (comptime !istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
-        C.ptr(i, j).* += A.at(i, k) * B.at(j, k);
-    };
-
-    if (comptime istruct(T)) for (0..C.rows) |i| for (0..C.cols) |j| for (0..A.cols) |k| {
-        C.ptr(i, j).* = C.at(i, j).add(A.at(i, k).mul(B.at(j, k)));
-    };
 }
 
 /// Multiply two matrices element-wise. The output matrix is stored in the matrix C.
@@ -292,12 +237,5 @@ pub fn sub(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
 
     if (comptime istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].sub(B.data[i]);
-    };
-}
-
-/// Transpose the matrix A. The output matrix is stored in the matrix C.
-pub fn transpose(comptime T: type, C: *Matrix(T), A: Matrix(T)) void {
-    for (0..A.rows) |i| for (0..A.cols) |j| {
-        C.ptr(j, i).* = A.at(i, j);
     };
 }

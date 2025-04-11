@@ -118,8 +118,8 @@ test "quantum_dynamics_real_nonadiabatic-1d/2s" {
     try expect(output_tully1D_2.p[0].at(0)                        , 20.83738069194260);
     try expect(output_tully1D_2.Ekin[0] + output_tully1D_2.Epot[0],  0.15176981510196);
     try expect(output_tully1D_2.P[0].at(0, 0)                     ,  0.19319230896963);
-    try expect(output_tully1D_2.P[0].at(0, 1)                     ,  0.00121002615618);
-    try expect(output_tully1D_2.P[0].at(1, 0)                     ,  0.00121002615618);
+    try expect(output_tully1D_2.P[0].at(0, 1)                     , -0.00121002615618);
+    try expect(output_tully1D_2.P[0].at(1, 0)                     , -0.00121002615618);
     try expect(output_tully1D_2.P[0].at(1, 1)                     ,  0.80680769102602);
 
     try expect(output_tully1D_3.r[0].at(0)                        , -3.63335060066262);

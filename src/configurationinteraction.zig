@@ -4,7 +4,7 @@ const std = @import("std");
 
 const hfm = @import("hartreefock.zig");
 const inp = @import("input.zig"      );
-const lag = @import("linalg.zig"     );
+const lpk = @import("lapack.zig"     );
 const mat = @import("matrix.zig"     );
 const mth = @import("math.zig"       );
 const out = @import("output.zig"     );
@@ -32,9 +32,6 @@ pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print:
     try transform(T, &H_MS, &J_MS_A, hf.T_AO, hf.V_AO, hf.J_AO, hf.C_MO, allocator);
 
     if (print) try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{D.rows});
-
-    var T1 = try Matrix(T).init(D.rows, D.rows, allocator); defer T1.deinit();
-    var T2 = try Matrix(T).init(D.rows, D.rows, allocator); defer T2.deinit();
 
     var A = try Vector(usize).init(nocc,           allocator); defer A.deinit();
     var H = try Matrix(T    ).init(D.rows, D.rows, allocator); defer H.deinit();
@@ -64,7 +61,7 @@ pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print:
         H.ptr(i, j).* = asfloat(T, sign) * try slater(T, A, so[0..diff * 2], H_MS, J_MS_A); H.ptr(j, i).* = H.at(i, j);
     };
 
-    lag.eighJacobi(T, &E, &C, H, &T1, &T2);
+    lpk.dsyevd(&E, &C, H);
 
     if (print) try std.io.getStdOut().writer().print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + hf.system.nuclearRepulsion()});
 

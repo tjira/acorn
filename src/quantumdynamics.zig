@@ -2,9 +2,10 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
+const bls = @import("blas.zig"            );
 const ftr = @import("fouriertransform.zig");
 const inp = @import("input.zig"           );
-const lag = @import("linalg.zig"          );
+const lpk = @import("lapack.zig"          );
 const mat = @import("matrix.zig"          );
 const mpt = @import("modelpotential.zig"  );
 const out = @import("output.zig"          );
@@ -247,9 +248,6 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
 pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(Complex(T))) {
     const nstate = pot.states;
 
-    var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
-    var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
-
     var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();
     var UA  = try Matrix(T).init(nstate, nstate, allocator); defer  UA.deinit();
     var UC  = try Matrix(T).init(nstate, nstate, allocator); defer  UC.deinit();
@@ -263,7 +261,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T),
 
         @memcpy(UCP.data, UC.data);
 
-        pot.eval_fn(&U, rvec.row(i).vector()); lag.eighJacobi(T, &UA, &UC, U, &T1, &T2);
+        pot.eval_fn(&U, rvec.row(i).vector()); lpk.dsyevd(&UA, &UC, U);
 
         if (i > 0) for (0..UC.cols) |j| {
 
@@ -295,7 +293,7 @@ pub fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(Complex(T))),
             T1.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        mat.mm(Complex(T), &T2, VC.items[i], T1); mat.mma(Complex(T), &T1, T2, VC.items[i]); try R.append(try T1.clone());
+        bls.zgemm(&T2, VC.items[i], false, T1, false); bls.zgemm(&T1, T2, false, VC.items[i], true); try R.append(try T1.clone());
     }
 
     return R;

@@ -4,7 +4,7 @@ const std = @import("std"); const Complex = std.math.Complex;
 
 const cnt = @import("constant.zig");
 const inp = @import("input.zig"   );
-const lag = @import("linalg.zig"  );
+const lpk = @import("lapack.zig"  );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
 
@@ -374,9 +374,6 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
 pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
     const pot = (try getMap(T, allocator)).get(opt.potential); const ndim = pot.?.dims; const nstate = pot.?.states;
 
-    var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
-    var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
-
     var U  = try Matrix(T).init(nstate, nstate, allocator); defer  U.deinit();
     var UA = try Matrix(T).init(nstate, nstate, allocator); defer UA.deinit();
     var UC = try Matrix(T).init(nstate, nstate, allocator); defer UC.deinit();
@@ -406,7 +403,7 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
         pot.?.eval_fn(&U, r);
 
         if (opt.adiabatic) {
-            lag.eighJacobi(T, &UA, &UC, U, &T1, &T2); @memcpy(U.data, UA.data);
+            lpk.dsyevd(&UA, &UC, U); @memcpy(U.data, UA.data);
         }
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;

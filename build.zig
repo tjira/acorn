@@ -1,12 +1,7 @@
 const std = @import("std"); const builtin = @import("builtin");
 
 const targets: []const std.Target.Query = &.{
-    .{.os_tag = .linux  , .cpu_arch = .aarch64},
-    .{.os_tag = .linux  , .cpu_arch = .x86_64 },
-    .{.os_tag = .macos  , .cpu_arch = .aarch64},
-    .{.os_tag = .macos  , .cpu_arch = .x86_64 },
-    .{.os_tag = .windows, .cpu_arch = .aarch64},
-    .{.os_tag = .windows, .cpu_arch = .x86_64 },
+    .{.os_tag = .linux, .cpu_arch = .x86_64, .abi = .gnu},
 };
 
 pub fn build(builder: *std.Build) !void {
@@ -18,7 +13,6 @@ pub fn build(builder: *std.Build) !void {
             .name = "acorn",
             .optimize = if (debug) .Debug else .ReleaseFast,
             .root_source_file = builder.path("src/main.zig"),
-            .single_threaded = true,
             .strip = !debug,
             .target = builder.resolveTargetQuery(target)
         });
@@ -27,7 +21,9 @@ pub fn build(builder: *std.Build) !void {
         main_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    });
 
         main_executable.linkLibC();
-        // main_executable.linkSystemLibrary("lapacke");
+
+        main_executable.linkSystemLibrary("cblas"  );
+        main_executable.linkSystemLibrary("lapacke");
 
         const main_install = builder.addInstallArtifact(main_executable, .{
             .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
@@ -54,10 +50,17 @@ pub fn build(builder: *std.Build) !void {
         .name = "test",
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("test/main.zig"),
-        .single_threaded = true,
         .strip = !debug,
         .target = builder.host
     });
+
+    test_executable.addIncludePath(.{.cwd_relative="/usr/include"});
+    test_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    });
+
+    test_executable.linkLibC();
+
+    test_executable.linkSystemLibrary("cblas"  );
+    test_executable.linkSystemLibrary("lapacke");
 
     test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
 

@@ -5,9 +5,10 @@ const std = @import("std");
 const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
+const bls = @import("blas.zig"    );
 const inp = @import("input.zig"   );
 const int = @import("integral.zig");
-const lag = @import("linalg.zig"  );
+const lpk = @import("lapack.zig"  );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
 const out = @import("output.zig"  );
@@ -71,7 +72,6 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     var T1 = try Matrix(T).init(nbf, nbf, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(nbf, nbf, allocator); defer T2.deinit();
     var T3 = try Matrix(T).init(nbf, nbf, allocator); defer T3.deinit();
-    var T4 = try Matrix(T).init(nbf, nbf, allocator); defer T4.deinit();
 
     var J_AO_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_AO_A.deinit();
 
@@ -95,12 +95,9 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
         ten.transpose(T, &K_AO, J_AO, &[_]usize{0, 3, 2, 1}); ten.muls(T, &K_AO, K_AO, 0.5); ten.sub(T, &J_AO_A, J_AO, K_AO);
 
-        lag.eighJacobi(T, &XJ, &XC, S_AO, &T1, &T2); for (0..nbf) |i| XJ.ptr(i, i).* = 1.0 / std.math.sqrt(XJ.at(i, i));
-        // try lag.eighDac(T, &XJ, &XC, S_AO, allocator); for (0..nbf) |i| XJ.ptr(i, i).* = 1.0 / std.math.sqrt(XJ.at(i, i));
+        lpk.dsyevd(&XJ, &XC, S_AO); for (0..nbf) |i| XJ.ptr(i, i).* = 1.0 / std.math.sqrt(XJ.at(i, i));
 
-        mat.mm(T, &T1, XC, XJ); mat.transpose(T, &T2, XC); mat.mm(T, &X, T1, T2);
-
-        mat.add(T, &H_AO, T_AO, V_AO);
+        bls.dgemm(&T1, XC, false, XJ, false); bls.dgemm(&X, T1, false, XC, true); mat.add(T, &H_AO, T_AO, V_AO);
     }
 
     var F_AO = try Matrix(T).init(nbf, nbf, allocator); F_AO.fill(0);
@@ -124,7 +121,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
         if (opt.dsize != null) {
 
-            mat.mm(T, &T1, S_AO, D_MO); mat.mm(T, &T2, T1, F_AO); mat.mm(T, &T1, F_AO, D_MO); mat.mm(T, &T3, T1, S_AO); mat.sub(T, &ERR, T2, T3);
+            bls.dgemm(&T1, S_AO, false, D_MO, false); bls.dgemm(&T2, T1, false, F_AO, true); bls.dgemm(&T1, F_AO, false, D_MO, false); bls.dgemm(&T3, T1, false, S_AO, true); mat.sub(T, &ERR, T2, T3);
 
             @memcpy(DIIS_F.items[@intCast(@mod(@as(i32, @intCast(iter)) - 1, @as(i32, @intCast(DIIS_F.items.len))))].data, F_AO.data);
             @memcpy(DIIS_E.items[@intCast(@mod(@as(i32, @intCast(iter)) - 1, @as(i32, @intCast(DIIS_E.items.len))))].data,  ERR.data);
@@ -132,8 +129,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
             try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
         }
 
-        mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); lag.eighJacobi(T, &E_MO, &T2, T1, &T3, &T4); mat.mm(T, &C_MO, X, T2);
-        // mat.mm(T, &T2, X, F_AO); mat.mm(T, &T1, T2, X); try lag.eighDac(T, &E_MO, &T2, T1, allocator); mat.mm(T, &C_MO, X, T2);
+        bls.dgemm(&T1, X, false, F_AO, false); bls.dgemm(&T2, T1, false, X, false); lpk.dsyevd(&E_MO, &T1, T2); bls.dgemm(&C_MO, X, false, T1, false);
 
         D_MO.fill(0); EP = E; E = 0;
 
@@ -173,9 +169,11 @@ pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayLis
 
         const size = if (iter < DIIS_F.items.len) iter else DIIS_F.items.len;
 
-        var A = try Matrix(T).init(size + 1, size + 1, allocator); defer A.deinit();
-        var b = try Vector(T).init(size + 1,           allocator); defer b.deinit();
-        var c = try Vector(T).init(size + 1,           allocator); defer c.deinit();
+        var A   = try Matrix(T  ).init(size + 1, size + 1, allocator); defer   A.deinit();
+        var ALU = try Matrix(T  ).init(size + 1, size + 1, allocator); defer ALU.deinit();
+        var b   = try Vector(T  ).init(size + 1,           allocator); defer   b.deinit();
+        var c   = try Vector(T  ).init(size + 1,           allocator); defer   c.deinit();
+        var p   = try Vector(i32).init(size + 1,           allocator); defer   p.deinit();
 
         A.fill(1); b.fill(0); A.ptr(A.rows - 1, A.cols - 1).* = 0; b.ptr(b.rows - 1).* = 1;
 
@@ -191,7 +189,7 @@ pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayLis
             };
         };
 
-        lag.linsolve(T, &c, &A, &b); if (std.math.isNan(mth.sum(T, c.data))) return; F_AO.fill(0); 
+        lpk.dgesv(&c, &ALU, &p, A, b); F_AO.fill(0); 
 
         for (0..size) |i| {
 

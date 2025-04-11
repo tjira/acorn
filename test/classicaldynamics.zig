@@ -148,20 +148,20 @@ test "classical_dynamics_nonadiabatic_mash" {
     const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
     const output_tully1D_3 = try classical_dynamics.run(f64, opt_tully1D_3, false, allocator); defer output_tully1D_3.deinit();
 
-    try expect(output_tully1D_1.r.at(0)                     , 21.00714185386427);
+    try expect(output_tully1D_1.r.at(0)                     , 21.00714185386426);
     try expect(output_tully1D_1.p.at(0)                     , 21.05977392710928);
     try expect(output_tully1D_1.Ekin + output_tully1D_1.Epot,  0.10954664424545);
     try expect(output_tully1D_1.pop.at(0)                   ,  0.59            );
     try expect(output_tully1D_1.pop.at(1)                   ,  0.41            );
 
-    try expect(output_tully1D_2.r.at(0)                     , 21.39838522317274);
-    try expect(output_tully1D_2.p.at(0)                     , 20.66718100732489);
-    try expect(output_tully1D_2.Ekin + output_tully1D_2.Epot,  0.14951839950157);
-    try expect(output_tully1D_2.pop.at(0)                   ,  0.16            );
-    try expect(output_tully1D_2.pop.at(1)                   ,  0.84            );
+    try expect(output_tully1D_2.r.at(0)                     , 21.10923477506220);
+    try expect(output_tully1D_2.p.at(0)                     , 20.37931004595746);
+    try expect(output_tully1D_2.Ekin + output_tully1D_2.Epot,  0.14951199660272);
+    try expect(output_tully1D_2.pop.at(0)                   ,  0.10            );
+    try expect(output_tully1D_2.pop.at(1)                   ,  0.90            );
 
-    try expect(output_tully1D_3.r.at(0)                     , -1.14318287393842);
-    try expect(output_tully1D_3.p.at(0)                     , -3.60808111892007);
+    try expect(output_tully1D_3.r.at(0)                     , -1.14318287393846);
+    try expect(output_tully1D_3.p.at(0)                     , -3.60808111892009);
     try expect(output_tully1D_3.Ekin + output_tully1D_3.Epot,  0.10015092475260);
     try expect(output_tully1D_3.pop.at(0)                   ,  0.68            );
     try expect(output_tully1D_3.pop.at(1)                   ,  0.32            );
