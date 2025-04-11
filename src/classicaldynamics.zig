@@ -86,10 +86,10 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         return error.MultipleHoppingMechanisms;
     }
 
-    const tdc_numeric = std.mem.eql(u8, opt.time_derivative_coupling.?, "numeric");
+    const tdc_hst     = std.mem.eql(u8, opt.time_derivative_coupling.?, "hst"    );
     const tdc_baeckan = std.mem.eql(u8, opt.time_derivative_coupling.?, "baeckan");
 
-    if (opt.time_derivative_coupling != null and !tdc_numeric and !tdc_baeckan) {
+    if (opt.time_derivative_coupling != null and !tdc_hst and !tdc_baeckan) {
         return error.UnknownTimeDerivativeCoupling;
     }
 
@@ -156,7 +156,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
-                if (opt.adiabatic and tdc_numeric and j > 0) derivativeCouplingNumeric(T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                     opt.time_step);
+                if (opt.adiabatic and tdc_hst     and j > 0) derivativeCouplingHst(    T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                     opt.time_step);
                 if (opt.adiabatic and tdc_baeckan and j > 1) derivativeCouplingBaeckan(T, &TDC,       &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, &S3, opt.time_step);
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
@@ -308,8 +308,8 @@ pub fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const 
     };
 }
 
-/// Calculate the nonadiabatic coupling between two states numerically.
-pub fn derivativeCouplingNumeric(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2: []const Matrix(T), time_step: T) void {
+/// Calculate the nonadiabatic coupling between two states according to Hammes--Schiffer and Tully.
+pub fn derivativeCouplingHst(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2: []const Matrix(T), time_step: T) void {
     UCS.fill(0);
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {

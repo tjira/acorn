@@ -1,5 +1,7 @@
 //! This module provides some specific linear algebra functions. It includes functions for finding eigenvalues and eigenvectors, solving linear systems, and performing QR decomposition.
 
+const lapack = @cImport(@cInclude("lapacke.h"));
+
 const std = @import("std");
 
 const mat = @import("matrix.zig");
@@ -8,6 +10,32 @@ const vec = @import("vector.zig");
 
 const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
+
+pub fn eigh(comptime T: type , J: *Matrix(T), C: *Matrix(T), A: Matrix(T), allocator: std.mem.Allocator) !void {
+    _ = J; _ = C; _ = A; _ = allocator;
+
+    // var a: [25]f64 = undefined;
+    // var j: [ 5]f64 = undefined;
+    // // var c: [25]f64 = undefined;
+    //
+    // const N: lapack.lapack_int = 5; const LDA = N;
+    //
+    // const lwork:  lapack.lapack_int = -1;
+    // const liwork: lapack.lapack_int = -1;
+    //
+    // const iwkopt: lapack.lapack_int = 0;
+    // const wkopt:  lapack.lapack_int = 0;
+    //
+    // const info: lapack.lapack_int = 0;
+    //
+    // // ssyevd( "Vectors", "Upper", &n, a, &lda, w, &wkopt, &lwork, &iwkopt,
+    //                     // &liwork, &info );
+    //
+    //
+    // lapack.LAPACKE_ssyevd(lapack.LAPACK_ROW_MAJOR, 'V', 'U', N, &a[0], LDA, &j[0], &wkopt, lwork, &iwkopt, liwork, &info);
+    //
+    // std.debug.print("info: {}\n", .{info});
+}
 
 /// The Davidson algorithm for finding the eigenvalues and eigenvectors of a real symmetric matrix A.
 pub fn davidson(comptime T: type, J: *Matrix(T), C: *Matrix(T), A: Matrix(T), k: usize, m: usize, allocator: std.mem.Allocator) !void {

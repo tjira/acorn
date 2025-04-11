@@ -18,7 +18,7 @@ if KTSH_TESTING:
         "tully1D_1_lorentz"       : [1, 1],
         "tripleState1D_4"         : [2, 2],
         "tripleState1D_4_lorentz" : [2, 2],
-        "doubleState2D_1"         : [1, 1],
+        "doubleState1D_3"         : [0, 1],
     }
 
     NS = {
@@ -26,7 +26,7 @@ if KTSH_TESTING:
         "tully1D_1_lorentz"       : 2,
         "tripleState1D_4"         : 3,
         "tripleState1D_4_lorentz" : 3,
-        "doubleState2D_1"         : 2
+        "doubleState1D_3"         : 2
     }
 
     TDCLIM = {
@@ -34,10 +34,10 @@ if KTSH_TESTING:
         "tully1D_1_lorentz"       : [1117, 1717],
         "tripleState1D_4"         : [1117, 1717],
         "tripleState1D_4_lorentz" : [1117, 1717],
-        "doubleState2D_1"         : [1117, 1717]
+        "doubleState1D_3"         : [1117, 1717]
     }
 
-    DS, TS, DS2 = ["tully1D_1", "tully1D_1_lorentz"], ["tripleState1D_4", "tripleState1D_4_lorentz"], ["doubleState2D_1"]
+    DS, TS, DS2 = ["tully1D_1", "tully1D_1_lorentz"], ["tripleState1D_4", "tripleState1D_4_lorentz"], ["doubleState1D_3"]
 
     for potential in DS + TS:
 
@@ -116,6 +116,9 @@ if KTSH_TESTING:
 
     for potential in DS2:
 
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-10, 10], "output" : f"KTSH_TESTING_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-10, 10], "output" : f"KTSH_TESTING_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
+
         qd_input = {
             "quantum_dynamics" : {
                 "log_intervals" : {
@@ -123,11 +126,11 @@ if KTSH_TESTING:
                 },
 
                 "grid" : {
-                    "limits" : [-10, 10], "points" : 256
+                    "limits" : [-24, 24], "points" : 256
                 },
 
                 "initial_conditions" : {
-                    "position" : [0, -5], "momentum" : [0, 0], "gamma" : 2, "state" : IS[potential][0], "mass" : 1
+                    "position" : [-10], "momentum" : [0], "gamma" : 2, "state" : IS[potential][0], "mass" : 1
                 },
 
                 "write" : {
@@ -135,7 +138,7 @@ if KTSH_TESTING:
                 },
 
                 "adiabatic" : True,
-                "iterations" : 65,
+                "iterations" : 60,
                 "mode" : [0, 1],
                 "potential" : potential,
                 "time_step" : 0.1
@@ -149,10 +152,10 @@ if KTSH_TESTING:
                 },
 
                 "initial_conditions" : {
-                    "position_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["position"], "position_std"  : [0.5, 0.5],
-                    "momentum_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["momentum"], "momentum_std"  : [1.0, 1.0],
+                    "position_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["position"], "position_std"  : [0.5],
+                    "momentum_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["momentum"], "momentum_std"  : [1.0],
                     "state" : [int(i == IS[potential][1]) for i in range(NS[potential])],
-                    "mass" : [1, 1]
+                    "mass" : [1]
                 },
 
                 "write" : {},
@@ -178,6 +181,8 @@ if KTSH_TESTING:
         fs_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_FSSH.mat"
         kt_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_KTSH.mat"
 
+        open(f"input_KTSH_TESTING_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_dp_{potential}.json")
+        open(f"input_KTSH_TESTING_ap_{potential}.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_ap_{potential}.json")
         open(f"input_KTSH_TESTING_qd_{potential}.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_qd_{potential}.json")
         open(f"input_KTSH_TESTING_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_fs_{potential}.json")
         open(f"input_KTSH_TESTING_kt_{potential}.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_kt_{potential}.json")
@@ -185,7 +190,7 @@ if KTSH_TESTING:
 
     os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 KTSH_TESTING_TDC_{DS[0]}_FSSH.mat:1 KTSH_TESTING_TDC_{DS[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{DS[0]}_EXACT.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[0]}_FSSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[0]}_KTSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[0]}_LZSH.mat:0 KTSH_TESTING_POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 KTSH_TESTING_TDC_{DS[1]}_FSSH.mat:1 KTSH_TESTING_TDC_{DS[1]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{DS[1]}_EXACT.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[1]}_FSSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[1]}_KTSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar} (BA)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar} (BA)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_DS.png')
     os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{TS[0]}.mat:0,4,8 KTSH_TESTING_TDC_{TS[0]}_FSSH.mat:1,2 KTSH_TESTING_TDC_{TS[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{TS[0]}_EXACT.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[0]}_FSSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[0]}_KTSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[0]}_LZSH.mat:0 KTSH_TESTING_POTENTIAL_ADIABATIC_{TS[1]}.mat:0,4,8 KTSH_TESTING_TDC_{TS[1]}_FSSH.mat:1,2 KTSH_TESTING_TDC_{TS[1]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{TS[1]}_EXACT.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[1]}_FSSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[1]}_KTSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 231 232 232 232 233 233 233 233 234 234 234 235 235 235 236 236 236 236 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{1,2}}{dollar} (HST)" "T{dollar}_{{0,2}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{0,2}}{dollar}=T{dollar}_{{1,2}}{dollar} (BA)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{1,2}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar} (BA)" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{0,2}}{dollar}=T{dollar}_{{1,2}}{dollar} (BA)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[TS[0]][0]} {TDCLIM[TS[0]][1]} nan nan nan nan {TDCLIM[TS[1]][0]} {TDCLIM[TS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (??)" "Ground State Population" "Energy (a.u.)" "TDC (??)" "Ground State Population" --output MODEL_TS.png')
-    os.system(f'python python/lines.py KTSH_TESTING_TDC_{DS2[0]}_FSSH.mat:1 KTSH_TESTING_TDC_{DS2[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{DS2[0]}_EXACT.mat:1 KTSH_TESTING_POPULATION_MEAN_{DS2[0]}_FSSH.mat:1 KTSH_TESTING_POPULATION_MEAN_{DS2[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_MEAN_{DS2[0]}_LZSH.mat:1 --dpi 256 --figsize 4 12 --legends every "T{dollar}_{{0,1}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar} (BA)" "S{dollar}_1{dollar} (EXACT)" "S{dollar}_1{dollar} (FSSH)" "S{dollar}_1{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_1{dollar} (LZSH)" --subplots 121 121 122 122 122 122 --xlabel "Coordinate (a.u.)" "Time (a.u.)" --ylabel "TDC (??)" "Excited State Population" --output MODEL_DS2.png')
+    os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{DS2[0]}.mat:0,3 KTSH_TESTING_TDC_{DS2[0]}_FSSH.mat:1 KTSH_TESTING_TDC_{DS2[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{DS2[0]}_EXACT.mat:1 KTSH_TESTING_POPULATION_MEAN_{DS2[0]}_FSSH.mat:1 KTSH_TESTING_POPULATION_MEAN_{DS2[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_MEAN_{DS2[0]}_LZSH.mat:1 --dpi 256 --figsize 4 16 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar} (BA)" "S{dollar}_1{dollar} (EXACT)" "S{dollar}_1{dollar} (FSSH)" "S{dollar}_1{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_1{dollar} (LZSH)" --subplots 131 131 132 132 133 133 133 133 --xlabel "Coordinate (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" --ylabel "Energy (a.u.)" "TDC (??)" "Excited State Population" --output MODEL_DS2.png')
 
 # GENERAL SURFACE HOPPING TESTING ON MODEL POTENTIALS ========================================================================================================================================
 

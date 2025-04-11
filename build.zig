@@ -2,16 +2,10 @@ const std = @import("std"); const builtin = @import("builtin");
 
 const targets: []const std.Target.Query = &.{
     .{.os_tag = .linux  , .cpu_arch = .aarch64},
-    .{.os_tag = .linux  , .cpu_arch = .arm    },
-    .{.os_tag = .linux  , .cpu_arch = .riscv64},
-    .{.os_tag = .linux  , .cpu_arch = .x86    },
     .{.os_tag = .linux  , .cpu_arch = .x86_64 },
     .{.os_tag = .macos  , .cpu_arch = .aarch64},
     .{.os_tag = .macos  , .cpu_arch = .x86_64 },
-    .{.os_tag = .wasi   , .cpu_arch = .wasm32 },
-    .{.os_tag = .wasi   , .cpu_arch = .wasm64 },
     .{.os_tag = .windows, .cpu_arch = .aarch64},
-    .{.os_tag = .windows, .cpu_arch = .x86    },
     .{.os_tag = .windows, .cpu_arch = .x86_64 },
 };
 
@@ -28,6 +22,12 @@ pub fn build(builder: *std.Build) !void {
             .strip = !debug,
             .target = builder.resolveTargetQuery(target)
         });
+
+        main_executable.addIncludePath(.{.cwd_relative="/usr/include"});
+        main_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    });
+
+        main_executable.linkLibC();
+        // main_executable.linkSystemLibrary("lapacke");
 
         const main_install = builder.addInstallArtifact(main_executable, .{
             .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}

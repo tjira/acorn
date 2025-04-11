@@ -128,37 +128,50 @@ pub fn main() !void {
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
-    // const N = 2; var k: u32 = 1; k = k;
-    //
-    // var A   = try matrix.Matrix(f64).init(N, N, allocator); defer   A.deinit();
-    // var AJ1 = try matrix.Matrix(f64).init(N, N, allocator); defer AJ1.deinit();
-    // var AJ2 = try matrix.Matrix(f64).init(N, N, allocator); defer AJ2.deinit();
-    // var AC1 = try matrix.Matrix(f64).init(N, N, allocator); defer AC1.deinit();
-    // var AC2 = try matrix.Matrix(f64).init(N, N, allocator); defer AC2.deinit();
-    //
-    // var T1 = try matrix.Matrix(f64).init(N, N, allocator); defer T1.deinit();
-    // var T2 = try matrix.Matrix(f64).init(N, N, allocator); defer T2.deinit();
-    // var T3 = try vector.Vector(f64).init(N,    allocator); defer T3.deinit();
-    //
-    // A.randn(0.0, 1.0, 1); matrix.transpose(f64, &T1, A); matrix.add(f64, &A, A, T1); matrix.muls(f64, &A, A, 0.5);
-    //
-    // A.ptr(0, 0).* =  1; A.ptr(0, 1).* = 0.67297290520263;
-    // A.ptr(1, 0).* = 0.67297290520263; A.ptr(1, 1).* = 1;
-    //
-    // try linear_algebra.eighDac(f64, &AJ2, &AC2, A, allocator);
-    // linear_algebra.eighJacobi(f64, &AJ1, &AC1, A, &T1, &T2);
-    // // try linear_algebra.eighQr(f64, &AJ2, &AC2, A, allocator);
-    // // try linear_algebra.davidson(f64, &AJ2, &AC2, A, k, N, allocator);
-    //
-    // // for (AC1.data) |*e| e.* = @abs(e.*);
-    // // for (AC2.data) |*e| e.* = @abs(e.*);
-    //
-    // // std.debug.print("\n", .{});
-    // // std.debug.print("{d:20.14}\n", .{AJ1.at(0, 0)});
-    // // std.debug.print("{d:20.14}\n", .{AJ2.at(0, 0)});
-    //
-    // try AJ1.print(std.io.getStdOut().writer());
-    // try AJ2.print(std.io.getStdOut().writer());
-    // try AC1.print(std.io.getStdOut().writer());
-    // try AC2.print(std.io.getStdOut().writer());
+    for (0..1) |i| {
+
+        const N = 2; var k: u32 = 1; var tol: f64 = 1e-12; k = k; tol = tol;
+
+        var A   = try matrix.Matrix(f64).init(N, N, allocator); defer   A.deinit();
+        var AJ1 = try matrix.Matrix(f64).init(N, N, allocator); defer AJ1.deinit();
+        var AJ2 = try matrix.Matrix(f64).init(N, N, allocator); defer AJ2.deinit();
+        var AC1 = try matrix.Matrix(f64).init(N, N, allocator); defer AC1.deinit();
+        var AC2 = try matrix.Matrix(f64).init(N, N, allocator); defer AC2.deinit();
+
+        var T1 = try matrix.Matrix(f64).init(N, N, allocator); defer T1.deinit();
+        var T2 = try matrix.Matrix(f64).init(N, N, allocator); defer T2.deinit();
+        var T3 = try vector.Vector(f64).init(N,    allocator); defer T3.deinit();
+
+        A.randn(0.0, 1.0, i); matrix.transpose(f64, &T1, A); matrix.add(f64, &A, A, T1); matrix.muls(f64, &A, A, 0.5);
+
+        A.ptr(0, 0).* = 1; A.ptr(0, 1).* = 2;
+        A.ptr(1, 0).* = 2; A.ptr(1, 1).* = 1;
+
+        try linear_algebra.eigh(f64, &AJ2, &AC2, A, allocator);
+        // try linear_algebra.eighDac(f64, &AJ2, &AC2, A, allocator);
+        linear_algebra.eighJacobi(f64, &AJ1, &AC1, A, &T1, &T2);
+        // try linear_algebra.eighQr(f64, &AJ2, &AC2, A, allocator);
+        // try linear_algebra.davidson(f64, &AJ2, &AC2, A, k, N, allocator);
+
+        // for (AC1.data) |*e| e.* = @abs(e.*);
+        // for (AC2.data) |*e| e.* = @abs(e.*);
+
+        // std.debug.print("\n", .{});
+        // std.debug.print("{d:20.14}\n", .{AJ1.at(0, 0)});
+        // std.debug.print("{d:20.14}\n", .{AJ2.at(0, 0)});
+        // std.debug.print("{d} {any} {any}\n", .{i, matrix.eq(f64, AJ1, AJ2, tol), matrix.eq(f64, AC1, AC2, tol)});
+
+        // if (!matrix.eq(f64, AJ1, AJ2, tol) or !matrix.eq(f64, AC1, AC2, tol)) {
+        //     try AJ1.print(std.io.getStdOut().writer());
+        //     try AJ2.print(std.io.getStdOut().writer());
+        //     try AC1.print(std.io.getStdOut().writer());
+        //     try AC2.print(std.io.getStdOut().writer());
+        //     break;
+        // }
+
+        // try AJ1.print(std.io.getStdOut().writer());
+        // try AJ2.print(std.io.getStdOut().writer());
+        // try AC1.print(std.io.getStdOut().writer());
+        // try AC2.print(std.io.getStdOut().writer());
+    }
 }
