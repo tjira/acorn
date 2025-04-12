@@ -2,9 +2,9 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
-const bls = @import("blas.zig"            );
-const ftr = @import("fouriertransform.zig");
-const mat = @import("matrix.zig"          );
+const bls = @import("blas.zig"  );
+const ftw = @import("fftw.zig"  );
+const mat = @import("matrix.zig");
 
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
@@ -12,20 +12,20 @@ const Vector = @import("vector.zig").Vector;
 /// The wavefunction object.
 pub fn Wavefunction(comptime T: type) type {
     return struct {
-        data: Matrix(Complex(T)), shape: []usize, ndim: u32, nstate: u32, allocator: std.mem.Allocator,
+        data: Matrix(Complex(T)), shape: []i32, ndim: u32, nstate: u32, allocator: std.mem.Allocator,
 
         /// Initialize the wavefunction object with the given number of dimensions, states, and points.
         pub fn init(ndim: u32, nstate: u32, points: u32, allocator: std.mem.Allocator) !Wavefunction(T) {
             const W = Wavefunction(T){
                 .data = try Matrix(Complex(T)).init(std.math.pow(u32, points, ndim), nstate, allocator),
-                .shape = try allocator.alloc(usize, ndim),
+                .shape = try allocator.alloc(i32, ndim),
                 .ndim = ndim,
                 .nstate = nstate,
                 .allocator = allocator
             };
 
             for (0..ndim) |i| {
-                W.shape[i] = points;
+                W.shape[i] = @intCast(points);
             }
 
             return W;
@@ -41,7 +41,7 @@ pub fn Wavefunction(comptime T: type) type {
 /// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction W and stores the result in WA.
 pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(Complex(T)))) void {
     for (0..W.data.rows) |i| {
-        var rowa = WA.data.row(i).vector().matrix(); bls.zgemm(&rowa, VC.items[i], true, rowa, false);
+        var rowa = WA.data.row(i).vector().matrix(); bls.zgemm(&rowa, VC.items[i], true, W.data.row(i).vector().matrix(), false);
     }
 }
 
@@ -62,7 +62,7 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: 
 
         for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
 
-        try ftr.fftn(T, T1.data, W.shape, -1);
+        ftw.fftwnd(T1.data, W.shape, -1);
 
         for (0..W.data.rows) |j| {
             
@@ -73,7 +73,7 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: 
             T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(ksqsum, 0));
         }
 
-        try ftr.fftn(T, T1.data, W.shape, 1);
+        ftw.fftwnd(T1.data, W.shape, 1);
 
         for (0..W.data.rows) |j| Ekin += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
     }
@@ -125,11 +125,11 @@ pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matri
 
             for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
 
-            try ftr.fftn(T, T1.data, W.shape, -1);
+            ftw.fftwnd(T1.data, W.shape, -1);
 
             for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(kvec.at(j, k), 0));
 
-            try ftr.fftn(T, T1.data, W.shape, 1);
+            ftw.fftwnd(T1.data, W.shape, 1);
 
             for (0..W.data.rows) |j| p.ptr(k).* += T1.at(j, 0).mul(W.data.at(j, i).conjugate()).re * dr;
         }
@@ -175,7 +175,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
 
     for (0..W.data.cols) |j| {
         for (0..W.data.rows) |i| T1.data[i] = W.data.at(i, j);
-        try ftr.fftn(T, T1.data, W.shape, -1);
+        ftw.fftwnd(T1.data, W.shape, -1);
         for (0..W.data.rows) |i| W.data.ptr(i, j).* = T1.at(i, 0);
     }
 
@@ -189,7 +189,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
 
     for (0..W.data.cols) |j| {
         for (0..W.data.rows) |i| T1.data[i] = W.data.at(i, j);
-        try ftr.fftn(T, T1.data, W.shape, 1);
+        ftw.fftwnd(T1.data, W.shape, 1);
         for (0..W.data.rows) |i| W.data.ptr(i, j).* = T1.at(i, 0);
     }
 

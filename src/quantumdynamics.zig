@@ -2,15 +2,15 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
-const bls = @import("blas.zig"            );
-const ftr = @import("fouriertransform.zig");
-const inp = @import("input.zig"           );
-const lpk = @import("lapack.zig"          );
-const mat = @import("matrix.zig"          );
-const mpt = @import("modelpotential.zig"  );
-const out = @import("output.zig"          );
-const vec = @import("vector.zig"          );
-const wfn = @import("wavefunction.zig"    );
+const bls = @import("blas.zig"          );
+const ftw = @import("fftw.zig"          );
+const inp = @import("input.zig"         );
+const lpk = @import("lapack.zig"        );
+const mat = @import("matrix.zig"        );
+const mpt = @import("modelpotential.zig");
+const out = @import("output.zig"        );
+const vec = @import("vector.zig"        );
+const wfn = @import("wavefunction.zig"  );
 
 const Matrix       = @import("matrix.zig"      ).Matrix      ;
 const Vector       = @import("vector.zig"      ).Vector      ;
@@ -233,7 +233,7 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
         acft.ptr(i, 1).* = transform.at(i).re; acft.ptr(i, 2).* = transform.at(i).im;
     }
 
-    try ftr.fftn(T, transform.data, &[_]usize{transform.rows}, -1);
+    ftw.fftwnd(transform.data, &[_]i32{@intCast(transform.rows)}, -1);
 
     for (0..spectrum.rows) |i| {
         spectrum.ptr(i, 0).* = frequency.at(i, 0); spectrum.ptr(i, 1).* = transform.at(i).magnitude();

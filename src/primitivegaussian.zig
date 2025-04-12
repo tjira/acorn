@@ -2,6 +2,7 @@
 
 const std = @import("std");
 
+const gsl = @import("gsl.zig" );
 const mth = @import("math.zig");
 
 const System = @import("system.zig").System;
@@ -86,7 +87,7 @@ pub fn PrimitiveGaussian(comptime T: type) type {
         /// Compute the Hermite integrals.
         pub fn hermitei(tuv: [3]T, RPC: [3]T, p: T, n: T) T {
             if (tuv[0] == 0 and tuv[1] == 0 and tuv[2] == 0) {
-                return std.math.pow(T, -2 * p, n) * mth.boys(T, p * (RPC[0] * RPC[0] + RPC[1] * RPC[1] + RPC[2] * RPC[2]), n);
+                return std.math.pow(T, -2 * p, n) * mth.boys(T, n, p * (RPC[0] * RPC[0] + RPC[1] * RPC[1] + RPC[2] * RPC[2]));
             }
 
             else if (tuv[0] > 0){
@@ -124,9 +125,13 @@ pub fn PrimitiveGaussian(comptime T: type) type {
 
         /// Calculate the norm of the primitive gaussian.
         pub fn norm(self: PrimitiveGaussian(T)) T {
-            const Nij = mth.dfact(2 * self.a[0] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[0])));
-            const Nkl = mth.dfact(2 * self.a[1] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[1])));
-            const Nmn = mth.dfact(2 * self.a[2] - 1) * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[2])));
+            const dfij = gsl.dfact(2 * @as(u32, @intFromFloat(self.a[0])) - @as(u32, if (self.a[0] > 0) 1 else 0));
+            const dfkl = gsl.dfact(2 * @as(u32, @intFromFloat(self.a[1])) - @as(u32, if (self.a[1] > 0) 1 else 0));
+            const dfmn = gsl.dfact(2 * @as(u32, @intFromFloat(self.a[2])) - @as(u32, if (self.a[2] > 0) 1 else 0));
+
+            const Nij = dfij * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[0])));
+            const Nkl = dfkl * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[1])));
+            const Nmn = dfmn * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[2])));
 
             return std.math.sqrt(Nij * Nkl * Nmn);
         }

@@ -2,11 +2,13 @@
 
 const std = @import("std");
 
+const gsl = @import("gsl.zig");
+
 const asfloat = @import("helper.zig").asfloat;
 
-/// Boys function with zero n.
-pub fn boys(comptime T: type, x: T, a: T) T {
-    return if (x > 0) 0.5 * gamma(T, a + 0.5) * gammainc(T, x, a + 0.5) / std.math.pow(T, x, a + 0.5) else 1 / (2 * a + 1);
+/// Boys function.
+pub fn boys(comptime T: type, a: T, x: T) T {
+    return if (x > 0) 0.5 * gsl.gamma(a + 0.5) * (gsl.gammainc(a + 0.5, x, )) / std.math.pow(T, x, a + 0.5) else 1 / (2 * a + 1);
 }
 
 /// Calculate the combination number.
@@ -41,76 +43,6 @@ pub fn combinations(comptime T: type, array: []const T, n: usize, allocator: std
     }};
 
     try Backtrack.get(&result, array, n, &current, 0, allocator); return result;
-}
-
-/// Calculate the double factorial of a number.
-pub fn dfact(n: anytype) @TypeOf(n) {
-    if (n == -1 or n == 0 or n == 1) return 1;
-
-    if (n == 2) return 2;
-
-    return n * dfact(n - 2);
-}
-
-/// Calculate the factorial of a number.
-pub fn fact(n: usize) @TypeOf(n) {
-    var result: @TypeOf(n) = 1;
-
-    for (2..n + 1) |i| result *= i;
-
-    return result;
-}
-
-/// Gamma function using the Lanczos approximation.
-pub fn gamma(comptime T: type, x: T) T {
-    const g: T = 7; const p = [9]T{
-           0.999999999999809930e+0,
-          676.52036812188510000e+0,
-        -1259.13921672240280000e+0,
-          771.32342877765313000e+0,
-         -176.61502916214059000e+0,
-           12.50734327868690500e+0,
-           -0.13857109526572012e+0,
-            9.98436957801957160e-6,
-            1.50563273514931160e-7
-    };
-
-    if (x < 0.5) return std.math.pi / (std.math.sin(std.math.pi * x) * gamma(T, 1 - x));
-    
-    var a: T = p[0];
-
-    for (1..g + 2) |i| a += p[i] / (x + asfloat(T, i) - 1);
-
-    const t: T = x + g - 0.5;
-
-    return std.math.sqrt(2 * std.math.pi) * std.math.pow(T, t, x - 0.5) * std.math.exp(-t) * a;
-}
-
-/// Regularized lower incomplete gamma function.
-pub fn gammainc(comptime T: type, x: T, a: T) T {
-    const eps: T = 1e-14;
-
-    if (x < a + 1) {
-
-        var b = 1 / a; var c = 1 / a; var i: T = 1;
-
-        while (true) : (i += 1) {
-            c *= x / (a + i); b += c; if (c < eps) break;
-        }
-
-        return b * std.math.exp(-x + a * std.math.log(T, std.math.e, x)) / gamma(T, a);
-    }
-
-    else {
-
-        var b = x + 1 - a; var c: T = 1e10; var d = 1 / b; var e = d; var i: T = 1;
-
-        while (true) : (i += 1) {
-            const f = i * (a - i); b += 2; d = f * d + b; c = b + f / c; d = 1 / d; const g = d * c; e *= g; if (@abs(g - 1) < eps) break;
-        }
-
-        return 1 - std.math.exp(-x + a * std.math.log(T, std.math.e, x) - std.math.log(T, std.math.e, gamma(T, a))) * e;
-    }
 }
 
 /// Return the maximum of two numbers

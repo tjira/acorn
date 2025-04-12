@@ -7,8 +7,6 @@ const mth = @import("math.zig");
 const PrimitiveGaussian = @import("primitivegaussian.zig").PrimitiveGaussian;
 const System            = @import("system.zig"           ).System           ;
 
-const dfact = @import("helper.zig").dfact;
-
 /// Contracted Gaussian type.
 pub fn ContractedGaussian(comptime T: type) type {
     return struct {

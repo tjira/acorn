@@ -26,10 +26,7 @@ jobs:
 
       - name: Rename and Move Binaries
         run: |
-          cd zig-out && for FOLDER in *linux;   do mv $FOLDER/acorn      ../bin/acorn-$FOLDER;      done && cd -
-          cd zig-out && for FOLDER in *macos;   do mv $FOLDER/acorn      ../bin/acorn-$FOLDER;      done && cd -
-          cd zig-out && for FOLDER in *wasi;    do mv $FOLDER/acorn.wasm ../bin/acorn-$FOLDER.wasm; done && cd -
-          cd zig-out && for FOLDER in *windows; do mv $FOLDER/acorn.exe  ../bin/acorn-$FOLDER.exe;  done && cd -
+          cd zig-out && for FOLDER in *linux*;   do mv $FOLDER/acorn      ../bin/acorn-$FOLDER;      done && cd -
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

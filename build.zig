@@ -1,50 +1,17 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-const targets: []const std.Target.Query = &.{
-    .{.os_tag = .linux, .cpu_arch = .x86_64, .abi = .gnu},
-};
+const target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = builtin.target.cpu.arch, .abi = .gnu};
 
 pub fn build(builder: *std.Build) !void {
     const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode") orelse false;
 
-    for (targets) |target| {
-
-        const main_executable = builder.addExecutable(.{
-            .name = "acorn",
-            .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path("src/main.zig"),
-            .strip = !debug,
-            .target = builder.resolveTargetQuery(target)
-        });
-
-        main_executable.addIncludePath(.{.cwd_relative="/usr/include"});
-        main_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    });
-
-        main_executable.linkLibC();
-
-        main_executable.linkSystemLibrary("cblas"  );
-        main_executable.linkSystemLibrary("lapacke");
-
-        const main_install = builder.addInstallArtifact(main_executable, .{
-            .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
-        });
-
-        builder.getInstallStep().dependOn(&main_install.step);
-
-        if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag) {
-
-            const docs_install = builder.addInstallDirectory(.{
-                .install_dir = .prefix, .install_subdir = "docs", .source_dir = builder.addExecutable(.{
-                    .name = "main", .root_source_file = builder.path("src/main.zig"), .target = builder.host
-                }).getEmittedDocs(),
-            });
-
-            var script_step = builder.step("script", "Generate executable scripts"); script_step.makeFn = script; script_step.dependOn(builder.getInstallStep());
-
-            builder.step("docs", "Compile code documentation" ).dependOn(&docs_install                           .step);
-            builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
-        }
-    }
+    const main_executable = builder.addExecutable(.{
+        .name = "acorn",
+        .optimize = if (debug) .Debug else .ReleaseFast,
+        .root_source_file = builder.path("src/main.zig"),
+        .strip = !debug,
+        .target = builder.resolveTargetQuery(target)
+    });
 
     const test_executable = builder.addTest(.{
         .name = "test",
@@ -54,42 +21,50 @@ pub fn build(builder: *std.Build) !void {
         .target = builder.host
     });
 
-    test_executable.addIncludePath(.{.cwd_relative="/usr/include"});
-    test_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    });
+    main_executable.addIncludePath(.{.cwd_relative="/usr/include"}); test_executable.addIncludePath(.{.cwd_relative="/usr/include"});
+    main_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    }); test_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    });
 
-    test_executable.linkLibC();
+    main_executable.linkLibC(); test_executable.linkLibC();
 
-    test_executable.linkSystemLibrary("cblas"  );
-    test_executable.linkSystemLibrary("lapacke");
+    main_executable.linkSystemLibrary("cblas"  ); test_executable.linkSystemLibrary("cblas"  );
+    main_executable.linkSystemLibrary("fftw3"  ); test_executable.linkSystemLibrary("fftw3"  );
+    main_executable.linkSystemLibrary("gsl"    ); test_executable.linkSystemLibrary("gsl"    );
+    main_executable.linkSystemLibrary("lapacke"); test_executable.linkSystemLibrary("lapacke");
 
     test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
 
-    builder.step("test", "Run unit tests").dependOn(&builder.addRunArtifact(test_executable).step);
+    const docs_install = builder.addInstallDirectory(.{
+        .install_dir = .prefix, .install_subdir = "docs", .source_dir = main_executable.getEmittedDocs()
+    });
+
+    const main_install = builder.addInstallArtifact(main_executable, .{
+        .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
+    });
+
+    builder.getInstallStep().dependOn(&main_install.step);
+
+    builder.step("docs", "Compile code documentation" ).dependOn(&docs_install                           .step);
+    builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
+    builder.step("test", "Run unit tests"             ).dependOn(&builder.addRunArtifact(test_executable).step);
+
+    var script_step = builder.step("script", "Generate executable scripts"); script_step.makeFn = script; script_step.dependOn(builder.getInstallStep());
 }
 
 pub fn script(self: *std.Build.Step, progress: std.Progress.Node) !void {
     _ = self; _ = progress;
 
-    for (targets) |target| if (target.os_tag == .linux) {
+    if (target.os_tag == .linux) {
         try linuxScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
-    };
-
-    for (targets) |target| if (target.os_tag == .windows) {
-        try windowsScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
-    };
+    }
 }
 
-pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
-    const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", target, "/"});
+pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
+    const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", bindir, "/"});
 
-    const mode = switch (builtin.os.tag) {
-        .wasi => 0, .windows => 0, else => 0o755
-    };
-
-    const file_fibonacci = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "fibonacci"}), .{.mode=mode});
-    const file_matsort   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort"  }), .{.mode=mode});
-    const file_mersenne  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne" }), .{.mode=mode});
-    const file_prime     = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime"    }), .{.mode=mode});
+    const file_fibonacci = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "fibonacci"}), .{.mode=0o755});
+    const file_matsort   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort"  }), .{.mode=0o755});
+    const file_mersenne  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne" }), .{.mode=0o755});
+    const file_prime     = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime"    }), .{.mode=0o755});
 
     const header =
         \\#!/usr/bin/bash
@@ -207,131 +182,4 @@ pub fn linuxScripts(allocator: std.mem.Allocator, target: []const u8) !void {
     try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nacorn .input.json && clean", .{});  file_matsort .close();
     try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nacorn .input.json && clean", .{});  file_mersenne.close();
     try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nacorn .input.json && clean", .{});     file_prime.close();
-}
-
-pub fn windowsScripts(allocator: std.mem.Allocator, target: []const u8) !void {
-    const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", target, "/"});
-
-    const mode = switch (builtin.os.tag) {
-        .wasi => 0, .windows => 0, else => 0o755
-    };
-
-    const file_matsort  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort.ps1" }), .{.mode=mode});
-    const file_mersenne = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne.ps1"}), .{.mode=mode});
-    const file_prime    = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime.ps1"   }), .{.mode=mode});
-
-    const header =
-        \\$IDX = 0
-        \\
-        \\function Show-Usage {{
-        \\  $NAME = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
-        \\  $USAGE = @"
-        \\Usage: $NAME [options]
-        \\
-        \\Options:
-    ;
-
-    const footer =
-        \\[System.IO.File]::WriteAllText(".input.json", $CONTENT, [System.Text.UTF8Encoding]::new($false))
-        \\
-        \\& acorn .input.json
-        \\
-        \\if ($LASTEXITCODE -eq 0) {{
-        \\  Remove-Item -Force input.json -ErrorAction SilentlyContinue
-        \\}}
-    ;
-
-    const content_matsort =
-        \\  -m <start> Matrix to sort.
-        \\  -h         Display this help message and exit.
-        \\"@
-        \\  Write-Output $USAGE.Trim()
-        \\}}
-        \\
-        \\while ($IDX -lt $args.Count) {{ switch ($args[$IDX]) {{
-        \\  '-m' {{ $IDX++; if ($IDX -lt $args.Count) {{ $MATRIX = $args[$IDX] }} }}
-        \\  '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
-        \\}} $IDX++ }}
-        \\
-        \\if ($MATRIX -ne "null") {{ $MATRIX = '"' + $MATRIX + '"' }}
-        \\
-        \\$CONTENT = "{{`n" +
-        \\"  `"sort`" : {{`n" +
-        \\"    `"input`" : $MATRIX,`n" +
-        \\"    `"algorithm`" : `"bubble`",`n" +
-        \\"    `"output`" : $MATRIX`n" +
-        \\"  }}`n" +
-        \\"}}"
-    ;
-
-    const content_mersenne =
-        \\  -c <count>  Number of Mersenne primes to generate. (default: $COUNT)
-        \\  -o <output> Output file. (default: $OUTPUT)
-        \\  -s <start>  Starting number. (default: $START)
-        \\  -h          Display this help message and exit.
-        \\"@
-        \\  Write-Output $USAGE.Trim()
-        \\}}
-        \\
-        \\$COUNT = 10; $OUTPUT = "null"; $START = 1
-        \\
-        \\while ($IDX -lt $args.Count) {{ switch ($args[$IDX]) {{
-        \\  '-c' {{ $IDX++; if ($IDX -lt $args.Count) {{ $COUNT = $args[$IDX] }} }}
-        \\  '-o' {{ $IDX++; if ($IDX -lt $args.Count) {{ $OUTPUT = $args[$IDX] }} }}
-        \\  '-s' {{ $IDX++; if ($IDX -lt $args.Count) {{ $START = $args[$IDX] }} }}
-        \\  '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
-        \\}} $IDX++ }}
-        \\
-        \\if ($OUTPUT -ne "null") {{ $OUTPUT = '"' + $OUTPUT + '"' }}
-        \\
-        \\$CONTENT = "{{`n" +
-        \\"  `"prime`" : {{`n" +
-        \\"    `"mode`" : `"mersenne`",`n" +
-        \\"    `"generate`" : {{`n" +
-        \\"      `"count`" : $COUNT,`n" +
-        \\"      `"output`" : $OUTPUT`n" +
-        \\"    }},`n" +
-        \\"    `"number`" : $START`n" +
-        \\"  }}`n" +
-        \\"}}"
-    ;
-
-    const content_prime =
-        \\  -c <count>        Number of primes to generate. (default: $COUNT)
-        \\  -l <log_interval> Log interval for output. (default: $LOG_INTERVAL)
-        \\  -o <output>       Output file. (default: $OUTPUT)
-        \\  -s <start>        Starting number. (default: $START)
-        \\  -h                Display this help message and exit.
-        \\"@
-        \\  Write-Output $USAGE.Trim()
-        \\}}
-        \\
-        \\$COUNT = 10; $LOG_INTERVAL = 1; $OUTPUT = "null"; $START = 1
-        \\
-        \\while ($IDX -lt $args.Count) {{ switch ($args[$IDX]) {{
-        \\  '-c' {{ $IDX++; if ($IDX -lt $args.Count) {{ $COUNT = $args[$IDX] }} }}
-        \\  '-l' {{ $IDX++; if ($IDX -lt $args.Count) {{ $LOG_INTERVAL = $args[$IDX] }} }}
-        \\  '-o' {{ $IDX++; if ($IDX -lt $args.Count) {{ $OUTPUT = $args[$IDX] }} }}
-        \\  '-s' {{ $IDX++; if ($IDX -lt $args.Count) {{ $START = $args[$IDX] }} }}
-        \\  '-h' {{ Show-Usage; exit 0 }} Default {{ Show-Usage; exit 1 }}
-        \\}} $IDX++ }}
-        \\
-        \\if ($OUTPUT -ne "null") {{ $OUTPUT = '"' + $OUTPUT + '"' }}
-        \\
-        \\$CONTENT = "{{`n" +
-        \\"  `"prime`" : {{`n" +
-        \\"    `"mode`" : `"basic`",`n" +
-        \\"    `"generate`" : {{`n" +
-        \\"      `"count`" : $COUNT,`n" +
-        \\"      `"log_interval`" : $LOG_INTERVAL,`n" +
-        \\"      `"output`" : $OUTPUT`n" +
-        \\"    }},`n" +
-        \\"    `"number`" : $START`n" +
-        \\"  }}`n" +
-        \\"}}"
-    ;
-
-    try file_matsort .writer().print(header ++ "\n\n" ++ content_matsort  ++ "\n\n" ++ footer, .{}); file_matsort .close();
-    try file_mersenne.writer().print(header ++ "\n\n" ++ content_mersenne ++ "\n\n" ++ footer, .{}); file_mersenne.close();
-    try file_prime   .writer().print(header ++ "\n\n" ++ content_prime    ++ "\n\n" ++ footer, .{});    file_prime.close();
 }
