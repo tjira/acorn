@@ -64,17 +64,17 @@ test "classical_dynamics_nonadiabatic_fssh" {
     try expect(output_tully1D_1.pop.at(0)                   ,  0.57            );
     try expect(output_tully1D_1.pop.at(1)                   ,  0.43            );
 
-    try expect(output_tully1D_2.r.at(0)                     , 21.24034857366279);
-    try expect(output_tully1D_2.p.at(0)                     , 20.46292853412406);
-    try expect(output_tully1D_2.Ekin + output_tully1D_2.Epot,  0.14951227243131);
-    try expect(output_tully1D_2.pop.at(0)                   ,  0.12            );
-    try expect(output_tully1D_2.pop.at(1)                   ,  0.88            );
+    try expect(output_tully1D_2.r.at(0)                     , 22.39200530039214);
+    try expect(output_tully1D_2.p.at(0)                     , 21.73981427966315);
+    try expect(output_tully1D_2.Ekin + output_tully1D_2.Epot,  0.14957845399543);
+    try expect(output_tully1D_2.pop.at(0)                   ,  0.4             );
+    try expect(output_tully1D_2.pop.at(1)                   ,  0.6             );
 
-    try expect(output_tully1D_3.r.at(0)                     ,  3.96609063054275);
-    try expect(output_tully1D_3.p.at(0)                     ,  1.90698142764801);
-    try expect(output_tully1D_3.Ekin + output_tully1D_3.Epot,  0.10014861728192);
-    try expect(output_tully1D_3.pop.at(0)                   ,  0.59            );
-    try expect(output_tully1D_3.pop.at(1)                   ,  0.41            );
+    try expect(output_tully1D_3.r.at(0)                     ,  3.96421688104682);
+    try expect(output_tully1D_3.p.at(0)                     ,  1.90463923086450);
+    try expect(output_tully1D_3.Ekin + output_tully1D_3.Epot,  0.10014883378852);
+    try expect(output_tully1D_3.pop.at(0)                   ,  0.61            );
+    try expect(output_tully1D_3.pop.at(1)                   ,  0.39            );
 }
 
 test "classical_dynamics_nonadiabatic_lzsh" {
@@ -154,15 +154,15 @@ test "classical_dynamics_nonadiabatic_mash" {
     try expect(output_tully1D_1.pop.at(0)                   ,  0.59            );
     try expect(output_tully1D_1.pop.at(1)                   ,  0.41            );
 
-    try expect(output_tully1D_2.r.at(0)                     , 21.10923477506220);
-    try expect(output_tully1D_2.p.at(0)                     , 20.37931004595746);
-    try expect(output_tully1D_2.Ekin + output_tully1D_2.Epot,  0.14951199660272);
-    try expect(output_tully1D_2.pop.at(0)                   ,  0.10            );
-    try expect(output_tully1D_2.pop.at(1)                   ,  0.90            );
+    try expect(output_tully1D_2.r.at(0)                     , 22.09148303144388);
+    try expect(output_tully1D_2.p.at(0)                     , 21.44900151138607);
+    try expect(output_tully1D_2.Ekin + output_tully1D_2.Epot,  0.14959411002963);
+    try expect(output_tully1D_2.pop.at(0)                   ,  0.33            );
+    try expect(output_tully1D_2.pop.at(1)                   ,  0.67            );
 
-    try expect(output_tully1D_3.r.at(0)                     , -1.14318287393846);
-    try expect(output_tully1D_3.p.at(0)                     , -3.60808111892009);
-    try expect(output_tully1D_3.Ekin + output_tully1D_3.Epot,  0.10015092475260);
-    try expect(output_tully1D_3.pop.at(0)                   ,  0.68            );
-    try expect(output_tully1D_3.pop.at(1)                   ,  0.32            );
+    try expect(output_tully1D_3.r.at(0)                     , -1.13474002928892);
+    try expect(output_tully1D_3.p.at(0)                     , -3.59063856236763);
+    try expect(output_tully1D_3.Ekin + output_tully1D_3.Epot,  0.10015066237358);
+    try expect(output_tully1D_3.pop.at(0)                   ,  0.54            );
+    try expect(output_tully1D_3.pop.at(1)                   ,  0.46            );
 }

@@ -76,7 +76,6 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     var J_AO_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_AO_A.deinit();
 
     var H_AO = try Matrix(T).init(nbf, nbf, allocator); defer H_AO.deinit();
-    var X    = try Matrix(T).init(nbf, nbf, allocator); defer    X.deinit();
     var ERR  = try Matrix(T).init(nbf, nbf, allocator); defer  ERR.deinit();
 
     var DIIS_E = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_E.deinit();
@@ -88,16 +87,11 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     };
 
     {
-        var XJ = try Matrix(T).init(nbf, nbf, allocator); defer XJ.deinit();
-        var XC = try Matrix(T).init(nbf, nbf, allocator); defer XC.deinit();
-
         var K_AO = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer K_AO.deinit();
 
         ten.transpose(T, &K_AO, J_AO, &[_]usize{0, 3, 2, 1}); ten.muls(T, &K_AO, K_AO, 0.5); ten.sub(T, &J_AO_A, J_AO, K_AO);
 
-        lpk.dsyevd(&XJ, &XC, S_AO); for (0..nbf) |i| XJ.ptr(i, i).* = 1.0 / std.math.sqrt(XJ.at(i, i));
-
-        bls.dgemm(&T1, XC, false, XJ, false); bls.dgemm(&X, T1, false, XC, true); mat.add(T, &H_AO, T_AO, V_AO);
+        mat.add(T, &H_AO, T_AO, V_AO);
     }
 
     var F_AO = try Matrix(T).init(nbf, nbf, allocator); F_AO.fill(0);
@@ -129,9 +123,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
             try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
         }
 
-        bls.dgemm(&T1, X, false, F_AO, false); bls.dgemm(&T2, T1, false, X, false); lpk.dsyevd(&E_MO, &T1, T2); bls.dgemm(&C_MO, X, false, T1, false);
-
-        D_MO.fill(0); EP = E; E = 0;
+        lpk.dsygvd(&E_MO, &C_MO, F_AO, S_AO, &T1); D_MO.fill(0); EP = E; E = 0;
 
         for (0..nbf) |i| for (0..nocc) |j| for (0..nbf) |k| {
             D_MO.ptr(i, k).* += 2.0 * C_MO.at(i, j) * C_MO.at(k, j);

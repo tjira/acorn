@@ -41,6 +41,6 @@
             "quantum_substep" : 10,
             "decoherence_alpha" : null
         },
-        "time_derivative_coupling" : "numeric"
+        "time_derivative_coupling" : "hst"
     }
 }
