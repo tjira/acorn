@@ -15,6 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Libgfortran
+        run: sudo apt install libgfortran5
+
       - name: Download and Compile Dependencies
         run: ./script/library.sh
 
