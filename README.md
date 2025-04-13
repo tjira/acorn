@@ -58,7 +58,7 @@ Below are all the important features of Acorn divided into categories.
 
 ## Compilation
 
-Before the compilation, make sure you have `fftw`, `gsl`, `lapacke` and `openblas` libraries installed on your system. You can install them using your package manager. For example, on Ubuntu, you can run the following command.
+Before the compilation, make sure you have `cblas`, `fftw`, `gsl` and `lapacke` libraries installed on your system. You can install them using your package manager. For example, on Ubuntu, you can run the following command.
 
 ```bash
 sudo apt install libfftw3-dev libgsl-dev liblapacke-dev libopenblas-dev
