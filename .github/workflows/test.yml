@@ -15,20 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Find gfortran
-        run: find /usr/ -name libgfortran.so
-
-      - name: Find gfortran
-        run: find /lib/ -name libgfortran.so
-
       - name: Download and Compile Dependencies
-        run: ./script/library.sh
+        run: ./script/library.sh && ln -s /lib/gcc/x86_64-linux-gnu/14/libgfortran.so external/lib/libgfortran.so
 
       - name: Download Zig Compiler
         run: mkdir bin && wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz && tar -xvf zig.tar.xz && mv zig-linux*/lib zig-linux*/zig bin && rm -rf zig*
 
       - name: Run Tests
-        run: ./bin/zig build --search-prefix "/usr/lib/gcc/x86_64-linux-gnu/14" --summary all test
+        run: ./bin/zig build --summary all test
 
       - name: Upload Coverage Reports
         uses: codecov/codecov-action@v4.0.1

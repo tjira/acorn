@@ -5,8 +5,6 @@ const target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = 
 pub fn build(builder: *std.Build) !void {
     const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode") orelse false;
 
-    // const main_module = builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")});
-
     const main_executable = builder.addExecutable(.{
         .name = "acorn",
         .optimize = if (debug) .Debug else .ReleaseFast,
