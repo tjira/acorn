@@ -23,6 +23,7 @@ pub fn build(builder: *std.Build) !void {
         .target = builder.host
     });
 
+    main_executable.addIncludePath(.{.cwd_relative="/usr/include"    }); main_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    });
     main_executable.addIncludePath(.{.cwd_relative="external/include"}); main_executable.addLibraryPath(.{.cwd_relative="external/lib"});
 
     main_executable.linkLibC(); main_executable.linkSystemLibrary("gfortran"); test_executable.linkLibC(); test_executable.linkSystemLibrary("gfortran");
