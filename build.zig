@@ -28,7 +28,6 @@ pub fn build(builder: *std.Build) !void {
 
     main_executable.linkSystemLibrary("fftw3"   ); test_executable.linkSystemLibrary("fftw3"   );
     main_executable.linkSystemLibrary("gsl"     ); test_executable.linkSystemLibrary("gsl"     );
-    main_executable.linkSystemLibrary("lapacke" ); test_executable.linkSystemLibrary("lapacke" );
     main_executable.linkSystemLibrary("openblas"); test_executable.linkSystemLibrary("openblas");
 
     test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
