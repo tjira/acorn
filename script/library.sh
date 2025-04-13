@@ -10,9 +10,8 @@ tar -xzvf openblas.tar.gz && rm openblas.tar.gz
 
 mv fftw* fftw ; mv gsl* gsl ; mv OpenBLAS* openblas
 
-cd fftw && ./configure --prefix="$PWD/install" && make -j 2 && make install && cd ..
-cd gsl  && ./configure --prefix="$PWD/install" && make -j 2 && make install && cd ..
-
-cd openblas && make -j 2 && make PREFIX="$PWD/install" install && cd ..
+cd fftw     && ./configure --enable-shared --prefix="$PWD/install" && make -j 2 && make                       install && cd ..
+cd gsl      && ./configure                 --prefix="$PWD/install" && make -j 2 && make                       install && cd ..
+cd openblas &&                                                        make -j 2 && make PREFIX="$PWD/install" install && cd ..
 
 rm -rf external && mkdir external && cp -r fftw/install/* gsl/install/* openblas/install/* external/ && rm -rf fftw gsl openblas
