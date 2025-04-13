@@ -25,6 +25,10 @@ pub fn build(builder: *std.Build) !void {
 
     main_executable.addIncludePath(.{.cwd_relative="external/include"}); main_executable.addLibraryPath(.{.cwd_relative="external/lib"});
 
+    if (target.os_tag == .linux) {
+        main_executable.addIncludePath(.{.cwd_relative="/usr/include/x86_64-linux-gnu"}); main_executable.addLibraryPath(.{.cwd_relative="/usr/lib/x86_64-linux-gnu"});
+    }
+
     main_executable.linkLibC(); main_executable.linkSystemLibrary("gfortran"); test_executable.linkLibC(); test_executable.linkSystemLibrary("gfortran");
 
     main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
