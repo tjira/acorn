@@ -17,7 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Biber and LaTeX
+      - name: Install System Dependencies
+        run: sudo apt update && sudo apt install -y libcblas-dev libgsl-dev liblapacke-dev
+
+      - name: Install Biber, LaTeX and Pandoc
         run: sudo apt update && sudo apt install -y biber pandoc texlive-latex-recommended texlive-latex-extra
 
       - name: Install Pandoc

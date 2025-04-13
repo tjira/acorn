@@ -36,7 +36,7 @@
 </p>
 
 <p align="center">
-Quantum Acorn, a collection of electronic structure methods compiled into a dependency-free binary. If you are here for the educational scripts, you can find them in the education folder.
+Quantum Acorn, a collection of electronic structure methods compiled into a small binary. If you are here for the educational scripts, you can find them in the education folder.
 </p>
 
 ## Features
@@ -58,13 +58,19 @@ Below are all the important features of Acorn divided into categories.
 
 ## Compilation
 
-Since the software is coded in zig, you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download) or install it from your favourite package manager. After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
+Before the compilation, make sure you have `cblas`, `lapacke` and `gsl` libraries installed on your system. You can install them using your package manager. For example, on Ubuntu, you can run the following command.
 
 ```bash
-zig build
+sudo apt install libcblas-dev libgsl-dev liblapacke-dev
 ```
 
-This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os` folder, where `arch` is the architecture of your system and `os` is the operating system you are using. If you don't know your CPU architecture, you probably want the `x86_64` binary. You can also perform tests on the project by running the following command.
+After the necessary dependencies you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download) or install it from your favourite package manager. After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
+
+```bash
+zig build && zig build script
+```
+
+This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os` folder, where `arch` is the architecture of your system and `os` is the operating system you are using. It will also generate some usefull wrappers around the binary in the same folder. You can also perform tests on the project by running the following command.
 
 ```bash
 zig build test

@@ -129,25 +129,4 @@ pub fn main() !void {
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
-
-    // const A = try Matrix(f64).init(2, 2, allocator); defer A.deinit();
-    //
-    // var B = try Matrix(f64).init(A.rows, A.cols, allocator); defer B.deinit();
-    // var C = try Matrix(f64).init(A.rows, A.cols, allocator); defer C.deinit();
-    // var AJI = try Vector(f64).init(A.rows, allocator); defer AJI.deinit();
-    // var AJR = try Vector(f64).init(A.rows, allocator); defer AJR.deinit();
-    // var Q   = try Matrix(f64).init(A.rows, A.cols, allocator); defer Q.deinit();
-    // var D   = try Matrix(f64).init(A.rows, A.cols, allocator); defer D.deinit();
-    //
-    // A.randn(0, 1, 2);
-    //
-    // A.ptr(0, 0).* = 7; A.ptr(0, 1).* = 1;
-    // A.ptr(1, 0).* = -1; A.ptr(1, 1).* = 3;
-    //
-    // lapack.dgees(&Q, &D, A, &AJR, &AJI); blas.dgemm(&C, D, false, Q, true); blas.dgemm(&B, Q, false, C, false);
-    //
-    // try A.print(std.io.getStdOut().writer());
-    // try Q.print(std.io.getStdOut().writer());
-    // try D.print(std.io.getStdOut().writer());
-    // try B.print(std.io.getStdOut().writer());
 }
