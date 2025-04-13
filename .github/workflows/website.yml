@@ -17,8 +17,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install System Dependencies
-        run: sudo apt update && sudo apt install -y libfftw3-dev libgsl-dev liblapacke-dev libopenblas-dev
+      - name: Download and Compile Dependencies
+        run: ./script/library.sh
 
       - name: Install Biber and LaTeX
         run: sudo apt update && sudo apt install -y biber texlive-latex-recommended texlive-latex-extra

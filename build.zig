@@ -5,6 +5,8 @@ const target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = 
 pub fn build(builder: *std.Build) !void {
     const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode") orelse false;
 
+    // const main_module = builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")});
+
     const main_executable = builder.addExecutable(.{
         .name = "acorn",
         .optimize = if (debug) .Debug else .ReleaseFast,
@@ -21,17 +23,15 @@ pub fn build(builder: *std.Build) !void {
         .target = builder.host
     });
 
-    main_executable.addIncludePath(.{.cwd_relative="/usr/include"}); test_executable.addIncludePath(.{.cwd_relative="/usr/include"});
-    main_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    }); test_executable.addLibraryPath(.{.cwd_relative="/usr/lib"    });
+    main_executable.addIncludePath(.{.cwd_relative="external/include"}); main_executable.addLibraryPath(.{.cwd_relative="external/lib"});
 
-    main_executable.linkLibC(); test_executable.linkLibC();
+    main_executable.linkLibC(); main_executable.linkSystemLibrary("gfortran"); test_executable.linkLibC(); test_executable.linkSystemLibrary("gfortran");
 
-    main_executable.linkSystemLibrary("fftw3"   ); test_executable.linkSystemLibrary("fftw3"   );
-    main_executable.linkSystemLibrary("gsl"     ); test_executable.linkSystemLibrary("gsl"     );
-    main_executable.linkSystemLibrary("lapacke" ); test_executable.linkSystemLibrary("lapacke" );
-    main_executable.linkSystemLibrary("openblas"); test_executable.linkSystemLibrary("openblas");
+    main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
+    main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static});
+    main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
 
-    test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
+    test_executable.root_module.addImport("acorn", &main_executable.root_module);
 
     const docs_install = builder.addInstallDirectory(.{
         .install_dir = .prefix, .install_subdir = "docs", .source_dir = main_executable.getEmittedDocs()
