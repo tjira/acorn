@@ -10,7 +10,7 @@ pub fn build(builder: *std.Build) !void {
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("src/main.zig"),
         .strip = !debug,
-        .target = builder.resolveTargetQuery(target)
+        .target = builder.host
     });
 
     const test_executable = builder.addTest(.{
@@ -28,6 +28,7 @@ pub fn build(builder: *std.Build) !void {
 
     main_executable.linkSystemLibrary("fftw3"   ); test_executable.linkSystemLibrary("fftw3"   );
     main_executable.linkSystemLibrary("gsl"     ); test_executable.linkSystemLibrary("gsl"     );
+    main_executable.linkSystemLibrary("lapacke" ); test_executable.linkSystemLibrary("lapacke" );
     main_executable.linkSystemLibrary("openblas"); test_executable.linkSystemLibrary("openblas");
 
     test_executable.root_module.addImport("acorn", builder.addModule("acorn", .{.root_source_file = builder.path("src/main.zig")}));
