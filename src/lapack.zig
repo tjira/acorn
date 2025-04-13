@@ -18,7 +18,7 @@ pub fn dgees(Q: *Matrix(f64), D: *Matrix(f64), A: Matrix(f64), JR: *Vector(f64),
 pub fn dgesv(x: *Vector(f64), ALU: *Matrix(f64), p: *Vector(i32), A: Matrix(f64), b: Vector(f64)) void {
     const n: i32 = @intCast(A.rows); @memcpy(ALU.data, A.data); @memcpy(x.data, b.data);
 
-    _ = lapacke.LAPACKE_dgesv(lapacke.LAPACK_COL_MAJOR, n, 1, &ALU.data[0], n, &p.data[0], &x.data[0], n);
+    _ = lapacke.LAPACKE_dgesv(lapacke.LAPACK_ROW_MAJOR, n, 1, &ALU.data[0], n, &p.data[0], &x.data[0], 1);
 }
 
 /// Calculate the LU decomposition of a matrix A. The result is stored in ALU and the pivot indices are stored in p.
