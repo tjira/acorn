@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download and Compile Dependencies
-        run: echo $LD_LIBRARY_PATH
+        run: find / -name libgfortran.so.5
 
       - name: Download and Compile Dependencies
         run: ./script/library.sh
