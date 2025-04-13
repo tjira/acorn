@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Libgfortran
-        run: sudo updatedb && locate libgfortran
+        run: sudo apt install mlocate && sudo updatedb && locate libgfortran
 
       - name: Download and Compile Dependencies
         run: ./script/library.sh
