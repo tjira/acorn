@@ -33,7 +33,7 @@ jobs:
         run: ./script/docstopdf.sh
 
       - name: Compile the Code Documentation
-        run: ./bin/zig build docs && cp -r zig-out/docs docs/code
+        run: ./bin/zig build --search-prefix "/usr/lib/gcc/x86_64-linux-gnu/14" docs && cp -r zig-out/docs docs/code
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
