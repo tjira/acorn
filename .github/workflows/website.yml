@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install System Dependencies
-        run: sudo apt update && sudo apt install -y fftw3 libatlas-base-dev libgsl-dev liblapacke-dev
+        run: sudo apt update && sudo apt install -y libatlas-base-dev libfftw3-dev libgsl-dev liblapacke-dev
 
       - name: Install Biber, LaTeX and Pandoc
         run: sudo apt update && sudo apt install -y biber pandoc texlive-latex-recommended texlive-latex-extra

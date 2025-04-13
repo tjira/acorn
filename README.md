@@ -61,7 +61,7 @@ Below are all the important features of Acorn divided into categories.
 Before the compilation, make sure you have `cblas`, `fftw`, `gsl` and `lapacke` libraries installed on your system. You can install them using your package manager. For example, on Ubuntu, you can run the following command.
 
 ```bash
-sudo apt install fftw3 libatlas-base-dev libgsl-dev liblapacke-dev
+sudo apt install libatlas-base-dev libfftw3-dev libgsl-dev liblapacke-dev
 ```
 
 After the necessary dependencies you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download) or install it from your favourite package manager. After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
