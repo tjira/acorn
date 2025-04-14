@@ -129,9 +129,9 @@ pub fn PrimitiveGaussian(comptime T: type) type {
             const dfkl = gsl.dfact(2 * @as(u32, @intFromFloat(self.a[1])) - @as(u32, if (self.a[1] > 0) 1 else 0));
             const dfmn = gsl.dfact(2 * @as(u32, @intFromFloat(self.a[2])) - @as(u32, if (self.a[2] > 0) 1 else 0));
 
-            const Nij = dfij * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[0])));
-            const Nkl = dfkl * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[1])));
-            const Nmn = dfmn * std.math.sqrt(0.5 * std.math.pi / self.alpha) / mth.powi(4 * self.alpha, @as(u32, @intFromFloat(self.a[2])));
+            const Nij = dfij * std.math.sqrt(0.5 * std.math.pi / self.alpha) / std.math.pow(T, 4 * self.alpha, self.a[0]);
+            const Nkl = dfkl * std.math.sqrt(0.5 * std.math.pi / self.alpha) / std.math.pow(T, 4 * self.alpha, self.a[1]);
+            const Nmn = dfmn * std.math.sqrt(0.5 * std.math.pi / self.alpha) / std.math.pow(T, 4 * self.alpha, self.a[2]);
 
             return std.math.sqrt(Nij * Nkl * Nmn);
         }

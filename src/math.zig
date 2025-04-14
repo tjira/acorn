@@ -8,7 +8,7 @@ const asfloat = @import("helper.zig").asfloat;
 
 /// Boys function.
 pub fn boys(comptime T: type, a: T, x: T) T {
-    return if (x > 0) 0.5 * gsl.gamma(a + 0.5) * (gsl.gammainc(a + 0.5, x, )) / std.math.pow(T, x, a + 0.5) else 1 / (2 * a + 1);
+    return gsl.hyp1f1(a + 0.5, a + 1.5, -x) / (2 * a + 1);
 }
 
 /// Calculate the combination number.
@@ -50,23 +50,9 @@ pub fn max(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a > b) a else b;
 }
 
-/// Return the mean of a vector.
-pub fn mean(comptime T: type, v: []const T) T {
-    return sum(T, v) / asfloat(T, v.len);
-}
-
 /// Return the minimum of two numbers
 pub fn min(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a < b) a else b;
-}
-
-/// Calculate the power of a number.
-pub fn powi(a: anytype, b: u32) @TypeOf(a) {
-    var result: @TypeOf(a) = 1;
-
-    for (0..b) |_| result *= a;
-
-    return result;
 }
 
 /// Calculate the product of an array.
@@ -81,15 +67,6 @@ pub fn prod(comptime T: type, v: []const T) T {
 /// Sign of a number.
 pub fn sgn(a: anytype) @TypeOf(a) {
     return if (a < 0) -1 else 1;
-}
-
-/// Return the standard deviation of a vector.
-pub fn stdev(comptime T: type, v: []const T) T {
-    var result: T = 0;
-
-    for (v) |value| result += (value - mean(T, v)) * (value - mean(T, v));
-
-    return std.math.sqrt(result / asfloat(T, v.len));
 }
 
 /// Calculate the sum of an array.

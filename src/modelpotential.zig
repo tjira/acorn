@@ -38,6 +38,7 @@ pub fn getMap(comptime T: type, allocator: std.mem.Allocator) !std.StringHashMap
     try map.put("tripleState1D_3",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_3(T, U, r);}}.get});
     try map.put("tripleState1D_4",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_4(T, U, r);}}.get});
     try map.put("tripleState1D_4_lorentz", Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {tripleState1D_4_lorentz(T, U, r);}}.get});
+    try map.put("tripleState1D_5",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_5(T, U, r);}}.get});
     try map.put("tully1D_1",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {              tully1D_1(T, U, r);}}.get});
     try map.put("tully1D_1_lorentz",       Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {      tully1D_1_lorentz(T, U, r);}}.get});
     try map.put("tully1D_2",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {              tully1D_2(T, U, r);}}.get});
@@ -280,6 +281,21 @@ pub fn tripleState1D_4_lorentz(comptime T: type, U: *Matrix(T), r: Vector(T)) vo
     U.ptr(2, 0).* = U.at(0, 2);
     U.ptr(2, 1).* = U.at(1, 2);
     U.ptr(2, 2).* = -U.at(0, 0);
+}
+
+/// The fifth triple-state model potential energy surface.
+pub fn tripleState1D_5(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = 0.5 * r.at(0) * r.at(0);
+    U.ptr(0, 1).* = 0;
+    U.ptr(0, 2).* = 0;
+
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = 2.5 + 0.5 * (r.at(0) - 2) * (r.at(0) - 2);
+    U.ptr(1, 2).* = 0;
+
+    U.ptr(2, 0).* = U.at(0, 2);
+    U.ptr(2, 1).* = U.at(1, 2);
+    U.ptr(2, 2).* = 5 + 0.5 * r.at(0) * r.at(0);
 }
 
 /// The first Tully model potential energy surface.
