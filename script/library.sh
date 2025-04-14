@@ -17,6 +17,6 @@ cd gsl  && ./configure --prefix="$PWD/install" && make -j 2 && make install && c
 
 cd openblas && make -j 2 && make PREFIX="$PWD/install" install && cd ..
 
-cd libint && cmake -DCMAKE_INSTALL_PREFIX="$PWD/install" . && cmake --build . --parallel 2 && cmake --install . && cd ..
+cd libint && cmake -DCMAKE_INSTALL_PREFIX="$PWD/install" -DREQUIRE_CXX_API=OFF . && cmake --build . --parallel 2 && cmake --install . && cd ..
 
 rm -rf external && mkdir external && cp -r fftw/install/* gsl/install/* libint/install/* openblas/install/* external/ && rm -rf fftw gsl libint openblas
