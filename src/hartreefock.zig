@@ -9,6 +9,7 @@ const bls = @import("blas.zig"    );
 const inp = @import("input.zig"   );
 const int = @import("integral.zig");
 const lpk = @import("lapack.zig"  );
+const lbt = @import("libint.zig"  );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
 const out = @import("output.zig"  );
@@ -66,6 +67,11 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     const T_AO = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try int.kinetic(T, basis,         allocator);
     const V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try int.nuclear(T, basis, system, allocator);
     const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try int.coulomb(T, basis,         allocator);
+
+    if (opt.integral.libint) lbt.overlap(S_AO.data, "molecule.xyz", "sto-3g");
+    if (opt.integral.libint) lbt.kinetic(T_AO.data, "molecule.xyz", "sto-3g");
+    if (opt.integral.libint) lbt.nuclear(V_AO.data, "molecule.xyz", "sto-3g");
+    if (opt.integral.libint) lbt.coulomb(J_AO.data, "molecule.xyz", "sto-3g");
 
     if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
 

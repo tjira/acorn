@@ -9,18 +9,24 @@ const System             = @import("system.zig"            ).System            ;
 pub fn Basis(comptime T: type) type {
     return struct {
 
-        /// Get the basis set for the given system and name.
-        pub fn get(system: System(T), name: []const u8, allocator: std.mem.Allocator) !std.ArrayList(ContractedGaussian(T)) {
-            var basis = std.ArrayList(ContractedGaussian(T)).init(allocator); var parsed: std.json.Parsed(std.json.Value) = undefined;
+        pub fn embedded(basis: []const u8, format: []const u8, allocator: std.mem.Allocator) ![]const u8 {
+            const lower = try allocator.alloc(u8, basis.len); defer allocator.free(lower); _ = std.ascii.lowerString(lower, basis);
 
-            const lower = try allocator.alloc(u8, name.len); defer allocator.free(lower); _ = std.ascii.lowerString(lower, name);
-
-            if      (std.mem.eql(u8, lower, "sto-3g"  )) {parsed = try std.json.parseFromSlice(std.json.Value, allocator, @embedFile("basis/sto-3g.json" ), .{});}
-            else if (std.mem.eql(u8, lower, "6-31g"   )) {parsed = try std.json.parseFromSlice(std.json.Value, allocator, @embedFile("basis/6-31g.json"  ), .{});}
-            else if (std.mem.eql(u8, lower, "cc-pvdz" )) {parsed = try std.json.parseFromSlice(std.json.Value, allocator, @embedFile("basis/cc-pvdz.json"), .{});}
-            else if (std.mem.eql(u8, lower, "cc-pvtz" )) {parsed = try std.json.parseFromSlice(std.json.Value, allocator, @embedFile("basis/cc-pvtz.json"), .{});}
+            if      (std.mem.eql(u8, lower, "sto-3g" ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/sto-3g.json" );}
+            else if (std.mem.eql(u8, lower, "sto-3g" ) and std.mem.eql(u8, format, "g94" )) {return @embedFile("basis/sto-3g.g94"  );}
+            else if (std.mem.eql(u8, lower, "6-31g"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31g.json"  );}
+            else if (std.mem.eql(u8, lower, "6-31g"  ) and std.mem.eql(u8, format, "g94" )) {return @embedFile("basis/6-31g.g94"   );}
+            else if (std.mem.eql(u8, lower, "cc-pvdz") and std.mem.eql(u8, format, "json")) {return @embedFile("basis/cc-pvdz.json");}
+            else if (std.mem.eql(u8, lower, "cc-pvdz") and std.mem.eql(u8, format, "g94" )) {return @embedFile("basis/cc-pvdz.g94" );}
+            else if (std.mem.eql(u8, lower, "cc-pvtz") and std.mem.eql(u8, format, "json")) {return @embedFile("basis/cc-pvtz.json");}
+            else if (std.mem.eql(u8, lower, "cc-pvtz") and std.mem.eql(u8, format, "g94" )) {return @embedFile("basis/cc-pvtz.g94" );}
 
             else return error.BasisNameNotFound;
+        }
+
+        /// Get the basis set for the given system and name.
+        pub fn get(system: System(T), name: []const u8, allocator: std.mem.Allocator) !std.ArrayList(ContractedGaussian(T)) {
+            var basis = std.ArrayList(ContractedGaussian(T)).init(allocator); const parsed = try std.json.parseFromSlice(std.json.Value, allocator, try embedded(name, "json", allocator), .{});
 
             for (0..system.atoms.rows) |i| {
 

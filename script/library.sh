@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CORES=2
+CORES=$(nproc --all)
 
 echo 'zig cc  "$@"' > zigcc  && chmod +x zigcc
 echo 'zig c++ "$@"' > zigcpp && chmod +x zigcpp
@@ -28,4 +28,4 @@ cd libint && cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_COMPILER="$PWD/../zigcpp"
 
 rm -rf external && mkdir external && cp -r fftw/install/* gsl/install/* libint/install/* openblas/install/* external/ && cp -r eigen/Eigen external/include
 
-rm -rf eigen fftw gsl libint openblas zigc zigcpp
+rm -rf eigen fftw gsl libint openblas zigcc zigcpp
