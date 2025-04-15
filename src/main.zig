@@ -15,6 +15,7 @@ pub const fibonacci                 = @import("fibonacci.zig"               );
 pub const hartree_fock              = @import("hartreefock.zig"             );
 pub const helper                    = @import("helper.zig"                  );
 pub const input                     = @import("input.zig"                   );
+pub const int                       = @import("int.zig"                     );
 pub const integral                  = @import("integral.zig"                );
 pub const lapack                    = @import("lapack.zig"                  );
 pub const linear_algebra            = @import("linearalgebra.zig"           );
