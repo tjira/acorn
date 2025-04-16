@@ -1,48 +1,42 @@
-#define DATADIR "/home/tojira/Projects/acorn"
-
 #include <libint2.hpp>
 
-#include <fstream>
+std::pair<std::vector<libint2::Atom>, std::vector<libint2::Shell>> load(int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+    std::vector<libint2::Atom> atoms; std::vector<libint2::Shell> shells;
 
-size_t max_nprim(const std::vector<libint2::Shell>& shells) {
-  size_t n = 0;
-  for (auto shell : shells) n = std::max(shell.nprim(), n);
-  return n;
-}
-
-int max_l(const std::vector<libint2::Shell>& shells) {
-  int l = 0;
-  for (auto shell : shells)
-    for (auto c : shell.contr) l = std::max(c.l, l);
-  return l;
-}
-
-std::vector<size_t> shell2bf(const std::vector<libint2::Shell>& shells) {
-    std::vector<size_t> result; result.reserve(shells.size());
-
-    size_t n = 0;
-    for (auto shell : shells) {
-        result.push_back(n);
-        n += shell.size();
+    for (int i = 0; i < natoms; i++) {
+        atoms.push_back({(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]});
     }
 
-    return result;
+    for (int i = 0; i < nbasis; i += 2 * basis[i] + 5) {
+
+        int n = basis[i]; libint2::svector<double> alpha(n), c(n);
+
+        for (int j = 0; j < basis[i]; j++) {
+            alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];
+        }
+
+        shells.push_back(libint2::Shell{alpha, {{(int)basis[i + 1], false, c}}, {{basis[i + 2], basis[i + 3], basis[i + 4]}}});
+    }
+
+    return {atoms, shells};
 }
 
 extern "C" {
-    using namespace libint2; typedef double real_t;
+    using namespace libint2;
 
-    void oneelec(double *ints, libint2::Engine &engine, const std::vector<Shell> &obs) {
-        int nbf = 0; std::vector<size_t> sh2bf = shell2bf(obs);
+    void oneelec(double *ints, libint2::Engine &engine, const std::vector<Shell> &shells) {
+        int nbf = 0; std::vector<size_t> sh2bf;
 
-        for (const auto& shell : obs) nbf += shell.size();
+        for (int i = 0, j = 0; j < shells.size(); i += shells[j].size(), j++) sh2bf.push_back(i);
 
-        for (size_t i = 0; i < obs.size(); i++) for (size_t j = i; j < obs.size(); j++) {
+        for (const auto& shell : shells) nbf += shell.size();
 
-            int integral_index = 0; engine.compute(obs.at(i), obs.at(j)); if (engine.results().at(0) == nullptr) continue;
+        for (size_t i = 0; i < shells.size(); i++) for (size_t j = i; j < shells.size(); j++) {
 
-            for (size_t k = 0; k < obs.at(i).size(); k++) {
-                for (size_t l = 0; l < obs.at(j).size(); l++) {
+            int integral_index = 0; engine.compute(shells.at(i), shells.at(j)); if (engine.results().at(0) == nullptr) continue;
+
+            for (size_t k = 0; k < shells.at(i).size(); k++) {
+                for (size_t l = 0; l < shells.at(j).size(); l++) {
                     ints[(k + sh2bf.at(i)) * nbf + (l + sh2bf.at(j))] = engine.results().at(0)[integral_index  ];
                     ints[(l + sh2bf.at(j)) * nbf + (k + sh2bf.at(i))] = engine.results().at(0)[integral_index++];
                 }
@@ -50,19 +44,21 @@ extern "C" {
         }
     }
 
-    void twoelec(double *ints, libint2::Engine &engine, const std::vector<Shell> &obs) {
-        int nbf = 0; std::vector<size_t> sh2bf = shell2bf(obs);
+    void twoelec(double *ints, libint2::Engine &engine, const std::vector<Shell> &shells) {
+        int nbf = 0; std::vector<size_t> sh2bf;
 
-        for (const auto& shell : obs) nbf += shell.size();
+        for (int i = 0, j = 0; j < shells.size(); i += shells[j].size(), j++) sh2bf.push_back(i);
 
-        for (size_t i = 0; i < obs.size(); i++) for (size_t j = i; j < obs.size(); j++) for (size_t k = i; k < obs.size(); k++) for (size_t l = (i == k ? j : k); l < obs.size(); l++) {
+        for (const auto& shell : shells) nbf += shell.size();
 
-            int integral_index = 0; engine.compute(obs.at(i), obs.at(j), obs.at(k), obs.at(l)); if (engine.results().at(0) == nullptr) continue;
+        for (size_t i = 0; i < shells.size(); i++) for (size_t j = i; j < shells.size(); j++) for (size_t k = i; k < shells.size(); k++) for (size_t l = (i == k ? j : k); l < shells.size(); l++) {
 
-            for (size_t m = 0; m < obs.at(i).size(); m++) {
-                for (size_t n = 0; n < obs.at(j).size(); n++) {
-                    for (size_t o = 0; o < obs.at(k).size(); o++) {
-                        for (size_t p = 0; p < obs.at(l).size(); p++) {
+            int integral_index = 0; engine.compute(shells.at(i), shells.at(j), shells.at(k), shells.at(l)); if (engine.results().at(0) == nullptr) continue;
+
+            for (size_t m = 0; m < shells.at(i).size(); m++) {
+                for (size_t n = 0; n < shells.at(j).size(); n++) {
+                    for (size_t o = 0; o < shells.at(k).size(); o++) {
+                        for (size_t p = 0; p < shells.at(l).size(); p++) {
                             ints[(m + sh2bf.at(i)) * nbf * nbf * nbf + (n + sh2bf.at(j)) * nbf * nbf + (o + sh2bf.at(k)) * nbf + (p + sh2bf.at(l))] = engine.results().at(0)[integral_index  ];
                             ints[(m + sh2bf.at(i)) * nbf * nbf * nbf + (n + sh2bf.at(j)) * nbf * nbf + (p + sh2bf.at(l)) * nbf + (o + sh2bf.at(k))] = engine.results().at(0)[integral_index  ];
                             ints[(n + sh2bf.at(j)) * nbf * nbf * nbf + (m + sh2bf.at(i)) * nbf * nbf + (o + sh2bf.at(k)) * nbf + (p + sh2bf.at(l))] = engine.results().at(0)[integral_index  ];
@@ -79,98 +75,52 @@ extern "C" {
     }
 
     void coulomb(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
-        std::vector<Atom> atoms(natoms); std::vector<Shell> obs;
+        auto [atoms, shells] = load(natoms, anums, coords, nbasis, basis); int max_l = 0; size_t max_npgs = 0;
 
-        for (int i = 0; i < natoms; i++) {
-            atoms.at(i) = {(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]};
+        for (auto shell : shells) {
+            max_npgs = std::max(shell.nprim(), max_npgs); for (auto c : shell.contr) max_l = std::max(c.l, max_l);
         }
 
-        for (int i = 0; i < nbasis;) {
+        initialize(); Engine engine(Operator::coulomb, max_npgs, max_l, 0, 1e-14);
 
-            int n = basis[i]; int am = basis[i + 1]; double x = basis[i + 2]; double y = basis[i + 3]; double z = basis[i + 4];
-
-            svector<double> alpha(n), c(n);
-
-            for (int j = 0; j < n; j++) {alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];}
-
-            obs.push_back(Shell{alpha, {{am, false, c}}, {{x, y, z}}}); i += 2 * n + 5;
-        }
-
-        initialize(); Engine engine(Operator::coulomb, max_nprim(obs), max_l(obs), 0, 1e-14);
-
-        twoelec(ints, engine, obs); finalize();
+        twoelec(ints, engine, shells); finalize();
     }
 
     void kinetic(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
-        std::vector<Atom> atoms(natoms); std::vector<Shell> obs;
+        auto [atoms, shells] = load(natoms, anums, coords, nbasis, basis); int max_l = 0; size_t max_npgs = 0;
 
-        for (int i = 0; i < natoms; i++) {
-            atoms.at(i) = {(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]};
+        for (auto shell : shells) {
+            max_npgs = std::max(shell.nprim(), max_npgs); for (auto c : shell.contr) max_l = std::max(c.l, max_l);
         }
 
-        for (int i = 0; i < nbasis;) {
+        initialize(); Engine engine(Operator::kinetic, max_npgs, max_l, 0, 1e-14);
 
-            int n = basis[i]; int am = basis[i + 1]; double x = basis[i + 2]; double y = basis[i + 3]; double z = basis[i + 4];
-
-            svector<double> alpha(n), c(n);
-
-            for (int j = 0; j < n; j++) {alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];}
-
-            obs.push_back(Shell{alpha, {{am, false, c}}, {{x, y, z}}}); i += 2 * n + 5;
-        }
-
-        initialize(); Engine engine(Operator::kinetic, max_nprim(obs), max_l(obs), 0, 1e-14);
-
-        oneelec(ints, engine, obs); finalize();
+        oneelec(ints, engine, shells); finalize();
     }
 
     void nuclear(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
-        std::vector<Atom> atoms(natoms); std::vector<Shell> obs;
+        auto [atoms, shells] = load(natoms, anums, coords, nbasis, basis); int max_l = 0; size_t max_npgs = 0;
 
-        for (int i = 0; i < natoms; i++) {
-            atoms.at(i) = {(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]};
+        for (auto shell : shells) {
+            max_npgs = std::max(shell.nprim(), max_npgs); for (auto c : shell.contr) max_l = std::max(c.l, max_l);
         }
 
-        for (int i = 0; i < nbasis;) {
-
-            int n = basis[i]; int am = basis[i + 1]; double x = basis[i + 2]; double y = basis[i + 3]; double z = basis[i + 4];
-
-            svector<double> alpha(n), c(n);
-
-            for (int j = 0; j < n; j++) {alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];}
-
-            obs.push_back(Shell{alpha, {{am, false, c}}, {{x, y, z}}}); i += 2 * n + 5;
-        }
-
-        initialize(); Engine engine(Operator::nuclear, max_nprim(obs), max_l(obs), 0, 1e-14);
+        initialize(); Engine engine(Operator::nuclear, max_npgs, max_l, 0, 1e-14);
 
         engine.set_params(make_point_charges(atoms));
 
-        oneelec(ints, engine, obs); finalize();
+        oneelec(ints, engine, shells); finalize();
     }
 
     void overlap(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
-        std::vector<Atom> atoms(natoms); std::vector<Shell> obs;
+        auto [atoms, shells] = load(natoms, anums, coords, nbasis, basis); int max_l = 0; size_t max_npgs = 0;
 
-        for (int i = 0; i < natoms; i++) {
-            atoms.at(i) = {(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]};
+        for (auto shell : shells) {
+            max_npgs = std::max(shell.nprim(), max_npgs); for (auto c : shell.contr) max_l = std::max(c.l, max_l);
         }
 
-        for (int i = 0; i < nbasis;) {
+        initialize(); Engine engine(Operator::overlap, max_npgs, max_l, 0, 1e-14);
 
-            int n = basis[i]; int am = basis[i + 1]; double x = basis[i + 2]; double y = basis[i + 3]; double z = basis[i + 4];
-
-            svector<double> alpha(n), c(n);
-
-            for (int j = 0; j < n; j++) {
-                alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];
-            }
-
-            obs.push_back(Shell{alpha, {{am, false, c}}, {{x, y, z}}}); i += 2 * n + 5;
-        }
-
-        initialize(); Engine engine(Operator::overlap, max_nprim(obs), max_l(obs), 0, 1e-14);
-
-        oneelec(ints, engine, obs); finalize();
+        oneelec(ints, engine, shells); finalize();
     }
 }
