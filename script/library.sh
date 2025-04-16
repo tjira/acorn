@@ -7,17 +7,17 @@ export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$
 echo 'zig cc  "$@"' > zigcc  && chmod +x zigcc
 echo 'zig c++ "$@"' > zigcpp && chmod +x zigcpp
 
-wget -O    eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-wget -O     fftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
-wget -O      gsl.tar.gz https://sunsite.icm.edu.pl/pub/gnu/gsl/gsl-2.8.tar.gz
-wget -O   libint.tar.gz https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
-wget -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
+wget -q --show-progress -O    eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+wget -q --show-progress -O     fftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
+wget -q --show-progress -O      gsl.tar.gz https://sunsite.icm.edu.pl/pub/gnu/gsl/gsl-2.8.tar.gz
+wget -q --show-progress -O   libint.tar.gz https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
+wget -q --show-progress -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
 
-tar -xzvf eigen.tar.gz    && rm    eigen.tar.gz
-tar -xzvf fftw.tar.gz     && rm     fftw.tar.gz
-tar -xzvf gsl.tar.gz      && rm      gsl.tar.gz
-tar -xzvf libint.tar.gz   && rm   libint.tar.gz
-tar -xzvf openblas.tar.gz && rm openblas.tar.gz
+tar -xzf eigen.tar.gz    && rm    eigen.tar.gz
+tar -xzf fftw.tar.gz     && rm     fftw.tar.gz
+tar -xzf gsl.tar.gz      && rm      gsl.tar.gz
+tar -xzf libint.tar.gz   && rm   libint.tar.gz
+tar -xzf openblas.tar.gz && rm openblas.tar.gz
 
 rm -rf eigen fftw gsl libint openblas && mv eigen* eigen && mv fftw* fftw ; mv gsl* gsl ; mv libint* libint ; mv OpenBLAS* openblas
 
@@ -32,4 +32,4 @@ cd libint && cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_COMPILER="$PWD/../zigcpp"
 
 rm -rf external && mkdir external && cp -r eigen/install/* fftw/install/* gsl/install/* libint/install/* openblas/install/* external
 
-rm -rf eigen fftw gsl libint openblas zigcc zigcpp
+mv external/include/eigen3/Eigen external/include && rm -rf eigen fftw gsl libint openblas zigcc zigcpp external/include/eigen3
