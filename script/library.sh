@@ -2,7 +2,7 @@
 
 CORES=$(nproc --all)
 
-export CPLUS_INCLUDE_PATH="$PWD/eigen:$CPLUS_INCLUDE_PATH"; export PATH="$PWD/bin:$CPLUS_INCLUDE_PATH"
+export CPLUS_INCLUDE_PATH="$PWD/eigen:$CPLUS_INCLUDE_PATH"; export PATH="$PWD/bin:$PATH"
 
 echo 'zig cc  "$@"' > zigcc  && chmod +x zigcc
 echo 'zig c++ "$@"' > zigcpp && chmod +x zigcpp
