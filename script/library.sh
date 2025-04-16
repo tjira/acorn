@@ -2,7 +2,7 @@
 
 CORES=$(nproc --all)
 
-export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen"; export PATH="$PWD/bin:$PATH"
+export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$PWD/bin:$PATH"
 
 echo 'zig cc  "$@"' > zigcc  && chmod +x zigcc
 echo 'zig c++ "$@"' > zigcpp && chmod +x zigcpp
@@ -25,9 +25,11 @@ cd fftw     && ./configure CC="$PWD/../zigcc" --enable-shared --prefix="$PWD/ins
 cd gsl      && ./configure CC="$PWD/../zigcc"                 --prefix="$PWD/install" && make -j $CORES && make                       install && cd ..
 cd openblas &&                                                                           make -j $CORES && make PREFIX="$PWD/install" install && cd ..
 
+cd eigen && mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX="$PWD/../install" .. && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
+
 cd libint && cmake -DBUILD_SHARED_LIBS=ON  -DCMAKE_CXX_COMPILER="$PWD/../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/install" . && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ..
 cd libint && cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_COMPILER="$PWD/../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/install" . && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ..
 
-rm -rf external && mkdir external && cp -r fftw/install/* gsl/install/* libint/install/* openblas/install/* external/ && cp -r eigen/Eigen external/include
+rm -rf external && mkdir external && cp -r eigen/install/* fftw/install/* gsl/install/* libint/install/* openblas/install/* external
 
 rm -rf eigen fftw gsl libint openblas zigcc zigcpp
