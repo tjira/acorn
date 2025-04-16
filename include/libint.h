@@ -1,4 +1,4 @@
-void coulomb(double *ints, const char *system, const char *basis);
-void kinetic(double *ints, const char *system, const char *basis);
-void nuclear(double *ints, const char *system, const char *basis);
-void overlap(double *ints, const char *system, const char *basis);
+void coulomb(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis);
+void kinetic(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis);
+void nuclear(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis);
+void overlap(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis);

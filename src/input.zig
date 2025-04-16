@@ -94,7 +94,6 @@ pub fn HartreeFockOptions(comptime T: type) type {
             nuclear: ?[]const u8 = null,
             coulomb: ?[]const u8 = null,
             basis:   ?[]const u8 = "sto-3g",
-            libint:  bool        = false,
         };
         pub const System = struct {
             atoms: ?[]const u8 = null,

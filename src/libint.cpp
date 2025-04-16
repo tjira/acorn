@@ -4,11 +4,38 @@
 
 #include <fstream>
 
-extern "C" {
-    using namespace libint2;
+size_t max_nprim(const std::vector<libint2::Shell>& shells) {
+  size_t n = 0;
+  for (auto shell : shells) n = std::max(shell.nprim(), n);
+  return n;
+}
 
-    void oneelec(double *ints, libint2::Engine &engine, const BasisSet &obs) {
-        int nbf = obs.nbf(); std::vector<size_t> sh2bf = obs.shell2bf();
+int max_l(const std::vector<libint2::Shell>& shells) {
+  int l = 0;
+  for (auto shell : shells)
+    for (auto c : shell.contr) l = std::max(c.l, l);
+  return l;
+}
+
+std::vector<size_t> shell2bf(const std::vector<libint2::Shell>& shells) {
+    std::vector<size_t> result; result.reserve(shells.size());
+
+    size_t n = 0;
+    for (auto shell : shells) {
+        result.push_back(n);
+        n += shell.size();
+    }
+
+    return result;
+}
+
+extern "C" {
+    using namespace libint2; typedef double real_t;
+
+    void oneelec(double *ints, libint2::Engine &engine, const std::vector<Shell> &obs) {
+        int nbf = 0; std::vector<size_t> sh2bf = shell2bf(obs);
+
+        for (const auto& shell : obs) nbf += shell.size();
 
         for (size_t i = 0; i < obs.size(); i++) for (size_t j = i; j < obs.size(); j++) {
 
@@ -23,8 +50,10 @@ extern "C" {
         }
     }
 
-    void twoelec(double *ints, libint2::Engine &engine, const BasisSet &obs) {
-        int nbf = obs.nbf(); std::vector<size_t> sh2bf = obs.shell2bf();
+    void twoelec(double *ints, libint2::Engine &engine, const std::vector<Shell> &obs) {
+        int nbf = 0; std::vector<size_t> sh2bf = shell2bf(obs);
+
+        for (const auto& shell : obs) nbf += shell.size();
 
         for (size_t i = 0; i < obs.size(); i++) for (size_t j = i; j < obs.size(); j++) for (size_t k = i; k < obs.size(); k++) for (size_t l = (i == k ? j : k); l < obs.size(); l++) {
 
@@ -49,36 +78,98 @@ extern "C" {
         }
     }
 
-    void coulomb(double *ints, const char *system, const char *basis) {
-        std::ifstream system_stream(system); std::vector<Atom> atoms = read_dotxyz(system_stream); BasisSet obs(basis, atoms);
+    void coulomb(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+        std::vector<Atom> atoms(natoms); std::vector<Shell> obs;
 
-        initialize(); Engine engine(Operator::coulomb, obs.max_nprim(), obs.max_l(), 0, 1e-14);
+        for (int i = 0; i < natoms; i++) {
+            atoms.at(i) = {(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]};
+        }
+
+        for (int i = 0; i < nbasis;) {
+
+            int n = basis[i]; int am = basis[i + 1]; double x = basis[i + 2]; double y = basis[i + 3]; double z = basis[i + 4];
+
+            svector<double> alpha(n), c(n);
+
+            for (int j = 0; j < n; j++) {alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];}
+
+            obs.push_back(Shell{alpha, {{am, false, c}}, {{x, y, z}}}); i += 2 * n + 5;
+        }
+
+        initialize(); Engine engine(Operator::coulomb, max_nprim(obs), max_l(obs), 0, 1e-14);
 
         twoelec(ints, engine, obs); finalize();
     }
 
-    void kinetic(double *ints, const char *system, const char *basis) {
-        std::ifstream system_stream(system); std::vector<Atom> atoms = read_dotxyz(system_stream); BasisSet obs(basis, atoms);
+    void kinetic(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+        std::vector<Atom> atoms(natoms); std::vector<Shell> obs;
 
-        initialize(); Engine engine(Operator::kinetic, obs.max_nprim(), obs.max_l(), 0, 1e-14);
+        for (int i = 0; i < natoms; i++) {
+            atoms.at(i) = {(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]};
+        }
+
+        for (int i = 0; i < nbasis;) {
+
+            int n = basis[i]; int am = basis[i + 1]; double x = basis[i + 2]; double y = basis[i + 3]; double z = basis[i + 4];
+
+            svector<double> alpha(n), c(n);
+
+            for (int j = 0; j < n; j++) {alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];}
+
+            obs.push_back(Shell{alpha, {{am, false, c}}, {{x, y, z}}}); i += 2 * n + 5;
+        }
+
+        initialize(); Engine engine(Operator::kinetic, max_nprim(obs), max_l(obs), 0, 1e-14);
 
         oneelec(ints, engine, obs); finalize();
     }
 
-    void nuclear(double *ints, const char *system, const char *basis) {
-        std::ifstream system_stream(system); std::vector<Atom> atoms = read_dotxyz(system_stream); BasisSet obs(basis, atoms);
+    void nuclear(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+        std::vector<Atom> atoms(natoms); std::vector<Shell> obs;
 
-        initialize(); Engine engine(Operator::nuclear, obs.max_nprim(), obs.max_l(), 0, 1e-14);
+        for (int i = 0; i < natoms; i++) {
+            atoms.at(i) = {(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]};
+        }
+
+        for (int i = 0; i < nbasis;) {
+
+            int n = basis[i]; int am = basis[i + 1]; double x = basis[i + 2]; double y = basis[i + 3]; double z = basis[i + 4];
+
+            svector<double> alpha(n), c(n);
+
+            for (int j = 0; j < n; j++) {alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];}
+
+            obs.push_back(Shell{alpha, {{am, false, c}}, {{x, y, z}}}); i += 2 * n + 5;
+        }
+
+        initialize(); Engine engine(Operator::nuclear, max_nprim(obs), max_l(obs), 0, 1e-14);
 
         engine.set_params(make_point_charges(atoms));
 
         oneelec(ints, engine, obs); finalize();
     }
 
-    void overlap(double *ints, const char *system, const char *basis) {
-        std::ifstream system_stream(system); std::vector<Atom> atoms = read_dotxyz(system_stream); BasisSet obs(basis, atoms);
+    void overlap(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+        std::vector<Atom> atoms(natoms); std::vector<Shell> obs;
 
-        initialize(); Engine engine(Operator::overlap, obs.max_nprim(), obs.max_l(), 0, 1e-14);
+        for (int i = 0; i < natoms; i++) {
+            atoms.at(i) = {(int)anums[i], coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]};
+        }
+
+        for (int i = 0; i < nbasis;) {
+
+            int n = basis[i]; int am = basis[i + 1]; double x = basis[i + 2]; double y = basis[i + 3]; double z = basis[i + 4];
+
+            svector<double> alpha(n), c(n);
+
+            for (int j = 0; j < n; j++) {
+                alpha[j] = basis[i + 5 + j]; c[j] = basis[i + 5 + n + j];
+            }
+
+            obs.push_back(Shell{alpha, {{am, false, c}}, {{x, y, z}}}); i += 2 * n + 5;
+        }
+
+        initialize(); Engine engine(Operator::overlap, max_nprim(obs), max_l(obs), 0, 1e-14);
 
         oneelec(ints, engine, obs); finalize();
     }

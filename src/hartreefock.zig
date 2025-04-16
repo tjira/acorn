@@ -7,7 +7,6 @@ const SM2AN = @import("constant.zig").SM2AN;
 
 const bls = @import("blas.zig"    );
 const inp = @import("input.zig"   );
-const int = @import("integral.zig");
 const lpk = @import("lapack.zig"  );
 const lbt = @import("libint.zig"  );
 const mat = @import("matrix.zig"  );
@@ -16,12 +15,11 @@ const out = @import("output.zig"  );
 const ten = @import("tensor.zig"  );
 const vec = @import("vector.zig"  );
 
-const ContractedGaussian = @import("contractedgaussian.zig").ContractedGaussian;
-const Basis              = @import("basis.zig" ).Basis                         ;
-const Matrix             = @import("matrix.zig").Matrix                        ;
-const System             = @import("system.zig").System                        ;
-const Tensor             = @import("tensor.zig").Tensor                        ;
-const Vector             = @import("vector.zig").Vector                        ;
+const Basis  = @import("basis.zig" ).Basis ;
+const Matrix = @import("matrix.zig").Matrix;
+const System = @import("system.zig").System;
+const Tensor = @import("tensor.zig").Tensor;
+const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
 const uncr    = @import("helper.zig").uncr   ;
@@ -32,7 +30,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (opt.system_file == null and (opt.system.coords == null or opt.system.atoms == null)) return error.SystemNotFullySpecified;
 
-    var basis: std.ArrayList(ContractedGaussian(T)) = undefined; var system: System(T) = undefined;
+    var system: System(T) = undefined;
 
     if (opt.system_file == null and opt.system.coords != null) {
 
@@ -51,27 +49,32 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
         };
     }
 
-    if (opt.system_file != null   ) system = try System(T).read(opt.system_file.?,            allocator);
-    if (opt.integral.basis != null) basis  = try Basis(T).get  (system, opt.integral.basis.?, allocator);
+    if (opt.system_file != null   ) system = try System(T).read (opt.system_file.?,            allocator);
 
-    const nbf = basis.items.len; var npg: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+    const basis = try  Basis(T).array(system, opt.integral.basis.?, allocator);
 
-    for (0..nbf) |i| npg += basis.items[i].c.len;
+    var nbf: usize = 0; var npg: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
 
-    if (print) try std.io.getStdOut().writer().print("\n# OF BASIS FUNCTIONS:      {d}\n", .{nbf});
-    if (print) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE GAUSSIANS:  {d}\n", .{npg});
+    {
+        var i: usize = 0; while (i < basis.len) : (i += 2 * @as(usize, @intFromFloat(basis[i])) + 5) {
+            const cgs: usize = @as(usize, @intFromFloat((basis[i + 1] + 1) * (basis[i + 1] + 2))) / 2; nbf += cgs; npg += @as(usize, @intFromFloat(basis[i])) * cgs;
+        }
+    }
+
+    if (print) try std.io.getStdOut().writer().print("\n# OF BASIS FUNCTIONS:     {d}\n", .{nbf});
+    if (print) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE GAUSSIANS: {d}\n", .{npg});
 
     var timer = try std.time.Timer.start();
 
-    const S_AO = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?,    allocator) else try int.overlap(T, basis,         allocator);
-    const T_AO = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try int.kinetic(T, basis,         allocator);
-    const V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try int.nuclear(T, basis, system, allocator);
-    const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try int.coulomb(T, basis,         allocator);
+    const S_AO = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
+    const T_AO = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
+    const V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
+    const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator);
 
-    if (opt.integral.libint) lbt.overlap(S_AO.data, "molecule.xyz", "sto-3g");
-    if (opt.integral.libint) lbt.kinetic(T_AO.data, "molecule.xyz", "sto-3g");
-    if (opt.integral.libint) lbt.nuclear(V_AO.data, "molecule.xyz", "sto-3g");
-    if (opt.integral.libint) lbt.coulomb(J_AO.data, "molecule.xyz", "sto-3g");
+    if (opt.integral.overlap == null) lbt.overlap(S_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.kinetic == null) lbt.kinetic(T_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.nuclear == null) lbt.nuclear(V_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.coulomb == null) lbt.coulomb(J_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
 
     if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
@@ -146,8 +149,6 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
-
-    if (opt.integral.basis != null) basis.deinit();
 
     if (opt.write.coefficient_ao != null) try C_MO.write(opt.write.coefficient_ao.?);
     if (opt.write.coulomb_ao     != null) try J_AO.write(opt.write.coulomb_ao.?    );
