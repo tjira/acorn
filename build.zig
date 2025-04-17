@@ -38,17 +38,12 @@ pub fn build(builder: *std.Build) !void {
 
     test_executable.root_module.addImport("acorn", &main_executable.root_module);
 
-    const docs_install = builder.addInstallDirectory(.{
-        .install_dir = .prefix, .install_subdir = "docs", .source_dir = main_executable.getEmittedDocs()
-    });
-
     const main_install = builder.addInstallArtifact(main_executable, .{
         .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
     });
 
     builder.getInstallStep().dependOn(&main_install.step);
 
-    builder.step("docs", "Compile code documentation" ).dependOn(&docs_install                           .step);
     builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
     builder.step("test", "Run unit tests"             ).dependOn(&builder.addRunArtifact(test_executable).step);
 

@@ -33,7 +33,7 @@ jobs:
         run: ./script/docstopdf.sh
 
       - name: Compile the Code Documentation
-        run: ./bin/zig build docs && cp -r zig-out/docs docs/code
+        run: ./bin/zig build-obj -Iinclude -Iexternal/include -lc -femit-docs=docs/code src/main.zig
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
