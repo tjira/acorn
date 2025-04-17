@@ -21,9 +21,9 @@ tar -xzf openblas.tar.gz && rm openblas.tar.gz
 
 rm -rf eigen fftw gsl libint openblas && mv eigen* eigen && mv fftw* fftw ; mv gsl* gsl ; mv libint* libint ; mv OpenBLAS* openblas
 
-cd fftw     && ./configure CC="$PWD/../zigcc" --enable-shared --prefix="$PWD/install" && make -j $CORES && make                       install && cd ..
-cd gsl      && ./configure CC="$PWD/../zigcc"                 --prefix="$PWD/install" && make -j $CORES && make                       install && cd ..
-cd openblas &&                                                                           make -j $CORES && make PREFIX="$PWD/install" install && cd ..
+cd fftw     && ./configure CC="$PWD/../zigcc" --enable-shared --prefix="$PWD/install" && make                               -j $CORES && make                       install && cd ..
+cd gsl      && ./configure CC="$PWD/../zigcc"                 --prefix="$PWD/install" && make                               -j $CORES && make                       install && cd ..
+cd openblas &&                                                                           make CC="$PWD/../zigcc" HOSTCC=gcc -j $CORES && make PREFIX="$PWD/install" install && cd ..
 
 cd eigen && mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX="$PWD/../install" .. && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
 

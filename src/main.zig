@@ -16,7 +16,6 @@ pub const helper                    = @import("helper.zig"                  );
 pub const input                     = @import("input.zig"                   );
 pub const libint                    = @import("libint.zig"                  );
 pub const lapack                    = @import("lapack.zig"                  );
-pub const linear_algebra            = @import("linearalgebra.zig"           );
 pub const math                      = @import("math.zig"                    );
 pub const matrix                    = @import("matrix.zig"                  );
 pub const model_potential           = @import("modelpotential.zig"          );
