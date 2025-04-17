@@ -24,9 +24,6 @@ jobs:
       - name: Build Acorn
         run: ./bin/zig build --summary all
 
-      - name: Make the Binary Folder
-        run: mkdir bin
-
       - name: Rename and Move Binaries
         run: |
           cd zig-out && for FOLDER in *linux*; do mv $FOLDER/acorn ../bin/acorn-$FOLDER; done && cd -
