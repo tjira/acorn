@@ -145,10 +145,7 @@ fn transform(comptime T: type, H_MS: *Matrix(T), J_MS_A: *Tensor(T), T_AO: Matri
     var H_AS = try Matrix(T).init(J_MS_A.shape[0], J_MS_A.shape[0], allocator); defer H_AS.deinit();
     var C_MS = try Matrix(T).init(J_MS_A.shape[0], J_MS_A.shape[0], allocator); defer C_MS.deinit();
 
-    tns.cfsMO2MS(T, &C_MS, C_MO);
-
-    tns.oneAO2AS(T, &H_AS, H_AO); tns.oneAO2MO(T,  H_MS,  H_AS, C_MS);
-    tns.twoAO2AS(T, &J_AS, J_AO); tns.twoAO2MO(T, &J_MS, &J_AS, C_MS);
+    tns.cfsMO2MS(T, &C_MS, C_MO); tns.oneAO2AS(T, &H_AS, H_AO); tns.oneAO2MO(T,  H_MS,  H_AS, C_MS); tns.twoAO2AS(T, &J_AS, J_AO); try tns.twoAO2MO(T, &J_MS, &J_AS, C_MS);
 
     for (0..J_MS.shape[0]) |i| for (0..J_MS.shape[1]) |j| for (0..J_MS.shape[2]) |k| for (0..J_MS.shape[3]) |l| {
         J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS.at(&[_]usize{i, j, k, l}) - J_MS.at(&[_]usize{i, l, k, j});

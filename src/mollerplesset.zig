@@ -50,7 +50,7 @@ pub fn transform(comptime T: type, J_MS_A: *Tensor(T), J_AO: Tensor(T), C_MO: Ma
 
     var C_MS = try Matrix(T).init(J_MS_A.shape[0], J_MS_A.shape[0], allocator); defer C_MS.deinit();
 
-    tns.cfsMO2MS(T, &C_MS, C_MO); tns.twoAO2AS(T, &J_AS, J_AO); tns.twoAO2MO(T, &J_MS, &J_AS, C_MS);
+    tns.cfsMO2MS(T, &C_MS, C_MO); tns.twoAO2AS(T, &J_AS, J_AO); try tns.twoAO2MO(T, &J_MS, &J_AS, C_MS);
 
     for (0..J_MS.shape[0]) |i| for (0..J_MS.shape[1]) |j| for (0..J_MS.shape[2]) |k| for (0..J_MS.shape[3]) |l| {
         J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS.at(&[_]usize{i, j, k, l}) - J_MS.at(&[_]usize{i, l, k, j});

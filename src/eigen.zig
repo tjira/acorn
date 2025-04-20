@@ -14,6 +14,7 @@ pub fn contract(C: anytype, A: anytype, B: anytype, pairs: []const i32) !void {
     if (comptime std.meta.fieldIndex(@TypeOf(B  ), "shape") != null) {dB = B.shape;} else {dB = &[_]usize{B.rows, B.cols};}
 
     if (dA.len == 2 and dB.len == 2 and pairs.len == 2) {return eigen.contract_221(&C.data[0], &dC[0], &A.data[0], &dA[0], &B.data[0], &dB[0], &pairs[0]);}
+    if (dA.len == 2 and dB.len == 4 and pairs.len == 2) {return eigen.contract_241(&C.data[0], &dC[0], &A.data[0], &dA[0], &B.data[0], &dB[0], &pairs[0]);}
     if (dA.len == 2 and dB.len == 4 and pairs.len == 4) {return eigen.contract_242(&C.data[0], &dC[0], &A.data[0], &dA[0], &B.data[0], &dB[0], &pairs[0]);}
 
     else return error.ContractionNotSupported;
