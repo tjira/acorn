@@ -2,6 +2,7 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
+#include <omp.h>
 extern "C" {
     using namespace Eigen;
 
