@@ -53,11 +53,11 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     if (opt.system_file    != null) system = try System(T).read(        opt.system_file.?,    allocator);
     if (opt.integral.basis != null) basis  = try Basis(T).array(system, opt.integral.basis.?, allocator);
 
-    var nbf: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+    var nbf: usize = 0; var npgs: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
 
     {
         var i: usize = 0; while (opt.integral.basis != null and i < basis.len) : (i += 2 * @as(usize, @intFromFloat(basis[i])) + 5) {
-            const cgs: usize = @as(usize, @intFromFloat((basis[i + 1] + 1) * (basis[i + 1] + 2))) / 2; nbf += cgs;
+            const cgs: usize = @as(usize, @intFromFloat((basis[i + 1] + 1) * (basis[i + 1] + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis[i])) * cgs;
         }
     }
 
@@ -70,7 +70,8 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (opt.integral.overlap != null) {nbf = S_AO.rows;} if (opt.integral.kinetic != null) {nbf = T_AO.rows;} if (opt.integral.nuclear != null) {nbf = V_AO.rows;}
 
-    if (print) try std.io.getStdOut().writer().print("\n# OF BASIS FUNCTIONS: {d}\n", .{nbf});
+    if (print             ) try std.io.getStdOut().writer().print("\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
+    if (print and npgs > 0) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE  GAUSSIAN SHELLS: {d}\n", .{npgs});
 
     if (opt.integral.overlap == null) lbt.overlap(S_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
     if (opt.integral.kinetic == null) lbt.kinetic(T_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));

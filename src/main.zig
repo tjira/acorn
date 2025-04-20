@@ -108,7 +108,7 @@ pub fn parse(filebuf: []const u8) !void {
 pub fn main() !void {
     var timer = try std.time.Timer.start(); var argv = try std.process.argsWithAllocator(allocator); defer argv.deinit(); var argc: usize = 0;
 
-    try std.io.getStdOut().writer().print("ZIG VERSION: {}\n", .{builtin.zig_version});
+    try std.io.getStdOut().writer().print("ZIG VERSION: {}, THREADS: {s}\n", .{builtin.zig_version, if (std.posix.getenv("OMP_NUM_THREADS") == null) "1" else std.posix.getenv("OMP_NUM_THREADS").?});
 
     _ = argv.next(); while (argv.next()) |arg| {
 

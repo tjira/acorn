@@ -1,13 +1,49 @@
 #!/bin/bash
 
 BASES=(
+    "sto-2g"
     "sto-3g"
+    "sto-4g"
+    "sto-5g"
+    "sto-6g"
+    "3-21g"
+    "6-21g"
     "6-31g"
+    "6-31g*"
+    "6-31g**"
+    "6-31+g"
+    "6-31+g*"
+    "6-31+g**"
+    "6-31++g"
+    "6-31++g*"
+    "6-31++g**"
+    "6-311g"
+    "6-311g*"
+    "6-311g**"
+    "6-311+g"
+    "6-311+g*"
+    "6-311+g**"
+    "6-311++g"
+    "6-311++g*"
+    "6-311++g**"
+    "def2-svp"
+    "def2-svpd"
+    "def2-tzvp"
+    "def2-tzvpd"
+    "def2-tzvpp"
+    "def2-tzvppd"
+    "def2-qzvp"
+    "def2-qzvpd"
+    "def2-qzvpp"
+    "def2-qzvppd"
     "cc-pvdz"
     "cc-pvtz"
+    "cc-pvqz"
+    "aug-cc-pvdz"
+    "aug-cc-pvtz"
+    "aug-cc-pvqz"
 )
 
 for BASIS in ${BASES[@]}; do
-    bse get-basis ${BASIS} json       --unc-spdf > src/basis/${BASIS}.json
-    bse get-basis ${BASIS} gaussian94 --unc-spdf > src/basis/${BASIS}.g94
+    bse get-basis "${BASIS}" json --unc-spdf > "src/basis/${BASIS}.json"
 done
