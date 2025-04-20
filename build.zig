@@ -27,9 +27,10 @@ pub fn build(builder: *std.Build) !void {
     main_executable.addIncludePath(.{.cwd_relative = "include"}); main_executable.addIncludePath(.{.cwd_relative = "external/include"}); main_executable.addLibraryPath(.{.cwd_relative = "external/lib"});
 
     main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp")});
+    main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" )});
 
-    main_executable.linkLibC(); main_executable.linkLibCpp(); main_executable.linkSystemLibrary("gfortran");
-    test_executable.linkLibC(); test_executable.linkLibCpp(); test_executable.linkSystemLibrary("gfortran");
+    main_executable.linkLibC(); main_executable.linkLibCpp(); main_executable.linkSystemLibrary("gfortran"); main_executable.linkSystemLibrary("omp");
+    test_executable.linkLibC(); test_executable.linkLibCpp(); test_executable.linkSystemLibrary("gfortran"); test_executable.linkSystemLibrary("omp");
 
     main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode});

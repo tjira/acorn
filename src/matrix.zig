@@ -6,6 +6,7 @@ const mth = @import("math.zig"  );
 const vec = @import("vector.zig");
 
 const StridedArray = @import("stridedarray.zig").StridedArray;
+const Tensor       = @import("tensor.zig"      ).Tensor      ;
 const Vector       = @import("vector.zig"      ).Vector      ;
 
 const asfloat = @import("helper.zig").asfloat;
@@ -69,7 +70,7 @@ pub fn Matrix(comptime T: type) type {
 
         /// Fill the matrix with a given value.
         pub fn fill(self: Matrix(T), value: T) void {
-            for (0..self.data.len) |i| self.data[i] = value;
+            @memset(self.data, value);
         }
 
         /// Fill the diagonal of the matrix with ones.

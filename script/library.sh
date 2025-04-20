@@ -4,8 +4,7 @@ CORES=$(nproc --all)
 
 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$PWD/bin:$PATH"
 
-echo 'zig cc  "$@"' > zigcc  && chmod +x zigcc
-echo 'zig c++ "$@"' > zigcpp && chmod +x zigcpp
+echo 'zig cc  "$@"' > zigcc  && chmod +x zigcc && echo 'zig c++ "$@"' > zigcpp && chmod +x zigcpp
 
 wget -q --show-progress -O    eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
 wget -q --show-progress -O     fftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
@@ -21,9 +20,12 @@ tar -xzf openblas.tar.gz && rm openblas.tar.gz
 
 rm -rf eigen fftw gsl libint openblas && mv eigen* eigen && mv fftw* fftw ; mv gsl* gsl ; mv libint* libint ; mv OpenBLAS* openblas
 
-cd fftw     && ./configure CC="$PWD/../zigcc" --enable-shared --prefix="$PWD/install" && make                               -j $CORES && make                       install && cd ..
-cd gsl      && ./configure CC="$PWD/../zigcc"                 --prefix="$PWD/install" && make                               -j $CORES && make                       install && cd ..
-cd openblas &&                                                                           make CC="$PWD/../zigcc" HOSTCC=gcc -j $CORES && make PREFIX="$PWD/install" install && cd ..
+cd fftw     && ./configure --enable-openmp --enable-shared --prefix="$PWD/install" && cd ..
+cd gsl      && ./configure                                 --prefix="$PWD/install" && cd ..
+
+cd fftw     && make                              -j $CORES && make                       install && cd ..
+cd gsl      && make                              -j $CORES && make                       install && cd ..
+cd openblas && make NUM_THREADS=128 USE_OPENMP=1 -j $CORES && make PREFIX="$PWD/install" install && cd ..
 
 cd eigen && mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX="$PWD/../install" .. && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
 
@@ -32,4 +34,4 @@ cd libint && cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_COMPILER="$PWD/../zigcpp"
 
 rm -rf external && mkdir external && cp -r eigen/install/* fftw/install/* gsl/install/* libint/install/* openblas/install/* external
 
-mv external/include/eigen3/Eigen external/include && rm -rf eigen fftw gsl libint openblas zigcc zigcpp external/include/eigen3
+mv external/include/eigen3/Eigen external/include/eigen3/unsupported external/include && rm -rf eigen fftw gsl libint openblas zigcc zigcpp external/include/eigen3

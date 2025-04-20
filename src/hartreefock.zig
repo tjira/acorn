@@ -5,15 +5,16 @@ const std = @import("std");
 const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
-const bls = @import("blas.zig"    );
-const inp = @import("input.zig"   );
-const lpk = @import("lapack.zig"  );
-const lbt = @import("libint.zig"  );
-const mat = @import("matrix.zig"  );
-const mth = @import("math.zig"    );
-const out = @import("output.zig"  );
-const ten = @import("tensor.zig"  );
-const vec = @import("vector.zig"  );
+const bls = @import("blas.zig"  );
+const eig = @import("eigen.zig" );
+const inp = @import("input.zig" );
+const lbt = @import("libint.zig");
+const lpk = @import("lapack.zig");
+const mat = @import("matrix.zig");
+const mth = @import("math.zig"  );
+const out = @import("output.zig");
+const ten = @import("tensor.zig");
+const vec = @import("vector.zig");
 
 const Basis  = @import("basis.zig" ).Basis ;
 const Matrix = @import("matrix.zig").Matrix;
@@ -30,7 +31,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (opt.system_file == null and (opt.system.coords == null or opt.system.atoms == null)) return error.SystemNotFullySpecified;
 
-    var system: System(T) = undefined;
+    var system: System(T) = undefined; var basis: []const f64 = undefined;
 
     if (opt.system_file == null and opt.system.coords != null) {
 
@@ -49,20 +50,16 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
         };
     }
 
-    if (opt.system_file != null   ) system = try System(T).read (opt.system_file.?,            allocator);
+    if (opt.system_file    != null) system = try System(T).read(        opt.system_file.?,    allocator);
+    if (opt.integral.basis != null) basis  = try Basis(T).array(system, opt.integral.basis.?, allocator);
 
-    const basis = try  Basis(T).array(system, opt.integral.basis.?, allocator);
-
-    var nbf: usize = 0; var npg: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+    var nbf: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
 
     {
-        var i: usize = 0; while (i < basis.len) : (i += 2 * @as(usize, @intFromFloat(basis[i])) + 5) {
-            const cgs: usize = @as(usize, @intFromFloat((basis[i + 1] + 1) * (basis[i + 1] + 2))) / 2; nbf += cgs; npg += @as(usize, @intFromFloat(basis[i])) * cgs;
+        var i: usize = 0; while (opt.integral.basis != null and i < basis.len) : (i += 2 * @as(usize, @intFromFloat(basis[i])) + 5) {
+            const cgs: usize = @as(usize, @intFromFloat((basis[i + 1] + 1) * (basis[i + 1] + 2))) / 2; nbf += cgs;
         }
     }
-
-    if (print) try std.io.getStdOut().writer().print("\n# OF BASIS FUNCTIONS:     {d}\n", .{nbf});
-    if (print) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE GAUSSIANS: {d}\n", .{npg});
 
     var timer = try std.time.Timer.start();
 
@@ -70,6 +67,10 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     const T_AO = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
     const V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
     const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator);
+
+    if (opt.integral.overlap != null) {nbf = S_AO.rows;} if (opt.integral.kinetic != null) {nbf = T_AO.rows;} if (opt.integral.nuclear != null) {nbf = V_AO.rows;}
+
+    if (print) try std.io.getStdOut().writer().print("\n# OF BASIS FUNCTIONS: {d}\n", .{nbf});
 
     if (opt.integral.overlap == null) lbt.overlap(S_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
     if (opt.integral.kinetic == null) lbt.kinetic(T_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
@@ -116,18 +117,14 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
         if (iter == opt.maxiter) return error.MaxIterationsExceeded;
 
-        @memcpy(F_AO.data, H_AO.data);
+        try eig.contract(&F_AO, D_MO, J_AO_A, &[_]i32{0, 0, 1, 1}); mat.add(T, &F_AO, F_AO, H_AO);
 
-        for (0..nbf) |i| for (0..nbf) |j| for (0..nbf) |k| for (0..nbf) |l| {
-            F_AO.ptr(k, l).* += D_MO.at(i, j) * J_AO_A.at(&[_]usize{i, j, k, l});
-        };
-
-        if (opt.dsize != null) {
+        if (opt.dsize != null and iter > 0) {
 
             bls.dgemm(&T1, S_AO, false, D_MO, false); bls.dgemm(&T2, T1, false, F_AO, true); bls.dgemm(&T1, F_AO, false, D_MO, false); bls.dgemm(&T3, T1, false, S_AO, true); mat.sub(T, &ERR, T2, T3);
 
-            @memcpy(DIIS_F.items[@intCast(@mod(@as(i32, @intCast(iter)) - 1, @as(i32, @intCast(DIIS_F.items.len))))].data, F_AO.data);
-            @memcpy(DIIS_E.items[@intCast(@mod(@as(i32, @intCast(iter)) - 1, @as(i32, @intCast(DIIS_E.items.len))))].data,  ERR.data);
+            @memcpy(DIIS_F.items[iter % DIIS_F.items.len].data, F_AO.data);
+            @memcpy(DIIS_E.items[iter % DIIS_E.items.len].data,  ERR.data);
 
             try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
         }
@@ -164,39 +161,36 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
 /// Extrapolate the DIIS error to obtain a new Fock matrix.
 pub fn diisExtrapolate(comptime T: type, F_AO: *Matrix(T), DIIS_F: *std.ArrayList(Matrix(T)), DIIS_E: *std.ArrayList(Matrix(T)), iter: u32, allocator: std.mem.Allocator) !void {
-    if (iter > 0) {
+    const size = if (iter < DIIS_F.items.len) iter else DIIS_F.items.len;
 
-        const size = if (iter < DIIS_F.items.len) iter else DIIS_F.items.len;
+    var A   = try Matrix(T  ).init(size + 1, size + 1, allocator); defer   A.deinit();
+    var ALU = try Matrix(T  ).init(size + 1, size + 1, allocator); defer ALU.deinit();
+    var b   = try Vector(T  ).init(size + 1,           allocator); defer   b.deinit();
+    var c   = try Vector(T  ).init(size + 1,           allocator); defer   c.deinit();
+    var p   = try Vector(i32).init(size + 1,           allocator); defer   p.deinit();
 
-        var A   = try Matrix(T  ).init(size + 1, size + 1, allocator); defer   A.deinit();
-        var ALU = try Matrix(T  ).init(size + 1, size + 1, allocator); defer ALU.deinit();
-        var b   = try Vector(T  ).init(size + 1,           allocator); defer   b.deinit();
-        var c   = try Vector(T  ).init(size + 1,           allocator); defer   c.deinit();
-        var p   = try Vector(i32).init(size + 1,           allocator); defer   p.deinit();
+    A.fill(1); b.fill(0); A.ptr(A.rows - 1, A.cols - 1).* = 0; b.ptr(b.rows - 1).* = 1;
 
-        A.fill(1); b.fill(0); A.ptr(A.rows - 1, A.cols - 1).* = 0; b.ptr(b.rows - 1).* = 1;
+    for (0..size) |i| for (0..size) |j| {
 
-        for (0..size) |i| for (0..size) |j| {
+        A.ptr(i, j).* = 0;
 
-            A.ptr(i, j).* = 0;
+        const ii = (iter - size + i + 1) % DIIS_E.items.len;
+        const jj = (iter - size + j + 1) % DIIS_E.items.len;
 
-            const ii = @mod(@as(i32, @intCast(iter)) - @as(i32, @intCast(size)) + @as(i32, @intCast(i)), @as(i32, @intCast(DIIS_E.items.len)));
-            const jj = @mod(@as(i32, @intCast(iter)) - @as(i32, @intCast(size)) + @as(i32, @intCast(j)), @as(i32, @intCast(DIIS_E.items.len)));
-
-            for (0..DIIS_E.items[0].rows) |k| for (0..DIIS_E.items[0].cols) |l| {
-                A.ptr(i, j).* += DIIS_E.items[@intCast(ii)].at(k, l) * DIIS_E.items[@intCast(jj)].at(k, l);
-            };
+        for (0..DIIS_E.items[0].rows) |k| for (0..DIIS_E.items[0].cols) |l| {
+            A.ptr(i, j).* += DIIS_E.items[ii].at(k, l) * DIIS_E.items[jj].at(k, l);
         };
+    };
 
-        lpk.dgesv(&c, &ALU, &p, A, b); F_AO.fill(0); 
+    lpk.dgesv(&c, &ALU, &p, A, b); if (lpk.dgecon(ALU, lpk.dlange(A, '1')) < 1e-12) return else F_AO.fill(0);
 
-        for (0..size) |i| {
+    for (0..size) |i| {
 
-            const ii = @mod(@as(i32, @intCast(iter)) - @as(i32, @intCast(size)) + @as(i32, @intCast(i)), @as(i32, @intCast(DIIS_F.items.len)));
+        const ii = (iter - size + i + 1) % DIIS_E.items.len;
 
-            for (0..F_AO.rows) |j| for (0..F_AO.cols) |k| {
-                F_AO.ptr(j, k).* += c.at(i) * DIIS_F.items[@intCast(ii)].at(j, k);
-            };
-        }
+        for (0..F_AO.rows) |j| for (0..F_AO.cols) |k| {
+            F_AO.ptr(j, k).* += c.at(i) * DIIS_F.items[ii].at(j, k);
+        };
     }
 }

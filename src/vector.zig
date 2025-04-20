@@ -54,9 +54,7 @@ pub fn Vector(comptime T: type) type {
 
         /// Fill the vector with the specified value.
         pub fn fill(self: Vector(T), value: T) void {
-            for (0..self.data.len) |i| {
-                self.data[i] = value;
-            }
+            @memset(self.data, value);
         }
 
         /// Return the vector as a matrix with one column. No memory is allocated.

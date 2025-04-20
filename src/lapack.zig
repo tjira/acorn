@@ -7,6 +7,15 @@ const std = @import("std");
 const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
 
+/// Calculate the condition number of a matrix A. The result returned.
+pub fn dgecon(ALU: Matrix(f64), onorm: f64) f64 {
+    const n: i32 = @intCast(ALU.rows); var rcond: f64 = 0;
+
+    _ = lapacke.LAPACKE_dgecon(lapacke.LAPACK_ROW_MAJOR, '1', n, &ALU.data[0], n, onorm, &rcond);
+
+    return rcond;
+}
+
 /// Calculate the Schur decomposition of matrix A. The JR and JI will contain real and imaginary parts of calculated eigenvalues.
 pub fn dgees(Q: *Matrix(f64), D: *Matrix(f64), A: Matrix(f64), JR: *Vector(f64), JI: *Vector(f64)) void {
     const n: i32 = @intCast(A.rows); var sdim: i32 = undefined; @memcpy(D.data, A.data);
@@ -28,11 +37,18 @@ pub fn dgetrf(ALU: *Matrix(f64), p: *Vector(i32), A: Matrix(f64)) void {
     _ = lapacke.LAPACKE_dgetrf(lapacke.LAPACK_ROW_MAJOR, m, n, &ALU.data[0], m, &p.data[0]);
 }
 
-/// Calculate the inverse from the LU decomposition of a matrix A. The result is stored in the AI matrix.
+/// Calculate the inverse from the LU decomposition of a matrix A. The result is stored in the AIN matrix.
 pub fn dgetri(AIN: *Matrix(f64), ALU: Matrix(f64), p: Vector(i32)) void {
     const n: i32 = @intCast(ALU.rows); @memcpy(AIN.data, ALU.data);
 
     _ = lapacke.LAPACKE_dgetri(lapacke.LAPACK_ROW_MAJOR, n, &AIN.data[0], n, &p.data[0]);
+}
+
+/// Calculates the specified norm of a matrix A. The result is returned.
+pub fn dlange(A: Matrix(f64), mode: u8) f64 {
+    const m: i32 = @intCast(A.rows); const n: i32 = @intCast(A.cols);
+
+    return lapacke.LAPACKE_dlange(lapacke.LAPACK_ROW_MAJOR, mode, m, n, &A.data[0], m);
 }
 
 /// Calculate the eigenvalues and eigenvectors of a symmetric matrix A. The eigenvalues are stored in J and the eigenvectors are stored in C.

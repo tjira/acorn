@@ -31,8 +31,8 @@ pub fn Tensor(comptime T: type) type {
 
         /// Free the memory allocated for the tensor.
         pub fn deinit(self: Tensor(T)) void {
-            self.allocator.free(self.data );
-            self.allocator.free(self.shape);
+            self.allocator.free(self.data  );
+            self.allocator.free(self.shape );
             self.allocator.free(self.stride);
         }
 
@@ -43,9 +43,7 @@ pub fn Tensor(comptime T: type) type {
 
         /// Fill the tensor with the specified value.
         pub fn fill(self: *Tensor(T), value: T) void {
-            for (0..self.data.len) |i| {
-                self.data[i] = value;
-            }
+            @memset(self.data, value);
         }
 
         /// Returns the tensor as a matrix. No memory is allocated. Currently only works for 4D tensors.
