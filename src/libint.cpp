@@ -32,7 +32,7 @@ extern "C" {
 
         for (const auto& shell : shells) nbf += shell.size();
 
-        #pragma omp parallel for
+        #pragma omp parallel for num_threads(engines.size()) schedule(dynamic)
         for (size_t i = 0; i < shells.size(); i++) for (size_t j = i; j < shells.size(); j++) {
 
             int id = omp_get_thread_num(); int integral_index = 0; engines.at(id).compute(shells.at(i), shells.at(j)); if (engines.at(id).results().at(0) == nullptr) continue;
@@ -53,7 +53,7 @@ extern "C" {
 
         for (const auto& shell : shells) nbf += shell.size();
 
-        #pragma omp parallel for
+        #pragma omp parallel for num_threads(engines.size()) schedule(dynamic)
         for (size_t i = 0; i < shells.size(); i++) for (size_t j = i; j < shells.size(); j++) for (size_t k = i; k < shells.size(); k++) for (size_t l = (i == k ? j : k); l < shells.size(); l++) {
 
             int id = omp_get_thread_num(); int integral_index = 0; engines.at(id).compute(shells.at(i), shells.at(j), shells.at(k), shells.at(l)); if (engines.at(id).results().at(0) == nullptr) continue;
