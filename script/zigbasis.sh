@@ -39,9 +39,11 @@ BASES=(
     "cc-pvdz"
     "cc-pvtz"
     "cc-pvqz"
+    "cc-pv5z"
     "aug-cc-pvdz"
     "aug-cc-pvtz"
     "aug-cc-pvqz"
+    "aug-cc-pv5z"
 )
 
 for BASIS in ${BASES[@]}; do

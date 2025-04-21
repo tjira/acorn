@@ -53,13 +53,20 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     if (opt.system_file    != null) system = try System(T).read(        opt.system_file.?,    allocator);
     if (opt.integral.basis != null) basis  = try Basis(T).array(system, opt.integral.basis.?, allocator);
 
-    var nbf: usize = 0; var npgs: usize = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+    var nbf: usize = 0; var npgs: usize = 0; var mem: f64 = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
 
     {
         var i: usize = 0; while (opt.integral.basis != null and i < basis.len) : (i += 2 * @as(usize, @intFromFloat(basis[i])) + 5) {
             const cgs: usize = @as(usize, @intFromFloat((basis[i + 1] + 1) * (basis[i + 1] + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis[i])) * cgs;
         }
+
+        mem = 8 * @as(f64, @floatFromInt(12 * nbf * nbf + 2 * nbf * nbf * nbf * nbf));
     }
+
+    if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print("\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
+    if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE  GAUSSIAN SHELLS: {d}\n", .{npgs});
+
+    if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print("\n# OF GB NEEDED TO PERFORM THE HF CALCULATION: {d:.2}\n", .{mem / 1e9});
 
     var timer = try std.time.Timer.start();
 
@@ -68,23 +75,22 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     const V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
     const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator);
 
-    if (opt.integral.overlap != null) {nbf = S_AO.rows;} if (opt.integral.kinetic != null) {nbf = T_AO.rows;} if (opt.integral.nuclear != null) {nbf = V_AO.rows;}
-
-    if (print             ) try std.io.getStdOut().writer().print("\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
-    if (print and npgs > 0) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE  GAUSSIAN SHELLS: {d}\n", .{npgs});
-
     if (opt.integral.overlap == null) lbt.overlap(S_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
     if (opt.integral.kinetic == null) lbt.kinetic(T_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
     if (opt.integral.nuclear == null) lbt.nuclear(V_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
     if (opt.integral.coulomb == null) lbt.coulomb(J_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+
+    nbf = S_AO.rows; var J_AO_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_AO_A.deinit();
+
+    for (0..nbf) |i| for(0..nbf) |j| for (0..nbf) |k| for (0..nbf) |l| {
+        J_AO_A.ptr(&[_]usize{i, j, k, l}).* = J_AO.at(&[_]usize{i, j, k, l}) - 0.5 * J_AO.at(&[_]usize{i, l, k, j});
+    };
 
     if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
     var T1 = try Matrix(T).init(nbf, nbf, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(nbf, nbf, allocator); defer T2.deinit();
     var T3 = try Matrix(T).init(nbf, nbf, allocator); defer T3.deinit();
-
-    var J_AO_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_AO_A.deinit();
 
     var H_AO = try Matrix(T).init(nbf, nbf, allocator); defer H_AO.deinit();
     var ERR  = try Matrix(T).init(nbf, nbf, allocator); defer  ERR.deinit();
@@ -97,20 +103,12 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
         try DIIS_F.append(try Matrix(T).init(H_AO.rows, H_AO.cols, allocator));
     };
 
-    {
-        var K_AO = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer K_AO.deinit();
-
-        ten.transpose(T, &K_AO, J_AO, &[_]usize{0, 3, 2, 1}); ten.muls(T, &K_AO, K_AO, 0.5); ten.sub(T, &J_AO_A, J_AO, K_AO);
-
-        mat.add(T, &H_AO, T_AO, V_AO);
-    }
-
     var F_AO = try Matrix(T).init(nbf, nbf, allocator); F_AO.fill(0);
     var C_MO = try Matrix(T).init(nbf, nbf, allocator); C_MO.fill(0);
     var D_MO = try Matrix(T).init(nbf, nbf, allocator); D_MO.fill(0);
     var E_MO = try Matrix(T).init(nbf, nbf, allocator); E_MO.fill(0);
 
-    var iter: u32 = 0; var E: T = 0; var EP: T = 1;
+    var iter: u32 = 0; var E: T = 0; var EP: T = 1; mat.add(T, &H_AO, T_AO, V_AO);
 
     if (print) try std.io.getStdOut().writer().print("\n{s:4} {s:20} {s:8}\n", .{"ITER", "ENERGY", "|DELTA E|"});
 

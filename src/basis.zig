@@ -90,9 +90,11 @@ pub fn Basis(comptime T: type) type {
             if (std.mem.eql(u8, lower, "cc-pvdz"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/cc-pvdz.json"    );}
             if (std.mem.eql(u8, lower, "cc-pvtz"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/cc-pvtz.json"    );}
             if (std.mem.eql(u8, lower, "cc-pvqz"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/cc-pvqz.json"    );}
+            if (std.mem.eql(u8, lower, "cc-pv5z"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/cc-pv5z.json"    );}
             if (std.mem.eql(u8, lower, "aug-cc-pvdz") and std.mem.eql(u8, format, "json")) {return @embedFile("basis/aug-cc-pvdz.json");}
             if (std.mem.eql(u8, lower, "aug-cc-pvtz") and std.mem.eql(u8, format, "json")) {return @embedFile("basis/aug-cc-pvtz.json");}
             if (std.mem.eql(u8, lower, "aug-cc-pvqz") and std.mem.eql(u8, format, "json")) {return @embedFile("basis/aug-cc-pvqz.json");}
+            if (std.mem.eql(u8, lower, "aug-cc-pv5z") and std.mem.eql(u8, format, "json")) {return @embedFile("basis/aug-cc-pv5z.json");}
 
             return error.BasisNameNotFound;
         }
