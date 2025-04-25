@@ -5,9 +5,9 @@ import copy as cp, glob as gl, shutil as sh, json as js, numpy as np, os
 dollar = "$"  if os.name == "nt" else  "\\$"
 esc    = "\\" if os.name == "nt" else "\\\\"
 
-KTSH_COUPLING = 1; KTSH_AKIMOV = 1; KTSH_HO = 1; SH_COMPARE = 1; URACIL_LVC = 1
+KTSH_COUPLING = 1; KTSH_AKIMOV = 1; KTSH_HO = 1; SH_COMPARE = 0; URACIL_LVC = 1
 
-TRAJS = 10000
+TRAJS, NGRID = 1000, 8192
 
 # KTSH TDC TESTING ON MODEL POTENTIALS ======================================================================================================================================================
 
@@ -48,7 +48,7 @@ if KTSH_COUPLING:
                 },
 
                 "grid" : {
-                    "limits" : [-24, 48], "points" : 8192
+                    "limits" : [-24, 48], "points" : NGRID
                 },
 
                 "initial_conditions" : {
@@ -70,7 +70,7 @@ if KTSH_COUPLING:
         cd_input = {
             "classical_dynamics" : {
                 "log_intervals" : {
-                    "iteration" : 1000, "trajectory" : 1000
+                    "iteration" : 10000, "trajectory" : 1000
                 },
 
                 "initial_conditions" : {
@@ -83,9 +83,9 @@ if KTSH_COUPLING:
                 "write" : {},
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
                 "potential" : potential,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
                 "trajectories" : TRAJS,
                 "seed" : 30
             }
@@ -95,14 +95,17 @@ if KTSH_COUPLING:
         kt_input = cp.deepcopy(cd_input); kt_input["classical_dynamics"]["fewest_switches"] = {}
         lz_input = cp.deepcopy(cd_input); lz_input["classical_dynamics"]["landau_zener"]    = {}
 
-        kt_input["classical_dynamics"]["time_derivative_coupling"] = "baeckan"
+        kt_input["classical_dynamics"]["time_derivative_coupling"] = "kappa"
+
+        fs_tdc_input = cp.deepcopy(fs_input); fs_tdc_input["classical_dynamics"]["trajectories"] = 1;
+        kt_tdc_input = cp.deepcopy(kt_input); kt_tdc_input["classical_dynamics"]["trajectories"] = 1;
+
+        fs_tdc_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_FSSH.mat"
+        kt_tdc_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_KTSH.mat"
 
         fs_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_FSSH.mat"
         kt_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_KTSH.mat"
         lz_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_LZSH.mat"
-
-        fs_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_FSSH.mat"
-        kt_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_KTSH.mat"
 
         open(f"input_KTSH_TESTING_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_dp_{potential}.json")
         open(f"input_KTSH_TESTING_ap_{potential}.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_ap_{potential}.json")
@@ -110,6 +113,9 @@ if KTSH_COUPLING:
         open(f"input_KTSH_TESTING_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_fs_{potential}.json")
         open(f"input_KTSH_TESTING_kt_{potential}.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_kt_{potential}.json")
         open(f"input_KTSH_TESTING_lz_{potential}.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_lz_{potential}.json")
+
+        open(f"input_KTSH_TESTING_fs_tdc_{potential}.json", "w").write(js.dumps(fs_tdc_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_fs_tdc_{potential}.json")
+        open(f"input_KTSH_TESTING_kt_tdc_{potential}.json", "w").write(js.dumps(kt_tdc_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_kt_tdc_{potential}.json")
 
     os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 KTSH_TESTING_TDC_{DS[0]}_FSSH.mat:1 KTSH_TESTING_TDC_{DS[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{DS[0]}_EXACT.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[0]}_FSSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[0]}_KTSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[0]}_LZSH.mat:0 KTSH_TESTING_POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 KTSH_TESTING_TDC_{DS[1]}_FSSH.mat:1 KTSH_TESTING_TDC_{DS[1]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{DS[1]}_EXACT.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[1]}_FSSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[1]}_KTSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{DS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar} (BA)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar} (BA)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" --output MODEL_COUPLING_DS.png')
     os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{TS[0]}.mat:0,4,8 KTSH_TESTING_TDC_{TS[0]}_FSSH.mat:1,2 KTSH_TESTING_TDC_{TS[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{TS[0]}_EXACT.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[0]}_FSSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[0]}_KTSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[0]}_LZSH.mat:0 KTSH_TESTING_POTENTIAL_ADIABATIC_{TS[1]}.mat:0,4,8 KTSH_TESTING_TDC_{TS[1]}_FSSH.mat:1,2 KTSH_TESTING_TDC_{TS[1]}_KTSH.mat:1 KTSH_TESTING_POPULATION_{TS[1]}_EXACT.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[1]}_FSSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[1]}_KTSH.mat:0 KTSH_TESTING_POPULATION_MEAN_{TS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 231 232 232 232 233 233 233 233 234 234 234 235 235 235 236 236 236 236 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{1,2}}{dollar} (HST)" "T{dollar}_{{0,2}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{0,2}}{dollar}=T{dollar}_{{1,2}}{dollar} (BA)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{1,2}}{dollar} (HST)" "T{dollar}_{{0,1}}{dollar} (BA)" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{0,2}}{dollar}=T{dollar}_{{1,2}}{dollar} (BA)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[TS[0]][0]} {TDCLIM[TS[0]][1]} nan nan nan nan {TDCLIM[TS[1]][0]} {TDCLIM[TS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" --output MODEL_COUPLING_TS.png')
@@ -130,6 +136,12 @@ if KTSH_HO:
         "tripleState1D_7" : 3,
     }
 
+    TDCLIM = {
+        "tripleState1D_5" : [750, 950],
+        "tripleState1D_6" : [400, 600],
+        "tripleState1D_7" : [750, 950],
+    }
+
     MODELS = ["tripleState1D_5", "tripleState1D_6", "tripleState1D_7"]
 
     for potential in MODELS:
@@ -144,7 +156,7 @@ if KTSH_HO:
                 },
 
                 "grid" : {
-                    "limits" : [-24, 24], "points" : 8192
+                    "limits" : [-24, 24], "points" : NGRID
                 },
 
                 "initial_conditions" : {
@@ -166,7 +178,7 @@ if KTSH_HO:
         cd_input = {
             "classical_dynamics" : {
                 "log_intervals" : {
-                    "iteration" : 2000, "trajectory" : 1000
+                    "iteration" : 20000, "trajectory" : 1000
                 },
 
                 "initial_conditions" : {
@@ -179,21 +191,37 @@ if KTSH_HO:
                 "write" : {},
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
                 "potential" : potential,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
-                "trajectories" : TRAJS
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
+                "trajectories" : TRAJS,
+                "seed" : 6
             }
         }
 
         fs_input = cp.deepcopy(cd_input); fs_input["classical_dynamics"]["fewest_switches"] = {}
-        kt_input = cp.deepcopy(cd_input); kt_input["classical_dynamics"]["fewest_switches"] = {}
         lz_input = cp.deepcopy(cd_input); lz_input["classical_dynamics"]["landau_zener"]    = {}
+        kt_input = cp.deepcopy(cd_input); kt_input["classical_dynamics"]["fewest_switches"] = {
+            "quantum_substep" : 1, "decoherence_alpha" : 0.1,
+        }
+        lt_input = cp.deepcopy(cd_input); lt_input["classical_dynamics"]["fewest_switches"] = {
+            "quantum_substep" : 1, "decoherence_alpha" : 0.1,
+        }
 
-        kt_input["classical_dynamics"]["time_derivative_coupling"] = "baeckan"
+        kt_input["classical_dynamics"]["time_derivative_coupling"] =  "kappa"
+        lt_input["classical_dynamics"]["time_derivative_coupling"] = "lambda"
+
+        fs_tdc_input = cp.deepcopy(fs_input); fs_tdc_input["classical_dynamics"]["trajectories"] = 1;
+        kt_tdc_input = cp.deepcopy(kt_input); kt_tdc_input["classical_dynamics"]["trajectories"] = 1;
+        lt_tdc_input = cp.deepcopy(lt_input); lt_tdc_input["classical_dynamics"]["trajectories"] = 1;
+
+        fs_tdc_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_FSSH.mat"
+        kt_tdc_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_KTSH.mat"
+        lt_tdc_input["classical_dynamics"]["write"]["time_derivative_coupling"] = f"KTSH_TESTING_TDC_{potential}_LTSH.mat"
 
         fs_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_FSSH.mat"
         kt_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_KTSH.mat"
+        lt_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_LTSH.mat"
         lz_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_LZSH.mat"
 
         open(f"input_KTSH_TESTING_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_dp_{potential}.json")
@@ -201,10 +229,14 @@ if KTSH_HO:
         open(f"input_KTSH_TESTING_qd_{potential}.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_qd_{potential}.json")
         open(f"input_KTSH_TESTING_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_fs_{potential}.json")
         open(f"input_KTSH_TESTING_kt_{potential}.json", "w").write(js.dumps(kt_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_kt_{potential}.json")
+        open(f"input_KTSH_TESTING_lt_{potential}.json", "w").write(js.dumps(lt_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_lt_{potential}.json")
         open(f"input_KTSH_TESTING_lz_{potential}.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_lz_{potential}.json")
 
-    os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[0]}.mat:0,4,8 KTSH_TESTING_POPULATION_{MODELS[0]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_LZSH.mat:2 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[1]}.mat:0,4,8 KTSH_TESTING_POPULATION_{MODELS[1]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_LZSH.mat:2 --dpi 256 --figsize 8 12 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" --subplots 221 221 221 222 222 222 222 223 223 223 224 224 224 224 --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" --ylabel "Energy (a.u.)" "State Population" "Energy (a.u.)" "State Population" --output MODEL_TRIVIAL_EPS_TS.png')
-    os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[0]}.mat:0,4,8 KTSH_TESTING_POPULATION_{MODELS[0]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_LZSH.mat:2 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[2]}.mat:0,4,8 KTSH_TESTING_POPULATION_{MODELS[2]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_LZSH.mat:2 --dpi 256 --figsize 8 12 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" --subplots 221 221 221 222 222 222 222 223 223 223 224 224 224 224 --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" --xlim -3 3 nan nan -3 3 nan nan --ylabel "Energy (a.u.)" "State Population" "Energy (a.u.)" "State Population" --ylim -0.002 0.07 nan nan -0.002 0.07 nan nan --output MODEL_TRIVIAL_CPOULING_TS.png')
+        open(f"input_KTSH_TESTING_fs_tdc_{potential}.json", "w").write(js.dumps(fs_tdc_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_fs_tdc_{potential}.json")
+        open(f"input_KTSH_TESTING_kt_tdc_{potential}.json", "w").write(js.dumps(kt_tdc_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_kt_tdc_{potential}.json")
+        open(f"input_KTSH_TESTING_lt_tdc_{potential}.json", "w").write(js.dumps(lt_tdc_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_lt_tdc_{potential}.json")
+
+    os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[0]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[0]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[0]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[0]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[0]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_LZSH.mat:2 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[1]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[1]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[1]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[1]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[1]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_LZSH.mat:2 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[2]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[2]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[2]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[2]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[2]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_LZSH.mat:2 --dpi 256 --figsize 12 18 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (HST)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (HST)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (HST)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" --subplots 331 331 331 332 332 332 333 333 333 333 333 334 334 334 335 335 335 336 336 336 336 336 337 337 337 338 338 338 339 339 339 339 339 --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim -3 3 {TDCLIM[MODELS[0]][0]} {TDCLIM[MODELS[0]][1]} nan nan -8 8 {TDCLIM[MODELS[1]][0]} {TDCLIM[MODELS[1]][1]} nan nan -3 3 {TDCLIM[MODELS[2]][0]} {TDCLIM[MODELS[2]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "State Population" "Energy (a.u.)" "TDC (a.u.)" "State Population" "Energy (a.u.)" "TDC (a.u.)" "State Population" --ylim -0.002 0.05 -0.002 0.02 nan nan -0.02 0.25 -0.002 0.02 nan nan -0.002 0.05 nan nan nan nan --output MODEL_TRIVIAL_HO_TS.png')
 
 # KTSH TESTING ON AKIMOV MODELS =======================================================================================================================================================================
 
@@ -249,7 +281,7 @@ if KTSH_AKIMOV:
                 },
 
                 "grid" : {
-                    "limits" : [-15, 15], "points" : 8192
+                    "limits" : [-15, 15], "points" : NGRID
                 },
 
                 "initial_conditions" : {
@@ -271,7 +303,7 @@ if KTSH_AKIMOV:
         cd_input = {
             "classical_dynamics" : {
                 "log_intervals" : {
-                    "iteration" : 2000, "trajectory" : 1000
+                    "iteration" : 20000, "trajectory" : 1000
                 },
 
                 "initial_conditions" : {
@@ -284,9 +316,9 @@ if KTSH_AKIMOV:
                 "write" : {},
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
                 "potential" : potential,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
                 "trajectories" : TRAJS
             }
         }
@@ -295,7 +327,7 @@ if KTSH_AKIMOV:
         kt_input = cp.deepcopy(cd_input); kt_input["classical_dynamics"]["fewest_switches"] = {}
         lz_input = cp.deepcopy(cd_input); lz_input["classical_dynamics"]["landau_zener"]    = {}
 
-        kt_input["classical_dynamics"]["time_derivative_coupling"] = "baeckan"
+        kt_input["classical_dynamics"]["time_derivative_coupling"] = "kappa"
 
         fs_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_FSSH.mat"
         kt_input["classical_dynamics"]["write"]["population_mean"] = f"KTSH_TESTING_POPULATION_MEAN_{potential}_KTSH.mat"
@@ -336,7 +368,7 @@ if SH_COMPARE:
                 },
 
                 "grid" : {
-                    "limits" : [-24, 48], "points" : 8192
+                    "limits" : [-24, 48], "points" : NGRID
                 },
 
                 "initial_conditions" : {
@@ -358,7 +390,7 @@ if SH_COMPARE:
         cd_input = {
             "classical_dynamics" : {
                 "log_intervals" : {
-                    "iteration" : 1000, "trajectory" : 1000
+                    "iteration" : 10000, "trajectory" : 1000
                 },
 
                 "initial_conditions" : {
@@ -371,9 +403,9 @@ if SH_COMPARE:
                 "write" : {},
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
                 "potential" : potential,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
                 "trajectories" : TRAJS
             }
         }
@@ -483,7 +515,7 @@ if URACIL_LVC:
         kt_input = cp.deepcopy(cd_input); kt_input["classical_dynamics"]["fewest_switches"] = {}
         lz_input = cp.deepcopy(cd_input); lz_input["classical_dynamics"]["landau_zener"]    = {}
 
-        kt_input["classical_dynamics"]["time_derivative_coupling"] = "baeckan"
+        kt_input["classical_dynamics"]["time_derivative_coupling"] = "kappa"
 
         fs_input["classical_dynamics"]["write"]["population_mean"] = f"URACIL_LVC_POPULATION_uracil{i}D_1_FSSH.mat"
         kt_input["classical_dynamics"]["write"]["population_mean"] = f"URACIL_LVC_POPULATION_uracil{i}D_1_KTSH.mat"

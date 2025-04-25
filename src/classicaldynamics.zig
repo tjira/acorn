@@ -87,11 +87,12 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         return error.MultipleHoppingMechanisms;
     }
 
-    const tdc_baeckan = std.mem.eql(u8, opt.time_derivative_coupling.?, "baeckan");
-    const tdc_hst     = std.mem.eql(u8, opt.time_derivative_coupling.?, "hst"    );
-    const tdc_npi     = std.mem.eql(u8, opt.time_derivative_coupling.?, "npi"    );
+    const tdc_hst    = std.mem.eql(u8, opt.time_derivative_coupling.?, "hst"   );
+    const tdc_kappa  = std.mem.eql(u8, opt.time_derivative_coupling.?, "kappa" );
+    const tdc_lambda = std.mem.eql(u8, opt.time_derivative_coupling.?, "lambda");
+    const tdc_npi    = std.mem.eql(u8, opt.time_derivative_coupling.?, "npi"   );
 
-    if (opt.time_derivative_coupling != null and !tdc_hst and !tdc_baeckan and !tdc_npi) {
+    if (opt.time_derivative_coupling != null and !tdc_hst and !tdc_kappa and !tdc_lambda and !tdc_npi) {
         return error.UnknownTimeDerivativeCoupling;
     }
 
@@ -158,9 +159,10 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
-                if (opt.adiabatic and tdc_hst     and j > 0)     derivativeCouplingHst(    T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                     opt.time_step);
-                if (opt.adiabatic and tdc_npi     and j > 0) try derivativeCouplingNpi(    T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                     opt.time_step);
-                if (opt.adiabatic and tdc_baeckan and j > 1)     derivativeCouplingBaeckan(T, &TDC,       &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, &S3, opt.time_step);
+                if (opt.adiabatic and tdc_hst    and j > 0)     derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                              opt.time_step);
+                if (opt.adiabatic and tdc_kappa  and j > 1)     derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step);
+                if (opt.adiabatic and tdc_lambda and j > 1)     derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step);
+                if (opt.adiabatic and tdc_npi    and j > 0) try derivativeCouplingNpi(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                              opt.time_step);
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
@@ -295,22 +297,6 @@ pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), po
     return -0.5 * (Up - Um) / opt.derivative_step;
 }
 
-/// Calculate the nonadiabatic coupling between two states using the Baeck-An method.
-pub fn derivativeCouplingBaeckan(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), S3: []const u32, time_step: T) void {
-    for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
-
-        const Z0 = @abs(U3[0].at(j, j) - U3[0].at(i, i)); const Z1 = @abs(U3[1].at(j, j) - U3[1].at(i, i)); const Z2 = @abs(U3[2].at(j, j) - U3[2].at(i, i));
-
-        const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
-
-        var sigma = if (ddZ0 * Z0 > 0) 0.5 * std.math.sqrt(ddZ0 / Z0) else 0;
-
-        if (mth.sum(u32, S3) != 3 * S3[0]) sigma = TDC.at(i, j);
-
-        TDC.ptr(i, j).* = sigma; TDC.ptr(j, i).* = -TDC.at(i, j);
-    };
-}
-
 /// Calculate the nonadiabatic coupling between two states according to Hammes--Schiffer and Tully.
 pub fn derivativeCouplingHst(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2: []const Matrix(T), time_step: T) void {
     UCS.fill(0); TDC.fill(0);
@@ -321,6 +307,34 @@ pub fn derivativeCouplingHst(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
         TDC.ptr(i, j).* = @abs(UCS.at(j, i) - UCS.at(i, j)) / (2 * time_step); TDC.ptr(j, i).* = -TDC.at(i, j);
+    };
+}
+
+/// Calculate the nonadiabatic coupling between two states using the Baeck-An method with dZ/dT=0 approximation.
+pub fn derivativeCouplingKappa(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), time_step: T) void {
+    for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
+
+        const Z0 = @abs(U3[0].at(j, j) - U3[0].at(i, i)); const Z1 = @abs(U3[1].at(j, j) - U3[1].at(i, i)); const Z2 = @abs(U3[2].at(j, j) - U3[2].at(i, i));
+
+        const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
+
+        const sigma = if (ddZ0 * Z0 > 1e-12) 0.5 * std.math.sqrt(ddZ0 / Z0) else 0;
+
+        TDC.ptr(i, j).* = sigma; TDC.ptr(j, i).* = -TDC.at(i, j);
+    };
+}
+
+/// Calculate the nonadiabatic coupling between two states using the Baeck-An method and no approximation in TDC conversion.
+pub fn derivativeCouplingLambda(comptime T: type, TDC: *Matrix(T), U3: []const Matrix(T), v: Vector(T), a: Vector(T), time_step: T) void {
+    for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
+
+        const Z0 = @abs(U3[0].at(j, j) - U3[0].at(i, i)); const Z1 = @abs(U3[1].at(j, j) - U3[1].at(i, i)); const Z2 = @abs(U3[2].at(j, j) - U3[2].at(i, i));
+
+        const dZ0 = (Z0 - Z1) / time_step; const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
+
+        const sigma = if ((ddZ0 - a.at(0) / v.at(0) * dZ0) * Z0 > 1e-12) 0.5 * std.math.sqrt((ddZ0 - a.at(0) / v.at(0) * dZ0) / Z0) else 0;
+
+        TDC.ptr(i, j).* = sigma; TDC.ptr(j, i).* = -TDC.at(i, j);
     };
 }
 
@@ -339,7 +353,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 
 /// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.
 pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
-    const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s; P.fill(0);
+    const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s;
 
     const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
         for (0..FC.rows) |i| {
@@ -353,7 +367,7 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), o
 
     for (0..opt.quantum_substep) |_| {
 
-        K1.fill(Complex(T).init(0, 0)); K2.fill(Complex(T).init(0, 0)); K3.fill(Complex(T).init(0, 0)); K4.fill(Complex(T).init(0, 0));
+        K1.fill(Complex(T).init(0, 0)); K2.fill(Complex(T).init(0, 0)); K3.fill(Complex(T).init(0, 0)); K4.fill(Complex(T).init(0, 0)); P.fill(0);
 
         Function.get(K1, C.*, U, TDC);
 
@@ -388,14 +402,14 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), o
         const rn = rand.float(T);
 
         for (0..C.rows) |j| if (j != ns) {
-            P.ptr(j).* = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / (std.math.pow(T, C.at(ns).magnitude(), 2) + 1e-14) * time_step / iters;
+            if (C.at(ns).magnitude() > 1e-14) P.ptr(j).* = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / std.math.pow(T, C.at(ns).magnitude(), 2) * time_step / iters;
         };
 
         if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
 
         for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
 
-        if (mth.sum(T, P.data) > 0) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+        if (mth.sum(T, P.data) > 0 and s == ns) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
             ns = @intCast(i);
         };
 
@@ -513,7 +527,7 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
 
         const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
 
-        if (dZ0 * dZ1 > 0 or (dZ0 * dZ1 < 0 and ddZ0 < 0)) continue;
+        if (dZ0 * dZ1 > 0 or (dZ0 * dZ1 < 0 and ddZ0 < 0) or @abs(ddZ0) < 1e-14) continue;
 
         P.ptr(i).* = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, Z0, 3) / ddZ0));
 
@@ -590,11 +604,9 @@ pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mp
 
         const F = try calculateForce(T, opt, pot, U, UA, UC, r, i, s);
 
-        const ap = a.at(i);
-
-        a.ptr(i).* = F / opt.initial_conditions.mass[i];
-        v.ptr(i).* += 0.5 * (a.at(i) + ap) * opt.time_step;
         r.ptr(i).* += (v.at(i) + 0.5 * a.at(i) * opt.time_step) * opt.time_step;
+        const ap = a.at(i); a.ptr(i).* = F / opt.initial_conditions.mass[i];
+        v.ptr(i).* += 0.5 * (a.at(i) + ap) * opt.time_step;
     }
 }
 

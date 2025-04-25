@@ -309,15 +309,15 @@ pub fn tripleState1D_6(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 
 /// The seventh triple-state model potential energy surface.
 pub fn tripleState1D_7(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    const k: T = 1e-4;
+    const k: T = 2e-4;
 
     U.ptr(0, 0).* = 0.0025 * r.at(0) * r.at(0);
     U.ptr(0, 1).* = k * std.math.exp(-(r.at(0) - 2) * (r.at(0) - 2));
-    U.ptr(0, 2).* = k * std.math.exp(-r.at(0) * r.at(0));
+    U.ptr(0, 2).* = 0;
 
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = 0.01 + 0.0025 * (r.at(0) - 2) * (r.at(0) - 2);
-    U.ptr(1, 2).* = k * std.math.exp(-(r.at(0) - 2) * (r.at(0) - 2));
+    U.ptr(1, 2).* = k * std.math.exp(-r.at(0) * r.at(0));
 
     U.ptr(2, 0).* = U.at(0, 2);
     U.ptr(2, 1).* = U.at(1, 2);
