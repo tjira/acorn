@@ -4,6 +4,7 @@ const eigen = @cImport(@cInclude("eigen.h"));
 
 const std = @import("std");
 
+const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;
 
 pub fn contract(C: anytype, A: anytype, B: anytype, pairs: []const i32) !void {
@@ -18,4 +19,8 @@ pub fn contract(C: anytype, A: anytype, B: anytype, pairs: []const i32) !void {
     if (dA.len == 2 and dB.len == 4 and pairs.len == 4) {return eigen.contract_242(&C.data[0], &dC[0], &A.data[0], &dA[0], &B.data[0], &dB[0], &pairs[0]);}
 
     else return error.ContractionNotSupported;
+}
+
+pub fn logm(B: *Matrix(f64), A: Matrix(f64)) void {
+    eigen.logm(&B.data[0], &A.data[0], A.rows);
 }

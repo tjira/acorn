@@ -1,5 +1,6 @@
 #define EIGEN_USE_THREADS
 
+#include <unsupported/Eigen/MatrixFunctions>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include <omp.h>
@@ -47,5 +48,13 @@ extern "C" {
         };
 
         CT.device(ThreadPoolDevice(&pool, pool.NumThreads())) = AT.contract(BT, axes);
+    }
+
+
+    void logm(double *B, double *A, const unsigned long n) {
+        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> AT(A, n, n);
+        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> BT(B, n, n);
+
+        BT = AT.log();
     }
 }

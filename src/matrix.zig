@@ -168,6 +168,17 @@ pub fn adds(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
     };
 }
 
+/// Divide a matrix by a scalar. The output matrix is stored in the matrix C.
+pub fn divs(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
+    if (comptime !istruct(T)) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i] / s;
+    };
+
+    if (comptime istruct(T)) for (0..C.data.len) |i| {
+        C.data[i] = A.data[i].div(s);
+    };
+}
+
 /// Horizontally concatenate two matrices. The output matrix is stored in the matrix C.
 pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
     for (0..A.rows) |i| {
