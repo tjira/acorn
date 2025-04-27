@@ -160,10 +160,10 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
-                if (opt.adiabatic and tdc_hst    and j > 0) derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                              opt.time_step);
-                if (opt.adiabatic and tdc_kappa  and j > 1) derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step);
-                if (opt.adiabatic and tdc_lambda and j > 1) derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step);
-                if (opt.adiabatic and tdc_npi    and j > 0) derivativeCouplingNpi(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                              opt.time_step);
+                if (opt.adiabatic and tdc_hst    and j > 0) derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
+                if (opt.adiabatic and tdc_kappa  and j > 1) derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
+                if (opt.adiabatic and tdc_lambda and j > 1) derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
+                if (opt.adiabatic and tdc_npi    and j > 0) derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
 
                 if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
@@ -319,7 +319,7 @@ pub fn derivativeCouplingKappa(comptime T: type, TDC: *Matrix(T), U3: []const Ma
 
         const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
 
-        const sigma = if (ddZ0 * Z0 > 1e-12) 0.5 * std.math.sqrt(ddZ0 / Z0) else 0;
+        const sigma = if (ddZ0 > 1e-8) 0.5 * std.math.sqrt(ddZ0 / Z0) else 0;
 
         TDC.ptr(i, j).* = sigma; TDC.ptr(j, i).* = -TDC.at(i, j);
     };
@@ -333,21 +333,40 @@ pub fn derivativeCouplingLambda(comptime T: type, TDC: *Matrix(T), U3: []const M
 
         const dZ0 = (Z0 - Z1) / time_step; const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
 
-        const sigma = if ((ddZ0 - a.at(0) / v.at(0) * dZ0) * Z0 > 1e-12) 0.5 * std.math.sqrt((ddZ0 - a.at(0) / v.at(0) * dZ0) / Z0) else 0;
+        const av = a.at(0); const vv = v.at(0);
+
+        const sigma = if (@abs(v.at(0)) > 1e-8 and (ddZ0 - av / vv * dZ0) > 1e-8) 0.5 * std.math.sqrt((ddZ0 - av / vv * dZ0) / Z0) else 0;
 
         TDC.ptr(i, j).* = sigma; TDC.ptr(j, i).* = -TDC.at(i, j);
     };
 }
 
 /// Calculate the nonadiabatic coupling between two states using Norm Preserving Interpolation.
-pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2: []const Matrix(T), time_step: T) void {
-    UCS.fill(0);
+pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2O: []Matrix(T), U: *Matrix(T), r: Vector(T), pot: mpt.Potential(T), time_step: T, iter: usize) void {
+    UCS.fill(0); const UC2 = &[_]Matrix(T){UC2O[iter % 2], UC2O[(iter - 1) % 2]};
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
         UCS.ptr(i, j).* += UC2[0].at(k, i) * UC2[1].at(k, j);
     };
 
+    for (0..UCS.rows) |l| if (UCS.at(l, l) == 0) {
+
+        pot.eval_fn(U, r); for (U.data) |*e| e.* += 1e-14; adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
+
+        UCS.fill(0);
+
+        for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
+            UCS.ptr(i, j).* += UC2[0].at(k, i) * UC2[1].at(k, j);
+        };
+
+        break;
+    };
+
     eig.logm(TDC, UCS.*); mat.divs(T, TDC, TDC.*, time_step);
+
+    for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
+        TDC.ptr(i, j).* = @abs(TDC.at(i, j)); TDC.ptr(j, i).* = -TDC.at(i, j);
+    };
 }
 
 /// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.

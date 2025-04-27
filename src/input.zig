@@ -56,7 +56,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         iterations: u32,
         potential: []const u8,
         seed: u32 = 1,
-        time_derivative_coupling: ?[]const u8 = "hst",
+        time_derivative_coupling: ?[]const u8 = "npi",
         time_step: T,
         trajectories: u32,
 

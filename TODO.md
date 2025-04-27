@@ -1,8 +1,10 @@
 # TODO List
 
 - [ ] The resampling within unSMASH algorithm should probably not resample all the spheres if resampling during jump.
-- [ ] Implement the TDC using the logarithm of U.
+- [x] Implement the TDC using the logarithm of U.
 - [ ] Implement the function that generates all combinations using GSL instead of my shitty function.
 - [x] Make the OpenBLAS library compile with arbitrary number of cores, not just the number of cores of the current machine.
 - [x] Fix the bug when loading integrals from disk, the basis still needs to be specified.
 - [x] Make the Eigen tensor contraction parallel.
+- [ ] Velocity and acceleration in lambda TSH should be in the direction of motion for higher dimensional systems.
+- [ ] Check if i really need to store both J_AO and J_AO_A for the HF method.

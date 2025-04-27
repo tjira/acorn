@@ -153,13 +153,11 @@ test "classical_dynamics_nonadiabatic_mash" {
     try expect(output_tully1D_1.Ekin + output_tully1D_1.Epot,  0.10954793322135);
     try expect(output_tully1D_1.pop.at(0)                   ,  0.59            );
     try expect(output_tully1D_1.pop.at(1)                   ,  0.41            );
-
-    try expect(output_tully1D_2.r.at(0)                     , 22.10041916775880);
-    try expect(output_tully1D_2.p.at(0)                     , 21.45661238975283);
-    try expect(output_tully1D_2.Ekin + output_tully1D_2.Epot,  0.14967491947983);
+    try expect(output_tully1D_2.r.at(0)                     , 22.10044168360206);
+    try expect(output_tully1D_2.p.at(0)                     , 21.45661238350094);
+    try expect(output_tully1D_2.Ekin + output_tully1D_2.Epot,  0.14967491941739);
     try expect(output_tully1D_2.pop.at(0)                   ,  0.33            );
     try expect(output_tully1D_2.pop.at(1)                   ,  0.67            );
-
     try expect(output_tully1D_3.r.at(0)                     , -1.19219562810638);
     try expect(output_tully1D_3.p.at(0)                     , -3.66930755012664);
     try expect(output_tully1D_3.Ekin + output_tully1D_3.Epot,  0.10108100457442);
