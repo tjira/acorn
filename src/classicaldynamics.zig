@@ -165,7 +165,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (opt.adiabatic and tdc_lambda and j > 1) derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
                 if (opt.adiabatic and tdc_npi    and j > 0) derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
 
-                if (lzsh and j > 1) ns = landauZener(T, &P, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
+                if (lzsh and j > 1) ns = try landauZener(T, &P, opt.landau_zener.?, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
                 if (mash and j > 1) ns = try spinMapping(T, &S, &SI, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
@@ -371,7 +371,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 
 /// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.
 pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
-    const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s;
+    const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s; var rn: T = 0;
 
     const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
         for (0..FC.rows) |i| {
@@ -417,8 +417,6 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), o
             C.ptr(j).* = C.at(j).add(K1.at(j).add(K2.at(j).mul(Complex(T).init(2, 0))).add(K3.at(j).mul(Complex(T).init(2, 0))).add(K4.at(j)).mul(Complex(T).init(time_step / 6 / iters, 0)));
         }
 
-        const rn = rand.float(T);
-
         for (0..C.rows) |j| if (j != ns) {
             if (C.at(ns).magnitude() > 1e-14) P.ptr(j).* = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / std.math.pow(T, C.at(ns).magnitude(), 2) * time_step / iters;
         };
@@ -426,6 +424,8 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), o
         if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
 
         for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
+
+        if (mth.sum(T, P.data) > 0) rn = rand.float(T);
 
         if (mth.sum(T, P.data) > 0 and s == ns) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
             ns = @intCast(i);
@@ -523,8 +523,8 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matri
 }
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.
-pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) u32 {
-    var sn = s; var rn: T = 0; P.fill(0);
+pub fn landauZener(comptime T: type, P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) !u32 {
+    var ns = s; var rn: T = 0; P.fill(0); _ = opt;
 
     if (!adiabatic) for (0..U3[0].rows) |i| if (i != s) {
 
@@ -552,19 +552,17 @@ pub fn landauZener(comptime T: type, P: *Vector(T), U3: []const Matrix(T), s: u3
         if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
     };
 
-    var ps: T = 0; for (0..P.rows) |i| ps += P.at(i);
-
-    if (ps > 1) for (0..P.rows) |i| {P.ptr(i).* /= ps;};
+    if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
 
     for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
 
-    if (ps > 0) rn = rand.float(T);
+    if (mth.sum(T, P.data) > 0) rn = rand.float(T);
 
-    if (ps > 0) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
-        sn = @intCast(i);
+    if (mth.sum(T, P.data) > 0 and s == ns) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+        ns = @intCast(i);
     };
 
-    return sn;
+    return ns;
 }
 
 /// Function to print the results of a single iteration.
