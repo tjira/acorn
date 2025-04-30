@@ -22,3 +22,5 @@ education/**/*.mat*
 *sit*/
 *tex*/
 *zig*/
+
+run.sh*
