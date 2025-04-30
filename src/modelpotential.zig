@@ -326,11 +326,11 @@ pub fn tripleState1D_7(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 
 /// The first Akimov potential.
 pub fn akimov1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = -0.001 + 0.0025 * (r.at(0) + 1) * (r.at(0) + 1);
+    U.ptr(0, 0).* = 0.0025 * (r.at(0) + 1) * (r.at(0) + 1);
     U.ptr(0, 1).* = 0;
 
     U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = -0.001 + 0.0025 * (r.at(0) - 1) * (r.at(0) - 1);
+    U.ptr(1, 1).* = 0.0025 * (r.at(0) - 1) * (r.at(0) - 1);
 }
 
 /// The second Akimov potential.

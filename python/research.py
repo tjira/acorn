@@ -5,9 +5,9 @@ import copy as cp, glob as gl, shutil as sh, json as js, numpy as np, os
 dollar = "$"  if os.name == "nt" else  "\\$"
 esc    = "\\" if os.name == "nt" else "\\\\"
 
-KTSH_COUPLING = 1; KTSH_AKIMOV = 0; KTSH_HO = 1; SH_COMPARE = 0; URACIL_LVC = 0
+KTSH_COUPLING = 1; KTSH_AKIMOV = 1; KTSH_HO = 1; SH_COMPARE = 1; URACIL_LVC = 1
 
-TRAJS, NGRID = 1000, 1024
+TRAJS, NGRID = 10000, 8192
 
 # KTSH TDC TESTING ON MODEL POTENTIALS ======================================================================================================================================================
 
@@ -83,9 +83,9 @@ if KTSH_COUPLING:
                 "write" : {},
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
                 "potential" : potential,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
                 "trajectories" : TRAJS,
                 "seed" : 30
             }
@@ -125,24 +125,27 @@ if KTSH_COUPLING:
 if KTSH_HO:
 
     IS = {
+        "akimov1D_1"      : [1, 1],
         "tripleState1D_5" : [1, 2],
         "tripleState1D_6" : [1, 2],
         "tripleState1D_7" : [1, 2],
     }
 
     NS = {
+        "akimov1D_1"      : 2,
         "tripleState1D_5" : 3,
         "tripleState1D_6" : 3,
         "tripleState1D_7" : 3,
     }
 
     TDCLIM = {
-        "tripleState1D_5" : [750, 950],
-        "tripleState1D_6" : [400, 600],
-        "tripleState1D_7" : [750, 950],
+        "akimov1D_1"      : [775,  975],
+        "tripleState1D_5" : [750,  950],
+        "tripleState1D_6" : [400,  600],
+        "tripleState1D_7" : [750,  950],
     }
 
-    MODELS = ["tripleState1D_5", "tripleState1D_6", "tripleState1D_7"]
+    MODELS = ["akimov1D_1", "tripleState1D_5", "tripleState1D_6", "tripleState1D_7"]
 
     for potential in MODELS:
 
@@ -191,9 +194,9 @@ if KTSH_HO:
                 "write" : {},
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
                 "potential" : potential,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
                 "trajectories" : TRAJS,
                 "seed" : 6
             }
@@ -236,7 +239,7 @@ if KTSH_HO:
         open(f"input_KTSH_TESTING_kt_tdc_{potential}.json", "w").write(js.dumps(kt_tdc_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_kt_tdc_{potential}.json")
         open(f"input_KTSH_TESTING_lt_tdc_{potential}.json", "w").write(js.dumps(lt_tdc_input, indent=4)); os.system(f"acorn input_KTSH_TESTING_lt_tdc_{potential}.json")
 
-    os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[0]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[0]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[0]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[0]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[0]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_LZSH.mat:2 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[1]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[1]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[1]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[1]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[1]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_LZSH.mat:2 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[2]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[2]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[2]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[2]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[2]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_LZSH.mat:2 --dpi 256 --figsize 12 18 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" --subplots 331 331 331 332 332 332 333 333 333 333 333 334 334 334 335 335 335 336 336 336 336 336 337 337 337 338 338 338 339 339 339 339 339 --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim -3 3 {TDCLIM[MODELS[0]][0]} {TDCLIM[MODELS[0]][1]} nan nan -8 8 {TDCLIM[MODELS[1]][0]} {TDCLIM[MODELS[1]][1]} nan nan -3 3 {TDCLIM[MODELS[2]][0]} {TDCLIM[MODELS[2]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "State Population" "Energy (a.u.)" "TDC (a.u.)" "State Population" "Energy (a.u.)" "TDC (a.u.)" "State Population" --ylim -0.002 0.05 -0.002 0.02 nan nan -0.02 0.25 -0.002 0.02 nan nan -0.002 0.05 nan nan nan nan --output MODEL_TRIVIAL_HO_TS.png')
+    os.system(f'python python/lines.py KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[0]}.mat:0,3 KTSH_TESTING_TDC_{MODELS[0]}_FSSH.mat:1 KTSH_TESTING_TDC_{MODELS[0]}_KTSH.mat:1 KTSH_TESTING_TDC_{MODELS[0]}_LTSH.mat:1 KTSH_TESTING_POPULATION_{MODELS[0]}_EXACT.mat:1 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_FSSH.mat:1 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_KTSH.mat:1 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_LTSH.mat:1 KTSH_TESTING_POPULATION_MEAN_{MODELS[0]}_LZSH.mat:1 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[1]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[1]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[1]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[1]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[1]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[1]}_LZSH.mat:2 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[2]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[2]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[2]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[2]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[2]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[2]}_LZSH.mat:2 KTSH_TESTING_POTENTIAL_ADIABATIC_{MODELS[3]}.mat:0,4,8 KTSH_TESTING_TDC_{MODELS[3]}_FSSH.mat:5 KTSH_TESTING_TDC_{MODELS[3]}_KTSH.mat:5 KTSH_TESTING_TDC_{MODELS[3]}_LTSH.mat:5 KTSH_TESTING_POPULATION_{MODELS[3]}_EXACT.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[3]}_FSSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[3]}_KTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[3]}_LTSH.mat:2 KTSH_TESTING_POPULATION_MEAN_{MODELS[3]}_LZSH.mat:2 --dpi 256 --figsize 12 18 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_1{dollar} (EXACT)" "S{dollar}_1{dollar} (FSSH)" "S{dollar}_1{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_1{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_1{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH)" --subplots 431 431 432 432 432 433 433 433 433 433 434 434 434 435 435 435 436 436 436 436 436 437 437 437 438 438 438 439 439 439 439 439 4-3-10 4-3-10 4-3-10 4-3-11 4-3-11 4-3-11 4-3-12 4-3-12 4-3-12 4-3-12 4-3-12 --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim -3 3 {TDCLIM[MODELS[0]][0]} {TDCLIM[MODELS[0]][1]} nan nan -3 3 {TDCLIM[MODELS[1]][0]} {TDCLIM[MODELS[1]][1]} nan nan -8 8 {TDCLIM[MODELS[2]][0]} {TDCLIM[MODELS[2]][1]} nan nan -3 3 {TDCLIM[MODELS[3]][0]} {TDCLIM[MODELS[3]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "State Population" "Energy (a.u.)" "TDC (a.u.)" "State Population" "Energy (a.u.)" "TDC (a.u.)" "State Population" "Energy (a.u.)" "TDC (a.u.)" "State Population" --ylim -0.002 0.05 -0.002 0.02 nan nan -0.002 0.05 -0.002 0.02 nan nan -0.02 0.25 -0.002 0.02 nan nan -0.002 0.05 nan nan nan nan --output MODEL_TRIVIAL_HO_TS.png')
 
 # KTSH TESTING ON AKIMOV MODELS =======================================================================================================================================================================
 
@@ -316,9 +319,9 @@ if KTSH_AKIMOV:
                 "write" : {},
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
                 "potential" : potential,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
                 "trajectories" : TRAJS
             }
         }
@@ -403,9 +406,9 @@ if SH_COMPARE:
                 "write" : {},
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
+                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
                 "potential" : potential,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
+                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
                 "trajectories" : TRAJS
             }
         }

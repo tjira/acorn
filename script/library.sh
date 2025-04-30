@@ -6,11 +6,11 @@ export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$
 
 echo 'zig cc  "$@"' > zigcc  && chmod +x zigcc && echo 'zig c++ "$@"' > zigcpp && chmod +x zigcpp
 
-wget -q --show-progress -O    eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-wget -q --show-progress -O     fftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
-wget -q --show-progress -O      gsl.tar.gz https://sunsite.icm.edu.pl/pub/gnu/gsl/gsl-2.8.tar.gz
-wget -q --show-progress -O   libint.tar.gz https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
-wget -q --show-progress -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
+wget -q -O    eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+wget -q -O     fftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
+wget -q -O      gsl.tar.gz https://sunsite.icm.edu.pl/pub/gnu/gsl/gsl-2.8.tar.gz
+wget -q -O   libint.tar.gz https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
+wget -q -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
 
 tar -xzf eigen.tar.gz    && rm    eigen.tar.gz
 tar -xzf fftw.tar.gz     && rm     fftw.tar.gz

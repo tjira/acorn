@@ -31,7 +31,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     if (opt.initial_conditions.mass.len          != ndim  ) return error.InvalidMass        ;
     if (mth.sum(T, opt.initial_conditions.state) != 1     ) return error.InvalidStateSum    ;
 
-    var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator);
+    var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator); output.pop.fill(0);
 
     var prng_jump = std.Random.DefaultPrng.init(opt.seed); const rand_jump = prng_jump.random();
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
@@ -319,7 +319,7 @@ pub fn derivativeCouplingKappa(comptime T: type, TDC: *Matrix(T), U3: []const Ma
 
         const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
 
-        const sigma = if (ddZ0 > 1e-8) 0.5 * std.math.sqrt(ddZ0 / Z0) else 0;
+        const sigma = if (ddZ0 > 1e-12) 0.5 * std.math.sqrt(ddZ0 / Z0) else 0;
 
         TDC.ptr(i, j).* = sigma; TDC.ptr(j, i).* = -TDC.at(i, j);
     };
