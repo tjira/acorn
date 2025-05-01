@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Locate OpenMP
-        run: sudo apt install libomp-dev && find / -name libomp.so
+      - name: Install OpenMP
+        run: sudo apt install libomp-dev
 
       - name: Download Zig Compiler
         run: mkdir bin && wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz && tar -xvf zig.tar.xz && mv zig-linux*/lib zig-linux*/zig bin && rm -rf zig*
