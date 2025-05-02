@@ -418,7 +418,7 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), o
         }
 
         for (0..C.rows) |j| if (j != ns) {
-            if (C.at(ns).magnitude() > 1e-14) P.ptr(j).* = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / std.math.pow(T, C.at(ns).magnitude(), 2) * time_step / iters;
+            P.ptr(j).* = 2 * TDC.at(ns, j) * C.at(j).mul(C.at(ns).conjugate()).re / (std.math.pow(T, C.at(ns).magnitude(), 2) + 1e-14) * time_step / iters;
         };
 
         if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
