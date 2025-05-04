@@ -1,8 +1,8 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-const target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = builtin.target.cpu.arch, .abi = .gnu};
-
 pub fn build(builder: *std.Build) !void {
+    const triple: std.Target.Query = .{.os_tag = builder.host.result.os.tag, .cpu_arch = builder.host.result.cpu.arch, .abi = builder.host.result.abi};
+
     const debug  = builder.option(bool, "DEBUG",  "Build everything in the debug mode") orelse false;
     const shared = builder.option(bool, "SHARED", "Link the shared libraries"         ) orelse false;
 
@@ -13,7 +13,7 @@ pub fn build(builder: *std.Build) !void {
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("src/main.zig"),
         .strip = !debug,
-        .target = builder.resolveTargetQuery(target)
+        .target = builder.host
     });
 
     const test_executable = builder.addTest(.{
@@ -21,12 +21,10 @@ pub fn build(builder: *std.Build) !void {
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("test/main.zig"),
         .strip = !debug,
-        .target = builder.resolveTargetQuery(target)
+        .target = builder.host
     });
 
     main_executable.addIncludePath(.{.cwd_relative = "include"}); main_executable.addIncludePath(.{.cwd_relative = "external/include"}); main_executable.addLibraryPath(.{.cwd_relative = "external/lib"});
-
-    if (target.os_tag == .linux) main_executable.addLibraryPath(.{.cwd_relative = "/usr/lib"});
 
     main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
     main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
@@ -43,7 +41,7 @@ pub fn build(builder: *std.Build) !void {
     test_executable.root_module.addImport("acorn", &main_executable.root_module);
 
     const main_install = builder.addInstallArtifact(main_executable, .{
-        .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
+        .dest_dir = .{.override = .{.custom = try triple.zigTriple(builder.allocator)}}
     });
 
     builder.getInstallStep().dependOn(&main_install.step);
@@ -55,10 +53,12 @@ pub fn build(builder: *std.Build) !void {
 }
 
 pub fn script(self: *std.Build.Step, progress: std.Progress.Node) !void {
-    _ = self; _ = progress;
+    _ = progress;
 
-    if (target.os_tag == .linux) {
-        try linuxScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
+    const triple: std.Target.Query = .{.os_tag = self.owner.host.result.os.tag, .cpu_arch = self.owner.host.result.cpu.arch, .abi = self.owner.host.result.abi};
+
+    if (triple.os_tag == .linux) {
+        try linuxScripts(std.heap.page_allocator, try triple.zigTriple(std.heap.page_allocator));
     }
 }
 
