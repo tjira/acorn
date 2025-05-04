@@ -28,6 +28,7 @@ jobs:
         run: |
           ln -s /usr/lib/llvm-18/lib/clang/18/include/omp.h external/include
           ln -s /lib/gcc/x86_64-linux-gnu/14/libgfortran.so external/lib
+          ln -s /lib/gcc/x86_64-linux-gnu/14/libgfortran.a  external/lib
           ln -s /usr/lib/llvm-18/lib/libomp.so              external/lib
 
       - name: Run Tests
