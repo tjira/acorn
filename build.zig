@@ -13,7 +13,7 @@ pub fn build(builder: *std.Build) !void {
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("src/main.zig"),
         .strip = !debug,
-        .target = builder.host
+        .target = builder.resolveTargetQuery(target)
     });
 
     const test_executable = builder.addTest(.{
@@ -21,10 +21,12 @@ pub fn build(builder: *std.Build) !void {
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("test/main.zig"),
         .strip = !debug,
-        .target = builder.host
+        .target = builder.resolveTargetQuery(target)
     });
 
     main_executable.addIncludePath(.{.cwd_relative = "include"}); main_executable.addIncludePath(.{.cwd_relative = "external/include"}); main_executable.addLibraryPath(.{.cwd_relative = "external/lib"});
+
+    if (target.os_tag == .linux) main_executable.addLibraryPath(.{.cwd_relative = "/usr/lib"});
 
     main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
     main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
