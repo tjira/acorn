@@ -1,12 +1,13 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-const target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = builtin.target.cpu.arch, .abi = .musl};
+var target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = builtin.target.cpu.arch, .abi = .gnu};
 
 pub fn build(builder: *std.Build) !void {
     const debug  = builder.option(bool, "DEBUG",  "Build everything in the debug mode") orelse false;
+    const gnu    = builder.option(bool, "GNU",    "Prefer the GNU standard library"   ) orelse false;
     const shared = builder.option(bool, "SHARED", "Link the shared libraries"         ) orelse false;
 
-    const mode: std.builtin.LinkMode = if (shared) .dynamic else .static;
+    const mode: std.builtin.LinkMode = if (shared) .dynamic else .static; target.abi = if (gnu) .gnu else .musl;
 
     const main_executable = builder.addExecutable(.{
         .name = "acorn",
@@ -29,8 +30,8 @@ pub fn build(builder: *std.Build) !void {
     main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
     main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
 
-    main_executable.linkSystemLibrary2("c",        .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("c",        .{.preferred_link_mode = mode});
-    main_executable.linkSystemLibrary2("stdc++",   .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("stdc++",   .{.preferred_link_mode = mode});
+    main_executable.linkLibC(); main_executable.linkLibCpp();
+    test_executable.linkLibC(); test_executable.linkLibCpp();
 
     main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode});

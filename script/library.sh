@@ -4,7 +4,7 @@ CORES=$(nproc --all)
 
 export C_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:$PWD/llvm/install/include"; export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$PWD/bin:$PATH"
 
-echo 'zig cc --target=x86_64-linux-musl "$@"' > zigcc  && chmod +x zigcc && echo 'zig c++ --target=x86_64-linux-musl "$@"' > zigcpp && chmod +x zigcpp
+echo 'zig cc --target=x86_64-linux-gnu "$@"' > zigcc  && chmod +x zigcc && echo 'zig c++ --target=x86_64-linux-gnu "$@"' > zigcpp && chmod +x zigcpp
 
 wget -q -O    boost.tar.gz https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz
 wget -q -O    eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
