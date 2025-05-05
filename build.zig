@@ -29,13 +29,14 @@ pub fn build(builder: *std.Build) !void {
     main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
     main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
 
-    main_executable.linkLibC(); main_executable.linkLibCpp(); main_executable.linkSystemLibrary("omp");
-    test_executable.linkLibC(); test_executable.linkLibCpp(); test_executable.linkSystemLibrary("omp");
+    main_executable.linkLibC(); main_executable.linkLibCpp();
+    test_executable.linkLibC(); test_executable.linkLibCpp();
 
     main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("gfortran", .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("gfortran", .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = mode});
+    main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = mode});
 
     test_executable.root_module.addImport("acorn", &main_executable.root_module);
