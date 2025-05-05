@@ -2,9 +2,9 @@
 
 CORES=$(nproc --all)
 
-export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$PWD/bin:$PATH"
+export C_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:$PWD/llvm/install/include"; export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$PWD/bin:$PATH"
 
-echo 'zig cc  "$@"' > zigcc  && chmod +x zigcc && echo 'zig c++ "$@"' > zigcpp && chmod +x zigcpp
+echo 'zig cc --target=x86_64-linux-musl "$@"' > zigcc  && chmod +x zigcc && echo 'zig c++ --target=x86_64-linux-musl "$@"' > zigcpp && chmod +x zigcpp
 
 wget -q -O    boost.tar.gz https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz
 wget -q -O    eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
@@ -24,17 +24,17 @@ tar -xzf openblas.tar.gz && rm openblas.tar.gz
 
 rm -rf boost eigen fftw gsl libint llvm openblas && mv boost* boost ; mv eigen* eigen ; mv fftw* fftw ; mv gsl* gsl ; mv libint* libint ; mv llvm* llvm ; mv OpenBLAS* openblas
 
-cd llvm && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/../install" -DLIBOMP_ENABLE_SHARED=True  ../openmp && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
-cd llvm && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/../install" -DLIBOMP_ENABLE_SHARED=False ../openmp && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
+cd llvm && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="$PWD/../../zigcc" -DCMAKE_CXX_COMPILER="$PWD/../../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/../install" -DLIBOMP_ENABLE_SHARED=True  ../openmp && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
+cd llvm && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="$PWD/../../zigcc" -DCMAKE_CXX_COMPILER="$PWD/../../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/../install" -DLIBOMP_ENABLE_SHARED=False ../openmp && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
 
 cd boost    && ./bootstrap.sh --prefix="$PWD/install" --with-libraries="atomic" && ./b2 install && cd ..
 
-cd fftw     && ./configure --enable-openmp --enable-shared --prefix="$PWD/install" && cd ..
-cd gsl      && ./configure                                 --prefix="$PWD/install" && cd ..
+cd fftw     && ./configure CC="$PWD/../zigcc" --enable-shared --prefix="$PWD/install" && cd ..
+cd gsl      && ./configure CC="$PWD/../zigcc"                 --prefix="$PWD/install" && cd ..
 
-cd fftw     && make                              -j $CORES && make                       install && cd ..
-cd gsl      && make                              -j $CORES && make                       install && cd ..
-cd openblas && make NUM_THREADS=128 USE_OPENMP=1 -j $CORES && make PREFIX="$PWD/install" install && cd ..
+cd fftw     && make                                                                        -j $CORES             && make                       install && cd ..
+cd gsl      && make                                                                        -j $CORES             && make                       install && cd ..
+cd openblas && make CC="$PWD/../zigcc" HOSTCC=gcc NOFORTRAN=1 NUM_THREADS=128 USE_OPENMP=1 -j $CORES libs shared && make PREFIX="$PWD/install" install && cd ..
 
 cd eigen && mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX="$PWD/../install" .. && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
 

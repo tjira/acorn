@@ -1,8 +1,8 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-pub fn build(builder: *std.Build) !void {
-    const triple: std.Target.Query = .{.os_tag = builder.host.result.os.tag, .cpu_arch = builder.host.result.cpu.arch, .abi = builder.host.result.abi};
+const target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = builtin.target.cpu.arch, .abi = .musl};
 
+pub fn build(builder: *std.Build) !void {
     const debug  = builder.option(bool, "DEBUG",  "Build everything in the debug mode") orelse false;
     const shared = builder.option(bool, "SHARED", "Link the shared libraries"         ) orelse false;
 
@@ -13,7 +13,7 @@ pub fn build(builder: *std.Build) !void {
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("src/main.zig"),
         .strip = !debug,
-        .target = builder.host
+        .target = builder.resolveTargetQuery(target)
     });
 
     const test_executable = builder.addTest(.{
@@ -21,7 +21,7 @@ pub fn build(builder: *std.Build) !void {
         .optimize = if (debug) .Debug else .ReleaseFast,
         .root_source_file = builder.path("test/main.zig"),
         .strip = !debug,
-        .target = builder.host
+        .target = builder.resolveTargetQuery(target)
     });
 
     main_executable.addIncludePath(.{.cwd_relative = "include"}); main_executable.addIncludePath(.{.cwd_relative = "external/include"}); main_executable.addLibraryPath(.{.cwd_relative = "external/lib"});
@@ -29,11 +29,10 @@ pub fn build(builder: *std.Build) !void {
     main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
     main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp", "-Xclang", "-target-feature", "-Xclang", "+evex512"}});
 
-    main_executable.linkLibC(); main_executable.linkLibCpp();
-    test_executable.linkLibC(); test_executable.linkLibCpp();
+    main_executable.linkSystemLibrary2("c",        .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("c",        .{.preferred_link_mode = mode});
+    main_executable.linkSystemLibrary2("stdc++",   .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("stdc++",   .{.preferred_link_mode = mode});
 
     main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode});
-    main_executable.linkSystemLibrary2("gfortran", .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("gfortran", .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = mode});
     main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = mode});
@@ -42,7 +41,7 @@ pub fn build(builder: *std.Build) !void {
     test_executable.root_module.addImport("acorn", &main_executable.root_module);
 
     const main_install = builder.addInstallArtifact(main_executable, .{
-        .dest_dir = .{.override = .{.custom = try triple.zigTriple(builder.allocator)}}
+        .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
     });
 
     builder.getInstallStep().dependOn(&main_install.step);
@@ -54,12 +53,10 @@ pub fn build(builder: *std.Build) !void {
 }
 
 pub fn script(self: *std.Build.Step, progress: std.Progress.Node) !void {
-    _ = progress;
+    _ = self; _ = progress;
 
-    const triple: std.Target.Query = .{.os_tag = self.owner.host.result.os.tag, .cpu_arch = self.owner.host.result.cpu.arch, .abi = self.owner.host.result.abi};
-
-    if (triple.os_tag == .linux) {
-        try linuxScripts(std.heap.page_allocator, try triple.zigTriple(std.heap.page_allocator));
+    if (target.os_tag == .linux) {
+        try linuxScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
     }
 }
 

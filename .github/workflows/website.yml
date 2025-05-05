@@ -17,9 +17,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install OpenMP
-        run: sudo apt update && sudo apt install libomp-dev
-
       - name: Install Biber and LaTeX
         run: sudo apt update && sudo apt install -y biber texlive-latex-recommended texlive-latex-extra
 
@@ -31,13 +28,6 @@ jobs:
 
       - name: Download and Compile Dependencies
         run: ./script/library.sh
-
-      - name: Make Symlinks
-        run: |
-          ln -s /usr/lib/llvm-18/lib/clang/18/include/omp.h external/include
-          ln -s /lib/gcc/x86_64-linux-gnu/14/libgfortran.so external/lib
-          ln -s /lib/gcc/x86_64-linux-gnu/14/libgfortran.a  external/lib
-          ln -s /usr/lib/llvm-18/lib/libomp.so              external/lib
 
       - name: Compile Document
         run: ./script/docstopdf.sh
