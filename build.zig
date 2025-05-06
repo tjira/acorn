@@ -1,6 +1,6 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-var target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = builtin.target.cpu.arch, .abi = .gnu};
+var target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = builtin.target.cpu.arch};
 
 pub fn build(builder: *std.Build) !void {
     const debug  = builder.option(bool, "DEBUG",  "Build everything in the debug mode") orelse false;
