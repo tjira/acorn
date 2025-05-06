@@ -36,7 +36,7 @@
 </p>
 
 <p align="center">
-Quantum Acorn, a collection of electronic structure methods compiled into a small binary. If you are here for the educational scripts, you can find them in the education folder.
+Quantum Acorn, a collection of electronic structure methods compiled into a small dependency-free binary. If you are here for the educational scripts, you can find them in the education folder.
 </p>
 
 ## Features
@@ -56,15 +56,21 @@ Below are all the important features of Acorn divided into categories.
 * Landau–Zener Surface Hopping Dynamics
 * Mapping Approach to Surface Hopping Dynamics
 
-## Compilation
+## Acquiring the Software
 
-Before the compilation, you need to have `fftw`, `gsl` and `openblas` libraries installed on your system. You can download and compile them in the project root using the practical `./script/library.sh` script. After the necessary dependencies you need to have the zig compiler installed on your system. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download) or install it from your favourite package manager. After you have installed the zig compiler, navigate to the project root and run the following command to compile the project.
+### Downloading Release
+
+You can download the latest release [here](https://github.com/tjira/acorn/releases/latest). The release is a dependency free binary compiled against the musl C library, so it sould run on any relatively modern linux system without any additional libraries. If you are encountering `illegal instruction` errors using the binary, it is likely that your CPU does not support the optimizations used in the binary. In that case, you have to compile the project from source.
+
+### Compilation
+
+First you need to have the zig compiler available. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download) or install it from your favourite package manager. After you have acquired the compiler, you need to have a few libraries installed on your system. You can download and compile them in the project root using the practical `./script/library.sh` script. After the libraries have compiled, navigate to the project root and run the following command to compile the project.
 
 ```bash
 zig build && zig build script
 ```
 
-This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os` folder, where `arch` is the architecture of your system and `os` is the operating system you are using. It will also generate some usefull wrappers around the binary in the same folder. You can also perform tests on the project by running the following command.
+This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os-abi` folder, where `arch` is the architecture of your system, `os` is the operating system you are using and the default ABI is musl. It will also generate some usefull wrappers around the binary in the same folder. You can also perform tests on the project by running the following command.
 
 ```bash
 zig build test
@@ -73,7 +79,7 @@ zig build test
 If some tests fail, let me know by creating an issue. If all the tests pass, you can run the binary file using the following command.
 
 ```bash
-./zig-out/arch-os/acorn
+./zig-out/arch-os-abi/acorn
 ```
 
 You should see the version of the compiler and execution time of the program. If you see this, the program is working correctly.

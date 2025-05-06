@@ -29,8 +29,8 @@ cd llvm && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAK
 
 cd boost    && ./bootstrap.sh --prefix="$PWD/install" --with-libraries="atomic" && ./b2 install && cd ..
 
-cd fftw     && ./configure CC="$PWD/../zigcc" --enable-shared --prefix="$PWD/install" && cd ..
-cd gsl      && ./configure CC="$PWD/../zigcc"                 --prefix="$PWD/install" && cd ..
+cd fftw     && ./configure CC="$PWD/../zigcc" --disable-fortran --enable-shared --prefix="$PWD/install" && cd ..
+cd gsl      && ./configure CC="$PWD/../zigcc"                                   --prefix="$PWD/install" && cd ..
 
 cd fftw     && make                                                                                       -j $CORES             && make                       install && cd ..
 cd gsl      && make                                                                                       -j $CORES             && make                       install && cd ..
