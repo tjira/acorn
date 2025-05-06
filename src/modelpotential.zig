@@ -39,6 +39,7 @@ pub fn getMap(comptime T: type, allocator: std.mem.Allocator) !std.StringHashMap
     try map.put("tripleState1D_5",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_5(T, U, r);}}.get});
     try map.put("tripleState1D_6",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_6(T, U, r);}}.get});
     try map.put("tripleState1D_7",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_7(T, U, r);}}.get});
+    try map.put("tripleState1D_8",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_8(T, U, r);}}.get});
     try map.put("akimov1D_1",              Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {             akimov1D_1(T, U, r);}}.get});
     try map.put("akimov1D_2",              Potential(T){.dims = 1,  .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {             akimov1D_2(T, U, r);}}.get});
     try map.put("tully1D_1",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {              tully1D_1(T, U, r);}}.get});
@@ -322,6 +323,21 @@ pub fn tripleState1D_7(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(2, 0).* = U.at(0, 2);
     U.ptr(2, 1).* = U.at(1, 2);
     U.ptr(2, 2).* = 0.02 + 0.0025 * r.at(0) * r.at(0);
+}
+
+/// The fourth triple-state model potential energy surface.
+pub fn tripleState1D_8(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
+    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
+    U.ptr(0, 1).* = 0;
+    U.ptr(0, 2).* = 0.004 * std.math.exp(-r.at(0) * r.at(0));
+
+    U.ptr(1, 0).* = U.at(0, 1);
+    U.ptr(1, 1).* = 0;
+    U.ptr(1, 2).* = 0;
+
+    U.ptr(2, 0).* = U.at(0, 2);
+    U.ptr(2, 1).* = U.at(1, 2);
+    U.ptr(2, 2).* = -U.at(0, 0);
 }
 
 /// The first Akimov potential.

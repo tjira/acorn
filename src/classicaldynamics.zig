@@ -524,7 +524,7 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matri
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.
 pub fn landauZener(comptime T: type, P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) !u32 {
-    var ns = s; var rn: T = 0; P.fill(0); _ = opt;
+    var ns = s; var rn: T = 0; var maxddZ0: T = 0; P.fill(0);
 
     if (!adiabatic) for (0..U3[0].rows) |i| if (i != s) {
 
@@ -547,9 +547,26 @@ pub fn landauZener(comptime T: type, P: *Vector(T), opt: inp.ClassicalDynamicsOp
 
         if (dZ0 * dZ1 > 0 or (dZ0 * dZ1 < 0 and ddZ0 < 0) or @abs(ddZ0) < 1e-14) continue;
 
-        P.ptr(i).* = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, Z0, 3) / ddZ0));
+        const p = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, Z0, 3) / ddZ0));
 
-        if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
+        if (opt.mode != null) {
+
+            if (std.mem.eql(u8, opt.mode.?, "nearest")) {
+                if (@abs(@as(i32, @intCast(i)) - @as(i32, @intCast(s))) == 1) {P.ptr(i).* = p;}
+            }
+
+            else if (std.mem.eql(u8, opt.mode.?, "maxprob")) {
+                if (mth.sum(T, P.data) < p) {P.fill(0); P.ptr(i).* = p;}
+            }
+
+            else if (std.mem.eql(u8, opt.mode.?, "maxdiff")) {
+                if (@abs(ddZ0) > maxddZ0) {maxddZ0 = @abs(ddZ0); P.fill(0); P.ptr(i).* = p;}
+            }
+
+            else return error.UnknownLandauZenerMode;
+        }
+
+        else P.ptr(i).* = p; if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
     };
 
     if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
