@@ -333,14 +333,46 @@ if LZ_COMPARE:
     IS = {
         "tripleState1D_4" : [2, 2],
         "tripleState1D_8" : [2, 2],
+        "tripleState1D_5" : [1, 2],
     }
 
     NS = {
         "tripleState1D_4" : 3,
         "tripleState1D_8" : 3,
+        "tripleState1D_5" : 3,
     }
 
-    MODELS = ["tripleState1D_4", "tripleState1D_8"]
+    X = {
+        "tripleState1D_4" : -5,
+        "tripleState1D_8" : -5,
+        "tripleState1D_5" : -2,
+    }
+
+    P = {
+        "tripleState1D_4" : 15,
+        "tripleState1D_8" : 15,
+        "tripleState1D_5" :  0,
+    }
+
+    POTXLIM = {
+        "tripleState1D_4" : [-10, 10],
+        "tripleState1D_8" : [-10, 10],
+        "tripleState1D_5" : [-3,  3 ],
+    }
+
+    POTYLIM = {
+        "tripleState1D_4" : [-0.012, 0.012],
+        "tripleState1D_8" : [-0.012, 0.012],
+        "tripleState1D_5" : [-0.002, 0.050],
+    }
+
+    ITERS = {
+        "tripleState1D_4" : 150,
+        "tripleState1D_8" : 150,
+        "tripleState1D_5" : 400,
+    }
+
+    MODELS = ["tripleState1D_4", "tripleState1D_8", "tripleState1D_5"]
 
     for potential in MODELS:
 
@@ -358,7 +390,7 @@ if LZ_COMPARE:
                 },
 
                 "initial_conditions" : {
-                    "position" : [-10], "momentum" : [15], "gamma" : 2, "state" : IS[potential][0], "mass" : 2000
+                    "position" : [X[potential]], "momentum" : [P[potential]], "gamma" : 2, "state" : IS[potential][0], "mass" : 2000
                 },
 
                 "write" : {
@@ -366,7 +398,7 @@ if LZ_COMPARE:
                 },
 
                 "adiabatic" : True,
-                "iterations" : 300,
+                "iterations" : ITERS[potential],
                 "mode" : [0, 1],
                 "potential" : potential,
                 "time_step" : 10
@@ -415,7 +447,7 @@ if LZ_COMPARE:
         open(f"input_LZ_COMPARE_lz-maxprob_{potential}.json", "w").write(js.dumps(lz_maxprob_input, indent=4)); os.system(f"acorn input_LZ_COMPARE_lz-maxprob_{potential}.json")
         open(f"input_LZ_COMPARE_lz-maxdiff_{potential}.json", "w").write(js.dumps(lz_maxdiff_input, indent=4)); os.system(f"acorn input_LZ_COMPARE_lz-maxdiff_{potential}.json")
 
-    os.system(f'lines.py LZ_COMPARE_POTENTIAL_ADIABATIC_{MODELS[0]}.mat:0,4,8 LZ_COMPARE_POPULATION_{MODELS[0]}_EXACT.mat LZ_COMPARE_POPULATION_{MODELS[0]}_LZSH-PROB.mat LZ_COMPARE_POPULATION_{MODELS[0]}_LZSH-NEAREST.mat LZ_COMPARE_POPULATION_{MODELS[0]}_LZSH-MAXPROB.mat LZ_COMPARE_POPULATION_{MODELS[0]}_LZSH-MAXDIFF.mat LZ_COMPARE_POTENTIAL_ADIABATIC_{MODELS[1]}.mat:0,4,8 LZ_COMPARE_POPULATION_{MODELS[1]}_EXACT.mat LZ_COMPARE_POPULATION_{MODELS[1]}_LZSH-PROB.mat LZ_COMPARE_POPULATION_{MODELS[1]}_LZSH-NEAREST.mat LZ_COMPARE_POPULATION_{MODELS[1]}_LZSH-MAXPROB.mat LZ_COMPARE_POPULATION_{MODELS[1]}_LZSH-MAXDIFF.mat --figsize 6 24 --subplots 261 261 261 262 262 262 263 263 263 264 264 264 265 265 265 266 266 266 267 267 267 268 268 268 269 269 269 2-6-10 2-6-10 2-6-10 2-6-11 2-6-11 2-6-11 2-6-12 2-6-12 2-6-12 --title "Potential" "Exact" "Normalized Probability" "Nearest State" "Maximum Probability" "Maximum 2. Derivative" --output LZ_COMPARE.png')
+    os.system(f'lines.py LZ_COMPARE_POTENTIAL_ADIABATIC_{MODELS[0]}.mat:0,4,8 LZ_COMPARE_POPULATION_{MODELS[0]}_EXACT.mat LZ_COMPARE_POPULATION_{MODELS[0]}_LZSH-PROB.mat LZ_COMPARE_POPULATION_{MODELS[0]}_LZSH-NEAREST.mat LZ_COMPARE_POPULATION_{MODELS[0]}_LZSH-MAXPROB.mat LZ_COMPARE_POPULATION_{MODELS[0]}_LZSH-MAXDIFF.mat LZ_COMPARE_POTENTIAL_ADIABATIC_{MODELS[1]}.mat:0,4,8 LZ_COMPARE_POPULATION_{MODELS[1]}_EXACT.mat LZ_COMPARE_POPULATION_{MODELS[1]}_LZSH-PROB.mat LZ_COMPARE_POPULATION_{MODELS[1]}_LZSH-NEAREST.mat LZ_COMPARE_POPULATION_{MODELS[1]}_LZSH-MAXPROB.mat LZ_COMPARE_POPULATION_{MODELS[1]}_LZSH-MAXDIFF.mat LZ_COMPARE_POTENTIAL_ADIABATIC_{MODELS[2]}.mat:0,4,8 LZ_COMPARE_POPULATION_{MODELS[2]}_EXACT.mat LZ_COMPARE_POPULATION_{MODELS[2]}_LZSH-PROB.mat LZ_COMPARE_POPULATION_{MODELS[2]}_LZSH-NEAREST.mat LZ_COMPARE_POPULATION_{MODELS[2]}_LZSH-MAXPROB.mat LZ_COMPARE_POPULATION_{MODELS[2]}_LZSH-MAXDIFF.mat --figsize 9 24 --subplots 361 361 361 362 362 362 363 363 363 364 364 364 365 365 365 366 366 366 367 367 367 368 368 368 369 369 369 3-6-10 3-6-10 3-6-10 3-6-11 3-6-11 3-6-11 3-6-12 3-6-12 3-6-12 3-6-13 3-6-13 3-6-13 3-6-14 3-6-14 3-6-14 3-6-15 3-6-15 3-6-15 3-6-16 3-6-16 3-6-16 3-6-17 3-6-17 3-6-17 3-6-18 3-6-18 3-6-18 --title "Potential" "Exact" "Normalized Probability" "Nearest State" "Maximum Probability" "Maximum 2. Derivative" --xlim {POTXLIM[MODELS[0]][0]} {POTXLIM[MODELS[0]][1]} nan nan nan nan nan nan nan nan nan nan {POTXLIM[MODELS[1]][0]} {POTXLIM[MODELS[1]][1]} nan nan nan nan nan nan nan nan nan nan {POTXLIM[MODELS[2]][0]} {POTXLIM[MODELS[2]][1]} nan nan nan nan nan nan nan nan nan nan --ylim {POTYLIM[MODELS[0]][0]} {POTYLIM[MODELS[0]][1]} nan nan nan nan nan nan nan nan nan nan {POTYLIM[MODELS[1]][0]} {POTYLIM[MODELS[1]][1]} nan nan nan nan nan nan nan nan nan nan {POTYLIM[MODELS[2]][0]} {POTYLIM[MODELS[2]][1]} nan nan nan nan nan nan nan nan nan nan --output LZ_COMPARE.png')
 
 # DYNAMICS ON URACIL VC MODEL ================================================================================================================================================================
 

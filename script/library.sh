@@ -32,9 +32,9 @@ cd boost    && ./bootstrap.sh --prefix="$PWD/install" --with-libraries="atomic" 
 cd fftw     && ./configure CC="$PWD/../zigcc" --enable-shared --prefix="$PWD/install" && cd ..
 cd gsl      && ./configure CC="$PWD/../zigcc"                 --prefix="$PWD/install" && cd ..
 
-cd fftw     && make                                                                        -j $CORES             && make                       install && cd ..
-cd gsl      && make                                                                        -j $CORES             && make                       install && cd ..
-cd openblas && make CC="$PWD/../zigcc" HOSTCC=gcc NOFORTRAN=1 NUM_THREADS=128 USE_OPENMP=1 -j $CORES libs shared && make PREFIX="$PWD/install" install && cd ..
+cd fftw     && make                                                                                       -j $CORES             && make                       install && cd ..
+cd gsl      && make                                                                                       -j $CORES             && make                       install && cd ..
+cd openblas && make CC="$PWD/../zigcc" DYNAMIC_ARCH=1 HOSTCC=gcc NOFORTRAN=1 NUM_THREADS=128 USE_OPENMP=1 -j $CORES libs shared && make PREFIX="$PWD/install" install && cd ..
 
 cd eigen && mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX="$PWD/../install" .. && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
 

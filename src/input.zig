@@ -21,7 +21,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             decoherence_alpha: ?T = null
         };
         pub const LandauZener = struct {
-            mode: ?[]const u8 = null
+            mode: ?[]const u8 = "maxdiff"
         };
         pub const SpinMapping = struct {
             pub const Resample = struct {
