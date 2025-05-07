@@ -6,20 +6,20 @@ export C_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:$PWD/llvm/install/include"; export CM
 
 echo 'zig cc --target=x86_64-linux-gnu "$@"' > zigcc  && chmod +x zigcc && echo 'zig c++ --target=x86_64-linux-gnu "$@"' > zigcpp && chmod +x zigcpp
 
-wget -q -O    boost.tar.gz https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz
-wget -q -O    eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-wget -q -O     fftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
-wget -q -O      gsl.tar.gz https://sunsite.icm.edu.pl/pub/gnu/gsl/gsl-2.8.tar.gz
-wget -q -O   libint.tar.gz https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
+wget -q -O boost.tar.gz    https://github.com/boostorg/boost/releases/download/boost-1.81.0/boost-1.81.0.tar.gz
+wget -q -O eigen.tar.gz    https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+wget -q -O fftw.tar.gz     https://www.fftw.org/fftw-3.3.10.tar.gz
+wget -q -O gsl.tar.gz      https://sunsite.icm.edu.pl/pub/gnu/gsl/gsl-2.8.tar.gz
+wget -q -O libint.tar.gz   https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
+wget -q -O llvm.tar.gz     https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-16.0.6.tar.gz
 wget -q -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
-wget -q -O     llvm.tar.gz https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-16.0.6.tar.gz
 
-tar -xzf llvm.tar.gz     && rm     llvm.tar.gz
 tar -xzf boost.tar.gz    && rm    boost.tar.gz
 tar -xzf eigen.tar.gz    && rm    eigen.tar.gz
 tar -xzf fftw.tar.gz     && rm     fftw.tar.gz
 tar -xzf gsl.tar.gz      && rm      gsl.tar.gz
 tar -xzf libint.tar.gz   && rm   libint.tar.gz
+tar -xzf llvm.tar.gz     && rm     llvm.tar.gz
 tar -xzf openblas.tar.gz && rm openblas.tar.gz
 
 rm -rf boost eigen fftw gsl libint llvm openblas && mv boost* boost ; mv eigen* eigen ; mv fftw* fftw ; mv gsl* gsl ; mv libint* libint ; mv llvm* llvm ; mv OpenBLAS* openblas
