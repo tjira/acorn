@@ -60,7 +60,7 @@ Below are all the important features of Acorn divided into categories.
 
 ### Downloading Release
 
-You can download the latest release [here](https://github.com/tjira/acorn/releases/latest). The release is a dependency-free binary compiled against the musl C library, so it should run on any relatively modern linux system without any additional libraries. If you are encountering `illegal instruction` errors using the binary, it is likely that your CPU does not support the optimizations used in the binary. In that case, you have to compile the project from source.
+You can download the latest release [here](https://github.com/tjira/acorn/releases/latest). The provided artifact is a statically linked ELF executable built with musl libc, so it embeds its own C standard library and has no external runtime dependencies, letting it run on any reasonably recent Linux kernel regardless of the user space environment. If the program exits with an `Illegal Instruction` fault, the host processor is missing one or more instruction set extensions such as SSE4.2 or AVX2 that were enabled during compilation. In that case clone the repository and build it on the target machine.
 
 ### Compilation
 

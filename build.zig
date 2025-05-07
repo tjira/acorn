@@ -9,6 +9,8 @@ pub fn build(builder: *std.Build) !void {
 
     const mode: std.builtin.LinkMode = if (shared) .dynamic else .static; target.abi = if (gnu) .gnu else .musl;
 
+    if (mode == .dynamic and target.abi == .musl) return error.SharedMuslNotSupported;
+
     const main_executable = builder.addExecutable(.{
         .name = "acorn",
         .optimize = if (debug) .Debug else .ReleaseFast,

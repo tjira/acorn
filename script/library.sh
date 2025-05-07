@@ -12,7 +12,7 @@ wget -q -O     fftw.tar.gz https://www.fftw.org/fftw-3.3.10.tar.gz
 wget -q -O      gsl.tar.gz https://sunsite.icm.edu.pl/pub/gnu/gsl/gsl-2.8.tar.gz
 wget -q -O   libint.tar.gz https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
 wget -q -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
-wget -q -O     llvm.tar.gz https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-20.1.4.tar.gz
+wget -q -O     llvm.tar.gz https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-16.0.6.tar.gz
 
 tar -xzf llvm.tar.gz     && rm     llvm.tar.gz
 tar -xzf boost.tar.gz    && rm    boost.tar.gz
