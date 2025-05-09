@@ -26,7 +26,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
     var pot: ?mpt.Potential(T) = undefined;    if (opt.hamiltonian.name != null) pot = (try mpt.getPotentialMap(T, allocator)).get(opt.hamiltonian.name.?);
     if (opt.hamiltonian.name == null) pot = try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.states.?, opt.hamiltonian.matrix.?, allocator);
 
-    const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim);
+    const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim); defer pot.?.deinit();
 
     if (pot == null                                ) return error.UnknownPotential      ;
     if (opt.initial_conditions.state > nstate - 1  ) return error.InvalidInitialState   ;

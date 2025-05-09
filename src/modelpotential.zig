@@ -21,8 +21,22 @@ pub fn Potential(comptime T: type) type {
             expr: []*txp.Expression, vars: []txp.Variable, r: Vector(T),
         };
 
-        dims: u32, states: u32, eval_fn: *const fn(U: *Matrix(T), r: Vector(T)) void, expr: ?Expression = null,
+        dims: u32, states: u32, eval_fn: *const fn(U: *Matrix(T), r: Vector(T)) void, expr: ?Expression = null, allocator: ?std.mem.Allocator = null,
 
+        /// Frees the memory allocated by the struct.
+        pub fn deinit(self: Potential(T)) void {
+            if (self.expr != null) {
+
+                for (self.expr.?.expr) |e| txp.free(e);
+
+                self.allocator.?.free(self.expr.?.vars);
+                self.allocator.?.free(self.expr.?.expr);
+
+                self.expr.?.r.deinit();
+            }
+        }
+
+        /// Potential evaluator.
         pub fn evaluate(self: Potential(T), U: *Matrix(T), r: Vector(T)) void {
             if (self.expr != null) {
 
@@ -44,13 +58,21 @@ pub fn getPotential(comptime T: type, dims: u32, states: u32, hamiltonian: []con
         .expr = try allocator.alloc(*txp.Expression, states * states),
     };
 
-    expr.vars = try txp.makevars(expr.r, &[_][]const u8{"r1"}, allocator);
+    var labels = std.ArrayList([]const u8).init(allocator); defer labels.deinit();
 
-    for (expr.expr, 0..states * states) |*e, i| {
-        const buffer = try allocator.dupeZ(u8, hamiltonian[i / states * states][i % states]); defer allocator.free(buffer); e.* = try txp.compile(buffer, expr.vars);
+    for (0..dims) |i| {
+        try labels.append(try std.fmt.allocPrint(allocator, "r{}", .{i + 1}));
     }
 
-    return .{.dims = dims, .states = states, .eval_fn = struct {
+    expr.vars = try txp.makevars(expr.r, labels.items, allocator);
+
+    for (expr.expr, 0..states * states) |*e, i| {
+        const buffer = try allocator.dupeZ(u8, hamiltonian[i / states][i % states]); defer allocator.free(buffer); e.* = try txp.compile(buffer, expr.vars);
+    }
+
+    for (0..dims) |i| allocator.free(labels.items[i]);
+
+    return .{.allocator = allocator, .dims = dims, .states = states, .eval_fn = struct {
         fn get (U: *Matrix(T), r: Vector(T)) void {_ = U; _ = r;}}.get, .expr = expr
     };
 }
@@ -59,33 +81,17 @@ pub fn getPotential(comptime T: type, dims: u32, states: u32, hamiltonian: []con
 pub fn getPotentialMap(comptime T: type, allocator: std.mem.Allocator) !std.StringHashMap(Potential(T)) {
     var map = std.StringHashMap(Potential(T)).init(allocator);
 
-    try map.put("doubleHarmonic1D_1",      Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {     doubleHarmonic1D_1(T, U, r);}}.get});
-    try map.put("doubleState1D_1",         Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        doubleState1D_1(T, U, r);}}.get});
-    try map.put("doubleState1D_2",         Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        doubleState1D_2(T, U, r);}}.get});
-    try map.put("doubleWell1D_1",          Potential(T){.dims = 1,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {         doubleWell1D_1(T, U, r);}}.get});
-    try map.put("harmonic1D_1",            Potential(T){.dims = 1,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {           harmonic1D_1(T, U, r);}}.get});
-    try map.put("harmonic2D_1",            Potential(T){.dims = 2,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {           harmonic2D_1(T, U, r);}}.get});
-    try map.put("harmonic3D_1",            Potential(T){.dims = 3,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {           harmonic3D_1(T, U, r);}}.get});
-    try map.put("harmonic4D_1",            Potential(T){.dims = 4,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {           harmonic4D_1(T, U, r);}}.get});
-    try map.put("tripleState1D_1",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_1(T, U, r);}}.get});
-    try map.put("tripleState1D_2",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_2(T, U, r);}}.get});
-    try map.put("tripleState1D_3",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_3(T, U, r);}}.get});
-    try map.put("tripleState1D_4",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_4(T, U, r);}}.get});
-    try map.put("tripleState1D_5",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_5(T, U, r);}}.get});
-    try map.put("tripleState1D_6",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_6(T, U, r);}}.get});
-    try map.put("tripleState1D_7",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_7(T, U, r);}}.get});
-    try map.put("tripleState1D_8",         Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        tripleState1D_8(T, U, r);}}.get});
-    try map.put("akimov1D_1",              Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {             akimov1D_1(T, U, r);}}.get});
-    try map.put("akimov1D_2",              Potential(T){.dims = 1,  .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {             akimov1D_2(T, U, r);}}.get});
-    try map.put("tully1D_1",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {              tully1D_1(T, U, r);}}.get});
-    try map.put("tully1D_2",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {              tully1D_2(T, U, r);}}.get});
-    try map.put("tully1D_3",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {              tully1D_3(T, U, r);}}.get});
-    try map.put("tripleState1D_4_lorentz", Potential(T){.dims = 1,  .states = 3, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {tripleState1D_4_lorentz(T, U, r);}}.get});
-    try map.put("tully1D_1_lorentz",       Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {      tully1D_1_lorentz(T, U, r);}}.get});
-    try map.put("uracil8D_1",              Potential(T){.dims = 8,  .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {             uracil8D_1(T, U, r);}}.get});
-    try map.put("uracil12D_1",             Potential(T){.dims = 12, .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {            uracil12D_1(T, U, r);}}.get});
-    try map.put("uracilDimless8D_1",       Potential(T){.dims = 8,  .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {      uracilDimless8D_1(T, U, r);}}.get});
-    try map.put("uracilDimless12D_1",      Potential(T){.dims = 12, .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {     uracilDimless12D_1(T, U, r);}}.get});
+    try map.put("harmonic1D_1",            Potential(T){.dims = 1,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {      harmonic1D_1(T, U, r);}}.get});
+    try map.put("harmonic2D_1",            Potential(T){.dims = 2,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {      harmonic2D_1(T, U, r);}}.get});
+    try map.put("harmonic3D_1",            Potential(T){.dims = 3,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {      harmonic3D_1(T, U, r);}}.get});
+    try map.put("harmonic4D_1",            Potential(T){.dims = 4,  .states = 1, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {      harmonic4D_1(T, U, r);}}.get});
+    try map.put("tully1D_1",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {         tully1D_1(T, U, r);}}.get});
+    try map.put("tully1D_2",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {         tully1D_2(T, U, r);}}.get});
+    try map.put("tully1D_3",               Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {         tully1D_3(T, U, r);}}.get});
+    try map.put("uracil8D_1",              Potential(T){.dims = 8,  .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {        uracil8D_1(T, U, r);}}.get});
+    try map.put("uracil12D_1",             Potential(T){.dims = 12, .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {       uracil12D_1(T, U, r);}}.get});
+    try map.put("uracilDimless8D_1",       Potential(T){.dims = 8,  .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void { uracilDimless8D_1(T, U, r);}}.get});
+    try map.put("uracilDimless12D_1",      Potential(T){.dims = 12, .states = 4, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {uracilDimless12D_1(T, U, r);}}.get});
 
     return map;
 }
@@ -186,38 +192,6 @@ pub fn UracilLinearVibronicCoupling(comptime T: type) type {
     };
 }
 
-/// The double harmonic oscillator potential energy surface.
-pub fn doubleHarmonic1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.005 * (r.at(0) + 10) * (r.at(0) + 10);
-    U.ptr(0, 1).* = 0.01 * std.math.exp(-0.05 * r.at(0) * r.at(0));
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0.005 * (r.at(0) - 10) * (r.at(0) - 10);
-}
-
-/// The first double-state model potential energy surface.
-pub fn doubleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.001 * r.at(0);
-    U.ptr(0, 1).* = 0.001 * std.math.exp(-0.05 * r.at(0) * r.at(0));
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = -0.001 * r.at(0);
-}
-
-/// The second double-state model potential energy surface.
-pub fn doubleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.01 * std.math.tanh(0.6 * r.at(0));
-    U.ptr(0, 1).* = 0.001 * std.math.exp(-r.at(0) * r.at(0));
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = -0.01 * std.math.tanh(0.6 * r.at(0));
-}
-
-/// One dimensional double well potential.
-pub fn doubleWell1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.05 * std.math.pow(T, 0.6 * r.at(0) * r.at(0) - 16, 2);
-}
-
 /// One-dimensional harmonic oscillator potential energy surface.
 pub fn harmonic1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(0, 0).* = 0.5 * r.at(0) * r.at(0);
@@ -238,188 +212,10 @@ pub fn harmonic4D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(0, 0).* = 0.5 * (r.at(0) * r.at(0) + r.at(1) * r.at(1) + r.at(2) * r.at(2) + r.at(3) * r.at(3));
 }
 
-/// The first triple-state model potential energy surface.
-pub fn tripleState1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.001 * r.at(0);
-    U.ptr(0, 1).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
-    U.ptr(0, 2).* = 0;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0;
-    U.ptr(1, 2).* = 0.001 * std.math.exp(-0.01 * r.at(0) * r.at(0));
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -0.001 * r.at(0);
-}
-
-/// The second triple-state model potential energy surface.
-pub fn tripleState1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.01 * std.math.tanh(0.6 * r.at(0));
-    U.ptr(0, 1).* = 0.001 * std.math.exp(-r.at(0) * r.at(0));
-    U.ptr(0, 2).* = 0;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0;
-    U.ptr(1, 2).* = 0.001 * std.math.exp(-r.at(0) * r.at(0));
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -0.01 * std.math.tanh(0.6 * r.at(0));
-}
-
-/// The third triple-state model potential energy surface.
-pub fn tripleState1D_3(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.03 * (std.math.tanh(1.6 * r.at(0)) + std.math.tanh(1.6 * (r.at(0) + 7)));
-    U.ptr(0, 1).* = 0.005 * std.math.exp(-r.at(0) * r.at(0));
-    U.ptr(0, 2).* = 0.005 * std.math.exp(-(r.at(0) + 7) * (r.at(0) + 7));
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = -0.03 * (std.math.tanh(1.6 * r.at(0)) + std.math.tanh(1.6 * (r.at(0) - 7)));
-    U.ptr(1, 2).* = 0.005 * std.math.exp(-(r.at(0) - 7) * (r.at(0) - 7));
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -0.03 * (std.math.tanh(1.6 * (r.at(0) + 7)) - std.math.tanh(1.6 * (r.at(0) - 7)));
-}
-
-/// The fourth triple-state model potential energy surface.
-pub fn tripleState1D_4(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
-    U.ptr(0, 1).* = 0.003 * std.math.exp(-r.at(0) * r.at(0));
-    U.ptr(0, 2).* = 0;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0;
-    U.ptr(1, 2).* = U.at(0, 1);
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -U.at(0, 0);
-}
-
-/// The tripleState1D_1 potential with a Lorentzian coupling.
-pub fn tripleState1D_4_lorentz(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
-    U.ptr(0, 1).* = 0.0005 / (100 * r.at(0) * r.at(0) + 1);
-    U.ptr(0, 2).* = 0;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0;
-    U.ptr(1, 2).* = U.at(0, 1);
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -U.at(0, 0);
-}
-
-/// The fifth triple-state model potential energy surface.
-pub fn tripleState1D_5(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.0025 * r.at(0) * r.at(0);
-    U.ptr(0, 1).* = 0;
-    U.ptr(0, 2).* = 0;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0.01 + 0.0025 * (r.at(0) - 2) * (r.at(0) - 2);
-    U.ptr(1, 2).* = 0;
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = 0.02 + 0.0025 * r.at(0) * r.at(0);
-}
-
-/// The sixth triple-state model potential energy surface.
-pub fn tripleState1D_6(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.0025 * r.at(0) * r.at(0);
-    U.ptr(0, 1).* = 0;
-    U.ptr(0, 2).* = 0;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0.05 + 0.0025 * (r.at(0) - 2) * (r.at(0) - 2);
-    U.ptr(1, 2).* = 0;
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = 0.1 + 0.0025 * r.at(0) * r.at(0);
-}
-
-/// The seventh triple-state model potential energy surface.
-pub fn tripleState1D_7(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    const k: T = 2e-4;
-
-    U.ptr(0, 0).* = 0.0025 * r.at(0) * r.at(0);
-    U.ptr(0, 1).* = k * std.math.exp(-(r.at(0) - 2) * (r.at(0) - 2));
-    U.ptr(0, 2).* = 0;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0.01 + 0.0025 * (r.at(0) - 2) * (r.at(0) - 2);
-    U.ptr(1, 2).* = k * std.math.exp(-r.at(0) * r.at(0));
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = 0.02 + 0.0025 * r.at(0) * r.at(0);
-}
-
-/// The fourth triple-state model potential energy surface.
-pub fn tripleState1D_8(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
-    U.ptr(0, 1).* = 0;
-    U.ptr(0, 2).* = 0.004 * std.math.exp(-r.at(0) * r.at(0));
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0;
-    U.ptr(1, 2).* = 0;
-
-    U.ptr(2, 0).* = U.at(0, 2);
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -U.at(0, 0);
-}
-
-/// The first Akimov potential.
-pub fn akimov1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.0025 * (r.at(0) + 1) * (r.at(0) + 1);
-    U.ptr(0, 1).* = 0;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0.0025 * (r.at(0) - 1) * (r.at(0) - 1);
-}
-
-/// The second Akimov potential.
-pub fn akimov1D_2(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = 0.00025 * (r.at(0) + 2) * (r.at(0) + 2);
-    U.ptr(0, 1).* = 0.002;
-    U.ptr(0, 2).* = 0.002;
-    U.ptr(0, 3).* = 0.002;
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = 0.00025 * (r.at(0) + 2) * (r.at(0) + 2);
-    U.ptr(1, 2).* = 0.002;
-    U.ptr(1, 3).* = 0.002;
-
-    U.ptr(2, 0).* = U.at(0, 2); 
-    U.ptr(2, 1).* = U.at(1, 2);
-    U.ptr(2, 2).* = -0.005 + 0.001 * (r.at(0) - 2) * (r.at(0) - 2);
-    U.ptr(2, 3).* = 0.002;
-
-    U.ptr(3, 0).* = U.at(0, 3);
-    U.ptr(3, 1).* = U.at(1, 3);
-    U.ptr(3, 2).* = U.at(2, 3);
-    U.ptr(3, 3).* = -0.016 + 0.0015 * (r.at(0) - 3) * (r.at(0) - 3);
-}
-
 /// The first Tully model potential energy surface.
 pub fn tully1D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
     U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
     U.ptr(0, 1).* = 0.005 * std.math.exp(-r.at(0) * r.at(0));
-
-    U.ptr(1, 0).* = U.at(0, 1);
-    U.ptr(1, 1).* = -U.at(0, 0);
-}
-
-/// The tully1D_1 potential with a Lorentzian coupling.
-pub fn tully1D_1_lorentz(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
-    U.ptr(0, 0).* = mth.sgn(r.at(0)) * 0.01 * (1 - std.math.exp(-1.6 * mth.sgn(r.at(0)) * r.at(0)));
-    U.ptr(0, 1).* = 0.0005 / (200 * r.at(0) * r.at(0) + 1);
 
     U.ptr(1, 0).* = U.at(0, 1);
     U.ptr(1, 1).* = -U.at(0, 0);
@@ -503,7 +299,7 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
     var pot: ?Potential(T) = undefined;        if (opt.hamiltonian.name != null) pot = (try getPotentialMap(T, allocator)).get(opt.hamiltonian.name.?);
     if (opt.hamiltonian.name == null) pot = try getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.states.?, opt.hamiltonian.matrix.?, allocator);
 
-    const ndim = pot.?.dims; const nstate = pot.?.states;
+    const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 
     var U  = try Matrix(T).init(nstate, nstate, allocator); defer  U.deinit();
     var UA = try Matrix(T).init(nstate, nstate, allocator); defer UA.deinit();
@@ -531,7 +327,7 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
             }
         }
 
-        pot.?.eval_fn(&U, r);
+        pot.?.evaluate(&U, r);
 
         if (opt.adiabatic) {
             lpk.dsyevd(&UA, &UC, U); @memcpy(U.data, UA.data);

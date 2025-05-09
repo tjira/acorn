@@ -26,7 +26,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     var pot: ?mpt.Potential(T) = undefined;    if (opt.hamiltonian.name != null) pot = (try mpt.getPotentialMap(T, allocator)).get(opt.hamiltonian.name.?);
     if (opt.hamiltonian.name == null) pot = try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.states.?, opt.hamiltonian.matrix.?, allocator);
 
-    const ndim = pot.?.dims; const nstate = pot.?.states;
+    const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 
     if (pot == null                                       ) return error.UnknownPotential   ;
     if (opt.initial_conditions.state.len         != nstate) return error.InvalidInitialState;
@@ -162,7 +162,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 if (j > 0) try propagate(T, opt, pot.?, &r, &v, &a, &U, &UA, &UC, s);
 
-                pot.?.eval_fn(&U, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
+                pot.?.evaluate(&U, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
 
                 @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
@@ -291,11 +291,11 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
 pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
-    r.ptr(c).* += 1 * opt.derivative_step; pot.eval_fn(U, r.*);
+    r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*);
 
     if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
 
-    r.ptr(c).* -= 2 * opt.derivative_step; pot.eval_fn(U, r.*);
+    r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*);
 
     if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
 
@@ -357,7 +357,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 
     for (0..UCS.rows) |l| if (UCS.at(l, l) == 0) {
 
-        pot.eval_fn(U, r); for (U.data) |*e| e.* += 1e-14; adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
+        pot.evaluate(U, r); for (U.data) |*e| e.* += 1e-14; adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
 
         UCS.fill(0);
 

@@ -13,33 +13,66 @@ TRAJS, NGRID = 10000, 8192
 
 if KTSH_COUPLING:
 
+    HAMILTONIAN = {
+        "P1" : {
+            "dims" : 1, "states" : 2,
+            "matrix" : [
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.005 * exp(-(r1^2))"                              ],
+                ["0.005 * exp(-(r1^2))",                              "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+            ]
+        },
+        "P2" : {
+            "dims" : 1, "states" : 2,
+            "matrix" : [
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.0005 / (200 * r1^2 + 1)"                         ],
+                ["0.0005 / (200 * r1^2 + 1)",                         "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+            ]
+        },
+        "P3" : {
+            "dims" : 1, "states" : 3,
+            "matrix" : [
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.003 * exp(-(r1^2))", "0"                                                 ],
+                ["0.003 * exp(-(r1^2))",                              "0",                    "0.003 * exp(-(r1^2))"                              ],
+                ["0",                                                 "0.003 * exp(-(r1^2))", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+            ]
+        },
+        "P4" : {
+            "dims" : 1, "states" : 3,
+            "matrix" : [
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.0005 / (100 * r1^2 + 1)", "0"                                                 ],
+                ["0.0005 / (100 * r1^2 + 1)",                         "0",                         "0.0005 / (100 * r1^2 + 1)"                         ],
+                ["0",                                                 "0.0005 / (100 * r1^2 + 1)", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+            ]
+        }
+    }
+
     IS = {
-        "tully1D_1"               : [1, 1],
-        "tully1D_1_lorentz"       : [1, 1],
-        "tripleState1D_4"         : [2, 2],
-        "tripleState1D_4_lorentz" : [2, 2],
+        "P1" : [1, 1],
+        "P2" : [1, 1],
+        "P3" : [2, 2],
+        "P4" : [2, 2],
     }
 
     NS = {
-        "tully1D_1"               : 2,
-        "tully1D_1_lorentz"       : 2,
-        "tripleState1D_4"         : 3,
-        "tripleState1D_4_lorentz" : 3,
+        "P1" : 2,
+        "P2" : 2,
+        "P3" : 3,
+        "P4" : 3,
     }
 
     TDCLIM = {
-        "tully1D_1"               : [1020, 1620],
-        "tully1D_1_lorentz"       : [1020, 1620],
-        "tripleState1D_4"         : [1020, 1620],
-        "tripleState1D_4_lorentz" : [1020, 1620],
+        "P1" : [1020, 1620],
+        "P2" : [1020, 1620],
+        "P3" : [1020, 1620],
+        "P4" : [1020, 1620],
     }
 
-    DS, TS = ["tully1D_1", "tully1D_1_lorentz"], ["tripleState1D_4", "tripleState1D_4_lorentz"]
+    DS, TS = ["P1", "P2"], ["P3", "P4"]
 
     for potential in DS + TS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"KTSH_COUPLING_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : {"name" : potential}}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"KTSH_COUPLING_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : {"name" : potential}}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"KTSH_COUPLING_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"KTSH_COUPLING_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -51,9 +84,7 @@ if KTSH_COUPLING:
                     "limits" : [-24, 48], "points" : NGRID
                 },
 
-                "hamiltonian" : {
-                    "name" : potential
-                },
+                "hamiltonian" : HAMILTONIAN[potential],
 
                 "initial_conditions" : {
                     "position" : [-10], "momentum" : [15], "gamma" : 2, "state" : IS[potential][0], "mass" : 2000
@@ -76,9 +107,7 @@ if KTSH_COUPLING:
                     "iteration" : 1000, "trajectory" : 1000
                 },
 
-                "hamiltonian" : {
-                    "name" : potential
-                },
+                "hamiltonian" : HAMILTONIAN[potential],
 
                 "initial_conditions" : {
                     "position_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["position"], "position_std"  : [0.5],
@@ -130,33 +159,67 @@ if KTSH_COUPLING:
 
 if KTSH_HO:
 
+    HAMILTONIAN = {
+        "P1" : {
+            "dims" : 1, "states" : 2,
+            "matrix" : [
+                ["0.0025 * (r1 + 1)^2", "0"                  ],
+                ["0",                   "0.0025 * (r1 - 1)^2"],
+            ]
+        },
+        "P2" : {
+            "dims" : 1, "states" : 3,
+            "matrix" : [
+                ["0.0025 * r1^2", "0",                          "0"                   ],
+                ["0",             "0.01 + 0.0025 * (r1 - 2)^2", "0"                   ],
+                ["0",             "0",                          "0.02 + 0.0025 * r1^2"],
+            ]
+        },
+        "P3" : {
+            "dims" : 1, "states" : 3,
+            "matrix" : [
+                ["0.0025 * r1^2", "0",                          "0"                  ],
+                ["0",             "0.05 + 0.0025 * (r1 - 2)^2", "0"                  ],
+                ["0",             "0",                          "0.1 + 0.0025 * r1^2"],
+            ]
+        },
+        "P4" : {
+            "dims" : 1, "states" : 3,
+            "matrix" : [
+                ["0.0025 * r1^2",             "0.0002 * exp(-((r1-2)^2))",  "0"                    ],
+                ["0.0002 * exp(-((r1-2)^2))", "0.01 + 0.0025 * (r1 - 2)^2", "0.0002 * exp(-(r1^2))"],
+                ["0",                         "0.0002 * exp(-(r1^2))",      "0.02 + 0.0025 * r1^2" ],
+            ]
+        }
+    }
+
     IS = {
-        "akimov1D_1"      : [1, 1],
-        "tripleState1D_5" : [1, 2],
-        "tripleState1D_6" : [1, 2],
-        "tripleState1D_7" : [1, 2],
+        "P1" : [1, 1],
+        "P2" : [1, 2],
+        "P3" : [1, 2],
+        "P4" : [1, 2],
     }
 
     NS = {
-        "akimov1D_1"      : 2,
-        "tripleState1D_5" : 3,
-        "tripleState1D_6" : 3,
-        "tripleState1D_7" : 3,
+        "P1" : 2,
+        "P2" : 3,
+        "P3" : 3,
+        "P4" : 3,
     }
 
     TDCLIM = {
-        "akimov1D_1"      : [775,  975],
-        "tripleState1D_5" : [750,  950],
-        "tripleState1D_6" : [400,  600],
-        "tripleState1D_7" : [750,  950],
+        "P1" : [775,  975],
+        "P2" : [750,  950],
+        "P3" : [400,  600],
+        "P4" : [750,  950],
     }
 
-    MODELS = ["akimov1D_1", "tripleState1D_5", "tripleState1D_6", "tripleState1D_7"]
+    MODELS = ["P1", "P2", "P3", "P4"]
 
     for potential in MODELS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-10, 10], "output" : f"KTSH_HO_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : {"name" : potential}}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-10, 10], "output" : f"KTSH_HO_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : {"name" : potential}}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-10, 10], "output" : f"KTSH_HO_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-10, 10], "output" : f"KTSH_HO_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -168,9 +231,7 @@ if KTSH_HO:
                     "limits" : [-24, 24], "points" : NGRID
                 },
 
-                "hamiltonian" : {
-                    "name" : potential
-                },
+                "hamiltonian" : HAMILTONIAN[potential],
 
                 "initial_conditions" : {
                     "position" : [-7], "momentum" : [0], "gamma" : 2, "state" : IS[potential][0], "mass" : 2000
@@ -193,9 +254,7 @@ if KTSH_HO:
                     "iteration" : 20000, "trajectory" : 1000
                 },
 
-                "hamiltonian" : {
-                    "name" : potential
-                },
+                "hamiltonian" : HAMILTONIAN[potential],
 
                 "initial_conditions" : {
                     "position_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["position"], "position_std"  : [0.5],
@@ -257,20 +316,30 @@ if KTSH_HO:
 
 if SH_COMPARE:
 
+    HAMILTONIAN = {
+        "P1" : {
+            "dims" : 1, "states" : 2,
+            "matrix" : [
+                ["0.01 * tanh(0.6 * r1)", "0.001 * exp(-(r1^2))"  ],
+                ["0.001 * exp(-(r1^2))",  "-0.01 * tanh(0.6 * r1)"],
+            ]
+        }
+    }
+
     IS = {
-        "doubleState1D_2" : [1, 1]
+        "P1" : [1, 1]
     }
 
     NS = {
-        "doubleState1D_2" : 2
+        "P1" : 2
     }
 
-    POTENTIALS = ["doubleState1D_2"]
+    POTENTIALS = ["P1"]
 
     for potential in POTENTIALS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : {"name" : potential}}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : {"name" : potential}}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -282,9 +351,7 @@ if SH_COMPARE:
                     "limits" : [-24, 48], "points" : NGRID
                 },
 
-                "hamiltonian" : {
-                    "name" : potential
-                },
+                "hamiltonian" : HAMILTONIAN[potential],
 
                 "initial_conditions" : {
                     "position" : [-10], "momentum" : [15], "gamma" : 2, "state" : IS[potential][0], "mass" : 2000
@@ -307,9 +374,7 @@ if SH_COMPARE:
                     "iteration" : 1000, "trajectory" : 1000
                 },
 
-                "hamiltonian" : {
-                    "name" : potential
-                },
+                "hamiltonian" : HAMILTONIAN[potential],
 
                 "initial_conditions" : {
                     "position_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["position"], "position_std"  : [0.5],
@@ -348,54 +413,81 @@ if SH_COMPARE:
 
 if LZ_COMPARE:
 
+    HAMILTONIAN = {
+        "P1" : {
+            "dims" : 1, "states" : 3,
+            "matrix" : [
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.003 * exp(-(r1^2))", "0"                                                 ],
+                ["0.003 * exp(-(r1^2))",                              "0",                    "0.003 * exp(-(r1^2))"                              ],
+                ["0",                                                 "0.003 * exp(-(r1^2))", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+            ]
+        },
+        "P2" : {
+            "dims" : 1, "states" : 3,
+            "matrix" : [
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0", "0.004 * exp(-(r1^2))"                              ],
+                ["0",                                                 "0", "0"                                                 ],
+                ["0.004 * exp(-(r1^2))",                              "0", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+            ]
+        },
+        "P3" : {
+            "dims" : 1, "states" : 3,
+            "matrix" : [
+                ["0.0025 * r1^2", "0",                          "0"                   ],
+                ["0",             "0.01 + 0.0025 * (r1 - 2)^2", "0"                   ],
+                ["0",             "0",                          "0.02 + 0.0025 * r1^2"],
+            ]
+        }
+    }
+
     IS = {
-        "tripleState1D_4" : [2, 2],
-        "tripleState1D_8" : [2, 2],
-        "tripleState1D_5" : [1, 2],
+        "P1" : [2, 2],
+        "P2" : [2, 2],
+        "P3" : [1, 2],
     }
 
     NS = {
-        "tripleState1D_4" : 3,
-        "tripleState1D_8" : 3,
-        "tripleState1D_5" : 3,
+        "P1" : 3,
+        "P2" : 3,
+        "P3" : 3,
     }
 
     X = {
-        "tripleState1D_4" : -5,
-        "tripleState1D_8" : -5,
-        "tripleState1D_5" : -2,
+        "P1" : -5,
+        "P2" : -5,
+        "P3" : -2,
     }
 
     P = {
-        "tripleState1D_4" : 15,
-        "tripleState1D_8" : 15,
-        "tripleState1D_5" :  0,
+        "P1" : 15,
+        "P2" : 15,
+        "P3" :  0,
     }
 
     POTXLIM = {
-        "tripleState1D_4" : [-10, 10],
-        "tripleState1D_8" : [-10, 10],
-        "tripleState1D_5" : [-3,  3 ],
+        "P1" : [-10, 10],
+        "P2" : [-10, 10],
+        "P3" : [-3,  3 ],
     }
 
     POTYLIM = {
-        "tripleState1D_4" : [-0.012, 0.012],
-        "tripleState1D_8" : [-0.012, 0.012],
-        "tripleState1D_5" : [-0.002, 0.050],
+        "P1" : [-0.012, 0.012],
+        "P2" : [-0.012, 0.012],
+        "P3" : [-0.002, 0.050],
     }
 
     ITERS = {
-        "tripleState1D_4" : 150,
-        "tripleState1D_8" : 150,
-        "tripleState1D_5" : 400,
+        "P1" : 150,
+        "P2" : 150,
+        "P3" : 400,
     }
 
-    MODELS = ["tripleState1D_4", "tripleState1D_8", "tripleState1D_5"]
+    MODELS = ["P1", "P2", "P3"]
 
     for potential in MODELS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"LZ_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : {"name" : potential}}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"LZ_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : {"name" : potential}}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"LZ_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"LZ_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -407,9 +499,7 @@ if LZ_COMPARE:
                     "limits" : [-24, 48], "points" : NGRID
                 },
 
-                "hamiltonian" : {
-                    "name" : potential
-                },
+                "hamiltonian" : HAMILTONIAN[potential],
 
                 "initial_conditions" : {
                     "position" : [X[potential]], "momentum" : [P[potential]], "gamma" : 2, "state" : IS[potential][0], "mass" : 2000
@@ -432,9 +522,7 @@ if LZ_COMPARE:
                     "iteration" : 1000, "trajectory" : 1000
                 },
 
-                "hamiltonian" : {
-                    "name" : potential
-                },
+                "hamiltonian" : HAMILTONIAN[potential],
 
                 "initial_conditions" : {
                     "position_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["position"], "position_std"  : [0.5],
