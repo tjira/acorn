@@ -156,6 +156,9 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
             "limits" : [-8, 8],
             "points" : 512
         },
+        "hamiltonian" : {
+            "name" : "harmonic1D_1"
+        },
         "initial_conditions" : {
             "mass" : 1,
             "momentum" : [0],
@@ -167,8 +170,7 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
             "wavefunction" : "WAVEFUNCTION.mat",
             "autocorrelation_function" : "ACF.mat",
             "spectrum" : "SPECTRUM.mat"
-        },
-        "potential" : "harmonic1D_1"
+        }
     }
 }
 ```
@@ -196,6 +198,9 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
             "limits" : [-8, 8],
             "points" : 256
         },
+        "hamiltonian" : {
+            "name" : "harmonic2D_1"
+        },
         "initial_conditions" : {
             "mass" : 1,
             "momentum" : [0, 0],
@@ -207,8 +212,7 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
             "wavefunction" : "WAVEFUNCTION.mat",
             "autocorrelation_function" : "ACF.mat",
             "spectrum" : "SPECTRUM.mat"
-        },
-        "potential" : "harmonic2D_1"
+        }
     }
 }
 ```
@@ -238,6 +242,9 @@ This example demonstrates the real-time quantum dynamics of a first Tully potent
             "limits" : [-16, 32],
             "points" : 2048
         },
+        "hamiltonian" : {
+            "name" : "tully1D_1"
+        },
         "initial_conditions" : {
             "mass" : 2000,
             "momentum" : [10],
@@ -248,8 +255,7 @@ This example demonstrates the real-time quantum dynamics of a first Tully potent
         "write" : {
             "wavefunction" : "WAVEFUNCTION.mat",
             "population" : "POPULATION.mat"
-        },
-        "potential" : "tully1D_1"
+        }
     }
 }
 ```
@@ -275,6 +281,9 @@ This example demonstrates how to run a surface hopping dynamics. The below examp
         "iterations" : 5000,
         "time_step" : 1,
         "trajectories" : 1000,
+        "hamiltonian" : {
+            "name" : "tully1D_1"
+        },
         "initial_conditions" : {
             "mass" : [2000],
             "momentum_mean" : [10],
@@ -289,8 +298,7 @@ This example demonstrates how to run a surface hopping dynamics. The below examp
         },
         "write" : {
             "population_mean" : "POPULATION_MEAN.mat"
-        },
-        "potential" : "tully1D_1",
+        }
         "fewest_switches" : {}
     }
 }

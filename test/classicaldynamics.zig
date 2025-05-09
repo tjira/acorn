@@ -10,6 +10,9 @@ const allocator = std.testing.allocator;
 
 test "classical_dynamics_adiabatic" {
     const opt_harmonic1D_1 = input.ClassicalDynamicsOptions(f64){
+        .hamiltonian = .{
+            .name = "harmonic1D_1"
+        },
         .initial_conditions = .{
             .position_mean = &[_]f64{1.0},
             .position_std  = &[_]f64{0.5},
@@ -20,7 +23,6 @@ test "classical_dynamics_adiabatic" {
 
         .adiabatic = true,
         .iterations = 1000,
-        .potential = "harmonic1D_1",
         .time_step = 0.01,
         .trajectories = 1000,
     };
@@ -34,6 +36,9 @@ test "classical_dynamics_adiabatic" {
 
 test "classical_dynamics_nonadiabatic_fssh" {
     const opt_tully1D_1 = input.ClassicalDynamicsOptions(f64){
+        .hamiltonian = .{
+            .name = "tully1D_1"
+        },
         .initial_conditions = .{
             .position_mean = &[_]f64{-15.0},
             .position_std  = &[_]f64{  0.5},
@@ -46,13 +51,12 @@ test "classical_dynamics_nonadiabatic_fssh" {
 
         .adiabatic = true,
         .iterations = 3500,
-        .potential = "tully1D_1",
         .time_step = 1,
         .trajectories = 100,
     };
 
-    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.potential = "tully1D_2";
-    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.potential = "tully1D_3";
+    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.hamiltonian.name = "tully1D_2";
+    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.hamiltonian.name = "tully1D_3";
 
     const output_tully1D_1 = try classical_dynamics.run(f64, opt_tully1D_1, false, allocator); defer output_tully1D_1.deinit();
     const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
@@ -77,6 +81,9 @@ test "classical_dynamics_nonadiabatic_fssh" {
 
 test "classical_dynamics_nonadiabatic_lzsh" {
     const opt_tully1D_1 = input.ClassicalDynamicsOptions(f64){
+        .hamiltonian = .{
+            .name = "tully1D_1"
+        },
         .initial_conditions = .{
             .position_mean = &[_]f64{-15.0},
             .position_std  = &[_]f64{  0.5},
@@ -89,13 +96,12 @@ test "classical_dynamics_nonadiabatic_lzsh" {
 
         .adiabatic = true,
         .iterations = 3500,
-        .potential = "tully1D_1",
         .time_step = 1,
         .trajectories = 100,
     };
 
-    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.potential = "tully1D_2";
-    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.potential = "tully1D_3";
+    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.hamiltonian.name = "tully1D_2";
+    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.hamiltonian.name = "tully1D_3";
 
     const output_tully1D_1 = try classical_dynamics.run(f64, opt_tully1D_1, false, allocator); defer output_tully1D_1.deinit();
     const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
@@ -122,6 +128,9 @@ test "classical_dynamics_nonadiabatic_lzsh" {
 
 test "classical_dynamics_nonadiabatic_mash" {
     const opt_tully1D_1 = input.ClassicalDynamicsOptions(f64){
+        .hamiltonian = .{
+            .name = "tully1D_1"
+        },
         .initial_conditions = .{
             .position_mean = &[_]f64{-15.0},
             .position_std  = &[_]f64{  0.5},
@@ -134,13 +143,12 @@ test "classical_dynamics_nonadiabatic_mash" {
 
         .adiabatic = true,
         .iterations = 3500,
-        .potential = "tully1D_1",
         .time_step = 1,
         .trajectories = 100,
     };
 
-    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.potential = "tully1D_2";
-    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.potential = "tully1D_3";
+    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.hamiltonian.name = "tully1D_2";
+    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.hamiltonian.name = "tully1D_3";
 
     const output_tully1D_1 = try classical_dynamics.run(f64, opt_tully1D_1, false, allocator); defer output_tully1D_1.deinit();
     const output_tully1D_2 = try classical_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();

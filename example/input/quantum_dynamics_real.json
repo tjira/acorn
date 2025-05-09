@@ -8,6 +8,9 @@
             "limits" : [-16, 32],
             "points" : 2048
         },
+        "hamiltonian" : {
+            "name" : "tully1D_1"
+        },
         "initial_conditions" : {
             "mass" : 2000,
             "momentum" : [15],
@@ -28,7 +31,6 @@
             "spectrum" : "SPECTRUM.mat",
             "total_energy" : "TOTAL_ENERGY_EXACT.mat",
             "wavefunction" : "WAVEFUNCTION.mat"
-        },
-        "potential" : "tully1D_1"
+        }
     }
 }

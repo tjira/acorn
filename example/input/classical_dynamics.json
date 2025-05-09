@@ -6,6 +6,9 @@
         "seed" : 1,
         "time_step" : 1,
         "trajectories" : 1000,
+        "hamiltonian" : {
+            "name" : "tully1D_1"
+        },
         "initial_conditions" : {
             "mass" : [2000],
             "momentum_mean" : [15],
@@ -36,7 +39,6 @@
             "total_energy" : "TOTAL_ENERGY.mat",
             "total_energy_mean" : "TOTAL_ENERGY_MEAN.mat"
         },
-        "potential" : "tully1D_1",
         "fewest_switches" : {
             "quantum_substep" : 10,
             "decoherence_alpha" : null

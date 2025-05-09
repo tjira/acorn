@@ -13,6 +13,9 @@ test "quantum_dynamics_imaginary_adiabatic-1d" {
         .grid = .{
             .limits = &[_]f64{-8, 8}, .points = 64
         },
+        .hamiltonian = .{
+            .name = "harmonic1D_1"
+        },
         .initial_conditions = .{
             .position = &[_]f64{1}, .momentum = &[_]f64{0}, .gamma = 2, .state = 0, .mass = 1
         },
@@ -20,7 +23,6 @@ test "quantum_dynamics_imaginary_adiabatic-1d" {
         .adiabatic = false,
         .iterations = 1000,
         .mode = &[_]u32{10, 0},
-        .potential = "harmonic1D_1",
         .time_step = 0.01,
     };
 
@@ -65,6 +67,9 @@ test "quantum_dynamics_real_adiabatic-1d" {
         .grid = .{
             .limits = &[_]f64{-8, 8}, .points = 64
         },
+        .hamiltonian = .{
+            .name = "harmonic1D_1"
+        },
         .initial_conditions = .{
             .position = &[_]f64{1}, .momentum = &[_]f64{0}, .gamma = 2, .state = 0, .mass = 1
         },
@@ -72,7 +77,6 @@ test "quantum_dynamics_real_adiabatic-1d" {
         .adiabatic = false,
         .iterations = 1000,
         .mode = &[_]u32{0, 1},
-        .potential = "harmonic1D_1",
         .time_step = 0.01,
     };
 
@@ -88,6 +92,9 @@ test "quantum_dynamics_real_nonadiabatic-1d/2s" {
         .grid = .{
             .limits = &[_]f64{-16, 32}, .points = 2048
         },
+        .hamiltonian = .{
+            .name = "tully1D_1"
+        },
         .initial_conditions = .{
             .position = &[_]f64{-15}, .momentum = &[_]f64{20}, .gamma = 2, .state = 1, .mass = 2000
         },
@@ -95,12 +102,11 @@ test "quantum_dynamics_real_nonadiabatic-1d/2s" {
         .adiabatic = true,
         .iterations = 350,
         .mode = &[_]u32{0, 1},
-        .potential = "tully1D_1",
         .time_step = 10,
     };
 
-    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.potential = "tully1D_2";
-    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.potential = "tully1D_3";
+    var opt_tully1D_2 = opt_tully1D_1; opt_tully1D_2.hamiltonian.name = "tully1D_2";
+    var opt_tully1D_3 = opt_tully1D_1; opt_tully1D_3.hamiltonian.name = "tully1D_3";
 
     const output_tully1D_1 = try quantum_dynamics.run(f64, opt_tully1D_1, false, allocator); defer output_tully1D_1.deinit();
     const output_tully1D_2 = try quantum_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();

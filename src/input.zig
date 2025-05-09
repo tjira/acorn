@@ -20,6 +20,9 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             quantum_substep: u32 = 10,
             decoherence_alpha: ?T = null
         };
+        pub const Hamiltonian = struct {
+            dims: ?u32 = null, states: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null
+        };
         pub const LandauZener = struct {
             mode: ?[]const u8 = "maxdiff"
         };
@@ -55,13 +58,12 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         adiabatic: bool,
         derivative_step: T = 0.001,
         iterations: u32,
-        potential: []const u8,
         seed: u32 = 1,
         time_derivative_coupling: ?[]const u8 = "npi",
         time_step: T,
         trajectories: u32,
 
-        fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
+        hamiltonian: Hamiltonian, fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
 
         initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, write: Write = .{},
     };
@@ -123,6 +125,9 @@ pub fn HartreeFockOptions(comptime T: type) type {
 /// Option struct for the model potential run target
 pub fn ModelPotentialOptions(comptime T: type) type {
     return struct {
+        pub const Hamiltonian = struct {
+            dims: ?u32 = null, states: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null
+        };
         pub const ValuePair = struct {
             index: u32 = 0, value: T = 0
         };
@@ -131,9 +136,8 @@ pub fn ModelPotentialOptions(comptime T: type) type {
         limits: []const T,
         output: []const u8 = "POTENTIAL.mat",
         points: u32,
-        potential: []const u8,
 
-        constant: []const ValuePair = &[_]ValuePair{}
+        constant: []const ValuePair = &[_]ValuePair{}, hamiltonian: Hamiltonian,
     };
 }
 
@@ -165,6 +169,9 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         pub const Grid = struct {
             limits: []const T, points: u32
         };
+        pub const Hamiltonian = struct {
+            dims: ?u32 = null, states: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null
+        };
         pub const InitialConditions = struct {
             position: []const T, momentum: []const T, gamma: T, state: u32, mass: T
         };
@@ -192,10 +199,9 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         adiabatic: bool,
         iterations: u32,
         mode: []const u32,
-        potential: []const u8,
         time_step: T,
 
-        grid: Grid, initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, spectrum: Spectrum = .{}, write: Write = .{}
+        grid: Grid, hamiltonian: Hamiltonian, initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, spectrum: Spectrum = .{}, write: Write = .{}
     };
 }
 

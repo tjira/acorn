@@ -28,6 +28,7 @@ pub const sort                      = @import("sort.zig"                    );
 pub const strided_array             = @import("stridedarray.zig"            );
 pub const system                    = @import("system.zig"                  );
 pub const tensor                    = @import("tensor.zig"                  );
+pub const tinyexpr                  = @import("tinyexpr.zig"                );
 pub const transform                 = @import("transform.zig"               );
 pub const vector                    = @import("vector.zig"                  );
 pub const wavefunction              = @import("wavefunction.zig"            );

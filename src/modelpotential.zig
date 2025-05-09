@@ -7,6 +7,7 @@ const inp = @import("input.zig"   );
 const lpk = @import("lapack.zig"  );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
+const txp = @import("tinyexpr.zig");
 
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
@@ -16,12 +17,46 @@ const asfloat = @import("helper.zig").asfloat;
 /// Potential struct.
 pub fn Potential(comptime T: type) type {
     return struct {
-        dims: u32, states: u32, eval_fn: *const fn(U: *Matrix(T), r: Vector(T)) void,
+        pub const Expression = struct {
+            expr: []*txp.Expression, vars: []txp.Variable, r: Vector(T),
+        };
+
+        dims: u32, states: u32, eval_fn: *const fn(U: *Matrix(T), r: Vector(T)) void, expr: ?Expression = null,
+
+        pub fn evaluate(self: Potential(T), U: *Matrix(T), r: Vector(T)) void {
+            if (self.expr != null) {
+
+                @memcpy(self.expr.?.r.data, r.data);
+
+                for (0..self.states) |i| for (0..self.states) |j| {
+                    U.ptr(i, j).* = txp.evaluate(self.expr.?.expr[i * self.states + j]);
+                };
+
+            } else return self.eval_fn(U, r);
+        }
+    };
+}
+
+/// Function to get the potential struct from the provided hamiltonian.
+pub fn getPotential(comptime T: type, dims: u32, states: u32, hamiltonian: []const []const []const u8, allocator: std.mem.Allocator) !?Potential(T) {
+    var expr: Potential(T).Expression = .{
+        .r = try Vector(f64).init(dims, allocator), .vars = undefined,
+        .expr = try allocator.alloc(*txp.Expression, states * states),
+    };
+
+    expr.vars = try txp.makevars(expr.r, &[_][]const u8{"r1"}, allocator);
+
+    for (expr.expr, 0..states * states) |*e, i| {
+        const buffer = try allocator.dupeZ(u8, hamiltonian[i / states * states][i % states]); defer allocator.free(buffer); e.* = try txp.compile(buffer, expr.vars);
+    }
+
+    return .{.dims = dims, .states = states, .eval_fn = struct {
+        fn get (U: *Matrix(T), r: Vector(T)) void {_ = U; _ = r;}}.get, .expr = expr
     };
 }
 
 /// Function to get the potential energy surface map.
-pub fn getMap(comptime T: type, allocator: std.mem.Allocator) !std.StringHashMap(Potential(T)) {
+pub fn getPotentialMap(comptime T: type, allocator: std.mem.Allocator) !std.StringHashMap(Potential(T)) {
     var map = std.StringHashMap(Potential(T)).init(allocator);
 
     try map.put("doubleHarmonic1D_1",      Potential(T){.dims = 1,  .states = 2, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T)) void {     doubleHarmonic1D_1(T, U, r);}}.get});
@@ -462,7 +497,13 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
 
 /// Write the potential energy surfaces to a file.
 pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
-    const pot = (try getMap(T, allocator)).get(opt.potential); const ndim = pot.?.dims; const nstate = pot.?.states;
+    if (opt.hamiltonian.name == null and opt.hamiltonian.dims == null and opt.hamiltonian.states == null and opt.hamiltonian.matrix == null) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or opt.hamiltonian.states != null or opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+
+    var pot: ?Potential(T) = undefined;        if (opt.hamiltonian.name != null) pot = (try getPotentialMap(T, allocator)).get(opt.hamiltonian.name.?);
+    if (opt.hamiltonian.name == null) pot = try getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.states.?, opt.hamiltonian.matrix.?, allocator);
+
+    const ndim = pot.?.dims; const nstate = pot.?.states;
 
     var U  = try Matrix(T).init(nstate, nstate, allocator); defer  U.deinit();
     var UA = try Matrix(T).init(nstate, nstate, allocator); defer UA.deinit();

@@ -7,7 +7,7 @@ esc    = "\\" if os.name == "nt" else "\\\\"
 
 KTSH_COUPLING = 1; KTSH_HO = 1; SH_COMPARE = 1; LZ_COMPARE = 1; URACIL_LVC = 1
 
-TRAJS, NGRID = 10000, 8192
+TRAJS, NGRID = 10, 2048
 
 # KTSH TDC TESTING ON MODEL POTENTIALS ======================================================================================================================================================
 
@@ -38,8 +38,8 @@ if KTSH_COUPLING:
 
     for potential in DS + TS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"KTSH_COUPLING_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"KTSH_COUPLING_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"KTSH_COUPLING_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : {"name" : potential}}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"KTSH_COUPLING_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : {"name" : potential}}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -49,6 +49,10 @@ if KTSH_COUPLING:
 
                 "grid" : {
                     "limits" : [-24, 48], "points" : NGRID
+                },
+
+                "hamiltonian" : {
+                    "name" : potential
                 },
 
                 "initial_conditions" : {
@@ -62,7 +66,6 @@ if KTSH_COUPLING:
                 "adiabatic" : True,
                 "iterations" : 300,
                 "mode" : [0, 1],
-                "potential" : potential,
                 "time_step" : 10
             }
         }
@@ -71,6 +74,10 @@ if KTSH_COUPLING:
             "classical_dynamics" : {
                 "log_intervals" : {
                     "iteration" : 1000, "trajectory" : 1000
+                },
+
+                "hamiltonian" : {
+                    "name" : potential
                 },
 
                 "initial_conditions" : {
@@ -84,7 +91,6 @@ if KTSH_COUPLING:
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
                 "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
-                "potential" : potential,
                 "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
                 "trajectories" : TRAJS,
                 "seed" : 37
@@ -149,8 +155,8 @@ if KTSH_HO:
 
     for potential in MODELS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-10, 10], "output" : f"KTSH_HO_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-10, 10], "output" : f"KTSH_HO_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-10, 10], "output" : f"KTSH_HO_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : {"name" : potential}}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-10, 10], "output" : f"KTSH_HO_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : {"name" : potential}}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -160,6 +166,10 @@ if KTSH_HO:
 
                 "grid" : {
                     "limits" : [-24, 24], "points" : NGRID
+                },
+
+                "hamiltonian" : {
+                    "name" : potential
                 },
 
                 "initial_conditions" : {
@@ -173,7 +183,6 @@ if KTSH_HO:
                 "adiabatic" : True,
                 "iterations" : 800,
                 "mode" : [0, 1],
-                "potential" : potential,
                 "time_step" : 10
             }
         }
@@ -182,6 +191,10 @@ if KTSH_HO:
             "classical_dynamics" : {
                 "log_intervals" : {
                     "iteration" : 20000, "trajectory" : 1000
+                },
+
+                "hamiltonian" : {
+                    "name" : potential
                 },
 
                 "initial_conditions" : {
@@ -195,7 +208,6 @@ if KTSH_HO:
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
                 "iterations" : qd_input["quantum_dynamics"]["iterations"] * 100,
-                "potential" : potential,
                 "time_step" : qd_input["quantum_dynamics"]["time_step"] / 100,
                 "trajectories" : TRAJS,
                 "seed" : 6
@@ -257,8 +269,8 @@ if SH_COMPARE:
 
     for potential in POTENTIALS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : {"name" : potential}}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : {"name" : potential}}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -268,6 +280,10 @@ if SH_COMPARE:
 
                 "grid" : {
                     "limits" : [-24, 48], "points" : NGRID
+                },
+
+                "hamiltonian" : {
+                    "name" : potential
                 },
 
                 "initial_conditions" : {
@@ -281,7 +297,6 @@ if SH_COMPARE:
                 "adiabatic" : True,
                 "iterations" : 300,
                 "mode" : [0, 1],
-                "potential" : potential,
                 "time_step" : 10
             }
         }
@@ -290,6 +305,10 @@ if SH_COMPARE:
             "classical_dynamics" : {
                 "log_intervals" : {
                     "iteration" : 1000, "trajectory" : 1000
+                },
+
+                "hamiltonian" : {
+                    "name" : potential
                 },
 
                 "initial_conditions" : {
@@ -303,7 +322,6 @@ if SH_COMPARE:
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
                 "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
-                "potential" : potential,
                 "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
                 "trajectories" : TRAJS
             }
@@ -376,8 +394,8 @@ if LZ_COMPARE:
 
     for potential in MODELS:
 
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"LZ_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "potential" : potential}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"LZ_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "potential" : potential}}
+        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"LZ_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : {"name" : potential}}}
+        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"LZ_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : {"name" : potential}}}
 
         qd_input = {
             "quantum_dynamics" : {
@@ -387,6 +405,10 @@ if LZ_COMPARE:
 
                 "grid" : {
                     "limits" : [-24, 48], "points" : NGRID
+                },
+
+                "hamiltonian" : {
+                    "name" : potential
                 },
 
                 "initial_conditions" : {
@@ -400,7 +422,6 @@ if LZ_COMPARE:
                 "adiabatic" : True,
                 "iterations" : ITERS[potential],
                 "mode" : [0, 1],
-                "potential" : potential,
                 "time_step" : 10
             }
         }
@@ -409,6 +430,10 @@ if LZ_COMPARE:
             "classical_dynamics" : {
                 "log_intervals" : {
                     "iteration" : 1000, "trajectory" : 1000
+                },
+
+                "hamiltonian" : {
+                    "name" : potential
                 },
 
                 "initial_conditions" : {
@@ -422,7 +447,6 @@ if LZ_COMPARE:
 
                 "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
                 "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
-                "potential" : potential,
                 "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
                 "trajectories" : TRAJS
             }
@@ -464,27 +488,27 @@ if URACIL_LVC:
         8  : np.array([734, 771, 1193, 1383, 1406, 1673, 1761, 1794]) / 8065.54429 / 27.211324570273
     }
 
-    ap_input_8_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 0]}}
-    ap_input_8_12 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 1]}}
-    ap_input_8_18 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 2]}}
-    ap_input_8_20 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 3]}}
-    ap_input_8_21 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 4]}}
-    ap_input_8_24 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 5]}}
-    ap_input_8_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 6]}}
-    ap_input_8_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat", "points" : 4096, "potential" : "uracilDimless8D_1", "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 7]}}
+    ap_input_8_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q10.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless8D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 0]}}
+    ap_input_8_12 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q12.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless8D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 1]}}
+    ap_input_8_18 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q18.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless8D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 2]}}
+    ap_input_8_20 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q20.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless8D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 3]}}
+    ap_input_8_21 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q21.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless8D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 4]}}
+    ap_input_8_24 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q24.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless8D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 5]}}
+    ap_input_8_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q25.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless8D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 6]}}
+    ap_input_8_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless8D_1_Q26.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless8D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(8) if i != 7]}}
 
-    ap_input_12_3  = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q3.mat",  "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  0]}}
-    ap_input_12_7  = {"model_potential" : {"adiabatic" : True, "limits" : [-3.0, 3.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q7.mat",  "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  1]}}
-    ap_input_12_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q10.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  2]}}
-    ap_input_12_11 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.0, 3.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q11.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  3]}}
-    ap_input_12_12 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q12.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  4]}}
-    ap_input_12_18 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q18.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  5]}}
-    ap_input_12_19 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q19.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  6]}}
-    ap_input_12_20 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q20.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  7]}}
-    ap_input_12_21 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q21.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  8]}}
-    ap_input_12_24 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q24.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  9]}}
-    ap_input_12_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 10]}}
-    ap_input_12_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat", "points" : 4096, "potential" : "uracilDimless12D_1", "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 11]}}
+    ap_input_12_3  = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q3.mat",  "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  0]}}
+    ap_input_12_7  = {"model_potential" : {"adiabatic" : True, "limits" : [-3.0, 3.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q7.mat",  "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  1]}}
+    ap_input_12_10 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q10.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  2]}}
+    ap_input_12_11 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.0, 3.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q11.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  3]}}
+    ap_input_12_12 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q12.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  4]}}
+    ap_input_12_18 = {"model_potential" : {"adiabatic" : True, "limits" : [-2.0, 2.0], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q18.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  5]}}
+    ap_input_12_19 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q19.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  6]}}
+    ap_input_12_20 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q20.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  7]}}
+    ap_input_12_21 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q21.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  8]}}
+    ap_input_12_24 = {"model_potential" : {"adiabatic" : True, "limits" : [-3.5, 3.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q24.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i !=  9]}}
+    ap_input_12_25 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q25.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 10]}}
+    ap_input_12_26 = {"model_potential" : {"adiabatic" : True, "limits" : [-4.5, 4.5], "output" : "URACIL_LVC_POTENTIAL_ADIABATIC_uracilDimless12D_1_Q26.mat", "points" : 4096, "hamiltonian" : {"name" : "uracilDimless12D_1"}, "constant" : [{"index" : i, "value" : 0} for i in range(12) if i != 11]}}
 
     ap_input_8_10 ["model_potential"]["constant"][3]["value"] = -4
     ap_input_8_12 ["model_potential"]["constant"][3]["value"] = -4
@@ -521,6 +545,10 @@ if URACIL_LVC:
                     "iteration" : 500, "trajectory" : 1000
                 },
 
+                "hamiltonian" : {
+                    "name" : f"uracil{i}D_1"
+                },
+
                 "initial_conditions" : {
                     "position_mean" : [0 for i in range(i)], "position_std" : list(np.sqrt(0.5 / omega[i])),
                     "momentum_mean" : [0 for i in range(i)], "momentum_std" : list(np.sqrt(omega[i] / 0.5)),
@@ -531,7 +559,6 @@ if URACIL_LVC:
 
                 "adiabatic" : True,
                 "iterations" : 2500,
-                "potential" : f"uracil{i}D_1",
                 "time_step" : 1,
                 "trajectories" : TRAJS
             }

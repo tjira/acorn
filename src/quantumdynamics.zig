@@ -20,7 +20,13 @@ const asfloat = @import("helper.zig").asfloat;
 
 /// The main function to run the quantum dynamics simulation.
 pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.QuantumDynamicsOutput(T) {
-    const pot = (try mpt.getMap(T, allocator)).get(opt.potential); const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim);
+    if (opt.hamiltonian.name == null and opt.hamiltonian.dims == null and opt.hamiltonian.states == null and opt.hamiltonian.matrix == null) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or opt.hamiltonian.states != null or opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+
+    var pot: ?mpt.Potential(T) = undefined;    if (opt.hamiltonian.name != null) pot = (try mpt.getPotentialMap(T, allocator)).get(opt.hamiltonian.name.?);
+    if (opt.hamiltonian.name == null) pot = try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.states.?, opt.hamiltonian.matrix.?, allocator);
+
+    const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim);
 
     if (pot == null                                ) return error.UnknownPotential      ;
     if (opt.initial_conditions.state > nstate - 1  ) return error.InvalidInitialState   ;
@@ -261,7 +267,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T),
 
         @memcpy(UCP.data, UC.data);
 
-        pot.eval_fn(&U, rvec.row(i).vector()); lpk.dsyevd(&UA, &UC, U);
+        pot.evaluate(&U, rvec.row(i).vector()); lpk.dsyevd(&UA, &UC, U);
 
         if (i > 0) for (0..UC.cols) |j| {
 

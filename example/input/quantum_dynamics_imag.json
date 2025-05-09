@@ -8,6 +8,9 @@
             "limits" : [-8, 8],
             "points" : 32
         },
+        "hamiltonian" : {
+            "name" : "harmonic1D_1"
+        },
         "initial_conditions" : {
             "mass" : 1,
             "momentum" : [0],
@@ -28,7 +31,6 @@
             "spectrum" : "SPECTRUM.mat",
             "total_energy" : "TOTAL_ENERGY_EXACT.mat",
             "wavefunction" : "WAVEFUNCTION.mat"
-        },
-        "potential" : "harmonic1D_1"
+        }
     }
 }
