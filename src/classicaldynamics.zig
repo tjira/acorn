@@ -309,11 +309,11 @@ pub fn derivativeCouplingHst(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
     UCS.fill(0); TDC.fill(0);
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
-        UCS.ptr(i, j).* += UC2[0].at(k, i) * UC2[1].at(k, j);
+        UCS.ptr(i, j).* += UC2[1].at(k, i) * UC2[0].at(k, j);
     };
 
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
-        TDC.ptr(i, j).* = @abs(UCS.at(j, i) - UCS.at(i, j)) / (2 * time_step); TDC.ptr(j, i).* = -TDC.at(i, j);
+        TDC.ptr(i, j).* = (UCS.at(i, j) - UCS.at(j, i)) / (2 * time_step); TDC.ptr(j, i).* = -TDC.at(i, j);
     };
 }
 
@@ -352,7 +352,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
     UCS.fill(0); const UC2 = &[_]Matrix(T){UC2O[iter % 2], UC2O[(iter - 1) % 2]};
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
-        UCS.ptr(i, j).* += UC2[0].at(k, i) * UC2[1].at(k, j);
+        UCS.ptr(i, j).* += UC2[1].at(k, i) * UC2[0].at(k, j);
     };
 
     for (0..UCS.rows) |l| if (UCS.at(l, l) == 0) {
@@ -362,17 +362,13 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
         UCS.fill(0);
 
         for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
-            UCS.ptr(i, j).* += UC2[0].at(k, i) * UC2[1].at(k, j);
+            UCS.ptr(i, j).* += UC2[1].at(k, i) * UC2[0].at(k, j);
         };
 
         break;
     };
 
     eig.logm(TDC, UCS.*); mat.divs(T, TDC, TDC.*, time_step);
-
-    for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
-        TDC.ptr(i, j).* = @abs(TDC.at(i, j)); TDC.ptr(j, i).* = -TDC.at(i, j);
-    };
 }
 
 /// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.
@@ -641,10 +637,11 @@ pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
 pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), s: u32) !void {
     for (0..r.rows) |i| {
 
-        const F = try calculateForce(T, opt, pot, U, UA, UC, r, i, s);
-
         r.ptr(i).* += (v.at(i) + 0.5 * a.at(i) * opt.time_step) * opt.time_step;
-        const ap = a.at(i); a.ptr(i).* = F / opt.initial_conditions.mass[i];
+
+        const F = try calculateForce(T, opt, pot, U, UA, UC, r, i, s); const ap = a.at(i);
+
+        a.ptr(i).* = F / opt.initial_conditions.mass[i];
         v.ptr(i).* += 0.5 * (a.at(i) + ap) * opt.time_step;
     }
 }

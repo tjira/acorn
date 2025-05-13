@@ -17,7 +17,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             mass:          []const T
         };
         pub const FewestSwitches = struct {
-            quantum_substep: u32 = 10,
+            quantum_substep: u32 = 100,
             decoherence_alpha: ?T = null
         };
         pub const Hamiltonian = struct {
