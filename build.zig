@@ -1,57 +1,65 @@
 const std = @import("std"); const builtin = @import("builtin");
 
-var target: std.Target.Query = .{.os_tag = builtin.target.os.tag, .cpu_arch = builtin.target.cpu.arch};
+const targets: []const std.Target.Query = &.{
+    .{.os_tag = .linux, .cpu_arch = .x86_64, .abi = .gnu },
+    .{.os_tag = .linux, .cpu_arch = .x86_64, .abi = .musl},
+};
 
 pub fn build(builder: *std.Build) !void {
-    const debug  = builder.option(bool, "DEBUG",  "Build everything in the debug mode") orelse false;
-    const gnu    = builder.option(bool, "GNU",    "Prefer the GNU standard library"   ) orelse false;
-    const shared = builder.option(bool, "SHARED", "Link the shared libraries"         ) orelse false;
+    const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode") orelse false;
 
-    const mode: std.builtin.LinkMode = if (shared) .dynamic else .static; target.abi = if (gnu) .gnu else .musl;
+    for (targets) |target| {
 
-    if (mode == .dynamic and target.abi == .musl) return error.SharedMuslNotSupported;
+        const os_name   = switch (target.os_tag.?  ) {.linux  => "linux",  .macos   => "macos",   .windows => "windows", else => unreachable};
+        const arch_name = switch (target.cpu_arch.?) {.x86_64 => "x86_64", .aarch64 => "aarch64", .riscv64 => "riscv64", else => unreachable};
 
-    const main_executable = builder.addExecutable(.{
-        .name = "acorn",
-        .optimize = if (debug) .Debug else .ReleaseFast,
-        .root_source_file = builder.path("src/main.zig"),
-        .strip = !debug,
-        .target = builder.resolveTargetQuery(target)
-    });
+        const main_executable = builder.addExecutable(.{
+            .name = "acorn",
+            .optimize = if (debug) .Debug else .ReleaseFast,
+            .root_source_file = builder.path("src/main.zig"),
+            .strip = !debug,
+            .target = builder.resolveTargetQuery(target)
+        });
 
-    const test_executable = builder.addTest(.{
-        .name = "test",
-        .optimize = if (debug) .Debug else .ReleaseFast,
-        .root_source_file = builder.path("test/main.zig"),
-        .strip = !debug,
-        .target = builder.resolveTargetQuery(target)
-    });
+        const test_executable = builder.addTest(.{
+            .name = "test",
+            .optimize = if (debug) .Debug else .ReleaseFast,
+            .root_source_file = builder.path("test/main.zig"),
+            .strip = !debug,
+            .target = builder.resolveTargetQuery(target)
+        });
 
-    main_executable.addIncludePath(.{.cwd_relative = "include"}); main_executable.addIncludePath(.{.cwd_relative = "external/include"}); main_executable.addLibraryPath(.{.cwd_relative = "external/lib"});
+        const external_include = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/include"});
+        const external_lib     = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/lib"    });
 
-    main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
-    main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
+        main_executable.addIncludePath(.{.cwd_relative = "include"}); main_executable.addIncludePath(.{.cwd_relative = external_include}); main_executable.addLibraryPath(.{.cwd_relative = external_lib});
 
-    main_executable.linkLibC(); main_executable.linkLibCpp();
-    test_executable.linkLibC(); test_executable.linkLibCpp();
+        main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
+        main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
 
-    main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = mode});
-    main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = mode});
-    main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = mode});
-    main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = mode});
-    main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = mode});
-    main_executable.linkSystemLibrary2("tinyexpr", .{.preferred_link_mode = mode}); test_executable.linkSystemLibrary2("tinyexpr", .{.preferred_link_mode = mode});
+        main_executable.linkLibC(); main_executable.linkLibCpp();
+        test_executable.linkLibC(); test_executable.linkLibCpp();
 
-    test_executable.root_module.addImport("acorn", &main_executable.root_module);
+        main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("tinyexpr", .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("tinyexpr", .{.preferred_link_mode = .static});
 
-    const main_install = builder.addInstallArtifact(main_executable, .{
-        .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
-    });
+        test_executable.root_module.addImport("acorn", &main_executable.root_module);
 
-    builder.getInstallStep().dependOn(&main_install.step);
+        const main_install = builder.addInstallArtifact(main_executable, .{
+            .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
+        });
 
-    builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
-    builder.step("test", "Run unit tests"             ).dependOn(&builder.addRunArtifact(test_executable).step);
+        builder.getInstallStep().dependOn(&main_install.step);
+
+        if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag and builtin.target.abi == .musl) {
+            builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
+            builder.step("test", "Run unit tests"             ).dependOn(&builder.addRunArtifact(test_executable).step);
+        }
+    }
 
     var script_step = builder.step("script", "Generate executable scripts"); script_step.makeFn = script; script_step.dependOn(builder.getInstallStep());
 }
@@ -59,9 +67,9 @@ pub fn build(builder: *std.Build) !void {
 pub fn script(self: *std.Build.Step, progress: std.Progress.Node) !void {
     _ = self; _ = progress;
 
-    if (target.os_tag == .linux) {
+    for (targets) |target| if (target.os_tag == .linux) {
         try linuxScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
-    }
+    };
 }
 
 pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {

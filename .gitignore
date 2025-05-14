@@ -1,5 +1,5 @@
-/external
-/research
+/external*
+/research*
 
 /*.dot*
 /*.g94*
