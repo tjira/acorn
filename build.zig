@@ -55,7 +55,7 @@ pub fn build(builder: *std.Build) !void {
 
         builder.getInstallStep().dependOn(&main_install.step);
 
-        if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag and builtin.target.abi == .musl) {
+        if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag and target.abi == .musl) {
             builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
             builder.step("test", "Run unit tests"             ).dependOn(&builder.addRunArtifact(test_executable).step);
         }
