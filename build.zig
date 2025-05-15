@@ -34,8 +34,9 @@ pub fn build(builder: *std.Build) !void {
 
         main_executable.addIncludePath(.{.cwd_relative = "include"}); main_executable.addIncludePath(.{.cwd_relative = external_include}); main_executable.addLibraryPath(.{.cwd_relative = external_lib});
 
-        main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
         main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
+        main_executable.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
+        main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
 
         main_executable.linkLibC(); main_executable.linkLibCpp();
         test_executable.linkLibC(); test_executable.linkLibCpp();
@@ -45,7 +46,6 @@ pub fn build(builder: *std.Build) !void {
         main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
-        main_executable.linkSystemLibrary2("tinyexpr", .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("tinyexpr", .{.preferred_link_mode = .static});
 
         test_executable.root_module.addImport("acorn", &main_executable.root_module);
 

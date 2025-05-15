@@ -17,8 +17,8 @@ if KTSH_COUPLING:
         "P1" : {
             "dims" : 1, "states" : 2,
             "matrix" : [
-                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.005 * exp(-(r1^2))"                              ],
-                ["0.005 * exp(-(r1^2))",                              "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.005 * exp(-r1^2)"                                ],
+                ["0.005 * exp(-r1^2)",                                "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
             ]
         },
         "P2" : {
@@ -31,9 +31,9 @@ if KTSH_COUPLING:
         "P3" : {
             "dims" : 1, "states" : 3,
             "matrix" : [
-                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.003 * exp(-(r1^2))", "0"                                                 ],
-                ["0.003 * exp(-(r1^2))",                              "0",                    "0.003 * exp(-(r1^2))"                              ],
-                ["0",                                                 "0.003 * exp(-(r1^2))", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.003 * exp(-r1^2)", "0"                                                 ],
+                ["0.003 * exp(-r1^2)",                                "0",                    "0.003 * exp(-r1^2)"                              ],
+                ["0",                                                 "0.003 * exp(-r1^2)", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
             ]
         },
         "P4" : {
@@ -151,7 +151,7 @@ if KTSH_COUPLING:
         open(f"input_KTSH_COUPLING_fs_tdc_{potential}.json", "w").write(js.dumps(fs_tdc_input, indent=4)); os.system(f"acorn input_KTSH_COUPLING_fs_tdc_{potential}.json")
         open(f"input_KTSH_COUPLING_kt_tdc_{potential}.json", "w").write(js.dumps(kt_tdc_input, indent=4)); os.system(f"acorn input_KTSH_COUPLING_kt_tdc_{potential}.json")
 
-    os.system(f'lines.py KTSH_COUPLING_POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 KTSH_COUPLING_TDC_{DS[0]}_FSSH.mat:1 KTSH_COUPLING_TDC_{DS[0]}_KTSH.mat:1 KTSH_COUPLING_POPULATION_{DS[0]}_EXACT.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[0]}_FSSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[0]}_KTSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[0]}_LZSH.mat:0 KTSH_COUPLING_POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 KTSH_COUPLING_TDC_{DS[1]}_FSSH.mat:2 KTSH_COUPLING_TDC_{DS[1]}_KTSH.mat:1 KTSH_COUPLING_POPULATION_{DS[1]}_EXACT.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[1]}_FSSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[1]}_KTSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (NPI)" "T{dollar}_{{0,1}}{dollar} ({dollar}{esc}kappa{dollar})" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (NPI)" "T{dollar}_{{0,1}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" --output MODEL_COUPLING_DS.png')
+    os.system(f'lines.py KTSH_COUPLING_POTENTIAL_ADIABATIC_{DS[0]}.mat:0,3 KTSH_COUPLING_TDC_{DS[0]}_FSSH.mat:1 KTSH_COUPLING_TDC_{DS[0]}_KTSH.mat:1 KTSH_COUPLING_POPULATION_{DS[0]}_EXACT.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[0]}_FSSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[0]}_KTSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[0]}_LZSH.mat:0 KTSH_COUPLING_POTENTIAL_ADIABATIC_{DS[1]}.mat:0,3 KTSH_COUPLING_TDC_{DS[1]}_FSSH.mat:2 KTSH_COUPLING_TDC_{DS[1]}_KTSH.mat:1 KTSH_COUPLING_POPULATION_{DS[1]}_EXACT.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[1]}_FSSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[1]}_KTSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{DS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 232 232 233 233 233 233 234 234 235 235 236 236 236 236 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (NPI)" "T{dollar}_{{0,1}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{0,1}}{dollar} (NPI)" "T{dollar}_{{0,1}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[DS[0]][0]} {TDCLIM[DS[0]][1]} nan nan nan nan {TDCLIM[DS[1]][0]} {TDCLIM[DS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" --output MODEL_COUPLING_DS.png')
     os.system(f'lines.py KTSH_COUPLING_POTENTIAL_ADIABATIC_{TS[0]}.mat:0,4,8 KTSH_COUPLING_TDC_{TS[0]}_FSSH.mat:3,2 KTSH_COUPLING_TDC_{TS[0]}_KTSH.mat:1 KTSH_COUPLING_POPULATION_{TS[0]}_EXACT.mat:0 KTSH_COUPLING_POPULATION_MEAN_{TS[0]}_FSSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{TS[0]}_KTSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{TS[0]}_LZSH.mat:0 KTSH_COUPLING_POTENTIAL_ADIABATIC_{TS[1]}.mat:0,4,8 KTSH_COUPLING_TDC_{TS[1]}_FSSH.mat:3,2 KTSH_COUPLING_TDC_{TS[1]}_KTSH.mat:1 KTSH_COUPLING_POPULATION_{TS[1]}_EXACT.mat:0 KTSH_COUPLING_POPULATION_MEAN_{TS[1]}_FSSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{TS[1]}_KTSH.mat:0 KTSH_COUPLING_POPULATION_MEAN_{TS[1]}_LZSH.mat:0 --dpi 256 --figsize 8 16 --subplots 231 231 231 232 232 232 233 233 233 233 234 234 234 235 235 235 236 236 236 236 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{0,2}}{dollar} (NPI)" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{0,2}}{dollar}=T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH{dollar}_{esc}mathrm{{maxdiff}}{dollar})" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{0,2}}{dollar} (NPI)" "T{dollar}_{{0,1}}{dollar}=T{dollar}_{{0,2}}{dollar}=T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_0{dollar} (LZSH{dollar}_{esc}mathrm{{maxdiff}}{dollar})" --xlabel "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim nan nan {TDCLIM[TS[0]][0]} {TDCLIM[TS[0]][1]} nan nan nan nan {TDCLIM[TS[1]][0]} {TDCLIM[TS[1]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" "Energy (a.u.)" "TDC (a.u.)" "Ground State Population" --output MODEL_COUPLING_TS.png')
 
 # KTSH TESTING ON MODEL POTENTIALS WITH TRIVIAL CROSSINGS ON HO ========================================================================================================================================
@@ -186,8 +186,8 @@ if KTSH_HO:
             "dims" : 1, "states" : 3,
             "matrix" : [
                 ["0.0025 * r1^2",             "0.0002 * exp(-((r1-2)^2))",  "0"                    ],
-                ["0.0002 * exp(-((r1-2)^2))", "0.01 + 0.0025 * (r1 - 2)^2", "0.0002 * exp(-(r1^2))"],
-                ["0",                         "0.0002 * exp(-(r1^2))",      "0.02 + 0.0025 * r1^2" ],
+                ["0.0002 * exp(-((r1-2)^2))", "0.01 + 0.0025 * (r1 - 2)^2", "0.0002 * exp(-r1^2)"  ],
+                ["0",                         "0.0002 * exp(-r1^2)",        "0.02 + 0.0025 * r1^2" ],
             ]
         }
     }
@@ -319,8 +319,8 @@ if SH_COMPARE:
         "P1" : {
             "dims" : 1, "states" : 2,
             "matrix" : [
-                ["0.01 * tanh(0.6 * r1)", "0.001 * exp(-(r1^2))"  ],
-                ["0.001 * exp(-(r1^2))",  "-0.01 * tanh(0.6 * r1)"],
+                ["0.01 * tanh(0.6 * r1)", "0.001 * exp(-r1^2)"    ],
+                ["0.001 * exp(-r1^2)",    "-0.01 * tanh(0.6 * r1)"],
             ]
         }
     }
@@ -416,17 +416,17 @@ if LZ_COMPARE:
         "P1" : {
             "dims" : 1, "states" : 3,
             "matrix" : [
-                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.003 * exp(-(r1^2))", "0"                                                 ],
-                ["0.003 * exp(-(r1^2))",                              "0",                    "0.003 * exp(-(r1^2))"                              ],
-                ["0",                                                 "0.003 * exp(-(r1^2))", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0.003 * exp(-r1^2)", "0"                                                 ],
+                ["0.003 * exp(-r1^2)",                                "0",                  "0.003 * exp(-r1^2)"                                ],
+                ["0",                                                 "0.003 * exp(-r1^2)", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
             ]
         },
         "P2" : {
             "dims" : 1, "states" : 3,
             "matrix" : [
-                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0", "0.004 * exp(-(r1^2))"                              ],
+                ["sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))", "0", "0.004 * exp(-r1^2)"                                ],
                 ["0",                                                 "0", "0"                                                 ],
-                ["0.004 * exp(-(r1^2))",                              "0", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
+                ["0.004 * exp(-r1^2)",                                "0", "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"],
             ]
         },
         "P3" : {

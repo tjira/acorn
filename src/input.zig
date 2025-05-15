@@ -21,7 +21,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             decoherence_alpha: ?T = null
         };
         pub const Hamiltonian = struct {
-            dims: ?u32 = null, states: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null
+            dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null
         };
         pub const LandauZener = struct {
             mode: ?[]const u8 = "maxdiff"

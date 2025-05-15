@@ -15,7 +15,6 @@ for TARGET in "${TARGETS[@]}"; do
     wget -q -O libint.tar.gz   https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
     wget -q -O llvm.tar.gz     https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-20.1.4.tar.gz
     wget -q -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
-    wget -q -O    tinyexpr.zip https://github.com/codeplea/tinyexpr/archive/master.zip
 
     tar -xzf boost.tar.gz    && rm    boost.tar.gz
     tar -xzf eigen.tar.gz    && rm    eigen.tar.gz
@@ -24,9 +23,8 @@ for TARGET in "${TARGETS[@]}"; do
     tar -xzf libint.tar.gz   && rm   libint.tar.gz
     tar -xzf llvm.tar.gz     && rm     llvm.tar.gz
     tar -xzf openblas.tar.gz && rm openblas.tar.gz
-    unzip -q tinyexpr.zip    && rm    tinyexpr.zip
 
-    rm -rf boost eigen fftw gsl libint llvm openblas && mv boost* boost ; mv eigen* eigen ; mv fftw* fftw ; mv gsl* gsl ; mv libint* libint ; mv llvm* llvm ; mv OpenBLAS* openblas ; mv tinyexpr* tinyexpr
+    rm -rf boost eigen fftw gsl libint llvm openblas && mv boost* boost ; mv eigen* eigen ; mv fftw* fftw ; mv gsl* gsl ; mv libint* libint ; mv llvm* llvm ; mv OpenBLAS* openblas
 
     cd llvm && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="$PWD/../../zigcc" -DCMAKE_CXX_COMPILER="$PWD/../../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/../install" -DLIBOMP_OMPD_SUPPORT=False -DLIBOMP_ENABLE_SHARED=True  ../openmp && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
     cd llvm && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="$PWD/../../zigcc" -DCMAKE_CXX_COMPILER="$PWD/../../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/../install" -DLIBOMP_OMPD_SUPPORT=False -DLIBOMP_ENABLE_SHARED=False ../openmp && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../..
@@ -45,12 +43,12 @@ for TARGET in "${TARGETS[@]}"; do
     cd libint && cmake -DBUILD_SHARED_LIBS=ON  -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER="$PWD/../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/install" . && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ..
     cd libint && cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER="$PWD/../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/install" . && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ..
 
-    cd tinyexpr && mkdir install && mkdir install/include install/lib && cp tinyexpr.h install/include && ../zigcc -c tinyexpr.c -o tinyexpr.o && ar rcs install/lib/libtinyexpr.a tinyexpr.o && ../zigcc -shared -o install/lib/libtinyexpr.so tinyexpr.o && cd ..
-
-    rm -rf external-$TARGET && mkdir external-$TARGET && cp -r boost/install/* eigen/install/* fftw/install/* gsl/install/* libint/install/* llvm/install/* openblas/install/* tinyexpr/install/* external-$TARGET
+    rm -rf external-$TARGET && mkdir external-$TARGET && cp -r boost/install/* eigen/install/* fftw/install/* gsl/install/* libint/install/* llvm/install/* openblas/install/* external-$TARGET
 
     cd external-$TARGET && rm -rf bin share lib/*archer* lib/*cblas* lib/*la lib/cmake lib/pkgconfig && cd ..
 
-    rm -rf boost eigen fftw gsl libint llvm openblas tinyexpr zigcc zigcpp
+    rm -rf boost eigen fftw gsl libint llvm openblas zigcc zigcpp
+
+    wget -q -O external-$TARGET/include/exprtk.hpp https://raw.githubusercontent.com/ArashPartow/exprtk/refs/heads/master/exprtk.hpp
 
 done

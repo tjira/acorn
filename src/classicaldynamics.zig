@@ -20,11 +20,10 @@ const  asfloat = @import("helper.zig").asfloat ;
 
 /// Main function for running classical dynamics simulations.
 pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.ClassicalDynamicsOutput(T) {
-    if (opt.hamiltonian.name == null and opt.hamiltonian.dims == null and opt.hamiltonian.states == null and opt.hamiltonian.matrix == null) return error.InvalidHamiltonian;
-    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or opt.hamiltonian.states != null or opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.name == null and (opt.hamiltonian.dims == null and opt.hamiltonian.matrix == null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
 
-    var pot: ?mpt.Potential(T) = undefined;    if (opt.hamiltonian.name != null) pot = (try mpt.getPotentialMap(T, allocator)).get(opt.hamiltonian.name.?);
-    if (opt.hamiltonian.name == null) pot = try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.states.?, opt.hamiltonian.matrix.?, allocator);
+    var pot = if (opt.hamiltonian.name != null) (try mpt.getPotentialMap(T, allocator)).get(opt.hamiltonian.name.?) else try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
 
     const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 
