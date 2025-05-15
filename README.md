@@ -60,7 +60,7 @@ Below are all the important features of Acorn divided into categories.
 
 ### Downloading Release
 
-You can download the latest release [here](https://github.com/tjira/acorn/releases/latest). The provided artifact is a statically linked ELF executable built with musl libc, so it embeds its own C standard library and has no external runtime dependencies, letting it run on any reasonably recent Linux kernel regardless of the user space environment. If the program exits with an `Illegal Instruction` fault, the host processor is missing one or more instruction set extensions such as SSE4.2 or AVX2 that were enabled during compilation. In that case clone the repository and build it on the target machine.
+You can download the latest release [here](https://github.com/tjira/acorn/releases/latest). Two versions of the executable are available, with one built using musl libc and the other using GNU libc. The musl version is a statically linked ELF executable that embeds its own C standard library and has no external runtime dependencies, allowing it to run on any Linux kernel regardless of the user space environment. The GNU version, linked against GNU libc, depends on the host system's runtime libraries but can offer better integration with glibc-based distributions.
 
 ### Compilation
 
