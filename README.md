@@ -45,16 +45,14 @@ Below are all the important features of Acorn divided into categories.
 
 ### Time-Independent Quantum Mechanics
 
-* Restricted Hartree–Fock Method with DIIS
+* Restricted and Generalized Hartree–Fock Method with DIIS
 * Møller–Plesset Perturbation Theory
 * Full Configuration Interaction
 
 ### Time-Dependent Quantum Mechanics
 
-* Quantum Dynamics with Arbitrary Number of States & Dimensions
-* Fewest Switches Surface Hopping Dynamics
-* Landau–Zener Surface Hopping Dynamics
-* Mapping Approach to Surface Hopping Dynamics
+* Quantum Dynamics with Arbitrary Number of States & Dimensions on User-Defined Potentials
+* Surface Hopping Dynamics with FSSH, LZSH, MASH or κTSH Algorithms on User-Defined Potentials
 
 ## Acquiring the Software
 

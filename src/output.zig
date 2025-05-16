@@ -54,14 +54,14 @@ pub fn ConfigurationInteractionOutput(comptime T: type) type {
 pub fn HartreeFockOutput(comptime T: type) type {
     return struct {
         S_AO: Matrix(T), T_AO: Matrix(T), V_AO: Matrix(T), J_AO: Tensor(T),
-        C_MO: Matrix(T), D_MO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T),
+        C_AO: Matrix(T), D_AO: Matrix(T), E_MO: Matrix(T), F_AO: Matrix(T),
 
         system: System(T), basis: std.ArrayList(T), E: T,
 
         /// Free the memory allocated for the Hartree-Fock output.
         pub fn deinit(self: HartreeFockOutput(T)) void {
             self.S_AO.deinit(); self.T_AO.deinit(); self.V_AO.deinit(); self.J_AO.deinit();
-            self.C_MO.deinit(); self.D_MO.deinit(); self.E_MO.deinit(); self.F_AO.deinit();
+            self.C_AO.deinit(); self.D_AO.deinit(); self.E_MO.deinit(); self.F_AO.deinit();
 
             self.system.deinit(); self.basis.deinit();
         }

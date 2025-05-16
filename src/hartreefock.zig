@@ -15,6 +15,7 @@ const mth = @import("math.zig"      );
 const out = @import("output.zig"    );
 const pop = @import("population.zig");
 const ten = @import("tensor.zig"    );
+const tns = @import("transform.zig" );
 const vec = @import("vector.zig"    );
 
 const Basis  = @import("basis.zig" ).Basis ;
@@ -32,7 +33,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (opt.system_file == null and (opt.system.coords == null or opt.system.atoms == null)) return error.SystemNotFullySpecified;
 
-    if (opt.system.multiplicity != 1) return error.MultiplicityNotImplemented;
+    if (!opt.generalized and @rem(opt.system.charge, 2) == 1) return error.UseGeneralizedHartreeFockForOddCharge;
 
     var system: System(T) = undefined; var basis: std.ArrayList(T) = undefined;
 
@@ -41,7 +42,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
         system = System(T){
             .coords = try Matrix(T).init(opt.system.coords.?.len, 3, allocator),
             .atoms  = try Vector(T).init(opt.system.atoms .?.len,    allocator),
-            .nocc   = mth.sum(u8, opt.system.atoms.?) / 2,
+            .charge = opt.system.charge,
         };
 
         for (0..opt.system.atoms.?.len) |i| {
@@ -53,17 +54,18 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
         };
     }
 
-    if (opt.system_file    != null) system = try System(T).read(        opt.system_file.?,    allocator);
-    if (opt.integral.basis != null) basis  = try Basis(T).array(system, opt.integral.basis.?, allocator);
+    if (opt.system_file    != null) system = try System(T).read(opt.system_file.?, opt.system.charge,    allocator);
+    if (opt.integral.basis != null) basis  = try Basis(T).array(system,            opt.integral.basis.?, allocator);
 
-    system.nocc -= opt.system.charge / 2; var nbf: usize = 0; var npgs: usize = 0; var mem: f64 = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+    var nbf: usize = 0; var npgs: usize = 0; var mem: f64 = 0; const VNN = system.nuclearRepulsion();
 
     {
         var i: usize = 0; while (opt.integral.basis != null and i < basis.items.len) : (i += 2 * @as(usize, @intFromFloat(basis.items[i])) + 5) {
             const cgs: usize = @as(usize, @intFromFloat((basis.items[i + 1] + 1) * (basis.items[i + 1] + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis.items[i])) * cgs;
         }
 
-        mem = 8 * @as(f64, @floatFromInt(12 * nbf * nbf + 2 * nbf * nbf * nbf * nbf));
+        if (!opt.generalized) mem = 8 * @as(f64, @floatFromInt(12 * nbf * nbf + 2  * nbf * nbf * nbf * nbf));
+        if ( opt.generalized) mem = 8 * @as(f64, @floatFromInt(48 * nbf * nbf + 32 * nbf * nbf * nbf * nbf));
     }
 
     if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print("\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
@@ -73,20 +75,39 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     var timer = try std.time.Timer.start();
 
-    const S_AO = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
-    const T_AO = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
-    const V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
-    const J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator);
+    var S_AO = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
+    var T_AO = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
+    var V_AO = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try Matrix(T).init(nbf, nbf,                      allocator);
+    var J_AO = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator);
 
     if (opt.integral.overlap == null) lbt.overlap(S_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
     if (opt.integral.kinetic == null) lbt.kinetic(T_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
     if (opt.integral.nuclear == null) lbt.nuclear(V_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
     if (opt.integral.coulomb == null) lbt.coulomb(J_AO.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
 
-    nbf = S_AO.rows; var J_AO_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_AO_A.deinit();
+    nbf = if (opt.generalized) 2 * S_AO.rows else S_AO.rows;
 
-    for (0..nbf) |i| for(0..nbf) |j| for (0..nbf) |k| for (0..nbf) |l| {
-        J_AO_A.ptr(&[_]usize{i, j, k, l}).* = J_AO.at(&[_]usize{i, j, k, l}) - 0.5 * J_AO.at(&[_]usize{i, l, k, j});
+    if (opt.generalized) {
+
+        var S_AS = try Matrix(T).init(nbf, nbf,                      allocator);
+        var T_AS = try Matrix(T).init(nbf, nbf,                      allocator);
+        var V_AS = try Matrix(T).init(nbf, nbf,                      allocator);
+        var J_AS = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator);
+
+        tns.oneAO2AS(T, &S_AS, S_AO); tns.oneAO2AS(T, &T_AS, T_AO); tns.oneAO2AS(T, &V_AS, V_AO); tns.twoAO2AS(T, &J_AS, J_AO);
+
+        S_AO.deinit(); S_AO = S_AS;
+        T_AO.deinit(); T_AO = T_AS;
+        V_AO.deinit(); V_AO = V_AS;
+        J_AO.deinit(); J_AO = J_AS;
+    }
+
+    const nocc: usize = if (opt.generalized) system.getElectrons() else system.getElectrons() / 2;
+
+    var J_AO_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_AO_A.deinit();
+
+    const jf: T = if (opt.generalized) 1 else 0.5; for (0..nbf) |i| for(0..nbf) |j| for (0..nbf) |k| for (0..nbf) |l| {
+        J_AO_A.ptr(&[_]usize{i, j, k, l}).* = J_AO.at(&[_]usize{i, j, k, l}) - jf * J_AO.at(&[_]usize{i, l, k, j});
     };
 
     if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
@@ -107,8 +128,8 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     };
 
     var F_AO = try Matrix(T).init(nbf, nbf, allocator); F_AO.fill(0);
-    var C_MO = try Matrix(T).init(nbf, nbf, allocator); C_MO.fill(0);
-    var D_MO = try Matrix(T).init(nbf, nbf, allocator); D_MO.fill(0);
+    var C_AO = try Matrix(T).init(nbf, nbf, allocator); C_AO.fill(0);
+    var D_AO = try Matrix(T).init(nbf, nbf, allocator); D_AO.fill(0);
     var E_MO = try Matrix(T).init(nbf, nbf, allocator); E_MO.fill(0);
 
     var iter: u32 = 0; var E: T = 0; var EP: T = 1; mat.add(T, &H_AO, T_AO, V_AO);
@@ -119,11 +140,11 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
         if (iter == opt.maxiter) return error.MaxIterationsExceeded;
 
-        try eig.contract(&F_AO, D_MO, J_AO_A, &[_]i32{0, 0, 1, 1}); mat.add(T, &F_AO, F_AO, H_AO);
+        try eig.contract(&F_AO, D_AO, J_AO_A, &[_]i32{0, 0, 1, 1}); mat.add(T, &F_AO, F_AO, H_AO);
 
         if (opt.dsize != null and iter > 0) {
 
-            bls.dgemm(&T1, S_AO, false, D_MO, false); bls.dgemm(&T2, T1, false, F_AO, true); bls.dgemm(&T1, F_AO, false, D_MO, false); bls.dgemm(&T3, T1, false, S_AO, true); mat.sub(T, &ERR, T2, T3);
+            bls.dgemm(&T1, S_AO, false, D_AO, false); bls.dgemm(&T2, T1, false, F_AO, true); bls.dgemm(&T1, F_AO, false, D_AO, false); bls.dgemm(&T3, T1, false, S_AO, true); mat.sub(T, &ERR, T2, T3);
 
             @memcpy(DIIS_F.items[iter % DIIS_F.items.len].data, F_AO.data);
             @memcpy(DIIS_E.items[iter % DIIS_E.items.len].data,  ERR.data);
@@ -131,14 +152,14 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
             try diisExtrapolate(T, &F_AO, &DIIS_F, &DIIS_E, iter, allocator);
         }
 
-        lpk.dsygvd(&E_MO, &C_MO, F_AO, S_AO, &T1); D_MO.fill(0); EP = E; E = 0;
+        lpk.dsygvd(&E_MO, &C_AO, F_AO, S_AO, &T1); D_AO.fill(0); EP = E; E = 0;
 
-        for (0..nbf) |i| for (0..nocc) |j| for (0..nbf) |k| {
-            D_MO.ptr(i, k).* += 2.0 * C_MO.at(i, j) * C_MO.at(k, j);
+        const df: T = if(opt.generalized) 1 else 2; for (0..nbf) |i| for (0..nocc) |j| for (0..nbf) |k| {
+            D_AO.ptr(i, k).* += df * C_AO.at(i, j) * C_AO.at(k, j);
         };
 
         for (0..nbf) |i| for (0..nbf) |j| {
-            E += 0.5 * D_MO.at(i, j) * (H_AO.at(i, j) + F_AO.at(i, j));
+            E += 0.5 * D_AO.at(i, j) * (H_AO.at(i, j) + F_AO.at(i, j));
         };
 
         if (print) try std.io.getStdOut().writer().print("{d:4} {d:20.14} {e:9.3}\n", .{iter + 1, E + VNN, @abs(EP - E)});
@@ -146,7 +167,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (print) try std.io.getStdOut().writer().print("\nHF ENERGY: {d:.14}\n", .{E + VNN});
 
-    const m = try pop.mulliken(T, system, basis, S_AO, D_MO, allocator); defer m.deinit();
+    const m = try pop.mulliken(T, system, basis, S_AO, D_AO, allocator); defer m.deinit();
 
     if (print) {
         try std.io.getStdOut().writer().print("\nHF MULLIKEN POPULATION ANALYSIS:\n", .{}); try m.matrix().print(std.io.getStdOut().writer());
@@ -155,15 +176,15 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
 
-    if (opt.write.coefficient_ao != null) try C_MO.write(opt.write.coefficient_ao.?);
+    if (opt.write.coefficient_ao != null) try C_AO.write(opt.write.coefficient_ao.?);
     if (opt.write.coulomb_ao     != null) try J_AO.write(opt.write.coulomb_ao.?    );
-    if (opt.write.density_ao     != null) try D_MO.write(opt.write.density_ao.?    );
+    if (opt.write.density_ao     != null) try D_AO.write(opt.write.density_ao.?    );
     if (opt.write.kinetic_ao     != null) try T_AO.write(opt.write.kinetic_ao.?    );
     if (opt.write.nuclear_ao     != null) try V_AO.write(opt.write.nuclear_ao.?    );
     if (opt.write.overlap_ao     != null) try S_AO.write(opt.write.overlap_ao.?    );
 
     return out.HartreeFockOutput(T){
-        .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .system = system, .basis = basis
+        .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_AO = C_AO, .D_AO = D_AO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .system = system, .basis = basis
     };
 }
 

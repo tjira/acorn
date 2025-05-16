@@ -14,7 +14,7 @@ const uncr    = @import("helper.zig").uncr;
 /// System type.
 pub fn System(comptime T: type) type {
     return struct {
-        coords: Matrix(T), atoms: Vector(T), nocc: u32,
+        coords: Matrix(T), atoms: Vector(T), charge: i32,
 
         /// Deinitialize the system.
         pub fn deinit(self: System(T)) void {
@@ -45,6 +45,11 @@ pub fn System(comptime T: type) type {
             return .{self.coords.at(i, 0), self.coords.at(i, 1), self.coords.at(i, 2)};
         }
 
+        /// Get the number of electrons in the system.
+        pub fn getElectrons(self: System(T)) usize {
+            return @as(usize, @intFromFloat(self.atoms.sum() - asfloat(T, self.charge)));
+        }
+
         /// Calculate the nuclear repulsion energy.
         pub fn nuclearRepulsion(self: System(T)) T {
             var VNN: T = 0;
@@ -64,7 +69,7 @@ pub fn System(comptime T: type) type {
         }
 
         /// Read the system from the specified file.
-        pub fn read(path: []const u8, allocator: std.mem.Allocator) !System(T) {
+        pub fn read(path: []const u8, charge: i32, allocator: std.mem.Allocator) !System(T) {
             const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [64]u8 = undefined;
 
             var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
@@ -98,7 +103,7 @@ pub fn System(comptime T: type) type {
 
             var nocc: u32 = 0; for (0..natom) |i| nocc += @intFromFloat(atoms.at(i));
 
-            return System(T) {.coords = coords, .atoms  = atoms, .nocc = nocc / 2};
+            return System(T) {.coords = coords, .atoms  = atoms, .charge = charge};
         }
     };
 }

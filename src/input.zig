@@ -100,9 +100,8 @@ pub fn HartreeFockOptions(comptime T: type) type {
         };
         pub const System = struct {
             atoms: ?[]const u8 = null,
-            charge: u32 = 0,
-            coords: ?[]const [3]T = null,
-            multiplicity: u32 = 1
+            charge: i32 = 0,
+            coords: ?[]const [3]T = null
         };
         pub const Write = struct {
             coefficient_ao: ?[]const u8 = null,
@@ -117,6 +116,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
         threshold: T = 1e-12,
         maxiter: u32 = 100,
         dsize: ?u32 = 5,
+        generalized: bool = false,
 
         integral: Integral = .{}, system: System = .{}, write: Write = .{}
     };

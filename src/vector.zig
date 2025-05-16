@@ -69,13 +69,13 @@ pub fn Vector(comptime T: type) type {
 
         /// Calculate the norm of the vector.
         pub fn norm(self: Vector(T)) T {
-            var sum: T = 0;
+            var sumsq: T = 0;
 
             for (0..self.data.len) |i| {
-                sum += self.data[i] * self.data[i];
+                sumsq += self.data[i] * self.data[i];
             }
 
-            return std.math.sqrt(sum);
+            return std.math.sqrt(sumsq);
         }
 
         /// Return the element at the specified index as a mutable reference.
@@ -99,6 +99,17 @@ pub fn Vector(comptime T: type) type {
                 .rows = self.data[start..end].len,
                 .allocator = self.allocator
             };
+        }
+
+        /// Returns the sum of the vector.
+        pub fn sum(self: Vector(T)) T {
+            var total: T = 0;
+
+            for (0..self.data.len) |i| {
+                total += self.data[i];
+            }
+
+            return total;
         }
 
         /// Returns the transposed column vector as a matrix with one row. No memory is allocated.
