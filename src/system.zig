@@ -21,6 +21,25 @@ pub fn System(comptime T: type) type {
             self.coords.deinit(); self.atoms.deinit();
         }
 
+        /// Get the atom to basis function map.
+        pub fn getBasisMap(self: System(T), basis: std.ArrayList(T), allocator: std.mem.Allocator) !std.ArrayList(usize) {
+            var map = std.ArrayList(usize).init(allocator); var i: usize = 0;
+
+            while (i < basis.items.len) {
+                
+                const size: usize = @intFromFloat(basis.items[i    ]);
+                const   am: usize = @intFromFloat(basis.items[i + 1]);
+
+                for (0..self.coords.rows) |j| if (self.coords.at(j, 0) == basis.items[i + 2] and self.coords.at(j, 1) == basis.items[i + 3] and self.coords.at(j, 2) == basis.items[i + 4]) {
+                    for (0..2 * am + 1) |_| try map.append(j);
+                };
+
+                i += 2 * size + 5;
+            }
+
+            return map;
+        }
+
         /// Get the coordinates of the atom at the specified index.
         pub fn getCoords(self: System(T), i: usize) [3]T {
             return .{self.coords.at(i, 0), self.coords.at(i, 1), self.coords.at(i, 2)};

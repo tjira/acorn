@@ -9,7 +9,7 @@ pub fn Basis(comptime T: type) type {
     return struct {
 
         /// Return the basis set as an array of consecutive numbers.
-        pub fn array(system: System(T), name: []const u8, allocator: std.mem.Allocator) ![]const T {
+        pub fn array(system: System(T), name: []const u8, allocator: std.mem.Allocator) !std.ArrayList(T){
             var basis = std.ArrayList(T).init(allocator); const parsed = try std.json.parseFromSlice(std.json.Value, allocator, try embedded(name, "json", allocator), .{});
 
             for (0..system.atoms.rows) |i| {
@@ -46,7 +46,7 @@ pub fn Basis(comptime T: type) type {
                 }
             }
 
-            parsed.deinit(); return basis.items;
+            parsed.deinit(); return basis;
         }
 
         /// Returns the basis set for the given name and format.

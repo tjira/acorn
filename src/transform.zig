@@ -2,7 +2,7 @@
 
 const std = @import("std");
 
-const eig = @import("eigen.zig" );
+const eig = @import("eigen.zig");
 
 const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;

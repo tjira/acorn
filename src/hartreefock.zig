@@ -5,16 +5,17 @@ const std = @import("std");
 const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
-const bls = @import("blas.zig"  );
-const eig = @import("eigen.zig" );
-const inp = @import("input.zig" );
-const lbt = @import("libint.zig");
-const lpk = @import("lapack.zig");
-const mat = @import("matrix.zig");
-const mth = @import("math.zig"  );
-const out = @import("output.zig");
-const ten = @import("tensor.zig");
-const vec = @import("vector.zig");
+const bls = @import("blas.zig"      );
+const eig = @import("eigen.zig"     );
+const inp = @import("input.zig"     );
+const lbt = @import("libint.zig"    );
+const lpk = @import("lapack.zig"    );
+const mat = @import("matrix.zig"    );
+const mth = @import("math.zig"      );
+const out = @import("output.zig"    );
+const pop = @import("population.zig");
+const ten = @import("tensor.zig"    );
+const vec = @import("vector.zig"    );
 
 const Basis  = @import("basis.zig" ).Basis ;
 const Matrix = @import("matrix.zig").Matrix;
@@ -31,14 +32,16 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (opt.system_file == null and (opt.system.coords == null or opt.system.atoms == null)) return error.SystemNotFullySpecified;
 
-    var system: System(T) = undefined; var basis: []const f64 = undefined;
+    if (opt.system.multiplicity != 1) return error.MultiplicityNotImplemented;
+
+    var system: System(T) = undefined; var basis: std.ArrayList(T) = undefined;
 
     if (opt.system_file == null and opt.system.coords != null) {
 
         system = System(T){
             .coords = try Matrix(T).init(opt.system.coords.?.len, 3, allocator),
             .atoms  = try Vector(T).init(opt.system.atoms .?.len,    allocator),
-            .nocc   = (mth.sum(u8, opt.system.atoms.?) - opt.system.charge) / 2,
+            .nocc   = mth.sum(u8, opt.system.atoms.?) / 2,
         };
 
         for (0..opt.system.atoms.?.len) |i| {
@@ -53,11 +56,11 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     if (opt.system_file    != null) system = try System(T).read(        opt.system_file.?,    allocator);
     if (opt.integral.basis != null) basis  = try Basis(T).array(system, opt.integral.basis.?, allocator);
 
-    var nbf: usize = 0; var npgs: usize = 0; var mem: f64 = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
+    system.nocc -= opt.system.charge / 2; var nbf: usize = 0; var npgs: usize = 0; var mem: f64 = 0; const nocc = system.nocc; const VNN = system.nuclearRepulsion();
 
     {
-        var i: usize = 0; while (opt.integral.basis != null and i < basis.len) : (i += 2 * @as(usize, @intFromFloat(basis[i])) + 5) {
-            const cgs: usize = @as(usize, @intFromFloat((basis[i + 1] + 1) * (basis[i + 1] + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis[i])) * cgs;
+        var i: usize = 0; while (opt.integral.basis != null and i < basis.items.len) : (i += 2 * @as(usize, @intFromFloat(basis.items[i])) + 5) {
+            const cgs: usize = @as(usize, @intFromFloat((basis.items[i + 1] + 1) * (basis.items[i + 1] + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis.items[i])) * cgs;
         }
 
         mem = 8 * @as(f64, @floatFromInt(12 * nbf * nbf + 2 * nbf * nbf * nbf * nbf));
@@ -143,6 +146,12 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (print) try std.io.getStdOut().writer().print("\nHF ENERGY: {d:.14}\n", .{E + VNN});
 
+    const m = try pop.mulliken(T, system, basis, S_AO, D_MO, allocator); defer m.deinit();
+
+    if (print) {
+        try std.io.getStdOut().writer().print("\nHF MULLIKEN POPULATION ANALYSIS:\n", .{}); try m.matrix().print(std.io.getStdOut().writer());
+    }
+
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
 
@@ -154,7 +163,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
     if (opt.write.overlap_ao     != null) try S_AO.write(opt.write.overlap_ao.?    );
 
     return out.HartreeFockOutput(T){
-        .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .system = system
+        .S_AO = S_AO, .T_AO = T_AO, .V_AO = V_AO, .J_AO = J_AO, .C_MO = C_MO, .D_MO = D_MO, .E_MO = E_MO, .F_AO = F_AO, .E = E + VNN, .system = system, .basis = basis
     };
 }
 
