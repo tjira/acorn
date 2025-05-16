@@ -1,3 +1,3 @@
-void*   compile(const char* string, int     nvars);
-double evaluate(void*        exprv, double*  vars);
-void     deinit(void*        exprv               );
+void*   compile(const char* string, unsigned long nvars);
+double evaluate(void*        exprv, double*        vars);
+void     deinit(void*        exprv                     );

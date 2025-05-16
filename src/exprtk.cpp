@@ -24,7 +24,7 @@ extern "C" {
     double evaluate(void* exprv, double* vars) {
         Expression* expr = static_cast<Expression*>(exprv);
 
-        for (int i = 1; i <= 1; i++) {
+        for (size_t i = 1; i <= expr->vars.size(); i++) {
             expr->symbols.get_variable("r" + std::to_string(i))->ref() = vars[i - 1];
         }
 
