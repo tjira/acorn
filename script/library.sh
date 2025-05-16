@@ -30,8 +30,8 @@ for TARGET in "${TARGETS[@]}"; do
 
     cd boost    && ./bootstrap.sh --prefix="$PWD/install" --with-libraries="atomic" && ./b2 install && rm -rf install/lib && cd ..
 
-    cd fftw     && ./configure CC="$PWD/../zigcc" --disable-fortran --prefix="$PWD/install" && cd ..
-    cd gsl      && ./configure CC="$PWD/../zigcc" --disable-shared  --prefix="$PWD/install" && cd ..
+    cd fftw     && ./configure CC="$PWD/../zigcc" CFLAGS="-O3 -mno-avx" --disable-fortran --prefix="$PWD/install" && cd ..
+    cd gsl      && ./configure CC="$PWD/../zigcc"                       --disable-shared  --prefix="$PWD/install" && cd ..
 
     cd fftw     && make                                                                                                   -j $CORES             && make                                   install && cd ..
     cd gsl      && make                                                                                                   -j $CORES             && make                                   install && cd ..
