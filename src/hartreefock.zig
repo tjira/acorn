@@ -33,7 +33,7 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (opt.system_file == null and (opt.system.coords == null or opt.system.atoms == null)) return error.SystemNotFullySpecified;
 
-    if (!opt.generalized and @rem(opt.system.charge, 2) == 1) return error.UseGeneralizedHartreeFockForOddCharge;
+    if (!opt.generalized and @rem(@abs(opt.system.charge), 2) == 1) return error.UseGeneralizedHartreeFockForOddCharge;
 
     var system: System(T) = undefined; var basis: std.ArrayList(T) = undefined;
 
