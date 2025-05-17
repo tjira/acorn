@@ -21,7 +21,7 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
     const hf = try hfm.run(T, opt.hartree_fock, print, allocator); const nbf = hf.S_AS.rows; const nocc = hf.system.getElectrons();
 
-    const D = try generateDeterminants(nbf / 2, nocc / 2, allocator); defer D.deinit();
+    const D = if (opt.hartree_fock.generalized) try generateAllDeterminants(nbf, nocc, allocator) else try generateSingletDeterminants(nbf, nocc, allocator); defer D.deinit();
 
     var H_MS   = try Matrix(T).init(nbf, nbf,                      allocator); defer   H_MS.deinit();
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
@@ -80,22 +80,42 @@ fn alignDeterminant(A: *Vector(usize), B: Vector(usize), C: Vector(usize)) !i32 
     return sign;
 }
 
-/// Generates the determinants for the CI calculations.
-fn generateDeterminants(nbf: usize, nocc: usize, allocator: std.mem.Allocator) !Matrix(usize) {
-    const data_alpha = try allocator.alloc(usize, nbf); defer allocator.free(data_alpha);
-    const data_beta  = try allocator.alloc(usize, nbf); defer allocator.free(data_beta );
+/// Generates the determinants for the CI calculations including singlet and triplet excitations.
+fn generateAllDeterminants(nbf: usize, nocc: usize, allocator: std.mem.Allocator) !Matrix(usize) {
+    const D = try Matrix(usize).init(mth.comb(nbf, nocc), nocc, allocator);
+
+    for (0..D.cols) |i| D.ptr(0, i).* = i;
+
+    for (1..D.rows) |i| {
+
+        @memcpy(D.row(i).data, D.row(i - 1).data); var index: usize = undefined;
+
+        for (0..D.cols) |j| if (D.at(i, D.cols - j - 1) != nbf - j - 1) {
+            D.ptr(i, D.cols - j - 1).* += 1; index = D.cols - j - 1; break;
+        };
+
+        for (index + 1..D.cols) |j| D.ptr(i, j).* = D.at(i, j - 1) + 1;
+    }
+
+    return D;
+}
+
+/// Generates the determinants for the CI calculations including only singlet excitations.
+fn generateSingletDeterminants(nbf: usize, nocc: usize, allocator: std.mem.Allocator) !Matrix(usize) {
+    const data_alpha = try allocator.alloc(usize, nbf / 2); defer allocator.free(data_alpha);
+    const data_beta  = try allocator.alloc(usize, nbf / 2); defer allocator.free(data_beta );
     
     for (0..data_alpha.len) |i| data_alpha[i] = 2 * i + 0;
     for (0..data_beta.len ) |i| data_beta[i]  = 2 * i + 1;
 
-    const dets_alpha = try mth.combinations(usize, data_alpha, nocc, allocator); defer dets_alpha.deinit();
-    const dets_beta  = try mth.combinations(usize, data_beta,  nocc, allocator); defer  dets_beta.deinit();
+    const dets_alpha = try mth.combinations(usize, data_alpha, nocc / 2, allocator); defer dets_alpha.deinit();
+    const dets_beta  = try mth.combinations(usize, data_beta,  nocc / 2, allocator); defer  dets_beta.deinit();
 
-    const D = try Matrix(usize).init(dets_alpha.items.len * dets_beta.items.len, 2 * nocc, allocator);
+    const D = try Matrix(usize).init(dets_alpha.items.len * dets_beta.items.len, nocc, allocator);
 
-    for (0..dets_alpha.items.len) |i| for (0..dets_beta.items.len) |j| for (0..nocc) |k| {
-        D.ptr(i * dets_beta.items.len + j, k       ).* = dets_alpha.items[i][k];
-        D.ptr(i * dets_beta.items.len + j, k + nocc).* =  dets_beta.items[j][k];
+    for (0..dets_alpha.items.len) |i| for (0..dets_beta.items.len) |j| for (0..nocc / 2) |k| {
+        D.ptr(i * dets_beta.items.len + j, k           ).* = dets_alpha.items[i][k];
+        D.ptr(i * dets_beta.items.len + j, k + nocc / 2).* =  dets_beta.items[j][k];
     };
 
     return D;
