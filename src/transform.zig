@@ -8,7 +8,7 @@ const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Transforms coefficients obtained from the HF calculation from the MO basis to the MS basis.
-pub fn cfsMO2MS(comptime T: type, C_MS: *Matrix(T), C_MO: Matrix(T)) void {
+pub fn cfsAO2AS(comptime T: type, C_MS: *Matrix(T), C_MO: Matrix(T)) void {
     C_MS.fill(0);
 
     for (0..C_MO.rows) |i| for (0..C_MO.cols) |j| {
@@ -49,12 +49,12 @@ pub fn twoAO2AS(comptime T: type, A_AS: *Tensor(T), A_AO: Tensor(T)) void {
 }
 
 /// Transforms the two-electron integrals from the AO basis to the MO basis or from the AS basis to the MS basis. The A_AO tensor is modified in place.
-pub fn twoAO2MO(comptime T: type, A_MO: *Tensor(T), A_AO: *Tensor(T), C_MO: Matrix(T)) !void {
-    @memcpy(A_MO.data, A_AO.data);
+pub fn twoAO2MO(comptime T: type, A_MO: *Tensor(T), A_AO: Tensor(T), C_MO: Matrix(T)) !void {
+    @memcpy(A_MO.data, A_AO.data); var A_AO_T = try A_AO.clone();
 
-    try eig.contract(A_AO, C_MO, A_MO.*, &[_]i32{0, 0});
-    try eig.contract(A_MO, C_MO, A_AO.*, &[_]i32{0, 1});
-    try eig.contract(A_AO, C_MO, A_MO.*, &[_]i32{0, 2});
-    try eig.contract(A_MO, C_MO, A_AO.*, &[_]i32{0, 3});
+    try eig.contract(&A_AO_T, C_MO, A_MO.*, &[_]i32{0, 0});
+    try eig.contract(A_MO,    C_MO, A_AO_T, &[_]i32{0, 1});
+    try eig.contract(&A_AO_T, C_MO, A_MO.*, &[_]i32{0, 2});
+    try eig.contract(A_MO,    C_MO, A_AO_T, &[_]i32{0, 3});
 }
 

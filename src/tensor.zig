@@ -41,6 +41,15 @@ pub fn Tensor(comptime T: type) type {
             return self.ptr(indices).*;
         }
 
+        /// Clone the tensor. The function returns an error if the allocation of the new matrix fails.
+        pub fn clone(self: Tensor(T)) !Tensor(T) {
+            const other = try Tensor(T).init(self.shape, self.allocator);
+
+            @memcpy(other.data, self.data);
+
+            return other;
+        }
+
         /// Fill the tensor with the specified value.
         pub fn fill(self: *Tensor(T), value: T) void {
             @memset(self.data, value);

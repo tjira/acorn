@@ -15,14 +15,12 @@ const Tensor = @import("tensor.zig").Tensor;
 pub fn run(comptime T: type, opt: inp.MollerPlessetOptions(T), print: bool, allocator: std.mem.Allocator) !out.MollerPlessetOutput(T) {
     if (opt.order != 2) return error.PerturbationOrderNotImplemented;
 
-    const hf = try hfm.run(T, opt.hartree_fock, print, allocator);
-
-    const nbf = if (opt.hartree_fock.generalized) hf.S_AO.rows else 2 * hf.S_AO.rows; const nocc = hf.system.getElectrons();
+    const hf = try hfm.run(T, opt.hartree_fock, print, allocator); const nbf = hf.S_AS.rows; const nocc = hf.system.getElectrons();
 
     var F_MS   = try Matrix(T).init(nbf, nbf,                      allocator); defer   F_MS.deinit();
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
     
-    try transform(T, &F_MS, &J_MS_A, hf.F_AO, hf.J_AO, hf.C_AO, opt.hartree_fock.generalized, allocator);
+    try transform(T, &F_MS, &J_MS_A, hf.F_AS, hf.J_AS, hf.C_AS, allocator);
 
     var E: T = 0;
 
@@ -47,20 +45,10 @@ pub fn mp2(comptime T: type, F_MS: Matrix(T), J_MS_A: Tensor(T), nocc: usize) T 
 }
 
 /// Function to perform all integrals transformations used in the Moller-Plesset calculations.
-pub fn transform(comptime T: type, F_MS: *Matrix(T), J_MS_A: *Tensor(T), F_AO: Matrix(T), J_AO: Tensor(T), C_AO: Matrix(T), generalized: bool, allocator: std.mem.Allocator) !void {
-    var J_AS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_AS.deinit();
+pub fn transform(comptime T: type, F_MS: *Matrix(T), J_MS_A: *Tensor(T), F_AS: Matrix(T), J_AS: Tensor(T), C_AS: Matrix(T), allocator: std.mem.Allocator) !void {
     var J_MS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_MS.deinit();
 
-    var F_AS = try Matrix(T).init(J_MS_A.shape[0], J_MS_A.shape[0], allocator); defer F_AS.deinit();
-    var C_AS = try Matrix(T).init(J_MS_A.shape[0], J_MS_A.shape[0], allocator); defer C_AS.deinit();
-
-    @memcpy(F_AS.data[0..F_AO.data.len], F_AO.data);
-    @memcpy(J_AS.data[0..J_AO.data.len], J_AO.data);
-    @memcpy(C_AS.data[0..C_AO.data.len], C_AO.data);
-
-    if (!generalized) {tns.oneAO2AS(T, &F_AS, F_AO); tns.twoAO2AS(T, &J_AS, J_AO); tns.cfsMO2MS(T, &C_AS, C_AO);}
-
-    tns.oneAO2MO(T, F_MS, F_AS, C_AS); try tns.twoAO2MO(T, &J_MS, &J_AS, C_AS);
+    tns.oneAO2MO(T, F_MS, F_AS, C_AS); try tns.twoAO2MO(T, &J_MS, J_AS, C_AS);
 
     for (0..J_MS.shape[0]) |i| for (0..J_MS.shape[1]) |j| for (0..J_MS.shape[2]) |k| for (0..J_MS.shape[3]) |l| {
         J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS.at(&[_]usize{i, j, k, l}) - J_MS.at(&[_]usize{i, l, k, j});

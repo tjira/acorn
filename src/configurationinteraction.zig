@@ -19,16 +19,14 @@ const asfloat = @import("helper.zig").asfloat;
 
 /// The main function to run the CI calculations.
 pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
-    const hf = try hfm.run(T, opt.hartree_fock, print, allocator);
-
-    const nbf = if (opt.hartree_fock.generalized) hf.S_AO.rows else 2 * hf.S_AO.rows; const nocc = hf.system.getElectrons();
+    const hf = try hfm.run(T, opt.hartree_fock, print, allocator); const nbf = hf.S_AS.rows; const nocc = hf.system.getElectrons();
 
     const D = try generateDeterminants(nbf / 2, nocc / 2, allocator); defer D.deinit();
 
     var H_MS   = try Matrix(T).init(nbf, nbf,                      allocator); defer   H_MS.deinit();
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
 
-    try transform(T, &H_MS, &J_MS_A, hf.T_AO, hf.V_AO, hf.J_AO, hf.C_AO, opt.hartree_fock.generalized, allocator);
+    try transform(T, &H_MS, &J_MS_A, hf.T_AS, hf.V_AS, hf.J_AS, hf.C_AS, allocator);
 
     if (print) try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{D.rows});
 
@@ -135,22 +133,11 @@ fn slater(comptime T: type, A: Vector(usize), so: []const usize, H_MS: Matrix(T)
 }
 
 /// Function to perform all integrals transformations used in the CI calculations.
-fn transform(comptime T: type, H_MS: *Matrix(T), J_MS_A: *Tensor(T), T_AO: Matrix(T), V_AO: Matrix(T), J_AO: Tensor(T), C_AO: Matrix(T), generalized: bool, allocator: std.mem.Allocator) !void {
-    var H_AO = try Matrix(T).init(T_AO.rows, T_AO.cols, allocator); defer H_AO.deinit(); mat.add(T, &H_AO, T_AO, V_AO);
-
-    var J_AS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_AS.deinit();
+fn transform(comptime T: type, H_MS: *Matrix(T), J_MS_A: *Tensor(T), T_AS: Matrix(T), V_AS: Matrix(T), J_AS: Tensor(T), C_AS: Matrix(T), allocator: std.mem.Allocator) !void {
+    var H_AS = try Matrix(T).init(T_AS.rows, T_AS.cols,                                                          allocator); defer H_AS.deinit();
     var J_MS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_MS.deinit();
 
-    var H_AS = try Matrix(T).init(J_MS_A.shape[0], J_MS_A.shape[0], allocator); defer H_AS.deinit();
-    var C_AS = try Matrix(T).init(J_MS_A.shape[0], J_MS_A.shape[0], allocator); defer C_AS.deinit();
-
-    @memcpy(H_AS.data[0..H_AO.data.len], H_AO.data);
-    @memcpy(J_AS.data[0..J_AO.data.len], J_AO.data);
-    @memcpy(C_AS.data[0..C_AO.data.len], C_AO.data);
-
-    if (!generalized) {tns.cfsMO2MS(T, &C_AS, C_AO); tns.oneAO2AS(T, &H_AS, H_AO); tns.twoAO2AS(T, &J_AS, J_AO);}
-
-    tns.oneAO2MO(T, H_MS, H_AS, C_AS); try tns.twoAO2MO(T, &J_MS, &J_AS, C_AS);
+    mat.add(T, &H_AS, T_AS, V_AS); tns.oneAO2MO(T, H_MS, H_AS, C_AS); try tns.twoAO2MO(T, &J_MS, J_AS, C_AS);
 
     for (0..J_MS.shape[0]) |i| for (0..J_MS.shape[1]) |j| for (0..J_MS.shape[2]) |k| for (0..J_MS.shape[3]) |l| {
         J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS.at(&[_]usize{i, j, k, l}) - J_MS.at(&[_]usize{i, l, k, j});
