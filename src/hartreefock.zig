@@ -6,6 +6,7 @@ const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
 const bls = @import("blas.zig"      );
+const edf = @import("energydiff.zig");
 const eig = @import("eigen.zig"     );
 const inp = @import("input.zig"     );
 const lbt = @import("libint.zig"    );
@@ -14,6 +15,8 @@ const mat = @import("matrix.zig"    );
 const mth = @import("math.zig"      );
 const out = @import("output.zig"    );
 const pop = @import("population.zig");
+const prp = @import("property.zig"  );
+const sys = @import("system.zig"    );
 const ten = @import("tensor.zig"    );
 const tns = @import("transform.zig" );
 const vec = @import("vector.zig"    );
@@ -29,33 +32,44 @@ const uncr    = @import("helper.zig").uncr   ;
 
 /// Run the Hartree-Fock calculation with the given options.
 pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
-    if (opt.integral.basis == null and (opt.integral.overlap == null or opt.integral.kinetic == null or opt.integral.nuclear == null or opt.integral.coulomb == null)) return error.MissingIntegral;
+    try checkErrors(T, opt); var system = try sys.load(T, opt.system, opt.system_file, allocator); defer system.deinit();
 
-    if (opt.system_file == null and (opt.system.coords == null or opt.system.atoms == null)) return error.SystemNotFullySpecified;
-
-    if (!opt.generalized and @rem(@abs(opt.system.charge), 2) == 1) return error.UseGeneralizedHartreeFockForOddCharge;
-
-    var system: System(T) = undefined; var basis: std.ArrayList(T) = undefined;
-
-    if (opt.system_file == null and opt.system.coords != null) {
-
-        system = System(T){
-            .coords = try Matrix(T).init(opt.system.coords.?.len, 3, allocator),
-            .atoms  = try Vector(T).init(opt.system.atoms .?.len,    allocator),
-            .charge = opt.system.charge,
-        };
-
-        for (0..opt.system.atoms.?.len) |i| {
-            system.atoms.ptr(i).* = @as(T, @floatFromInt(opt.system.atoms.?[i]));
-        }
-
-        for (0..opt.system.coords.?.len) |i| for (0..3) |j| {
-            system.coords.ptr(i, j).* = opt.system.coords.?[i][j] * A2AU;
-        };
+    if (print) {
+        try std.io.getStdOut().writer().print("\nSYSTEM:\n", .{}); try system.print(std.io.getStdOut().writer());
     }
 
-    if (opt.system_file    != null) system = try System(T).read(opt.system_file.?, opt.system.charge,    allocator);
-    if (opt.integral.basis != null) basis  = try Basis(T).array(system,            opt.integral.basis.?, allocator);
+    var hf = try hfFull(T, opt, system, print, allocator);
+
+    if (opt.mulliken) hf.mulliken = try pop.mulliken(T, system, hf.basis, hf.S_AS, hf.D_AS, allocator);
+
+    if (print) {
+        if (hf.mulliken != null) {try std.io.getStdOut().writer().print("\nHF MULLIKEN POPULATION ANALYSIS:\n", .{}); try hf.mulliken.?.matrix().print(std.io.getStdOut().writer());}
+    }
+
+    if (opt.gradient != null) hf.G = try edf.gradient(T, opt, system, hfFull, allocator);
+
+    if (print) {
+        if (hf.G != null) {try std.io.getStdOut().writer().print("\nHF GRADIENT:\n", .{}); try hf.G.?.print(std.io.getStdOut().writer());}
+    }
+
+    if (opt.hessian  != null) hf.H = try edf.hessian( T, opt, system, hfFull, allocator);
+
+    if (print) {
+        if (hf.H != null) {try std.io.getStdOut().writer().print("\nHF HESSIAN:\n", .{}); try hf.H.?.print(std.io.getStdOut().writer());}
+    }
+
+    if (opt.hessian != null and opt.hessian.?.freq) hf.f = try prp.freq(T, system, hf.H.?, allocator);
+
+    if (print) {
+        if (hf.f != null) {try std.io.getStdOut().writer().print("\nHF HARMONIC FREQUENCIES:\n", .{}); try hf.f.?.matrix().print(std.io.getStdOut().writer());}
+    }
+
+    return hf;
+}
+
+/// Run the Hartree-Fock energy calculation on the provided system.
+pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
+    var basis: std.ArrayList(T) = undefined; if (opt.integral.basis != null) basis = try Basis(T).array(system, opt.integral.basis.?, allocator);
 
     var nbf: usize = 0; var npgs: usize = 0; var mem: f64 = 0; const VNN = system.nuclearRepulsion();
 
@@ -166,12 +180,6 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
 
     if (print) try std.io.getStdOut().writer().print("\nHF ENERGY: {d:.14}\n", .{E + VNN});
 
-    const m = try pop.mulliken(T, system, basis, S_A, D_A, allocator); defer m.deinit();
-
-    if (print) {
-        try std.io.getStdOut().writer().print("\nHF MULLIKEN POPULATION ANALYSIS:\n", .{}); try m.matrix().print(std.io.getStdOut().writer());
-    }
-
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
 
@@ -207,11 +215,28 @@ pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, alloca
         D_A.deinit(); D_A = D_AS;
         E_M.deinit(); E_M = E_MS;
         J_A.deinit(); J_A = J_AS;
+
+        mat.muls(T, &D_A, D_A, 0.5);
     }
 
     return out.HartreeFockOutput(T){
-        .S_AS = S_A, .T_AS = T_A, .V_AS = V_A, .J_AS = J_A, .C_AS = C_A, .D_AS = D_A, .E_MS = E_M, .F_AS = F_A, .E = E + VNN, .system = system, .basis = basis
+        .S_AS = S_A, .T_AS = T_A, .V_AS = V_A, .J_AS = J_A, .C_AS = C_A, .D_AS = D_A, .E_MS = E_M, .F_AS = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .f = null, .basis = basis
     };
+}
+
+/// Check the errors int the provided input.
+pub fn checkErrors(comptime T: type, opt: inp.HartreeFockOptions(T)) !void {
+    const calcInt = opt.integral.overlap == null or opt.integral.kinetic == null or opt.integral.nuclear == null or opt.integral.coulomb == null;
+    const readInt = opt.integral.overlap != null or opt.integral.kinetic != null or opt.integral.nuclear != null or opt.integral.coulomb != null;
+
+    if (opt.integral.basis == null and calcInt) return error.MissingIntegral;
+
+    if (opt.gradient != null and readInt) return error.CantUseGradientWithProvidedIntegrals;
+    if (opt.hessian  != null and readInt) return  error.CantUseHessianWithProvidedIntegrals;
+
+    if (!opt.generalized and @rem(@abs(opt.system.charge), 2) == 1) return error.UseGeneralizedHartreeFockForOddCharge;
+
+    if (opt.dsize != null and opt.dsize.? < 1) return error.InvalidDIISSize;
 }
 
 /// Extrapolate the DIIS error to obtain a new Fock matrix.

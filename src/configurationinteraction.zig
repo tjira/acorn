@@ -2,16 +2,20 @@
 
 const std = @import("std");
 
+const edf = @import("energydiff.zig" );
 const hfm = @import("hartreefock.zig");
 const inp = @import("input.zig"      );
 const lpk = @import("lapack.zig"     );
 const mat = @import("matrix.zig"     );
 const mth = @import("math.zig"       );
 const out = @import("output.zig"     );
+const prp = @import("property.zig"   );
+const sys = @import("system.zig"     );
 const ten = @import("tensor.zig"     );
 const tns = @import("transform.zig"  );
 
 const Matrix = @import("matrix.zig").Matrix;
+const System = @import("system.zig").System;
 const Tensor = @import("tensor.zig").Tensor;
 const Vector = @import("vector.zig").Vector;
 
@@ -19,7 +23,39 @@ const asfloat = @import("helper.zig").asfloat;
 
 /// The main function to run the CI calculations.
 pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
-    const hf = try hfm.run(T, opt.hartree_fock, print, allocator); const nbf = hf.S_AS.rows; const nocc = hf.system.getElectrons();
+    try checkErrors(T, opt); const system = try sys.load(T, opt.hartree_fock.system, opt.hartree_fock.system_file, allocator); defer system.deinit();
+
+    const hf = try hfm.run(T, opt.hartree_fock, print, allocator); var ci = try ciPost(T, opt, system, hf, print, allocator);
+
+    if (opt.gradient != null) ci.G = try edf.gradient(T, opt, system, ciFull, allocator);
+
+    if (print) {
+        if (ci.G != null) {try std.io.getStdOut().writer().print("\nCI GRADIENT:\n", .{}); try ci.G.?.print(std.io.getStdOut().writer());}
+    }
+
+    if (opt.hessian != null) ci.H = try edf.hessian(T, opt, system, ciFull, allocator);
+
+    if (print) {
+        if (ci.H != null) {try std.io.getStdOut().writer().print("\nCI HESSIAN:\n", .{}); try ci.H.?.print(std.io.getStdOut().writer());}
+    }
+
+    if (opt.hessian != null and opt.hessian.?.freq) ci.f = try prp.freq(T, system, ci.H.?, allocator);
+
+    if (print) {
+        if (ci.f != null) {try std.io.getStdOut().writer().print("\nCI HARMONIC FREQUENCIES:\n", .{}); try ci.f.?.matrix().print(std.io.getStdOut().writer());}
+    }
+
+    return ci;
+}
+
+/// Returns the CI energy given the system.
+pub fn ciFull(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), system: System(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
+    const hf = try hfm.hfFull(T, opt.hartree_fock, system, print, allocator); return ciPost(T, opt, system, hf, print, allocator);
+}
+
+/// Returns the CI energy given the system, provided the Hartree-Fock calculation is already done.
+pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), system: System(T), hf: out.HartreeFockOutput(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
+    const nbf = hf.S_AS.rows; const nocc = system.getElectrons();
 
     const D = if (opt.hartree_fock.generalized) try generateAllDeterminants(nbf, nocc, allocator) else try generateSingletDeterminants(nbf, nocc, allocator); defer D.deinit();
 
@@ -60,10 +96,10 @@ pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print:
 
     lpk.dsyevd(&E, &C, H);
 
-    if (print) try std.io.getStdOut().writer().print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + hf.system.nuclearRepulsion()});
+    if (print) try std.io.getStdOut().writer().print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + system.nuclearRepulsion()});
 
     return .{
-        .E = E.at(0, 0) + hf.system.nuclearRepulsion(),
+        .hf = hf, .E = E.at(0, 0) + system.nuclearRepulsion(), .G = null, .H = null, .f = null,
     };
 }
 
@@ -78,6 +114,14 @@ fn alignDeterminant(A: *Vector(usize), B: Vector(usize), C: Vector(usize)) !i32 
     }
 
     return sign;
+}
+
+/// Check for errors in the CI options.
+pub fn checkErrors(comptime T: type, opt: inp.ConfigurationInteractionOptions(T)) !void {
+    const readInt = opt.hartree_fock.integral.overlap != null or opt.hartree_fock.integral.kinetic != null or opt.hartree_fock.integral.nuclear != null or opt.hartree_fock.integral.coulomb != null;
+
+    if (opt.gradient != null and readInt) return error.CantUseGradientWithProvidedIntegrals;
+    if (opt.hessian  != null and readInt) return  error.CantUseHessianWithProvidedIntegrals;
 }
 
 /// Generates the determinants for the CI calculations including singlet and triplet excitations.

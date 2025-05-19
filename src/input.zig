@@ -72,9 +72,19 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
 /// The CI options
 pub fn ConfigurationInteractionOptions(comptime T: type) type {
     return struct {
+        pub const Gradient = struct {
+            numeric: bool = true,
+            step: T = 5e-3,
+        };
+        pub const Hessian = struct {
+            numeric: bool = true,
+            freq: bool = true,
+            step: T = 5e-3,
+        };
+
         excitation: ?[]const u32 = null,
 
-        hartree_fock: HartreeFockOptions(T) = .{},
+        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null,
     };
 }
 
@@ -98,6 +108,15 @@ pub fn HartreeFockOptions(comptime T: type) type {
             coulomb: ?[]const u8 = null,
             basis:   ?[]const u8 = null,
         };
+        pub const Gradient = struct {
+            numeric: bool = true,
+            step: T = 5e-3,
+        };
+        pub const Hessian = struct {
+            numeric: bool = true,
+            freq: bool = true,
+            step: T = 5e-3,
+        };
         pub const System = struct {
             atoms: ?[]const u8 = null,
             charge: i32 = 0,
@@ -117,8 +136,9 @@ pub fn HartreeFockOptions(comptime T: type) type {
         maxiter: u32 = 100,
         dsize: ?u32 = 5,
         generalized: bool = false,
+        mulliken: bool = true,
 
-        integral: Integral = .{}, system: System = .{}, write: Write = .{}
+        integral: Integral = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, system: System = .{}, write: Write = .{}
     };
 }
 
@@ -144,9 +164,19 @@ pub fn ModelPotentialOptions(comptime T: type) type {
 /// The Moller-Plesset options
 pub fn MollerPlessetOptions(comptime T: type) type {
     return struct {
+        pub const Gradient = struct {
+            numeric: bool = true,
+            step: T = 5e-3,
+        };
+        pub const Hessian = struct {
+            numeric: bool = true,
+            freq: bool = true,
+            step: T = 5e-3,
+        };
+
         order: u32 = 2,
 
-        hartree_fock: HartreeFockOptions(T) = .{},
+        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null,
     };
 }
 

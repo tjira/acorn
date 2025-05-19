@@ -1,27 +1,49 @@
 #!/bin/bash
 
-# USAGE: wraporca.sh SYSTEM BASIS CHARGE MULT METHOD
-if [ "$#" -ne 5 ]; then
-    echo "USAGE: wraporca.sh SYSTEM BASIS CHARGE MULT METHOD"; exit 1
+usage() {
+  cat <<EOF
+Usage: $(basename $0) [options]
+
+Options:
+  -s <system>       System file. (default: ${COUNT})
+  -b <basis>        Basis set used to specify the atomic orbitals. (default: ${LOG_INTERVAL})
+  -c <charge>       Charge of the system. (default: ${OUTPUT})
+  -p <multiplicity> Spin multiplicity of the system. (default: ${START})
+  -m <method>       Method to perform. (default: ${START})
+  -f                Flag for the hessian and frequency calculation.
+  -g                Flag for the gradient calculation.
+  -h                Display this help message and exit.
+EOF
+
+}; SYSTEM="molecule.xyz"; BASIS="sto-3g"; CHARGE=0; MULTIPLICITY=1; METHOD="hf"; FREQUENCY=0; GRADIENT=0
+
+while getopts "s:b:c:p:m:fgh" OPT; do case "$OPT" in
+  s ) SYSTEM="$OPTARG" ;; b ) BASIS="$OPTARG" ;; c ) CHARGE="$OPTARG" ;; p ) MULTIPLICITY="$OPTARG" ;; m ) METHOD="$OPTARG" ;; f ) FREQUENCY=1 ;; g ) GRADIENT=1 ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+esac done
+
+# create a folder and extract the method
+mkdir -p .orca; METHOD=${METHOD^^}; OPTIONS=""
+
+if [[ $METHOD == "FCI" ]]; then
+    METHOD=""; OPTIONS="%casscf DoFCI true; end"
 fi
 
-# create a folder
-mkdir -p .orca
+if [[ $FREQUENCY -eq 1 ]]; then
+    FREQUENCY="NUMFREQ"; else FREQUENCY=""
+fi
 
-# extract the method
-METHOD=${5^^}; if [[ ${5^^} == "FCI" ]]; then METHOD=""; fi
-
-# extract the options
-OPTIONS=""; if [[ ${5^^} == "FCI" ]]; then OPTIONS="%casscf DoFCI true; end"; fi
+if [[ $GRADIENT -eq 1 ]]; then
+    GRADIENT="ENGRAD NUMGRAD"; else GRADIENT=""
+fi
 
 # specify the input file
 cat << EOT > .orca/orca.inp
-! $METHOD ${2^^} HCORE KDIIS NOFROZENCORE
+! $METHOD ${BASIS^^} HCORE KDIIS NOFROZENCORE TIGHTSCF $GRADIENT $FREQUENCY LARGEPRINT
 
 $OPTIONS
 
-*xyzfile $3 $4 ../$1
+*xyzfile $CHARGE $MULTIPLICITY ../$SYSTEM
 EOT
 
 # run the calculation
-cd .orca && orca orca.inp; cd .. && rm -rf .orca
+cd .orca && orca orca.inp; cd .. # && rm -rf .orca

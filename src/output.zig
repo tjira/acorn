@@ -41,11 +41,15 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
 /// The CI output.
 pub fn ConfigurationInteractionOutput(comptime T: type) type {
     return struct {
-        E: T,
+        hf: HartreeFockOutput(T), E: T, G: ?Matrix(T), H: ?Matrix(T), f: ?Vector(T),
 
         /// Free the memory allocated for the CI output.
         pub fn deinit(self: ConfigurationInteractionOutput(T)) void {
-            _ = self;
+            self.hf.deinit();
+
+            if (self.G != null) self.G.?.deinit();
+            if (self.H != null) self.H.?.deinit();
+            if (self.f != null) self.f.?.deinit();
         }
     };
 }
@@ -56,14 +60,22 @@ pub fn HartreeFockOutput(comptime T: type) type {
         S_AS: Matrix(T), T_AS: Matrix(T), V_AS: Matrix(T), J_AS: Tensor(T),
         C_AS: Matrix(T), D_AS: Matrix(T), E_MS: Matrix(T), F_AS: Matrix(T),
 
-        system: System(T), basis: std.ArrayList(T), E: T,
+        mulliken: ?Vector(T),
+
+        basis: std.ArrayList(T), E: T, G: ?Matrix(T), H: ?Matrix(T), f: ?Vector(T),
 
         /// Free the memory allocated for the Hartree-Fock output.
         pub fn deinit(self: HartreeFockOutput(T)) void {
             self.S_AS.deinit(); self.T_AS.deinit(); self.V_AS.deinit(); self.J_AS.deinit();
             self.C_AS.deinit(); self.D_AS.deinit(); self.E_MS.deinit(); self.F_AS.deinit();
 
-            self.system.deinit(); self.basis.deinit();
+            if (self.mulliken != null) self.mulliken.?.deinit();
+
+            self.basis.deinit();
+
+            if (self.G != null) self.G.?.deinit();
+            if (self.H != null) self.H.?.deinit();
+            if (self.f != null) self.f.?.deinit();
         }
     };
 }
@@ -71,11 +83,15 @@ pub fn HartreeFockOutput(comptime T: type) type {
 /// The Moller-Plesset output.
 pub fn MollerPlessetOutput(comptime T: type) type {
     return struct {
-        E: T,
+        hf: HartreeFockOutput(T), E: T, G: ?Matrix(T), H: ?Matrix(T), f: ?Vector(T),
 
         /// Free the memory allocated for the Moller-Plesset output.
         pub fn deinit(self: MollerPlessetOutput(T)) void {
-            _ = self;
+            self.hf.deinit();
+
+            if (self.G != null) self.G.?.deinit();
+            if (self.H != null) self.H.?.deinit();
+            if (self.f != null) self.f.?.deinit();
         }
     };
 }
