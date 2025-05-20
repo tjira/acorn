@@ -35,8 +35,8 @@ test "moller_plesset_hydrogen_2" {
     const output_ccpvdz = try moller_plesset.run(f64, opt_ccpvdz, false, allocator); defer output_ccpvdz.deinit();
     const output_ccpvtz = try moller_plesset.run(f64, opt_ccpvtz, false, allocator); defer output_ccpvtz.deinit();
 
-    try expect(output_sto3g.E,  -1.13012364534420);
-    try expect(output_631g.E,   -1.14391755478545);
-    try expect(output_ccpvdz.E, -1.15434251438166);
-    try expect(output_ccpvtz.E, -1.16458063440793);
+    try expect(output_sto3g.E,  -1.13012364534534);
+    try expect(output_631g.E,   -1.14391755479002);
+    try expect(output_ccpvdz.E, -1.15434251439068);
+    try expect(output_ccpvtz.E, -1.16458063441218);
 }

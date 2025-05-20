@@ -74,17 +74,22 @@ pub fn ConfigurationInteractionOptions(comptime T: type) type {
     return struct {
         pub const Gradient = struct {
             numeric: bool = true,
-            step: T = 5e-3,
+            step: T = 1e-3,
         };
         pub const Hessian = struct {
             numeric: bool = true,
             freq: bool = true,
-            step: T = 5e-3,
+            step: T = 1e-3,
+        };
+        pub const Optimize = struct {
+            maxiter: u32 = 100,
+            threshold: T = 1e-6,
+            step: T = 1,
         };
 
         excitation: ?[]const u32 = null,
 
-        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null,
+        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null,
     };
 }
 
@@ -110,12 +115,17 @@ pub fn HartreeFockOptions(comptime T: type) type {
         };
         pub const Gradient = struct {
             numeric: bool = true,
-            step: T = 5e-3,
+            step: T = 1e-2,
         };
         pub const Hessian = struct {
             numeric: bool = true,
             freq: bool = true,
-            step: T = 5e-3,
+            step: T = 1e-2,
+        };
+        pub const Optimize = struct {
+            maxiter: u32 = 100,
+            threshold: T = 1e-6,
+            step: T = 1,
         };
         pub const System = struct {
             atoms: ?[]const u8 = null,
@@ -138,7 +148,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
         generalized: bool = false,
         mulliken: bool = true,
 
-        integral: Integral = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, system: System = .{}, write: Write = .{}
+        integral: Integral = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null, system: System = .{}, write: Write = .{}
     };
 }
 
@@ -166,17 +176,22 @@ pub fn MollerPlessetOptions(comptime T: type) type {
     return struct {
         pub const Gradient = struct {
             numeric: bool = true,
-            step: T = 5e-3,
+            step: T = 1e-3,
         };
         pub const Hessian = struct {
             numeric: bool = true,
             freq: bool = true,
-            step: T = 5e-3,
+            step: T = 1e-3,
+        };
+        pub const Optimize = struct {
+            maxiter: u32 = 100,
+            threshold: T = 1e-6,
+            step: T = 1,
         };
 
         order: u32 = 2,
 
-        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null,
+        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null,
     };
 }
 

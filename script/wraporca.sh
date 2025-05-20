@@ -25,11 +25,11 @@ esac done
 mkdir -p .orca; METHOD=${METHOD^^}; OPTIONS=""
 
 if [[ $METHOD == "FCI" ]]; then
-    METHOD=""; OPTIONS="%casscf DoFCI true; end"
+    METHOD=""; OPTIONS="%CASSCF DOFCI TRUE; END"
 fi
 
 if [[ $FREQUENCY -eq 1 ]]; then
-    FREQUENCY="NUMFREQ"; else FREQUENCY=""
+    FREQUENCY="NUMFREQ"; OPTIONS="%FREQ PROJECTTR FALSE; END"; else FREQUENCY=""
 fi
 
 if [[ $GRADIENT -eq 1 ]]; then
@@ -46,4 +46,4 @@ $OPTIONS
 EOT
 
 # run the calculation
-cd .orca && orca orca.inp; cd .. # && rm -rf .orca
+cd .orca && orca orca.inp; cd .. && rm -rf .orca

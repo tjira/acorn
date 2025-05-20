@@ -1,0 +1,37 @@
+//! Functions to optimize a system with quantum mechanical gradients.
+
+const std = @import("std");
+
+const edf = @import("energydiff.zig");
+const mat = @import("matrix.zig"    );
+
+const Matrix = @import("matrix.zig").Matrix;
+const System = @import("system.zig").System;
+
+/// General function to optimize a system with quantum mechanical gradients.
+pub fn optimize(comptime T: type, opt: anytype, system: System(T), efunc: anytype, method: []const u8, print: bool, allocator: std.mem.Allocator) !System(T) {
+    if (opt.gradient == null) return error.GradientNotDefined;
+
+    var optsystem = try system.clone();
+
+    if (print) try std.io.getStdOut().writer().print("\n{s} GEOMETRY OPTIMIZATION:\n{s:4} {s:20}\n", .{method, "ITER", "GRADIENT NORM"});
+
+    for (0..opt.optimize.?.maxiter) |i| {
+
+        if (i == opt.optimize.?.maxiter) return error.MaxIterationsExceeded;
+
+        if (print) try std.io.getStdOut().writer().print("{d:4} ", .{i + 1});
+
+        var G = try edf.gradient(T, opt, optsystem, efunc, method, false, allocator);
+
+        if (print) try std.io.getStdOut().writer().print("{d:20.14}\n", .{G.vector().norm()});
+
+        if (G.vector().norm() < opt.optimize.?.threshold) break;
+
+        mat.muls(T, &G, G, opt.optimize.?.step);
+
+        mat.sub(T, &optsystem.coords, optsystem.coords, G);
+    }
+
+    return optsystem;
+}

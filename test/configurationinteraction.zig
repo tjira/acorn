@@ -31,6 +31,6 @@ test "configuration_interaction_hydrogen_full" {
     const output_sto3g = try configuration_interaction.run(f64, opt_sto3g, false, allocator); defer output_sto3g.deinit();
     const output_631g  = try configuration_interaction.run(f64, opt_631g,  false, allocator); defer  output_631g.deinit();
 
-    try expect(output_sto3g.E, -1.13711171523940);
-    try expect(output_631g.E,  -1.15122475611609);
+    try expect(output_sto3g.E, -1.13711171524389);
+    try expect(output_631g.E,  -1.15122475612240);
 }

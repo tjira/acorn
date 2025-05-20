@@ -1,15 +1,18 @@
-//! Constants used in the project.
+//! Constants used in the project from CODATA 2022 (https://physics.nist.gov/cuu/Constants/index.html).
 
 const std = @import("std");
 
-/// Angstrom to atomic units factor.
-pub const A2AU = 1.8897261254578281;
 
-/// Electronvolt to reciprocal centimeter factor.
-pub const EV2RCM = 8065.54429;
+pub const Eh  = 4.359744722206e-18; // J
+pub const a0  = 5.29177210544e-11;  // m
+pub const c   = 299792458.0;        // m/s
+pub const amu = 1.66053906892e-27;  // kg
+pub const e   = 1.602176634e-19;    // C
+pub const h   = 6.62607015e-34;     // J.s
 
-/// Atomic unit to electronvolt factor.
-pub const AU2EV = 27.211324570273;
+pub const A2AU = 1e-10 / a0;         // Å to a.u. of length
+pub const AU2EV = Eh / c;            // a.u. of energy to eV
+pub const EV2RCM = 1e-2 * e / h / c; // eV of photon to its wavenumber in cm^-1
 
 /// Atomic symbol to atomic number map.
 pub const SM2AN = std.StaticStringMap(u32).initComptime(.{
@@ -24,3 +27,43 @@ pub const SM2AN = std.StaticStringMap(u32).initComptime(.{
                                               .{"Ce",  58}, .{"Pr",  59}, .{"Nd",  60}, .{"Pm",  61}, .{"Sm",  62}, .{"Eu",  63}, .{"Gd",  64}, .{"Tb",  65}, .{"Dy",  66}, .{"Ho",  67}, .{"Er",  68}, .{"Tm",  69}, .{"Yb",  70}, .{"Lu",  71},
                                               .{"Th",  90}, .{"Pa",  91}, .{"U",   92}, .{"Np",  93}, .{"Pu",  94}, .{"Am",  95}, .{"Cm",  96}, .{"Bk",  97}, .{"Cf",  98}, .{"Es",  99}, .{"Fm", 100}, .{"Md", 101}, .{"No", 102}, .{"Lr", 103},
 });
+
+/// Atomic number to mass array.
+pub const AN2M = [_]f64{
+     1.007840000, // H
+     4.002602000, // He
+     6.938000000, // Li
+     9.012183100, // Be
+    10.806000000, // B
+    12.009600000, // C
+    14.006430000, // N
+    15.999030000, // O
+    18.998403163, // F
+    20.179700000, // Ne
+    22.989769280, // Na
+    24.305500000, // Mg
+    26.981538500, // Al
+    28.085000000, // Si
+    30.973761998, // P
+    32.067000000, // S
+    35.453300000, // Cl
+    39.948000000, // Ar
+    39.098300000, // K
+    40.078000000, // Ca
+    44.955908000, // Sc
+    47.867000000, // Ti
+    50.941500000, // V
+    51.996100000, // Cr
+    54.938044000, // Mn
+    55.845000000, // Fe
+    58.933194000, // Co
+    58.693400000, // Ni
+    63.546000000, // Cu
+    65.380000000, // Zn
+    69.723000000, // Ga
+    72.630000000, // Ge
+    74.921595000, // As
+    78.971000000, // Se
+    79.904000000, // Br
+    83.798000000, // Kr
+};

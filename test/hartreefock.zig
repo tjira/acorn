@@ -31,8 +31,8 @@ test "hartree_fock_hydrogen" {
     const output_ccpvdz = try hartree_fock.run(f64, opt_ccpvdz, false, allocator); defer output_ccpvdz.deinit();
     const output_ccpvtz = try hartree_fock.run(f64, opt_ccpvtz, false, allocator); defer output_ccpvtz.deinit();
 
-    try expect(output_sto3g.E,  -1.11744507742767);
-    try expect(output_631g.E,   -1.12675331625770);
-    try expect(output_ccpvdz.E, -1.12815326004132);
-    try expect(output_ccpvtz.E, -1.13285933203976);
+    try expect(output_sto3g.E,  -1.11744507742492);
+    try expect(output_631g.E,   -1.12675331626040);
+    try expect(output_ccpvdz.E, -1.12815326004878);
+    try expect(output_ccpvtz.E, -1.13285933204346);
 }

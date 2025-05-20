@@ -46,8 +46,8 @@ Below are all the important features of Acorn divided into categories.
 ### Time-Independent Quantum Mechanics
 
 * Restricted and Generalized Hartree–Fock Method with DIIS
-* Møller–Plesset Perturbation Theory
-* Full Configuration Interaction
+* Møller–Plesset Perturbation Theory and Configuration Interaction
+* Gradients, Hessians, Frequencies and Some Optimization Algorithms
 
 ### Time-Dependent Quantum Mechanics
 

@@ -13,6 +13,7 @@ const lbt = @import("libint.zig"    );
 const lpk = @import("lapack.zig"    );
 const mat = @import("matrix.zig"    );
 const mth = @import("math.zig"      );
+const opm = @import("optimize.zig"  );
 const out = @import("output.zig"    );
 const pop = @import("population.zig");
 const prp = @import("property.zig"  );
@@ -30,44 +31,59 @@ const Vector = @import("vector.zig").Vector;
 const asfloat = @import("helper.zig").asfloat;
 const uncr    = @import("helper.zig").uncr   ;
 
-/// Run the Hartree-Fock calculation with the given options.
+/// Main function to run the Hartree-Fock calculation with the given options.
 pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
-    try checkErrors(T, opt); var system = try sys.load(T, opt.system, opt.system_file, allocator); defer system.deinit();
+     var system = try sys.load(T, opt.system, opt.system_file, allocator); defer system.deinit();
 
     if (print) {
         try std.io.getStdOut().writer().print("\nSYSTEM:\n", .{}); try system.print(std.io.getStdOut().writer());
     }
 
-    var hf = try hfFull(T, opt, system, print, allocator);
+    return runFull(T, opt, &system, print, allocator);
+}
 
-    if (opt.mulliken) hf.mulliken = try pop.mulliken(T, system, hf.basis, hf.S_AS, hf.D_AS, allocator);
+/// Secondary function to run the Hartree-Fock calculation with the given options from a reference geometry.
+pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
+    try checkErrors(T, opt); const name = try std.fmt.allocPrint(allocator, "HF", .{}); defer allocator.free(name);
 
-    if (print) {
-        if (hf.mulliken != null) {try std.io.getStdOut().writer().print("\nHF MULLIKEN POPULATION ANALYSIS:\n", .{}); try hf.mulliken.?.matrix().print(std.io.getStdOut().writer());}
+    if (opt.optimize != null) {
+        const optsys = try opm.optimize(T, opt, system.*, hfFull, name, print, allocator); system.deinit(); system.* = optsys;
     }
 
-    if (opt.gradient != null) hf.G = try edf.gradient(T, opt, system, hfFull, allocator);
-
     if (print) {
-        if (hf.G != null) {try std.io.getStdOut().writer().print("\nHF GRADIENT:\n", .{}); try hf.G.?.print(std.io.getStdOut().writer());}
+        if (opt.optimize != null) {try std.io.getStdOut().writer().print("\n{s} OPTIMIZED SYSTEM:\n", .{name}); try system.print(std.io.getStdOut().writer());}
     }
 
-    if (opt.hessian  != null) hf.H = try edf.hessian( T, opt, system, hfFull, allocator);
+    var hf = try hfFull(T, opt, system.*, print, allocator);
+
+    if (opt.mulliken) hf.mulliken = try pop.mulliken(T, system.*, hf.basis, hf.S_AS, hf.D_AS, allocator);
 
     if (print) {
-        if (hf.H != null) {try std.io.getStdOut().writer().print("\nHF HESSIAN:\n", .{}); try hf.H.?.print(std.io.getStdOut().writer());}
+        if (hf.mulliken != null) {try std.io.getStdOut().writer().print("\n{s} MULLIKEN POPULATION ANALYSIS:\n", .{name}); try hf.mulliken.?.matrix().print(std.io.getStdOut().writer());}
     }
 
-    if (opt.hessian != null and opt.hessian.?.freq) hf.f = try prp.freq(T, system, hf.H.?, allocator);
+    if (opt.gradient != null) hf.G = try edf.gradient(T, opt, system.*, hfFull, name, true, allocator);
 
     if (print) {
-        if (hf.f != null) {try std.io.getStdOut().writer().print("\nHF HARMONIC FREQUENCIES:\n", .{}); try hf.f.?.matrix().print(std.io.getStdOut().writer());}
+        if (hf.G != null) {try std.io.getStdOut().writer().print("\n{s} GRADIENT:\n", .{name}); try hf.G.?.print(std.io.getStdOut().writer());}
+    }
+
+    if (opt.hessian != null) hf.H = try edf.hessian(T, opt, system.*, hfFull, name, true, allocator);
+
+    if (print) {
+        if (hf.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try hf.H.?.print(std.io.getStdOut().writer());}
+    }
+
+    if (opt.hessian != null and opt.hessian.?.freq) hf.freqs = try prp.freq(T, system.*, hf.H.?, allocator);
+
+    if (print) {
+        if (hf.freqs != null) {try std.io.getStdOut().writer().print("\n{s} HARMONIC FREQUENCIES:\n", .{name}); try hf.freqs.?.matrix().print(std.io.getStdOut().writer());}
     }
 
     return hf;
 }
 
-/// Run the Hartree-Fock energy calculation on the provided system.
+/// Function to actually run the Hartree-Fock energy calculation on the provided system without additional calculation.
 pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
     var basis: std.ArrayList(T) = undefined; if (opt.integral.basis != null) basis = try Basis(T).array(system, opt.integral.basis.?, allocator);
 
@@ -147,7 +163,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
     var iter: u32 = 0; var E: T = 0; var EP: T = 1; mat.add(T, &H_A, T_A, V_A);
 
-    if (print) try std.io.getStdOut().writer().print("\n{s:4} {s:20} {s:8}\n", .{"ITER", "ENERGY", "|DELTA E|"});
+    if (print) try std.io.getStdOut().writer().print("\nHF SELF-CONSISTENT FIELD:\n{s:4} {s:20} {s:8}\n", .{"ITER", "ENERGY", "|DELTA E|"});
 
     while (@abs(EP - E) > opt.threshold) : (iter += 1) {
 
@@ -220,7 +236,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
     }
 
     return out.HartreeFockOutput(T){
-        .S_AS = S_A, .T_AS = T_A, .V_AS = V_A, .J_AS = J_A, .C_AS = C_A, .D_AS = D_A, .E_MS = E_M, .F_AS = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .f = null, .basis = basis
+        .S_AS = S_A, .T_AS = T_A, .V_AS = V_A, .J_AS = J_A, .C_AS = C_A, .D_AS = D_A, .E_MS = E_M, .F_AS = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .freqs = null, .basis = basis
     };
 }
 

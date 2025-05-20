@@ -41,7 +41,7 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
 /// The CI output.
 pub fn ConfigurationInteractionOutput(comptime T: type) type {
     return struct {
-        hf: HartreeFockOutput(T), E: T, G: ?Matrix(T), H: ?Matrix(T), f: ?Vector(T),
+        hf: HartreeFockOutput(T), E: T, G: ?Matrix(T), H: ?Matrix(T), freqs: ?Vector(T),
 
         /// Free the memory allocated for the CI output.
         pub fn deinit(self: ConfigurationInteractionOutput(T)) void {
@@ -49,7 +49,8 @@ pub fn ConfigurationInteractionOutput(comptime T: type) type {
 
             if (self.G != null) self.G.?.deinit();
             if (self.H != null) self.H.?.deinit();
-            if (self.f != null) self.f.?.deinit();
+
+            if (self.freqs != null) self.freqs.?.deinit();
         }
     };
 }
@@ -62,7 +63,7 @@ pub fn HartreeFockOutput(comptime T: type) type {
 
         mulliken: ?Vector(T),
 
-        basis: std.ArrayList(T), E: T, G: ?Matrix(T), H: ?Matrix(T), f: ?Vector(T),
+        basis: std.ArrayList(T), E: T, G: ?Matrix(T), H: ?Matrix(T), freqs: ?Vector(T),
 
         /// Free the memory allocated for the Hartree-Fock output.
         pub fn deinit(self: HartreeFockOutput(T)) void {
@@ -75,7 +76,8 @@ pub fn HartreeFockOutput(comptime T: type) type {
 
             if (self.G != null) self.G.?.deinit();
             if (self.H != null) self.H.?.deinit();
-            if (self.f != null) self.f.?.deinit();
+
+            if (self.freqs != null) self.freqs.?.deinit();
         }
     };
 }
@@ -83,7 +85,7 @@ pub fn HartreeFockOutput(comptime T: type) type {
 /// The Moller-Plesset output.
 pub fn MollerPlessetOutput(comptime T: type) type {
     return struct {
-        hf: HartreeFockOutput(T), E: T, G: ?Matrix(T), H: ?Matrix(T), f: ?Vector(T),
+        hf: HartreeFockOutput(T), E: T, G: ?Matrix(T), H: ?Matrix(T), freqs: ?Vector(T),
 
         /// Free the memory allocated for the Moller-Plesset output.
         pub fn deinit(self: MollerPlessetOutput(T)) void {
@@ -91,7 +93,8 @@ pub fn MollerPlessetOutput(comptime T: type) type {
 
             if (self.G != null) self.G.?.deinit();
             if (self.H != null) self.H.?.deinit();
-            if (self.f != null) self.f.?.deinit();
+
+            if (self.freqs != null) self.freqs.?.deinit();
         }
     };
 }
