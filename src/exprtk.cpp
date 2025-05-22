@@ -7,7 +7,9 @@ struct Expression {
 };
 
 extern "C" {
-    void* compile(const char* string, int nvars) {
+    typedef unsigned long ulong;
+
+    void* compile(const char* string, ulong nvars) {
         Expression* expr = new Expression(); exprtk::parser<double> parser; expr->vars.resize(nvars);
 
         for (int i = 1; i <= nvars; i++) {

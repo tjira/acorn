@@ -8,20 +8,20 @@ const System = @import("system.zig").System;
 
 /// Calculate the Coulomb integrals.
 pub fn coulomb(ints: []f64, system: System(f64), basis: std.ArrayList(f64)) void {
-    libint.coulomb(&ints[0], @intCast(system.atoms.rows), &system.atoms.data[0], &system.coords.data[0], @intCast(basis.items.len), basis.items.ptr);
+    libint.coulomb(&ints[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
 }
 
 /// Calculate the kinetic integrals.
 pub fn kinetic(ints: []f64, system: System(f64), basis: std.ArrayList(f64)) void {
-    libint.kinetic(&ints[0], @intCast(system.atoms.rows), &system.atoms.data[0], &system.coords.data[0], @intCast(basis.items.len), basis.items.ptr);
+    libint.kinetic(&ints[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
 }
 
 /// Calculate the nuclear integrals.
 pub fn nuclear(ints: []f64, system: System(f64), basis: std.ArrayList(f64)) void {
-    libint.nuclear(&ints[0], @intCast(system.atoms.rows), &system.atoms.data[0], &system.coords.data[0], @intCast(basis.items.len), basis.items.ptr);
+    libint.nuclear(&ints[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
 }
 
 /// Calculate the overlap integrals.
 pub fn overlap(ints: []f64, system: System(f64), basis: std.ArrayList(f64)) void {
-    libint.overlap(&ints[0], @intCast(system.atoms.rows), &system.atoms.data[0], &system.coords.data[0], @intCast(basis.items.len), basis.items.ptr);
+    libint.overlap(&ints[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
 }

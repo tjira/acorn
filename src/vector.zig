@@ -2,8 +2,7 @@
 
 const std = @import("std"); const Complex = std.math.Complex;
 
-const StridedArray = @import("stridedarray.zig").StridedArray;
-const Matrix       = @import("matrix.zig").Matrix            ;
+const Matrix = @import("matrix.zig").Matrix;
 
 const asfloat = @import("helper.zig").asfloat;
 const istruct = @import("helper.zig").istruct;

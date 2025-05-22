@@ -23,7 +23,7 @@ std::pair<std::vector<libint2::Atom>, std::vector<libint2::Shell>> load(int nato
 
 #include <omp.h>
 extern "C" {
-    using namespace libint2;
+    using namespace libint2; typedef unsigned long ulong;
 
     void oneelec(double *ints, libint2::Engine &engine, const std::vector<Shell> &shells) {
         int nbf = 0; std::vector<size_t> sh2bf; std::vector<Engine> engines(std::getenv("OMP_NUM_THREADS") ? std::max(1, std::atoi(std::getenv("OMP_NUM_THREADS"))) : 1, engine);
@@ -77,7 +77,7 @@ extern "C" {
         }
     }
 
-    void coulomb(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+    void coulomb(double *ints, ulong natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
         auto [atoms, shells] = load(natoms, anums, coords, nbasis, basis); int max_l = 0; size_t max_npgs = 0;
 
         for (auto shell : shells) {
@@ -89,7 +89,7 @@ extern "C" {
         twoelec(ints, engine, shells); finalize();
     }
 
-    void kinetic(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+    void kinetic(double *ints, ulong natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
         auto [atoms, shells] = load(natoms, anums, coords, nbasis, basis); int max_l = 0; size_t max_npgs = 0;
 
         for (auto shell : shells) {
@@ -101,7 +101,7 @@ extern "C" {
         oneelec(ints, engine, shells); finalize();
     }
 
-    void nuclear(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+    void nuclear(double *ints, ulong natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
         auto [atoms, shells] = load(natoms, anums, coords, nbasis, basis); int max_l = 0; size_t max_npgs = 0;
 
         for (auto shell : shells) {
@@ -115,7 +115,7 @@ extern "C" {
         oneelec(ints, engine, shells); finalize();
     }
 
-    void overlap(double *ints, int natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
+    void overlap(double *ints, ulong natoms, const double *anums, const double *coords, int nbasis, const double *basis) {
         auto [atoms, shells] = load(natoms, anums, coords, nbasis, basis); int max_l = 0; size_t max_npgs = 0;
 
         for (auto shell : shells) {

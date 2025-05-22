@@ -1,5 +1,5 @@
-void contract_221(double *C, const unsigned long *dC, double *A, const unsigned long *dA, double *B, const unsigned long *dB, const int *pairs);
-void contract_241(double *C, const unsigned long *dC, double *A, const unsigned long *dA, double *B, const unsigned long *dB, const int *pairs);
-void contract_242(double *C, const unsigned long *dC, double *A, const unsigned long *dA, double *B, const unsigned long *dB, const int *pairs);
+typedef unsigned long ulong;
 
-void logm(double *B, double *A, const unsigned long n);
+void contract(double *C, const ulong *dC, ulong rC, double *A, const ulong *dA, ulong rA, double *B, const ulong *dB, ulong rB, const int *pairs, ulong npairs);
+
+void logm(double *B, double *A, const ulong n);
