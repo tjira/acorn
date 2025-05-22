@@ -140,6 +140,8 @@ pub fn checkErrors(comptime T: type, opt: inp.ConfigurationInteractionOptions(T)
     if (opt.gradient != null and readInt) return error.CantUseGradientWithProvidedIntegrals;
     if (opt.hessian  != null and readInt) return  error.CantUseHessianWithProvidedIntegrals;
 
+    if (!opt.hartree_fock.generalized and opt.active_space != null and opt.active_space.?[1] % 2 == 1) return error.UseGeneralizedHartreeFockForOddActiveOrbitals;
+
     if (opt.hartree_fock.optimize != null) return error.CantOptimizeOnHartreeFockAndUseConfigurationInteraction;
 }
 

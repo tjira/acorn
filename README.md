@@ -70,16 +70,16 @@ You can download the latest release [here](https://github.com/tjira/acorn/releas
 
 ### Compilation
 
-First you need to have the zig compiler available. You can download the latest version of the zig compiler from the [official website](https://ziglang.org/download) or install it from your favourite package manager. After you have acquired the compiler, you need to have a few libraries installed on your system. You can download and compile them in the project root using the practical `./script/library.sh` script. After the libraries have compiled, navigate to the project root and run the following command to compile the project.
+To install all necessary prerequisites, you need to have a few libraries installed on your system. You can download and compile them in the project root using the practical `./script/library.sh` script. The script, among other things, downloads the zig compiler into the `zig-bin` directory. After the libraries have compiled, navigate to the project root and run the following command to compile the project.
 
 ```bash
-zig build && zig build script
+./zig-bin/zig build && zig build script
 ```
 
 This will compile the project and create a binary file named `acorn` in the `zig-out/arch-os-abi` folder, where `arch` is the architecture of your system, `os` is the operating system you are using and the default ABI is musl. It will also generate some usefull wrappers around the binary in the same folder. You can also perform tests on the project by running the following command.
 
 ```bash
-zig build test
+./zig-bin/zig build test
 ```
 
 If some tests fail, let me know by creating an issue. If all the tests pass, you can run the binary file using the following command.

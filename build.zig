@@ -47,7 +47,7 @@ pub fn build(builder: *std.Build) !void {
         main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
 
-        test_executable.root_module.addImport("acorn", &main_executable.root_module);
+        test_executable.root_module.addImport("acorn", main_executable.root_module);
 
         const main_install = builder.addInstallArtifact(main_executable, .{
             .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
@@ -64,8 +64,8 @@ pub fn build(builder: *std.Build) !void {
     var script_step = builder.step("script", "Generate executable scripts"); script_step.makeFn = script; script_step.dependOn(builder.getInstallStep());
 }
 
-pub fn script(self: *std.Build.Step, progress: std.Progress.Node) !void {
-    _ = self; _ = progress;
+pub fn script(self: *std.Build.Step, options: std.Build.Step.MakeOptions) !void {
+    _ = self; _ = options;
 
     for (targets) |target| if (target.os_tag == .linux) {
         try linuxScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));

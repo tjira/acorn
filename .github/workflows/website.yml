@@ -23,9 +23,6 @@ jobs:
       - name: Install Pandoc
         run: wget https://github.com/jgm/pandoc/releases/download/3.4/pandoc-3.4-1-amd64.deb -O pandoc.deb && sudo dpkg -i pandoc.deb
 
-      - name: Download Zig Compiler
-        run: mkdir bin && wget -O zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz && tar -xvf zig.tar.xz && mv zig-linux*/lib zig-linux*/zig bin && rm -rf zig*
-
       - name: Download and Compile Dependencies
         run: ./script/library.sh
 
@@ -33,7 +30,7 @@ jobs:
         run: ./script/docstopdf.sh
 
       - name: Compile the Code Documentation
-        run: ./bin/zig build-obj -Iinclude -Iexternal-x86_64-linux/include -lc -femit-docs=docs/code src/main.zig
+        run: ./zig-bin/zig build-obj -Iinclude -Iexternal-x86_64-linux/include -lc -femit-docs=docs/code src/main.zig
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

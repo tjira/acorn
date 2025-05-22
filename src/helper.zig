@@ -23,7 +23,7 @@ pub fn contains(comptime T: type, v: []const T, value: T) bool {
 
 /// Check if the passed type is a struct.
 pub fn istruct(comptime T: type) bool {
-    return @typeInfo(T) == .Struct;
+    return @typeInfo(T) == .@"struct";
 }
 
 /// Remove the carriage return from a string. Fucking windows.

@@ -85,7 +85,7 @@ pub fn Vector(comptime T: type) type {
 
         /// Fill the vector with normally distributed random numbers.
         pub fn randn(self: Vector(T), mean: T, stdev: T, seed: usize) void {
-            var rng = std.rand.DefaultPrng.init(seed); const random = rng.random();
+            var rng = std.Random.DefaultPrng.init(seed); const random = rng.random();
 
             for (0..self.rows) |i| {
                 self.data[i] = mean + stdev * random.floatNorm(T);

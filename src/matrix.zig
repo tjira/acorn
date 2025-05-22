@@ -111,7 +111,7 @@ pub fn Matrix(comptime T: type) type {
 
         /// Fill the matrix with normally distributed random numbers.
         pub fn randn(self: Matrix(T), mean: T, stdev: T, seed: usize) void {
-            var rng = std.rand.DefaultPrng.init(seed); const random = rng.random();
+            var rng = std.Random.DefaultPrng.init(seed); const random = rng.random();
 
             for (0..self.data.len) |i| {
                 self.data[i] = mean + stdev * random.floatNorm(T);
