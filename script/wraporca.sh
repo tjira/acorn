@@ -21,7 +21,6 @@ while getopts "s:b:c:p:m:fgh" OPT; do case "$OPT" in
   s ) SYSTEM="$OPTARG" ;; b ) BASIS="$OPTARG" ;; c ) CHARGE="$OPTARG" ;; p ) MULTIPLICITY="$OPTARG" ;; m ) METHOD="$OPTARG" ;; f ) FREQUENCY=1 ;; g ) GRADIENT=1 ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
 esac done
 
-# create a folder and extract the method
 mkdir -p .orca; METHOD=${METHOD^^}; OPTIONS=""
 
 if [[ $METHOD == "FCI" ]]; then
@@ -36,7 +35,6 @@ if [[ $GRADIENT -eq 1 ]]; then
     GRADIENT="ENGRAD NUMGRAD"; else GRADIENT=""
 fi
 
-# specify the input file
 cat << EOT > .orca/orca.inp
 ! $METHOD ${BASIS^^} HCORE KDIIS NOFROZENCORE TIGHTSCF $GRADIENT $FREQUENCY LARGEPRINT
 
@@ -45,5 +43,6 @@ $OPTIONS
 *xyzfile $CHARGE $MULTIPLICITY ../$SYSTEM
 EOT
 
-# run the calculation
+sed -i 's/   /  /g ; s/  / /g' .orca/orca.inp
+
 cd .orca && orca orca.inp; cd .. && rm -rf .orca

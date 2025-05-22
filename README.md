@@ -41,18 +41,26 @@ Quantum Acorn, a collection of electronic structure methods compiled into a smal
 
 ## Features
 
-Below are all the important features of Acorn divided into categories.
+Acorn offers a comprehensive suite of tools for both time-independent and time-dependent quantum mechanical simulations. Key features are grouped below for clarity.
 
 ### Time-Independent Quantum Mechanics
 
-* Restricted and Generalized Hartree–Fock Method with DIIS
-* Møller–Plesset Perturbation Theory and Configuration Interaction
-* Gradients, Hessians, Frequencies and Some Optimization Algorithms
+* **Hartree–Fock Methods**  
+  Includes both restricted (RHF) and generalized (GHF) Hartree–Fock, enhanced with DIIS convergence acceleration.
+
+* **Post-Hartree–Fock Methods**  
+  Support for Møller–Plesset perturbation theory (MP2) and configuration interaction (CASCI) techniques.
+
+* **Analytical Tools**  
+  Computation of energy gradients, Hessians, vibrational frequencies, and geometry optimizations for all supported methods.
 
 ### Time-Dependent Quantum Mechanics
 
-* Quantum Dynamics with Arbitrary Number of States & Dimensions on User-Defined Potentials
-* Surface Hopping Dynamics with FSSH, LZSH, MASH or κTSH Algorithms on User-Defined Potentials
+* **Quantum Dynamics Simulations**  
+  Simulate quantum dynamics across arbitrary dimensions and electronic states using customizable potential energy surfaces.
+
+* **Surface Hopping Algorithms**  
+  Perform nonadiabatic dynamics with support for FSSH, LZSH, MASH, and κTSH methods, all on user-defined potentials.
 
 ## Acquiring the Software
 
@@ -296,7 +304,7 @@ This example demonstrates how to run a surface hopping dynamics. The below examp
         },
         "write" : {
             "population_mean" : "POPULATION_MEAN.mat"
-        }
+        },
         "fewest_switches" : {}
     }
 }

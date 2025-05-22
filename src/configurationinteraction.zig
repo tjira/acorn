@@ -2,18 +2,19 @@
 
 const std = @import("std");
 
-const edf = @import("energydiff.zig" );
-const hfm = @import("hartreefock.zig");
-const inp = @import("input.zig"      );
-const lpk = @import("lapack.zig"     );
-const mat = @import("matrix.zig"     );
-const mth = @import("math.zig"       );
-const opm = @import("optimize.zig"   );
-const out = @import("output.zig"     );
-const prp = @import("property.zig"   );
-const sys = @import("system.zig"     );
-const ten = @import("tensor.zig"     );
-const tns = @import("transform.zig"  );
+const cas = @import("completeactivespace.zig");
+const edf = @import("energydiff.zig"         );
+const hfm = @import("hartreefock.zig"        );
+const inp = @import("input.zig"              );
+const lpk = @import("lapack.zig"             );
+const mat = @import("matrix.zig"             );
+const mth = @import("math.zig"               );
+const opm = @import("optimize.zig"           );
+const out = @import("output.zig"             );
+const prp = @import("property.zig"           );
+const sys = @import("system.zig"             );
+const ten = @import("tensor.zig"             );
+const tns = @import("transform.zig"          );
 
 const Matrix = @import("matrix.zig").Matrix;
 const System = @import("system.zig").System;
@@ -55,7 +56,7 @@ pub fn runFull(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sy
 
     if (opt.hessian != null) ci.H = try edf.hessian(T, opt, system.*, ciFull, name, true, allocator);
 
-    if (print) {
+    if (print and opt.hessian != null and opt.hessian.?.print) {
         if (ci.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try ci.H.?.print(std.io.getStdOut().writer());}
     }
 
@@ -75,9 +76,18 @@ pub fn ciFull(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sys
 
 /// Function to run the CI energy calculation on the provided system with Hartree-Fock output.
 pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), system: System(T), hf: out.HartreeFockOutput(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
-    const nbf = hf.S_AS.rows; const nocc = system.getElectrons();
+    const nbf = hf.S_AS.rows; const nocc = system.getElectrons(); var AS = [2]usize{nocc, nbf};
 
-    const D = if (opt.hartree_fock.generalized) try generateAllDeterminants(nbf, nocc, allocator) else try generateSingletDeterminants(nbf, nocc, allocator); defer D.deinit();
+    if (opt.active_space != null) {
+        AS[0] = opt.active_space.?[0];
+        AS[1] = opt.active_space.?[1];
+    }
+
+    if (AS[0] > nocc or AS[1] > nbf or AS[0] > AS[1] or AS[1] - AS[0] > nbf - nocc) return error.InvalidActiveSpace;
+
+    if (print) try std.io.getStdOut().writer().print("\nCI ACTIVE SPACE: {d} ELECTRONS IN {d} SPINORBITALS\n", .{AS[0], AS[1]});
+
+    var D = try cas.generateCasDeterminants(AS[0], AS[1], nocc, opt.hartree_fock.generalized, allocator); defer D.deinit();
 
     var H_MS   = try Matrix(T).init(nbf, nbf,                      allocator); defer   H_MS.deinit();
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
@@ -144,47 +154,6 @@ fn alignDeterminant(A: *Vector(usize), B: Vector(usize), C: Vector(usize)) !i32 
     }
 
     return sign;
-}
-
-/// Generates the determinants for the CI calculations including singlet and triplet excitations.
-fn generateAllDeterminants(nbf: usize, nocc: usize, allocator: std.mem.Allocator) !Matrix(usize) {
-    const D = try Matrix(usize).init(mth.comb(nbf, nocc), nocc, allocator);
-
-    for (0..D.cols) |i| D.ptr(0, i).* = i;
-
-    for (1..D.rows) |i| {
-
-        @memcpy(D.row(i).data, D.row(i - 1).data); var index: usize = undefined;
-
-        for (0..D.cols) |j| if (D.at(i, D.cols - j - 1) != nbf - j - 1) {
-            D.ptr(i, D.cols - j - 1).* += 1; index = D.cols - j - 1; break;
-        };
-
-        for (index + 1..D.cols) |j| D.ptr(i, j).* = D.at(i, j - 1) + 1;
-    }
-
-    return D;
-}
-
-/// Generates the determinants for the CI calculations including only singlet excitations.
-fn generateSingletDeterminants(nbf: usize, nocc: usize, allocator: std.mem.Allocator) !Matrix(usize) {
-    const data_alpha = try allocator.alloc(usize, nbf / 2); defer allocator.free(data_alpha);
-    const data_beta  = try allocator.alloc(usize, nbf / 2); defer allocator.free(data_beta );
-    
-    for (0..data_alpha.len) |i| data_alpha[i] = 2 * i + 0;
-    for (0..data_beta.len ) |i| data_beta[i]  = 2 * i + 1;
-
-    const dets_alpha = try mth.combinations(usize, data_alpha, nocc / 2, allocator); defer dets_alpha.deinit();
-    const dets_beta  = try mth.combinations(usize, data_beta,  nocc / 2, allocator); defer  dets_beta.deinit();
-
-    const D = try Matrix(usize).init(dets_alpha.items.len * dets_beta.items.len, nocc, allocator);
-
-    for (0..dets_alpha.items.len) |i| for (0..dets_beta.items.len) |j| for (0..nocc / 2) |k| {
-        D.ptr(i * dets_beta.items.len + j, k           ).* = dets_alpha.items[i][k];
-        D.ptr(i * dets_beta.items.len + j, k + nocc / 2).* =  dets_beta.items[j][k];
-    };
-
-    return D;
 }
 
 /// Slater-Condon rules for the CI calculations.

@@ -10,7 +10,7 @@ const allocator = std.testing.allocator;
 
 test "configuration_interaction_hydrogen_full" {
     const opt_sto3g = input.ConfigurationInteractionOptions(f64){
-        .excitation = null,
+        .active_space = null,
 
         .hartree_fock = input.HartreeFockOptions(f64){
             .integral = .{

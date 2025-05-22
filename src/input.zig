@@ -80,6 +80,7 @@ pub fn ConfigurationInteractionOptions(comptime T: type) type {
             numeric: bool = true,
             freq: bool = true,
             step: T = 1e-3,
+            print: bool = false,
         };
         pub const Optimize = struct {
             maxiter: u32 = 100,
@@ -87,7 +88,7 @@ pub fn ConfigurationInteractionOptions(comptime T: type) type {
             step: T = 1,
         };
 
-        excitation: ?[]const u32 = null,
+        active_space: ?[]const usize = null,
 
         hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null,
     };
@@ -121,6 +122,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
             numeric: bool = true,
             freq: bool = true,
             step: T = 1e-2,
+            print: bool = false,
         };
         pub const Optimize = struct {
             maxiter: u32 = 100,
@@ -182,6 +184,7 @@ pub fn MollerPlessetOptions(comptime T: type) type {
             numeric: bool = true,
             freq: bool = true,
             step: T = 1e-3,
+            print: bool = false,
         };
         pub const Optimize = struct {
             maxiter: u32 = 100,

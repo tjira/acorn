@@ -70,7 +70,7 @@ pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System
 
     if (opt.hessian != null) hf.H = try edf.hessian(T, opt, system.*, hfFull, name, true, allocator);
 
-    if (print) {
+    if (print and opt.hessian != null and opt.hessian.?.print) {
         if (hf.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try hf.H.?.print(std.io.getStdOut().writer());}
     }
 
@@ -98,6 +98,8 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         mem = 8 * @as(f64, @floatFromInt(12 * nbf * nbf + 2 * nbf * nbf * nbf * nbf));
     }
+
+    if (print) try std.io.getStdOut().writer().print("\n# NUMBER OF ELECTRONS: {d}\n", .{system.getElectrons()});
 
     if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print("\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
     if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE  GAUSSIAN SHELLS: {d}\n", .{npgs});

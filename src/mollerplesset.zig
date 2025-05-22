@@ -53,7 +53,7 @@ pub fn runFull(comptime T: type, opt: inp.MollerPlessetOptions(T), system: *Syst
 
     if (opt.hessian != null) mp.H = try edf.hessian(T, opt, system.*, mpFull, name, true, allocator);
 
-    if (print) {
+    if (print and opt.hessian != null and opt.hessian.?.print) {
         if (mp.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try mp.H.?.print(std.io.getStdOut().writer());}
     }
 
