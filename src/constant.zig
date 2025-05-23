@@ -11,7 +11,7 @@ pub const e   = 1.602176634e-19;    // C
 pub const h   = 6.62607015e-34;     // J.s
 
 pub const A2AU = 1e-10 / a0;         // Å to a.u. of length
-pub const AU2EV = Eh / c;            // a.u. of energy to eV
+pub const AU2EV = Eh / e;            // a.u. of energy to eV
 pub const EV2RCM = 1e-2 * e / h / c; // eV of photon to its wavenumber in cm^-1
 
 /// Atomic symbol to atomic number map.
