@@ -76,7 +76,7 @@ pub fn ciFull(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sys
 
 /// Function to run the CI energy calculation on the provided system with Hartree-Fock output.
 pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), system: System(T), hf: out.HartreeFockOutput(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
-    const nbf = hf.S_AS.rows; const nocc = system.getElectrons(); var AS = [2]usize{nocc, nbf};
+    const nbf = if (opt.hartree_fock.generalized) hf.S_A.rows else 2 * hf.S_A.rows; const nocc = system.getElectrons(); var AS = [2]usize{nocc, nbf};
 
     if (opt.active_space != null) {
         AS[0] = opt.active_space.?[0];
@@ -92,7 +92,7 @@ pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sys
     var H_MS   = try Matrix(T).init(nbf, nbf,                      allocator); defer   H_MS.deinit();
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
 
-    try transform(T, &H_MS, &J_MS_A, hf.T_AS, hf.V_AS, hf.J_AS, hf.C_AS, allocator);
+    try transform(T, &H_MS, &J_MS_A, hf.T_A, hf.V_A, hf.J_A, hf.C_A, allocator);
 
     if (print) try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{D.rows});
 
@@ -190,13 +190,13 @@ fn slater(comptime T: type, A: Vector(usize), so: []const usize, H_MS: Matrix(T)
 }
 
 /// Function to perform all integrals transformations used in the CI calculations.
-fn transform(comptime T: type, H_MS: *Matrix(T), J_MS_A: *Tensor(T), T_AS: Matrix(T), V_AS: Matrix(T), J_AS: Tensor(T), C_AS: Matrix(T), allocator: std.mem.Allocator) !void {
-    var H_AS = try Matrix(T).init(T_AS.rows, T_AS.cols,                                                          allocator); defer H_AS.deinit();
-    var J_MS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_MS.deinit();
+fn transform(comptime T: type, H_MS: *Matrix(T), J_MS_A: *Tensor(T), T_A: Matrix(T), V_A: Matrix(T), J_A: Tensor(T), C_A: Matrix(T), allocator: std.mem.Allocator) !void {
+    var H_A = try Matrix(T).init(T_A.rows, T_A.cols, allocator); defer H_A.deinit(); mat.add(T, &H_A, T_A, V_A);
 
-    mat.add(T, &H_AS, T_AS, V_AS); tns.oneAO2MO(T, H_MS, H_AS, C_AS); try tns.twoAO2MO(T, &J_MS, J_AS, C_AS);
+    if (T_A.rows != H_MS.rows) {try tns.oneAO2MS(T, H_MS,   H_A, C_A);} else {try tns.oneAO2MO(T, H_MS,   H_A, C_A);}
+    if (T_A.rows != H_MS.rows) {try tns.twoAO2MS(T, J_MS_A, J_A, C_A);} else {try tns.twoAO2MO(T, J_MS_A, J_A, C_A);}
 
-    for (0..J_MS.shape[0]) |i| for (0..J_MS.shape[1]) |j| for (0..J_MS.shape[2]) |k| for (0..J_MS.shape[3]) |l| {
-        J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS.at(&[_]usize{i, j, k, l}) - J_MS.at(&[_]usize{i, l, k, j});
+    for (0..J_MS_A.shape[0]) |i| for (0..J_MS_A.shape[1]) |j| for (0..J_MS_A.shape[2]) |k| for (0..J_MS_A.shape[3]) |l| {
+        J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS_A.at(&[_]usize{i, j, k, l}) - J_MS_A.at(&[_]usize{i, l, k, j});
     };
 }

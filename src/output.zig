@@ -58,8 +58,8 @@ pub fn ConfigurationInteractionOutput(comptime T: type) type {
 /// The Hartree-Fock output.
 pub fn HartreeFockOutput(comptime T: type) type {
     return struct {
-        S_AS: Matrix(T), T_AS: Matrix(T), V_AS: Matrix(T), J_AS: Tensor(T),
-        C_AS: Matrix(T), D_AS: Matrix(T), E_MS: Matrix(T), F_AS: Matrix(T),
+        S_A: Matrix(T), T_A: Matrix(T), V_A: Matrix(T), J_A: Tensor(T),
+        C_A: Matrix(T), D_A: Matrix(T), E_M: Matrix(T), F_A: Matrix(T),
 
         mulliken: ?Vector(T),
 
@@ -67,8 +67,8 @@ pub fn HartreeFockOutput(comptime T: type) type {
 
         /// Free the memory allocated for the Hartree-Fock output.
         pub fn deinit(self: HartreeFockOutput(T)) void {
-            self.S_AS.deinit(); self.T_AS.deinit(); self.V_AS.deinit(); self.J_AS.deinit();
-            self.C_AS.deinit(); self.D_AS.deinit(); self.E_MS.deinit(); self.F_AS.deinit();
+            self.S_A.deinit(); self.T_A.deinit(); self.V_A.deinit(); self.J_A.deinit();
+            self.C_A.deinit(); self.D_A.deinit(); self.E_M.deinit(); self.F_A.deinit();
 
             if (self.mulliken != null) self.mulliken.?.deinit();
 

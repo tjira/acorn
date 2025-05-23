@@ -135,12 +135,12 @@ pub fn HartreeFockOptions(comptime T: type) type {
             coords: ?[]const [3]T = null
         };
         pub const Write = struct {
-            coefficient_ao: ?[]const u8 = null,
-            density_ao:     ?[]const u8 = null,
-            nuclear_ao:     ?[]const u8 = null,
-            kinetic_ao:     ?[]const u8 = null,
-            coulomb_ao:     ?[]const u8 = null,
-            overlap_ao:     ?[]const u8 = null,
+            coefficient: ?[]const u8 = null,
+            density:     ?[]const u8 = null,
+            nuclear:     ?[]const u8 = null,
+            kinetic:     ?[]const u8 = null,
+            coulomb:     ?[]const u8 = null,
+            overlap:     ?[]const u8 = null,
         };
 
         system_file: ?[]const u8 = null,

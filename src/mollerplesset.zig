@@ -73,12 +73,12 @@ pub fn mpFull(comptime T: type, opt: inp.MollerPlessetOptions(T), system: System
 
 /// Function to run the Moller-Plesset energy calculation on the provided system with Hartree-Fock output.
 pub fn mpPost(comptime T: type, opt: inp.MollerPlessetOptions(T), system: System(T), hf: out.HartreeFockOutput(T), print: bool, allocator: std.mem.Allocator) !out.MollerPlessetOutput(T) {
-    const nbf = hf.S_AS.rows; const nocc = system.getElectrons();
+    const nbf = if (opt.hartree_fock.generalized) hf.S_A.rows else 2 * hf.S_A.rows; const nocc = system.getElectrons();
 
     var F_MS   = try Matrix(T).init(nbf, nbf,                      allocator); defer   F_MS.deinit();
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
 
-    try transform(T, &F_MS, &J_MS_A, hf.F_AS, hf.J_AS, hf.C_AS, allocator);
+    try transform(T, &F_MS, &J_MS_A, hf.F_A, hf.J_A, hf.C_A);
 
     var E: T = 0;
 
@@ -115,12 +115,11 @@ pub fn mp2(comptime T: type, F_MS: Matrix(T), J_MS_A: Tensor(T), nocc: usize) T 
 }
 
 /// Function to perform all integrals transformations used in the Moller-Plesset calculations.
-pub fn transform(comptime T: type, F_MS: *Matrix(T), J_MS_A: *Tensor(T), F_AS: Matrix(T), J_AS: Tensor(T), C_AS: Matrix(T), allocator: std.mem.Allocator) !void {
-    var J_MS = try Tensor(T).init(&[_]usize{J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0], J_MS_A.shape[0]}, allocator); defer J_MS.deinit();
+pub fn transform(comptime T: type, F_MS: *Matrix(T), J_MS_A: *Tensor(T), F_A: Matrix(T), J_A: Tensor(T), C_A: Matrix(T)) !void {
+    if (F_A.rows != F_MS.rows) {try tns.oneAO2MS(T, F_MS,   F_A, C_A);} else {try tns.oneAO2MO(T, F_MS,   F_A, C_A);}
+    if (F_A.rows != F_MS.rows) {try tns.twoAO2MS(T, J_MS_A, J_A, C_A);} else {try tns.twoAO2MO(T, J_MS_A, J_A, C_A);}
 
-    tns.oneAO2MO(T, F_MS, F_AS, C_AS); try tns.twoAO2MO(T, &J_MS, J_AS, C_AS);
-
-    for (0..J_MS.shape[0]) |i| for (0..J_MS.shape[1]) |j| for (0..J_MS.shape[2]) |k| for (0..J_MS.shape[3]) |l| {
-        J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS.at(&[_]usize{i, j, k, l}) - J_MS.at(&[_]usize{i, l, k, j});
+    for (0..J_MS_A.shape[0]) |i| for (0..J_MS_A.shape[1]) |j| for (0..J_MS_A.shape[2]) |k| for (0..J_MS_A.shape[3]) |l| {
+        J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS_A.at(&[_]usize{i, j, k, l}) - J_MS_A.at(&[_]usize{i, l, k, j});
     };
 }

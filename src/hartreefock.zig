@@ -56,7 +56,7 @@ pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System
 
     var hf = try hfFull(T, opt, system.*, print, allocator);
 
-    if (opt.mulliken) hf.mulliken = try pop.mulliken(T, system.*, hf.basis, hf.S_AS, hf.D_AS, allocator);
+    if (opt.mulliken) hf.mulliken = try pop.mulliken(T, system.*, hf.basis, hf.S_A, hf.D_A, allocator);
 
     if (print) {
         if (hf.mulliken != null) {try std.io.getStdOut().writer().print("\n{s} MULLIKEN POPULATION ANALYSIS:\n", .{name}); try hf.mulliken.?.matrix().print(std.io.getStdOut().writer());}
@@ -96,7 +96,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         nbf = if (opt.generalized) 2 * nbf else nbf; npgs = if (opt.generalized) 2 * npgs else npgs;
 
-        mem = 8 * @as(f64, @floatFromInt(12 * nbf * nbf + 2 * nbf * nbf * nbf * nbf));
+        mem = 8 * @as(f64, @floatFromInt(((if (opt.dsize != null) opt.dsize.? else 0) + 12) * nbf * nbf + nbf * nbf * nbf * nbf));
     }
 
     if (print) try std.io.getStdOut().writer().print("\n# NUMBER OF ELECTRONS: {d}\n", .{system.getElectrons()});
@@ -119,27 +119,13 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
     if (opt.integral.coulomb == null) lbt.coulomb(J_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
 
     if (opt.generalized) {
-
-        var S_AS = try Matrix(T).init(nbf, nbf,                      allocator);
-        var T_AS = try Matrix(T).init(nbf, nbf,                      allocator);
-        var V_AS = try Matrix(T).init(nbf, nbf,                      allocator);
-        var J_AS = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator);
-
-        tns.oneAO2AS(T, &S_AS, S_A); tns.oneAO2AS(T, &T_AS, T_A); tns.oneAO2AS(T, &V_AS, V_A); tns.twoAO2AS(T, &J_AS, J_A);
-
-        S_A.deinit(); S_A = S_AS;
-        T_A.deinit(); T_A = T_AS;
-        V_A.deinit(); V_A = V_AS;
-        J_A.deinit(); J_A = J_AS;
+        {var S_AS = try Matrix(T).init(nbf, nbf,                      allocator); tns.oneAO2AS(T, &S_AS, S_A); S_A.deinit(); S_A = S_AS;}
+        {var T_AS = try Matrix(T).init(nbf, nbf,                      allocator); tns.oneAO2AS(T, &T_AS, T_A); T_A.deinit(); T_A = T_AS;}
+        {var V_AS = try Matrix(T).init(nbf, nbf,                      allocator); tns.oneAO2AS(T, &V_AS, V_A); V_A.deinit(); V_A = V_AS;}
+        {var J_AS = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); tns.twoAO2AS(T, &J_AS, J_A); J_A.deinit(); J_A = J_AS;}
     }
 
     const nocc: usize = if (opt.generalized) system.getElectrons() else system.getElectrons() / 2;
-
-    var J_A_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator);
-
-    const jf: T = if (opt.generalized) 1 else 0.5; for (0..nbf) |i| for(0..nbf) |j| for (0..nbf) |k| for (0..nbf) |l| {
-        J_A_A.ptr(&[_]usize{i, j, k, l}).* = J_A.at(&[_]usize{i, j, k, l}) - jf * J_A.at(&[_]usize{i, l, k, j});
-    };
 
     if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
 
@@ -171,7 +157,15 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         if (iter == opt.maxiter) return error.MaxIterationsExceeded;
 
-        try eig.contract(&F_A, D_A, J_A_A, &[_]i32{0, 0, 1, 1}); mat.add(T, &F_A, F_A, H_A);
+        @memcpy(F_A.data, H_A.data);
+
+        try eig.contract(&T1, D_A, J_A, &[_]i32{0, 0, 1, 1});
+        try eig.contract(&T2, D_A, J_A, &[_]i32{0, 0, 1, 3});
+
+        if (!opt.generalized) mat.muls(T, &T2, T2, 0.5);
+
+        mat.add(T, &F_A, F_A, T1);
+        mat.sub(T, &F_A, F_A, T2);
 
         if (opt.dsize != null and iter > 0) {
 
@@ -201,44 +195,15 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
 
-    J_A_A.deinit();
-
-    if (opt.write.coefficient_ao != null) try C_A.write(opt.write.coefficient_ao.?);
-    if (opt.write.coulomb_ao     != null) try J_A.write(opt.write.coulomb_ao.?    );
-    if (opt.write.density_ao     != null) try D_A.write(opt.write.density_ao.?    );
-    if (opt.write.kinetic_ao     != null) try T_A.write(opt.write.kinetic_ao.?    );
-    if (opt.write.nuclear_ao     != null) try V_A.write(opt.write.nuclear_ao.?    );
-    if (opt.write.overlap_ao     != null) try S_A.write(opt.write.overlap_ao.?    );
-
-    if (!opt.generalized) {
-
-        var S_AS = try Matrix(T).init(2 * nbf, 2 * nbf,                              allocator);
-        var T_AS = try Matrix(T).init(2 * nbf, 2 * nbf,                              allocator);
-        var V_AS = try Matrix(T).init(2 * nbf, 2 * nbf,                              allocator);
-        var F_AS = try Matrix(T).init(2 * nbf, 2 * nbf,                              allocator);
-        var C_AS = try Matrix(T).init(2 * nbf, 2 * nbf,                              allocator);
-        var D_AS = try Matrix(T).init(2 * nbf, 2 * nbf,                              allocator);
-        var E_MS = try Matrix(T).init(2 * nbf, 2 * nbf,                              allocator);
-        var J_AS = try Tensor(T).init(&[_]usize{2 * nbf, 2 * nbf, 2 * nbf, 2 * nbf}, allocator);
-
-        tns.oneAO2AS(T, &S_AS, S_A); tns.oneAO2AS(T, &T_AS, T_A); tns.oneAO2AS(T, &V_AS, V_A); tns.oneAO2AS(T, &F_AS, F_A); tns.oneAO2AS(T, &D_AS, D_A);
-
-        tns.cfsAO2AS(T, &C_AS, C_A); tns.twoAO2AS(T, &J_AS, J_A); E_MS.fill(0); for (0..2 * nbf) |i| E_MS.ptr(i, i).* = E_M.at(i / 2, i / 2);
-
-        S_A.deinit(); S_A = S_AS;
-        T_A.deinit(); T_A = T_AS;
-        V_A.deinit(); V_A = V_AS;
-        F_A.deinit(); F_A = F_AS;
-        C_A.deinit(); C_A = C_AS;
-        D_A.deinit(); D_A = D_AS;
-        E_M.deinit(); E_M = E_MS;
-        J_A.deinit(); J_A = J_AS;
-
-        mat.muls(T, &D_A, D_A, 0.5);
-    }
+    if (opt.write.coefficient != null) try C_A.write(opt.write.coefficient.?);
+    if (opt.write.coulomb     != null) try J_A.write(opt.write.coulomb.?    );
+    if (opt.write.density     != null) try D_A.write(opt.write.density.?    );
+    if (opt.write.kinetic     != null) try T_A.write(opt.write.kinetic.?    );
+    if (opt.write.nuclear     != null) try V_A.write(opt.write.nuclear.?    );
+    if (opt.write.overlap     != null) try S_A.write(opt.write.overlap.?    );
 
     return out.HartreeFockOutput(T){
-        .S_AS = S_A, .T_AS = T_A, .V_AS = V_A, .J_AS = J_A, .C_AS = C_A, .D_AS = D_A, .E_MS = E_M, .F_AS = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .freqs = null, .basis = basis
+        .S_A = S_A, .T_A = T_A, .V_A = V_A, .J_A = J_A, .C_A = C_A, .D_A = D_A, .E_M = E_M, .F_A = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .freqs = null, .basis = basis
     };
 }
 

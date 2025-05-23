@@ -8,8 +8,6 @@ const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;
 
 pub fn contract(C: anytype, A: anytype, B: anytype, pairs: []const i32) !void {
-    C.fill(0);
-
     var dC: []const usize = undefined; var rC: usize = undefined;
     var dA: []const usize = undefined; var rA: usize = undefined;
     var dB: []const usize = undefined; var rB: usize = undefined;
