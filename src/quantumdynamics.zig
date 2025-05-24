@@ -27,6 +27,8 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
     const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim); defer pot.?.deinit();
 
+    if (opt.bohmian_dynamics != null and ndim != 1) return error.InvalidDimensionForBohmianDynamics;
+
     if (pot == null                                ) return error.UnknownPotential      ;
     if (opt.initial_conditions.state > nstate - 1  ) return error.InvalidInitialState   ;
     if (opt.initial_conditions.position.len != ndim) return error.InvalidInitialPosition;
@@ -72,6 +74,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         var W  = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer  W.deinit();
         var WA = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer WA.deinit();
 
+        var bohm_field:    Vector(T) = undefined; defer if (opt.bohmian_dynamics != null)    bohm_field.deinit();
         var bohm_position: Vector(T) = undefined; defer if (opt.bohmian_dynamics != null) bohm_position.deinit();
         var bohm_momentum: Vector(T) = undefined; defer if (opt.bohmian_dynamics != null) bohm_momentum.deinit();
 
@@ -80,6 +83,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             if (opt.write.bohm_position != null) bohm_positions.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
             if (opt.write.bohm_momentum != null)   bohm_momenta.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
+            bohm_field    = try Vector(T).init(rdim,                                       allocator);
             bohm_position = try Vector(T).init(ndim * opt.bohmian_dynamics.?.trajectories, allocator);
             bohm_momentum = try Vector(T).init(ndim * opt.bohmian_dynamics.?.trajectories, allocator);
 
@@ -135,7 +139,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             for (0..opt.iterations + 1) |j| {
 
                 if (j > 0 and opt.bohmian_dynamics != null) {
-                    try propagateBohmianTrajectories(T, &bohm_position, &bohm_momentum, W, rvec, kvec, opt.time_step, opt.initial_conditions.mass, allocator);
+                    propagateBohmianTrajectories(T, &bohm_position, &bohm_momentum, &bohm_field, W, rvec, kvec, opt.time_step, opt.initial_conditions.mass, &T1);
                 }
 
                 if (j > 0) try wfn.propagate(T, &W, R, K, &T1);
@@ -299,31 +303,24 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
 }
 
 /// Propagates the Bohmian trajectories.
-pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), bohm_momentum: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), kvec: Matrix(T), time_step: T, mass: T, allocator: std.mem.Allocator) !void {
-    const dr = rvec.at(1, 0) - rvec.at(0, 0);
-
-    var momentum_field = try Vector(T).init(W.data.rows, allocator); defer momentum_field.deinit();
-
-    const T1 = try Vector(Complex(T)).init(W.data.rows, allocator); defer T1.deinit();
+pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), bohm_momentum: *Vector(T), bohm_field: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), kvec: Matrix(T), time_step: T, mass: T, T1: *Matrix(Complex(T))) void {
+    const dr = rvec.at(1, 0) - rvec.at(0, 0); bohm_field.fill(0);
 
     for (0..W.nstate) |i| {
 
-        for (0..W.ndim) |k| {
+        for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
 
-            for (0..W.data.rows) |j| T1.ptr(j).* = W.data.at(j, i);
+        ftw.fftwnd(T1.data, W.shape, -1);
 
-            ftw.fftwnd(T1.data, W.shape, -1);
+        for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(0, kvec.at(j, 0)));
 
-            for (0..W.data.rows) |j| T1.ptr(j).* = T1.at(j).mul(Complex(T).init(0, kvec.at(j, k)));
+        ftw.fftwnd(T1.data, W.shape, 1);
 
-            ftw.fftwnd(T1.data, W.shape, 1);
-
-            for (0..momentum_field.rows) |j| momentum_field.ptr(j).* += W.data.at(j, i).conjugate().mul(T1.at(j)).im;
-        }
+        for (0..bohm_field.rows) |j| bohm_field.ptr(j).* += W.data.at(j, i).conjugate().mul(T1.at(j, 0)).im;
     }
 
-    for (0..momentum_field.rows) |j| {
-        var densum: T = 0; for (0..W.nstate) |i| {densum += W.data.at(j, i).magnitude() * W.data.at(j, i).magnitude();} momentum_field.ptr(j).* /= (densum + 1e-14);
+    for (0..bohm_field.rows) |j| {
+        var densum: T = 0; for (0..W.nstate) |i| {densum += W.data.at(j, i).magnitude() * W.data.at(j, i).magnitude();} bohm_field.ptr(j).* /= (densum + 1e-14);
     }
 
     for (0..bohm_momentum.rows) |i| {
@@ -332,7 +329,7 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 
         const ffindex = @as(usize, @intFromFloat(@floor(findex))); const cfindex = @as(usize, @intFromFloat(@ceil(findex)));
 
-        bohm_momentum.ptr(i).* = momentum_field.at(ffindex) + (momentum_field.at(cfindex) - momentum_field.at(ffindex)) * (bohm_position.at(i) - rvec.at(ffindex, 0)) / dr;
+        bohm_momentum.ptr(i).* = bohm_field.at(ffindex) + (bohm_field.at(cfindex) - bohm_field.at(ffindex)) * (bohm_position.at(i) - rvec.at(ffindex, 0)) / dr;
     }
 
     for (0..bohm_position.rows) |i| {

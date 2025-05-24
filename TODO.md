@@ -11,3 +11,4 @@
 - [x] The coefficient matrix from GHF is not necessarily in a,b,a,b order, which might mess up following calcualtions.
 - [ ] Better integrator for the Bohmian trajectories so that the trajectories would not lag behind.
 - [ ] Bohmian dynamics should have an option to output only the mean trajectories.
+- [ ] Multidimensional Bohmian dynamics.
