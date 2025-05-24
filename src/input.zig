@@ -263,7 +263,9 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             total_energy:                         ?[]const u8 = null,
             wavefunction:                         ?[]const u8 = null,
             bohm_position:                        ?[]const u8 = null,
+            bohm_position_mean:                   ?[]const u8 = null,
             bohm_momentum:                        ?[]const u8 = null,
+            bohm_momentum_mean:                   ?[]const u8 = null,
         };
 
         adiabatic: bool,

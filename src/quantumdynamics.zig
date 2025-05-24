@@ -51,13 +51,17 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
     if ( opt.spectrum.flip) acft.column(0).linspace(-opt.time_step * asfloat(T, acft.rows / 2), opt.time_step * asfloat(T, acft.rows / 2 - 1));
     if (!opt.spectrum.flip) acft.column(0).linspace(0,                                          opt.time_step * asfloat(T, acft.rows     - 1));
 
-    var wavefunction:   Matrix(T) = undefined; defer if (opt.write.wavefunction  != null                                 )   wavefunction.deinit();
-    var bohm_positions: Matrix(T) = undefined; defer if (opt.write.bohm_position != null and opt.bohmian_dynamics != null) bohm_positions.deinit();
-    var bohm_momenta:   Matrix(T) = undefined; defer if (opt.write.bohm_momentum != null and opt.bohmian_dynamics != null)   bohm_momenta.deinit();
+    var wavefunction:       Matrix(T) = undefined; defer if (opt.write.wavefunction       != null                                 )       wavefunction.deinit();
+    var bohm_positions:     Matrix(T) = undefined; defer if (opt.write.bohm_position      != null and opt.bohmian_dynamics != null)     bohm_positions.deinit();
+    var bohm_position_mean: Matrix(T) = undefined; defer if (opt.write.bohm_position_mean != null and opt.bohmian_dynamics != null) bohm_position_mean.deinit();
+    var bohm_momenta:       Matrix(T) = undefined; defer if (opt.write.bohm_momentum      != null and opt.bohmian_dynamics != null)       bohm_momenta.deinit();
+    var bohm_momentum_mean: Matrix(T) = undefined; defer if (opt.write.bohm_momentum_mean != null and opt.bohmian_dynamics != null) bohm_momentum_mean.deinit();
 
-    if (opt.write.wavefunction != null                                    ) wavefunction   = try Matrix(T).init(rdim,               ndim + 2 * (opt.iterations + 1) * nstate,       allocator);
-    if (opt.bohmian_dynamics   != null and opt.write.bohm_position != null) bohm_positions = try Matrix(T).init(1 + opt.iterations, 1 + ndim * opt.bohmian_dynamics.?.trajectories, allocator);
-    if (opt.bohmian_dynamics   != null and opt.write.bohm_momentum != null) bohm_momenta   = try Matrix(T).init(1 + opt.iterations, 1 + ndim * opt.bohmian_dynamics.?.trajectories, allocator);
+    if (opt.write.wavefunction != null                                         ) wavefunction       = try Matrix(T).init(rdim,               ndim + 2 * (opt.iterations + 1) * nstate,       allocator);
+    if (opt.bohmian_dynamics   != null and opt.write.bohm_position      != null) bohm_positions     = try Matrix(T).init(1 + opt.iterations, 1 + ndim * opt.bohmian_dynamics.?.trajectories, allocator);
+    if (opt.bohmian_dynamics   != null and opt.write.bohm_momentum      != null) bohm_momenta       = try Matrix(T).init(1 + opt.iterations, 1 + ndim * opt.bohmian_dynamics.?.trajectories, allocator);
+    if (opt.bohmian_dynamics   != null and opt.write.bohm_position_mean != null) bohm_position_mean = try Matrix(T).init(1 + opt.iterations, 1 + ndim,                                       allocator);
+    if (opt.bohmian_dynamics   != null and opt.write.bohm_momentum_mean != null) bohm_momentum_mean = try Matrix(T).init(1 + opt.iterations, 1 + ndim,                                       allocator);
 
     {
         var T1 = try Matrix(Complex(T)).init(rdim, 1, allocator); defer T1.deinit();
@@ -80,8 +84,10 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
         if (opt.bohmian_dynamics != null) {
 
-            if (opt.write.bohm_position != null) bohm_positions.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-            if (opt.write.bohm_momentum != null)   bohm_momenta.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+            if (opt.write.bohm_position      != null)     bohm_positions.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+            if (opt.write.bohm_momentum      != null)       bohm_momenta.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+            if (opt.write.bohm_position_mean != null) bohm_position_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+            if (opt.write.bohm_momentum_mean != null) bohm_momentum_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
             bohm_field    = try Vector(T).init(rdim,                                       allocator);
             bohm_position = try Vector(T).init(ndim * opt.bohmian_dynamics.?.trajectories, allocator);
@@ -171,8 +177,18 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                 };
 
                 if (opt.bohmian_dynamics != null) {
+
                     if (opt.write.bohm_position != null) @memcpy(bohm_positions.row(j).data[1..], bohm_position.data);
                     if (opt.write.bohm_momentum != null) @memcpy(  bohm_momenta.row(j).data[1..], bohm_momentum.data);
+
+                    if (opt.write.bohm_position_mean != null) for (0..ndim) |k| {
+
+                        var mean_position: T = 0; for (0..opt.bohmian_dynamics.?.trajectories) |l| mean_position += bohm_position.at(l * ndim + k);
+                        var mean_momentum: T = 0; for (0..opt.bohmian_dynamics.?.trajectories) |l| mean_momentum += bohm_momentum.at(l * ndim + k);
+
+                        if (opt.write.bohm_position_mean != null) bohm_position_mean.ptr(j, 1 + k).* = mean_position / asfloat(T, opt.bohmian_dynamics.?.trajectories);
+                        if (opt.write.bohm_momentum_mean != null) bohm_momentum_mean.ptr(j, 1 + k).* = mean_momentum / asfloat(T, opt.bohmian_dynamics.?.trajectories);
+                    };
                 }
 
                 if (print and (j % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(j), Ekin, Epot, r, p, P, acfi);
@@ -216,8 +232,10 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
     if (opt.write.transformed_autocorrelation_function) |path| try         acft.write(path);
     if (opt.write.wavefunction                        ) |path| try wavefunction.write(path);
 
-    if (opt.bohmian_dynamics != null) {if (opt.write.bohm_position) |path| try bohm_positions.write(path);}
-    if (opt.bohmian_dynamics != null) {if (opt.write.bohm_momentum) |path|   try bohm_momenta.write(path);}
+    if (opt.bohmian_dynamics != null) {if (opt.write.bohm_momentum     ) |path| try       bohm_momenta.write(path);}
+    if (opt.bohmian_dynamics != null) {if (opt.write.bohm_momentum_mean) |path| try bohm_momentum_mean.write(path);}
+    if (opt.bohmian_dynamics != null) {if (opt.write.bohm_position     ) |path| try     bohm_positions.write(path);}
+    if (opt.bohmian_dynamics != null) {if (opt.write.bohm_position_mean) |path| try bohm_position_mean.write(path);}
 
     return output;
 }
