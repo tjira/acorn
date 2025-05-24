@@ -56,7 +56,7 @@ pub fn runFull(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sy
 
     if (opt.hessian != null) ci.H = try edf.hessian(T, opt, system.*, ciFull, name, true, allocator);
 
-    if (print and opt.hessian != null and opt.hessian.?.print) {
+    if (print and opt.hessian != null and opt.print.hessian) {
         if (ci.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try ci.H.?.print(std.io.getStdOut().writer());}
     }
 
@@ -65,6 +65,9 @@ pub fn runFull(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sy
     if (print) {
         if (ci.freqs != null) {try std.io.getStdOut().writer().print("\n{s} HARMONIC FREQUENCIES:\n", .{name}); try ci.freqs.?.matrix().print(std.io.getStdOut().writer());}
     }
+
+    if (opt.gradient != null and opt.write.gradient != null) try ci.G.?.write(opt.write.gradient.?);
+    if (opt.hessian  != null and opt.write.hessian  != null) try ci.H.?.write(opt.write.hessian.? );
 
     return ci;
 }

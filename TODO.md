@@ -7,5 +7,5 @@
 - [x] Fix the bug when loading integrals from disk, the basis still needs to be specified.
 - [x] Make the Eigen tensor contraction parallel.
 - [ ] Velocity and acceleration in lambda TSH should be in the direction of motion for higher dimensional systems.
-- [ ] Check if i really need to store both J_AO and J_AO_A for the HF method.
+- [x] Check if i really need to store both J_AO and J_AO_A for the HF method.
 - [x] The coefficient matrix from GHF is not necessarily in a,b,a,b order, which might mess up following calcualtions.

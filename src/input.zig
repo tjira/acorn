@@ -80,17 +80,23 @@ pub fn ConfigurationInteractionOptions(comptime T: type) type {
             numeric: bool = true,
             freq: bool = true,
             step: T = 1e-3,
-            print: bool = false,
         };
         pub const Optimize = struct {
             maxiter: u32 = 100,
             threshold: T = 1e-6,
             step: T = 1,
         };
+        pub const Print = struct {
+            hessian: bool = false,
+        };
+        pub const Write = struct {
+            gradient: ?[]const u8 = null,
+            hessian:  ?[]const u8 = null
+        };
 
         active_space: ?[]const usize = null,
 
-        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null,
+        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null, print: Print = .{}, write: Write = .{}
     };
 }
 
@@ -121,13 +127,15 @@ pub fn HartreeFockOptions(comptime T: type) type {
         pub const Hessian = struct {
             numeric: bool = true,
             freq: bool = true,
-            step: T = 1e-2,
-            print: bool = false,
+            step: T = 1e-3,
         };
         pub const Optimize = struct {
             maxiter: u32 = 100,
             threshold: T = 1e-6,
             step: T = 1,
+        };
+        pub const Print = struct {
+            hessian: bool = false,
         };
         pub const System = struct {
             atoms: ?[]const u8 = null,
@@ -141,6 +149,8 @@ pub fn HartreeFockOptions(comptime T: type) type {
             kinetic:     ?[]const u8 = null,
             coulomb:     ?[]const u8 = null,
             overlap:     ?[]const u8 = null,
+            gradient:    ?[]const u8 = null,
+            hessian:     ?[]const u8 = null
         };
 
         system_file: ?[]const u8 = null,
@@ -150,7 +160,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
         generalized: bool = false,
         mulliken: bool = true,
 
-        integral: Integral = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null, system: System = .{}, write: Write = .{}
+        integral: Integral = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null, print: Print = .{}, system: System = .{}, write: Write = .{}
     };
 }
 
@@ -184,17 +194,23 @@ pub fn MollerPlessetOptions(comptime T: type) type {
             numeric: bool = true,
             freq: bool = true,
             step: T = 1e-3,
-            print: bool = false,
         };
         pub const Optimize = struct {
             maxiter: u32 = 100,
             threshold: T = 1e-6,
             step: T = 1,
         };
+        pub const Print = struct {
+            hessian: bool = false,
+        };
+        pub const Write = struct {
+            gradient: ?[]const u8 = null,
+            hessian:  ?[]const u8 = null
+        };
 
         order: u32 = 2,
 
-        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null,
+        hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null, print: Print = .{}, write: Write = .{}
     };
 }
 

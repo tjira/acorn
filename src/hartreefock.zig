@@ -70,7 +70,7 @@ pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System
 
     if (opt.hessian != null) hf.H = try edf.hessian(T, opt, system.*, hfFull, name, true, allocator);
 
-    if (print and opt.hessian != null and opt.hessian.?.print) {
+    if (print and opt.hessian != null and opt.print.hessian) {
         if (hf.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try hf.H.?.print(std.io.getStdOut().writer());}
     }
 
@@ -79,6 +79,16 @@ pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System
     if (print) {
         if (hf.freqs != null) {try std.io.getStdOut().writer().print("\n{s} HARMONIC FREQUENCIES:\n", .{name}); try hf.freqs.?.matrix().print(std.io.getStdOut().writer());}
     }
+
+    if (opt.write.coefficient != null) try hf.C_A.write(opt.write.coefficient.?);
+    if (opt.write.coulomb     != null) try hf.J_A.write(opt.write.coulomb.?    );
+    if (opt.write.density     != null) try hf.D_A.write(opt.write.density.?    );
+    if (opt.write.kinetic     != null) try hf.T_A.write(opt.write.kinetic.?    );
+    if (opt.write.nuclear     != null) try hf.V_A.write(opt.write.nuclear.?    );
+    if (opt.write.overlap     != null) try hf.S_A.write(opt.write.overlap.?    );
+
+    if (opt.gradient != null and opt.write.gradient != null) try hf.G.?.write(opt.write.gradient.?);
+    if (opt.hessian  != null and opt.write.hessian  != null) try hf.H.?.write(opt.write.hessian.? );
 
     return hf;
 }
@@ -194,13 +204,6 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
-
-    if (opt.write.coefficient != null) try C_A.write(opt.write.coefficient.?);
-    if (opt.write.coulomb     != null) try J_A.write(opt.write.coulomb.?    );
-    if (opt.write.density     != null) try D_A.write(opt.write.density.?    );
-    if (opt.write.kinetic     != null) try T_A.write(opt.write.kinetic.?    );
-    if (opt.write.nuclear     != null) try V_A.write(opt.write.nuclear.?    );
-    if (opt.write.overlap     != null) try S_A.write(opt.write.overlap.?    );
 
     return out.HartreeFockOutput(T){
         .S_A = S_A, .T_A = T_A, .V_A = V_A, .J_A = J_A, .C_A = C_A, .D_A = D_A, .E_M = E_M, .F_A = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .freqs = null, .basis = basis

@@ -53,7 +53,7 @@ pub fn runFull(comptime T: type, opt: inp.MollerPlessetOptions(T), system: *Syst
 
     if (opt.hessian != null) mp.H = try edf.hessian(T, opt, system.*, mpFull, name, true, allocator);
 
-    if (print and opt.hessian != null and opt.hessian.?.print) {
+    if (print and opt.hessian != null and opt.print.hessian) {
         if (mp.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try mp.H.?.print(std.io.getStdOut().writer());}
     }
 
@@ -62,6 +62,9 @@ pub fn runFull(comptime T: type, opt: inp.MollerPlessetOptions(T), system: *Syst
     if (print) {
         if (mp.freqs != null) {try std.io.getStdOut().writer().print("\n{s} HARMONIC FREQUENCIES:\n", .{name}); try mp.freqs.?.matrix().print(std.io.getStdOut().writer());}
     }
+
+    if (opt.gradient != null and opt.write.gradient != null) try mp.G.?.write(opt.write.gradient.?);
+    if (opt.hessian  != null and opt.write.hessian  != null) try mp.H.?.write(opt.write.hessian.? );
 
     return mp;
 }
