@@ -49,9 +49,13 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
     if ( opt.spectrum.flip) acft.column(0).linspace(-opt.time_step * asfloat(T, acft.rows / 2), opt.time_step * asfloat(T, acft.rows / 2 - 1));
     if (!opt.spectrum.flip) acft.column(0).linspace(0,                                          opt.time_step * asfloat(T, acft.rows     - 1));
 
-    var wavefunction: Matrix(T) = undefined;
+    var wavefunction:   Matrix(T) = undefined; defer if (opt.write.wavefunction  != null                                 )   wavefunction.deinit();
+    var bohm_positions: Matrix(T) = undefined; defer if (opt.write.bohm_position != null and opt.bohmian_dynamics != null) bohm_positions.deinit();
+    var bohm_momenta:   Matrix(T) = undefined; defer if (opt.write.bohm_momentum != null and opt.bohmian_dynamics != null)   bohm_momenta.deinit();
 
-    if (opt.write.wavefunction != null) wavefunction = try Matrix(T).init(rdim, ndim + 2 * (opt.iterations + 1) * nstate, allocator);
+    if (opt.write.wavefunction != null                                    ) wavefunction   = try Matrix(T).init(rdim,               ndim + 2 * (opt.iterations + 1) * nstate,       allocator);
+    if (opt.bohmian_dynamics   != null and opt.write.bohm_position != null) bohm_positions = try Matrix(T).init(1 + opt.iterations, 1 + ndim * opt.bohmian_dynamics.?.trajectories, allocator);
+    if (opt.bohmian_dynamics   != null and opt.write.bohm_momentum != null) bohm_momenta   = try Matrix(T).init(1 + opt.iterations, 1 + ndim * opt.bohmian_dynamics.?.trajectories, allocator);
 
     {
         var T1 = try Matrix(Complex(T)).init(rdim, 1, allocator); defer T1.deinit();
@@ -67,6 +71,20 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         var W0 = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer W0.deinit();
         var W  = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer  W.deinit();
         var WA = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer WA.deinit();
+
+        var bohm_position: Vector(T) = undefined; defer if (opt.bohmian_dynamics != null) bohm_position.deinit();
+        var bohm_momentum: Vector(T) = undefined; defer if (opt.bohmian_dynamics != null) bohm_momentum.deinit();
+
+        if (opt.bohmian_dynamics != null) {
+
+            if (opt.write.bohm_position != null) bohm_positions.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+            if (opt.write.bohm_momentum != null)   bohm_momenta.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+
+            bohm_position = try Vector(T).init(ndim * opt.bohmian_dynamics.?.trajectories, allocator);
+            bohm_momentum = try Vector(T).init(ndim * opt.bohmian_dynamics.?.trajectories, allocator);
+
+            for (0..bohm_momentum.rows) |i| bohm_momentum.ptr(i).* = opt.initial_conditions.momentum[i % ndim];
+        }
 
         var WOPT = try allocator.alloc(Wavefunction(T), if (opt.mode[0] > 0) opt.mode[0] - 1 else 0); defer allocator.free(WOPT);
 
@@ -104,6 +122,8 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                 wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); wfn.normalize(T, &W, dr);
             }
 
+            if (opt.bohmian_dynamics != null) initBohmianTrajectories(T, &bohm_position, rvec, W, opt.bohmian_dynamics.?.seed);
+
             @memcpy(W0.data.data, W.data.data);
 
             if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12} {s:13}", .{"ITER", "EKIN", "EPOT", "ETOT",  "ACF"});
@@ -113,6 +133,10 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             if (print) {if (W.nstate > 1) for (0..W.nstate - 1) |_| {try std.io.getStdOut().writer().print(" " ** 10, .{});}; try std.io.getStdOut().writer().print(" {s:10}\n", .{"POPULATION"});}
 
             for (0..opt.iterations + 1) |j| {
+
+                if (j > 0 and opt.bohmian_dynamics != null) {
+                    try propagateBohmianTrajectories(T, &bohm_position, &bohm_momentum, W, rvec, kvec, opt.time_step, opt.initial_conditions.mass, allocator);
+                }
 
                 if (j > 0) try wfn.propagate(T, &W, R, K, &T1);
 
@@ -141,6 +165,11 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                     wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 0).* = (if (opt.adiabatic) WA else W).data.at(k, l).re;
                     wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 1).* = (if (opt.adiabatic) WA else W).data.at(k, l).im;
                 };
+
+                if (opt.bohmian_dynamics != null) {
+                    if (opt.write.bohm_position != null) @memcpy(bohm_positions.row(j).data[1..], bohm_position.data);
+                    if (opt.write.bohm_momentum != null) @memcpy(  bohm_momenta.row(j).data[1..], bohm_momentum.data);
+                }
 
                 if (print and (j % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(j), Ekin, Epot, r, p, P, acfi);
 
@@ -183,7 +212,8 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
     if (opt.write.transformed_autocorrelation_function) |path| try         acft.write(path);
     if (opt.write.wavefunction                        ) |path| try wavefunction.write(path);
 
-    if (opt.write.wavefunction != null) wavefunction.deinit();
+    if (opt.bohmian_dynamics != null) {if (opt.write.bohm_position) |path| try bohm_positions.write(path);}
+    if (opt.bohmian_dynamics != null) {if (opt.write.bohm_momentum) |path|   try bohm_momenta.write(path);}
 
     return output;
 }
@@ -195,6 +225,25 @@ pub fn assignOutput(comptime T: type, output: *out.QuantumDynamicsOutput(T), r: 
     @memcpy(output.P[i].data, P.data);
 
     output.Ekin[i] = Ekin; output.Epot[i] = Epot;
+}
+
+/// Initialize bohmian trajectories.
+pub fn initBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), rvec: Matrix(T), W: Wavefunction(T), seed: usize) void {
+    var prng = std.Random.DefaultPrng.init(seed); const rand = prng.random(); const count = bohm_position.rows / @as(usize, @intCast(W.ndim));
+
+    for (0..count) |i| {
+
+        var cumprob: T = 0; const rn = rand.float(T);
+
+        outer: for (0..rvec.rows) |j| for (0..W.nstate) |k| {
+
+            cumprob += W.data.at(j, k).magnitude() * W.data.at(j, k).magnitude() * (rvec.at(1, 0) - rvec.at(0, 0));
+
+            if (rn < cumprob) {
+                @memcpy(bohm_position.data[i * W.ndim..(i + 1) * W.ndim], rvec.row(j).data); break :outer;
+            }
+        };
+    }
 }
 
 /// Returns the propagators for the k-space grid.
@@ -247,6 +296,48 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
     for (0..spectrum.rows) |i| for (1..spectrum.rows - i) |j| if (spectrum.at(j - 1, 0) > spectrum.at(j, 0)) for (0..spectrum.cols) |k| {
         std.mem.swap(T, spectrum.ptr(j - 1, k), spectrum.ptr(j, k));
     };
+}
+
+/// Propagates the Bohmian trajectories.
+pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), bohm_momentum: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), kvec: Matrix(T), time_step: T, mass: T, allocator: std.mem.Allocator) !void {
+    const dr = rvec.at(1, 0) - rvec.at(0, 0);
+
+    var momentum_field = try Vector(T).init(W.data.rows, allocator); defer momentum_field.deinit();
+
+    const T1 = try Vector(Complex(T)).init(W.data.rows, allocator); defer T1.deinit();
+
+    for (0..W.nstate) |i| {
+
+        for (0..W.ndim) |k| {
+
+            for (0..W.data.rows) |j| T1.ptr(j).* = W.data.at(j, i);
+
+            ftw.fftwnd(T1.data, W.shape, -1);
+
+            for (0..W.data.rows) |j| T1.ptr(j).* = T1.at(j).mul(Complex(T).init(0, kvec.at(j, k)));
+
+            ftw.fftwnd(T1.data, W.shape, 1);
+
+            for (0..momentum_field.rows) |j| momentum_field.ptr(j).* += W.data.at(j, i).conjugate().mul(T1.at(j)).im;
+        }
+    }
+
+    for (0..momentum_field.rows) |j| {
+        var densum: T = 0; for (0..W.nstate) |i| {densum += W.data.at(j, i).magnitude() * W.data.at(j, i).magnitude();} momentum_field.ptr(j).* /= (densum + 1e-14);
+    }
+
+    for (0..bohm_momentum.rows) |i| {
+
+        var findex = (bohm_position.at(i) - rvec.at(0, 0)) / dr; if (findex < 0) {findex = 0;} if (findex > asfloat(T, rvec.rows - 1)) {findex = @as(T, @floatFromInt(rvec.rows - 1));}
+
+        const ffindex = @as(usize, @intFromFloat(@floor(findex))); const cfindex = @as(usize, @intFromFloat(@ceil(findex)));
+
+        bohm_momentum.ptr(i).* = momentum_field.at(ffindex) + (momentum_field.at(cfindex) - momentum_field.at(ffindex)) * (bohm_position.at(i) - rvec.at(ffindex, 0)) / dr;
+    }
+
+    for (0..bohm_position.rows) |i| {
+        bohm_position.ptr(i).* += bohm_momentum.at(i) * time_step / mass;
+    }
 }
 
 /// Returns the potential matrices for each point in the space.

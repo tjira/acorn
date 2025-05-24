@@ -35,6 +35,23 @@ pub fn Wavefunction(comptime T: type) type {
         pub fn deinit(self: Wavefunction(T)) void {
             self.data.deinit(); self.allocator.free(self.shape);
         }
+
+        /// Clone the wavefunction object.
+        pub fn clone(self: Wavefunction(T)) !Wavefunction(T) {
+            const W = Wavefunction(T){
+                .data = try self.data.clone(),
+                .shape = try self.allocator.alloc(i32, self.ndim),
+                .ndim = self.ndim,
+                .nstate = self.nstate,
+                .allocator = self.allocator
+            };
+
+            for (0..self.ndim) |i| {
+                W.shape[i] = self.shape[i];
+            }
+
+            return W;
+        }
     };
 }
 

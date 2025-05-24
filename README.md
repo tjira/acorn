@@ -59,6 +59,9 @@ Acorn offers a comprehensive suite of tools for both time-independent and time-d
 * **Quantum Dynamics Simulations**  
   Simulate quantum dynamics across arbitrary dimensions and electronic states using customizable potential energy surfaces.
 
+* **Bohmian Dynamics**  
+  Propagate trajectory ensembles guided by the time-dependent Schrödinger equation for phase-aware quantum dynamics.
+
 * **Surface Hopping Algorithms**  
   Perform nonadiabatic dynamics with support for FSSH, LZSH, MASH, and κTSH methods, all on user-defined potentials.
 

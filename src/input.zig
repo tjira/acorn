@@ -230,6 +230,10 @@ pub fn PrimeOptions(comptime T: type) type {
 /// The quantum dynamics options struct
 pub fn QuantumDynamicsOptions(comptime T: type) type {
     return struct {
+        pub const BohmianDynamics = struct {
+            trajectories: usize = 100,
+            seed: usize = 1,
+        };
         pub const Grid = struct {
             limits: []const T, points: u32
         };
@@ -257,7 +261,9 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             potential_energy:                     ?[]const u8 = null,
             spectrum:                             ?[]const u8 = null,
             total_energy:                         ?[]const u8 = null,
-            wavefunction:                         ?[]const u8 = null
+            wavefunction:                         ?[]const u8 = null,
+            bohm_position:                        ?[]const u8 = null,
+            bohm_momentum:                        ?[]const u8 = null,
         };
 
         adiabatic: bool,
@@ -265,7 +271,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         mode: []const u32,
         time_step: T,
 
-        grid: Grid, hamiltonian: Hamiltonian, initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, spectrum: Spectrum = .{}, write: Write = .{}
+        bohmian_dynamics: ?BohmianDynamics = null, grid: Grid, hamiltonian: Hamiltonian, initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, spectrum: Spectrum = .{}, write: Write = .{}
     };
 }
 
