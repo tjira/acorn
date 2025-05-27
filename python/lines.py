@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, numpy as np
+import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, matplotlib.ticker as tck, numpy as np
 
 # create the parser
 parser = ap.ArgumentParser(
@@ -9,21 +9,25 @@ parser = ap.ArgumentParser(
     add_help=False, allow_abbrev=False
 )
 
-# add the 
+# add the arguments for the parser
 parser.add_argument("-h", "--help", action="help", default=ap.SUPPRESS, help="This help message.")
 parser.add_argument("-o", "--output", type=str, help="The output file to save the plot.")
 parser.add_argument("-a", "--animate", type=int, help="Animate the plot.")
 
 # add the plotting arguments
-parser.add_argument("--colormap", type=str, default="tab10", help="The colormap to use for the plot.")
+parser.add_argument("--colormap", type=str, nargs=2, default=["tab10", "10"], help="The colormap to use for the plot.")
 parser.add_argument("--dpi", type=int, default=96, help="The DPI of the plot.")
 parser.add_argument("--figsize", type=int, nargs=2, default=[6, 8], help="The dimensions of the plot in inches.")
+parser.add_argument("--fontsize_label", type=int, nargs="+", help="The font size for the x and y axis labels.")
+parser.add_argument("--fontsize_title", type=int, nargs="+", help="The font size for the title of each subplot.")
 parser.add_argument("--fps", type=int, default=30, help="Frames per second for the animation.")
 parser.add_argument("--title", type=str, nargs="+", help="The title of each subplot.")
 parser.add_argument("--xlabel", type=str, nargs="+", help="The an x-axis labels for each subplot.")
 parser.add_argument("--xlim", type=float, nargs="+", help="The x-axis limits for each subplot.")
+parser.add_argument("--xticklabelon", type=int, nargs="+", help="Whether to show the x-axis tick labels for each subplot.")
 parser.add_argument("--ylabel", type=str, nargs="+", help="The an y-axis label for each subplot.")
 parser.add_argument("--ylim", type=float, nargs="+", help="The y-axis limits for each subplot.")
+parser.add_argument("--yticklabelon", type=int, nargs="+", help="Whether to show the y-axis tick labels for each subplot.")
 
 # additional file arguments
 parser.add_argument("--alphas", nargs="+", help="Alpha values for the plotted lines.")
@@ -45,7 +49,7 @@ def load(fname): tmp = fname.split(":"); data = np.loadtxt(tmp[0], ndmin=2, skip
 dcit, indc, trng = lambda d, c: ((x, j) for x, y in zip(d, c) for j in y), lambda l, e: [i for i, sl in enumerate(l) if e in sl], lambda s: range((a := list(map(int, s.split("-"))))[0], a[-1] + 1)
 
 # load the data with plotted columns and get the total number of lines
-data, data_cols = zip(*[load(file) for file in args.files]); nline = sum(len(data_cols[i]) for i in range(len(data_cols)))
+data, data_cols = zip(*[load(file) for file in args.files]); maxnline = max(len(data_cols[i]) for i in range(len(data_cols)))
 
 # load the error bars if provided
 data_errors, cols_errors = zip(*[load(file) for file in args.errors[1:]]) if args.errors else ((), ())
@@ -74,7 +78,7 @@ fig = plt.figure(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); axes
 for subplot in args.subplots: axes[subplot] = (fig.add_subplot(int(subplot)) if len(subplot) == 3 else fig.add_subplot(*[int(num) for num in subplot.split("-")])) if subplot not in axes else axes[subplot]
 
 # set the colormap
-cmap = plt.get_cmap(args.colormap)(np.linspace(0.1, 0.9, nline) if (plt.get_cmap(args.colormap).N) > 20 else np.linspace(0, 1, plt.get_cmap(args.colormap).N))
+cmap = plt.get_cmap(args.colormap[0])(np.linspace(0, 1, int(args.colormap[1])))
 
 # loop over data and its columns to plot
 for i, (data_i, j) in enumerate(dcit(data, data_cols)):
@@ -122,19 +126,26 @@ for i, ax in enumerate(axes.values()):
     # enlarge the y limit by 5 percent
     ax.set_ylim(ax.get_ylim()[0] - 0.05 * np.diff(ax.get_ylim()), ax.get_ylim()[1] + 0.05 * np.diff(ax.get_ylim()))
 
+    # enable minor ticks
+    ax.xaxis.set_minor_locator(tck.AutoMinorLocator()); ax.yaxis.set_minor_locator(tck.AutoMinorLocator()); ax.tick_params(which="both", direction="in", top=True, right=True)
+
     # add the legend
     if any([line.get_label()[0] != "_" for line in ax.lines]): ax.legend(frameon=False)
 
     # set the title
-    if args.title and len(args.title) > i: ax.set_title(args.title[i])
+    if args.title and len(args.title) > i: ax.set_title(args.title[i], fontsize=args.fontsize_title[i] if args.fontsize_title and len(args.fontsize_title) > i else 20)
 
     # set the axis labels
-    if args.xlabel and len(args.xlabel) > i: ax.set_xlabel(args.xlabel[i])
-    if args.ylabel and len(args.ylabel) > i: ax.set_ylabel(args.ylabel[i])
+    if args.xlabel and len(args.xlabel) > i: ax.set_xlabel(args.xlabel[i], fontsize=args.fontsize_label[i] if args.fontsize_label and len(args.fontsize_label) > i else 14)
+    if args.ylabel and len(args.ylabel) > i: ax.set_ylabel(args.ylabel[i], fontsize=args.fontsize_label[i] if args.fontsize_label and len(args.fontsize_label) > i else 14)
 
     # set the axis limits
     if args.xlim and len(args.xlim) > 2 * i and not np.isnan(args.xlim[2 * i]): ax.set_xlim(args.xlim[2 * i + 0:2 * i + 2])
     if args.ylim and len(args.ylim) > 2 * i and not np.isnan(args.ylim[2 * i]): ax.set_ylim(args.ylim[2 * i + 0:2 * i + 2])
+
+    # enable or disable the x-axis and y-axis tick labels
+    if args.xticklabelon and len(args.xticklabelon) > i: ax.xaxis.set_tick_params(labelbottom=args.xticklabelon[i])
+    if args.yticklabelon and len(args.yticklabelon) > i: ax.yaxis.set_tick_params(labelleft  =args.yticklabelon[i])
 
 # set the layout
 fig.tight_layout()
