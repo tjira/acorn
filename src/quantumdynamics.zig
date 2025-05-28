@@ -345,16 +345,19 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 
         for (0..bohm_momentum.rows / W.ndim) |i| {
 
-            var index: usize = 0;
+            var q: T = 0; var f: usize = 0; var c: usize = 0;
 
             for (0..W.ndim) |j| {
 
-                const q = std.math.clamp((bohm_position.at(i * W.ndim + j) - rvec.at(0, j)) / dr, 0, asfloat(T, W.shape[j] - 1));
+                const qj = std.math.clamp((bohm_position.at(i * W.ndim + j) - rvec.at(0, j)) / dr, 0, asfloat(T, W.shape[j] - 1));
 
-                index += @as(usize, @intFromFloat(@round(q))) * std.math.pow(usize, @intCast(W.shape[0]), W.ndim - j - 1);
+                q += @mod(qj, 1) * @mod(qj, 1);
+
+                f += @as(usize, @intFromFloat(@floor(qj))) * std.math.pow(usize, @intCast(W.shape[0]), W.ndim - j - 1);
+                c += @as(usize, @intFromFloat(@ceil(qj)))  * std.math.pow(usize, @intCast(W.shape[0]), W.ndim - j - 1);
             }
 
-            bohm_momentum.ptr(i * W.ndim + k).* = bohm_field.at(index);
+            bohm_momentum.ptr(i * W.ndim + k).* = bohm_field.at(f) * (1 - std.math.sqrt(q)) + bohm_field.at(c) * std.math.sqrt(q);
         }
     }
 

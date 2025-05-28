@@ -12,4 +12,4 @@
 - [ ] Better integrator for the Bohmian trajectories so that the trajectories would not lag behind.
 - [x] Bohmian dynamics should have an option to output only the mean trajectories.
 - [x] Multidimensional Bohmian dynamics.
-- [ ] Maybe do some better field interpolation than nearest neighbour for the Bohmian trajectories.
+- [x] Maybe do some better field interpolation than nearest neighbour for the Bohmian trajectories.
