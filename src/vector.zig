@@ -56,6 +56,11 @@ pub fn Vector(comptime T: type) type {
             @memset(self.data, value);
         }
 
+        /// Memcpy the vector data to the destination vector.
+        pub fn memcpy(self: Vector(T), dest: Vector(T)) void {
+            @memcpy(dest.data, self.data);
+        }
+
         /// Return the vector as a matrix with one column. No memory is allocated.
         pub fn matrix(self: Vector(T)) Matrix(T) {
             return Matrix(T){

@@ -148,22 +148,22 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
             for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean[j] + opt.initial_conditions.position_std[j] * rand_traj.floatNorm(T);
             for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean[j] + opt.initial_conditions.momentum_std[j] * rand_traj.floatNorm(T);
 
-            a.fill(0); @memcpy(v.data, p.data); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j];
+            a.fill(0); p.memcpy(v); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j];
 
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
             if (mash) {try initialBlochVector(T, &S, &SI, s, rand_bloc);                 }
 
-            @memcpy(S0.data, S.data); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
+            S.memcpy(S0); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
             for (0..opt.iterations + 1) |j| {
 
-                @memcpy(rp.data, r.data); @memcpy(pp.data, p.data); @memcpy(vp.data, v.data); @memcpy(ap.data, a.data); S3[j % 3] = s;
+                r.memcpy(rp); p.memcpy(pp); v.memcpy(vp); a.memcpy(ap); S3[j % 3] = s;
 
                 if (j > 0) try propagate(T, opt, pot.?, &r, &v, &a, &U, &UA, &UC, s);
 
                 pot.?.evaluate(&U, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
 
-                @memcpy(U3[j % 3].data, U.data); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
+                U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
                 if (opt.adiabatic and tdc_hst    and j > 0) derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
                 if (opt.adiabatic and tdc_kappa  and j > 1) derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
@@ -260,7 +260,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), i: usize) void {
     lpk.dsyevd(UA, UC, U.*);
 
-    @memcpy(U.data, UA.data); @memcpy(UC2[i % 2].data, UC.data);
+    UA.memcpy(U.*); UC.memcpy(UC2[i % 2]);
 
     if (i > 0) for (0..UC.cols) |k| {
 
@@ -292,11 +292,11 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
     r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*);
 
-    if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); @memcpy(U.data, UA.data);} const Up = U.at(s, s);
+    if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); UA.memcpy(U.*);} const Up = U.at(s, s);
 
     r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*);
 
-    if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); @memcpy(U.data, UA.data);} const Um = U.at(s, s);
+    if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); UA.memcpy(U.*);} const Um = U.at(s, s);
 
     r.ptr(c).* += opt.derivative_step;
 
@@ -520,7 +520,7 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matri
         sn = s;
     }
 
-    @memcpy(S.data, SN.data); return sn;
+    SN.memcpy(S.*); return sn;
 }
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.

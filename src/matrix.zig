@@ -91,6 +91,11 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
+        /// Copy the data to another matrix.
+        pub fn memcpy(self: Matrix(T), dest: Matrix(T)) void {
+            @memcpy(dest.data, self.data);
+        }
+
         /// Print the matrix to the given device.
         pub fn print(self: Matrix(T), device: anytype) !void {
             var buffered = std.io.bufferedWriter(device); var writer = buffered.writer();

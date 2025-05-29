@@ -5,7 +5,7 @@ import copy as cp, glob as gl, shutil as sh, json as js, numpy as np, os
 dollar = "$"  if os.name == "nt" else  "\\$"
 esc    = "\\" if os.name == "nt" else "\\\\"
 
-KTSH_COUPLING = 1; KTSH_HO = 1; SH_COMPARE = 1; LZ_COMPARE = 1; URACIL_LVC = 1
+KTSH_COUPLING = 1; KTSH_HO = 1; LZ_COMPARE = 1; URACIL_LVC = 1
 
 TRAJS, NGRID = 10000, 8192
 
@@ -310,103 +310,6 @@ if KTSH_HO:
         open(f"input_KTSH_HO_lt_tdc_{potential}.json", "w").write(js.dumps(lt_tdc_input, indent=4)); os.system(f"acorn input_KTSH_HO_lt_tdc_{potential}.json")
 
     os.system(f'lines.py KTSH_HO_POTENTIAL_ADIABATIC_{MODELS[0]}.mat:0,3 KTSH_HO_TDC_{MODELS[0]}_FSSH.mat:1 KTSH_HO_TDC_{MODELS[0]}_KTSH.mat:1 KTSH_HO_TDC_{MODELS[0]}_LTSH.mat:1 KTSH_HO_POPULATION_{MODELS[0]}_EXACT.mat:1 KTSH_HO_POPULATION_MEAN_{MODELS[0]}_FSSH.mat:1 KTSH_HO_POPULATION_MEAN_{MODELS[0]}_KTSH.mat:1 KTSH_HO_POPULATION_MEAN_{MODELS[0]}_LTSH.mat:1 KTSH_HO_POPULATION_MEAN_{MODELS[0]}_LZSH.mat:1 KTSH_HO_POTENTIAL_ADIABATIC_{MODELS[1]}.mat:0,4,8 KTSH_HO_TDC_{MODELS[1]}_FSSH.mat:5 KTSH_HO_TDC_{MODELS[1]}_KTSH.mat:5 KTSH_HO_TDC_{MODELS[1]}_LTSH.mat:5 KTSH_HO_POPULATION_{MODELS[1]}_EXACT.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[1]}_FSSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[1]}_KTSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[1]}_LTSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[1]}_LZSH.mat:2 KTSH_HO_POTENTIAL_ADIABATIC_{MODELS[2]}.mat:0,4,8 KTSH_HO_TDC_{MODELS[2]}_FSSH.mat:5 KTSH_HO_TDC_{MODELS[2]}_KTSH.mat:5 KTSH_HO_TDC_{MODELS[2]}_LTSH.mat:5 KTSH_HO_POPULATION_{MODELS[2]}_EXACT.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[2]}_FSSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[2]}_KTSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[2]}_LTSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[2]}_LZSH.mat:2 KTSH_HO_POTENTIAL_ADIABATIC_{MODELS[3]}.mat:0,4,8 KTSH_HO_TDC_{MODELS[3]}_FSSH.mat:5 KTSH_HO_TDC_{MODELS[3]}_KTSH.mat:5 KTSH_HO_TDC_{MODELS[3]}_LTSH.mat:5 KTSH_HO_POPULATION_{MODELS[3]}_EXACT.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[3]}_FSSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[3]}_KTSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[3]}_LTSH.mat:2 KTSH_HO_POPULATION_MEAN_{MODELS[3]}_LZSH.mat:2 --dpi 256 --figsize 12 18 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_1{dollar} (EXACT)" "S{dollar}_1{dollar} (FSSH)" "S{dollar}_1{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_1{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_1{dollar} (LZSH{dollar}_{esc}mathrm{{maxdiff}}{dollar})" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH{dollar}_{esc}mathrm{{maxdiff}}{dollar})" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH{dollar}_{esc}mathrm{{maxdiff}}{dollar})" "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_2{dollar}" "T{dollar}_{{1,2}}{dollar} (NPI)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}kappa{dollar}TDC)" "T{dollar}_{{1,2}}{dollar} ({dollar}{esc}lambda{dollar}TDC)" "S{dollar}_2{dollar} (EXACT)" "S{dollar}_2{dollar} (FSSH)" "S{dollar}_2{dollar} ({dollar}{esc}kappa{dollar}TSH)" "S{dollar}_2{dollar} ({dollar}{esc}lambda{dollar}TSH)" "S{dollar}_2{dollar} (LZSH{dollar}_{esc}mathrm{{maxdiff}}{dollar})" --subplots 431 431 432 432 432 433 433 433 433 433 434 434 434 435 435 435 436 436 436 436 436 437 437 437 438 438 438 439 439 439 439 439 4-3-10 4-3-10 4-3-10 4-3-11 4-3-11 4-3-11 4-3-12 4-3-12 4-3-12 4-3-12 4-3-12 --xlabel "" "" "" "" "" "" "" "" "" "Coordinate (a.u.)" "Time (a.u.)" "Time (a.u.)" --xlim -3 3 {TDCLIM[MODELS[0]][0]} {TDCLIM[MODELS[0]][1]} nan nan -3 3 {TDCLIM[MODELS[1]][0]} {TDCLIM[MODELS[1]][1]} nan nan -8 8 {TDCLIM[MODELS[2]][0]} {TDCLIM[MODELS[2]][1]} nan nan -3 3 {TDCLIM[MODELS[3]][0]} {TDCLIM[MODELS[3]][1]} nan nan --ylabel "Energy (a.u.)" "TDC (a.u.)" "Highest State Populations" "Energy (a.u.)" "TDC (a.u.)" "Highest State Populations" "Energy (a.u.)" "TDC (a.u.)" "Highest State Populations" "Energy (a.u.)" "TDC (a.u.)" "Highest State Populations" --ylim -0.002 0.05 -0.002 0.02 nan nan -0.002 0.05 -0.002 0.02 nan nan -0.02 0.25 -0.002 0.02 nan nan -0.002 0.05 -0.005 0.2 nan nan --output MODEL_TRIVIAL_HO_TS.png')
-
-# GENERAL SURFACE HOPPING TESTING ON MODEL POTENTIALS ========================================================================================================================================
-
-if SH_COMPARE:
-
-    HAMILTONIAN = {
-        "P1" : {
-            "dims" : 1,
-            "matrix" : [
-                ["0.01 * tanh(0.6 * r1)", "0.001 * exp(-r1^2)"    ],
-                ["0.001 * exp(-r1^2)",    "-0.01 * tanh(0.6 * r1)"],
-            ]
-        }
-    }
-
-    IS = {
-        "P1" : [1, 1]
-    }
-
-    NS = {
-        "P1" : 2
-    }
-
-    POTENTIALS = ["P1"]
-
-    for potential in POTENTIALS:
-
-        dp_input = {"model_potential" : {"adiabatic" : False, "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_DIABATIC_{potential}.mat",  "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
-        ap_input = {"model_potential" : {"adiabatic" : True,  "limits" : [-16, 16], "output" : f"SH_COMPARE_POTENTIAL_ADIABATIC_{potential}.mat", "points" : 8192, "hamiltonian" : HAMILTONIAN[potential]}}
-
-        qd_input = {
-            "quantum_dynamics" : {
-                "log_intervals" : {
-                    "iteration" : 50
-                },
-
-                "grid" : {
-                    "limits" : [-24, 48], "points" : NGRID
-                },
-
-                "hamiltonian" : HAMILTONIAN[potential],
-
-                "initial_conditions" : {
-                    "position" : [-10], "momentum" : [15], "gamma" : 2, "state" : IS[potential][0], "mass" : 2000
-                },
-
-                "write" : {
-                    "population" : f"SH_COMPARE_POPULATION_{potential}_EXACT.mat"
-                },
-
-                "adiabatic" : True,
-                "iterations" : 300,
-                "mode" : [0, 1],
-                "time_step" : 10
-            }
-        }
-
-        cd_input = {
-            "classical_dynamics" : {
-                "log_intervals" : {
-                    "iteration" : 1000, "trajectory" : 1000
-                },
-
-                "hamiltonian" : HAMILTONIAN[potential],
-
-                "initial_conditions" : {
-                    "position_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["position"], "position_std"  : [0.5],
-                    "momentum_mean" : qd_input["quantum_dynamics"]["initial_conditions"]["momentum"], "momentum_std"  : [1.0],
-                    "state" : [int(i == IS[potential][1]) for i in range(NS[potential])],
-                    "mass" : [qd_input["quantum_dynamics"]["initial_conditions"]["mass"]]
-                },
-
-                "write" : {},
-
-                "adiabatic" : qd_input["quantum_dynamics"]["adiabatic"],
-                "iterations" : qd_input["quantum_dynamics"]["iterations"] * 10,
-                "time_step" : qd_input["quantum_dynamics"]["time_step"] / 10,
-                "trajectories" : TRAJS
-            }
-        }
-
-        fs_input = cp.deepcopy(cd_input); fs_input["classical_dynamics"]["fewest_switches"] = {}
-        lz_input = cp.deepcopy(cd_input); lz_input["classical_dynamics"]["landau_zener"]    = {}
-        ma_input = cp.deepcopy(cd_input); ma_input["classical_dynamics"]["spin_mapping"]    = {}
-
-        fs_input["classical_dynamics"]["write"]["population_mean"] = f"SH_COMPARE_POPULATION_{potential}_FSSH.mat"
-        lz_input["classical_dynamics"]["write"]["population_mean"] = f"SH_COMPARE_POPULATION_{potential}_LZSH.mat"
-        ma_input["classical_dynamics"]["write"]["population_mean"] = f"SH_COMPARE_POPULATION_{potential}_MASH.mat"
-
-        open(f"input_SH_COMPARE_dp_{potential}.json", "w").write(js.dumps(dp_input, indent=4)); os.system(f"acorn input_SH_COMPARE_dp_{potential}.json")
-        open(f"input_SH_COMPARE_ap_{potential}.json", "w").write(js.dumps(ap_input, indent=4)); os.system(f"acorn input_SH_COMPARE_ap_{potential}.json")
-        open(f"input_SH_COMPARE_qd_{potential}.json", "w").write(js.dumps(qd_input, indent=4)); os.system(f"acorn input_SH_COMPARE_qd_{potential}.json")
-        open(f"input_SH_COMPARE_fs_{potential}.json", "w").write(js.dumps(fs_input, indent=4)); os.system(f"acorn input_SH_COMPARE_fs_{potential}.json")
-        open(f"input_SH_COMPARE_lz_{potential}.json", "w").write(js.dumps(lz_input, indent=4)); os.system(f"acorn input_SH_COMPARE_lz_{potential}.json")
-        open(f"input_SH_COMPARE_ma_{potential}.json", "w").write(js.dumps(ma_input, indent=4)); os.system(f"acorn input_SH_COMPARE_ma_{potential}.json")
-
-    os.system(f'lines.py SH_COMPARE_POTENTIAL_ADIABATIC_{POTENTIALS[0]}.mat:0,3 SH_COMPARE_POPULATION_{POTENTIALS[0]}_EXACT.mat:0 SH_COMPARE_POPULATION_{POTENTIALS[0]}_FSSH.mat:0 SH_COMPARE_POPULATION_{POTENTIALS[0]}_LZSH.mat:0 SH_COMPARE_POPULATION_{POTENTIALS[0]}_MASH.mat:0 --dpi 256 --figsize 4 10 --subplots 121 121 122 122 122 122 --legends every "S{dollar}_0{dollar}" "S{dollar}_1{dollar}" "S{dollar}_0{dollar} (EXACT)" "S{dollar}_0{dollar} (FSSH)" "S{dollar}_0{dollar} (LZSH)" "S{dollar}_0{dollar} (MASH)" --xlabel "Coordinate (a.u.)" "Time (a.u.)" --ylabel "Energy (a.u.)" "Ground State Populations" --output SH_COMPARE.png --fontsize_label 12 12')
 
 # LZSH FOR THREE STATE CROSSING COMPARE ======================================================================================================================================================
 

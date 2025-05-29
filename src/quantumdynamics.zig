@@ -127,12 +127,12 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             }
 
             if (i < opt.mode[0] or (opt.mode[0] == 0)) {
-                wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); wfn.normalize(T, &W, dr);
+                wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); W.normalize(dr);
             }
 
             if (opt.bohmian_dynamics != null) initBohmianTrajectories(T, &bohm_position, rvec, W, opt.bohmian_dynamics.?.seed);
 
-            @memcpy(W0.data.data, W.data.data);
+            W.memcpy(W0);
 
             if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12} {s:13}", .{"ITER", "EKIN", "EPOT", "ETOT",  "ACF"});
 
@@ -156,7 +156,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); try wfn.momentum(T, &p, W, kvec, dr, &T1);
 
-                const acfi = wfn.overlap(T, W0, W, dr);
+                const acfi = W0.overlap(W, dr);
 
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.population       != null) for (0..nstate) |k| {pop.ptr(j, 1 + k).* = P.at(k, k);};
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.position         != null) for (0..ndim) |k| {position.ptr(j, 1 + k).* = r.at(k);};
@@ -176,8 +176,8 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 if (opt.bohmian_dynamics != null) {
 
-                    if (opt.write.bohm_position != null) @memcpy(bohm_positions.row(j).data[1..], bohm_position.data);
-                    if (opt.write.bohm_momentum != null) @memcpy(  bohm_momenta.row(j).data[1..], bohm_momentum.data);
+                    if (opt.write.bohm_position != null) bohm_position.memcpy(bohm_positions.row(j).vector().slice(1, bohm_positions.cols));
+                    if (opt.write.bohm_momentum != null) bohm_momentum.memcpy(  bohm_momenta.row(j).vector().slice(1,   bohm_momenta.cols));
 
                     if (opt.write.bohm_position_mean != null) for (0..ndim) |k| {
 
@@ -193,7 +193,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 if (j == opt.iterations) assignOutput(T, &output, r, p, P, Ekin, Epot, i);
 
-                if (j == opt.iterations and opt.mode[0] > 0 and i < opt.mode[0] - 1) @memcpy(WOPT[i].data.data, W.data.data);
+                if (j == opt.iterations and opt.mode[0] > 0 and i < opt.mode[0] - 1) W.memcpy(WOPT[i]);
 
                 if (print and j == opt.iterations and opt.mode[0] + opt.mode[1] == 1) {
                     try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{Ekin + Epot});
@@ -240,11 +240,12 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
 /// Assigns the calculated properties to the output struct.
 pub fn assignOutput(comptime T: type, output: *out.QuantumDynamicsOutput(T), r: Vector(T), p: Vector(T), P: Matrix(T), Ekin: T, Epot: T, i: usize) void {
-    @memcpy(output.r[i].data, r.data);
-    @memcpy(output.p[i].data, p.data);
-    @memcpy(output.P[i].data, P.data);
+    r.memcpy(output.r[i]);
+    p.memcpy(output.p[i]);
+    P.memcpy(output.P[i]);
 
-    output.Ekin[i] = Ekin; output.Epot[i] = Epot;
+    output.Ekin[i] = Ekin;
+    output.Epot[i] = Epot;
 }
 
 /// Initialize bohmian trajectories.
@@ -257,17 +258,17 @@ pub fn initBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), rvec
 
         outer: for (0..rvec.rows) |j| for (0..W.nstate) |k| {
 
-            cumprob += W.data.at(j, k).magnitude() * W.data.at(j, k).magnitude() * std.math.pow(T, (rvec.at(1, W.ndim - 1) - rvec.at(0, W.ndim - 1)), asfloat(T, W.ndim));
+            cumprob += W.at(j, k).magnitude() * W.at(j, k).magnitude() * std.math.pow(T, (rvec.at(1, W.ndim - 1) - rvec.at(0, W.ndim - 1)), asfloat(T, W.ndim));
 
             if (rn < cumprob) {
-                @memcpy(bohm_position.data[i * W.ndim..(i + 1) * W.ndim], rvec.row(j).data); break :outer;
+                rvec.row(j).vector().memcpy(bohm_position.slice(i * W.ndim, (i + 1) * W.ndim)); break :outer;
             }
         };
     }
 }
 
 /// Returns the propagators for the k-space grid.
-pub fn kgridPropagators(comptime T: type, nstate: u32, kvec: Matrix(T), time_step: T, mass: T, imaginary: bool, allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
+pub fn kgridPropagators(comptime T: type, nstate: usize, kvec: Matrix(T), time_step: T, mass: T, imaginary: bool, allocator: std.mem.Allocator) !std.ArrayList(Matrix(Complex(T))) {
     const unit = Complex(T).init(if (imaginary) 1 else 0, if (imaginary) 0 else 1);
 
     var K = try std.ArrayList(Matrix(Complex(T))).initCapacity(allocator, kvec.rows);
@@ -307,7 +308,7 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
         acft.ptr(i, 1).* = transform.at(i).re; acft.ptr(i, 2).* = transform.at(i).im;
     }
 
-    ftw.fftwnd(transform.data, &[_]i32{@intCast(transform.rows)}, -1);
+    ftw.fftwnd(transform.data, &[_]u32{@intCast(transform.rows)}, -1);
 
     for (0..spectrum.rows) |i| {
         spectrum.ptr(i, 0).* = frequency.at(i, 0); spectrum.ptr(i, 1).* = transform.at(i).magnitude();
@@ -328,19 +329,19 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 
         for (0..W.nstate) |i| {
 
-            for (0..W.data.rows) |j| T1.ptr(j, 0).* = W.data.at(j, i);
+            for (0..W.npoint) |j| T1.ptr(j, 0).* = W.at(j, i);
 
             ftw.fftwnd(T1.data, W.shape, -1);
 
-            for (0..W.data.rows) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(0, kvec.at(j, k)));
+            for (0..W.npoint) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(Complex(T).init(0, kvec.at(j, k)));
 
             ftw.fftwnd(T1.data, W.shape, 1);
 
-            for (0..bohm_field.rows) |j| bohm_field.ptr(j).* += W.data.at(j, i).conjugate().mul(T1.at(j, 0)).im;
+            for (0..bohm_field.rows) |j| bohm_field.ptr(j).* += W.at(j, i).conjugate().mul(T1.at(j, 0)).im;
         }
 
         for (0..bohm_field.rows) |j| {
-            var densum: T = 0; for (0..W.nstate) |i| {densum += W.data.at(j, i).magnitude() * W.data.at(j, i).magnitude();} bohm_field.ptr(j).* /= (densum + 1e-14);
+            var densum: T = 0; for (0..W.nstate) |i| {densum += W.at(j, i).magnitude() * W.at(j, i).magnitude();} bohm_field.ptr(j).* /= (densum + 1e-14);
         }
 
         for (0..bohm_momentum.rows / W.ndim) |i| {
@@ -381,9 +382,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T),
 
     for (0..rvec.rows) |i| {
 
-        @memcpy(UCP.data, UC.data);
-
-        pot.evaluate(&U, rvec.row(i).vector()); lpk.dsyevd(&UA, &UC, U);
+        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector()); lpk.dsyevd(&UA, &UC, U);
 
         if (i > 0) for (0..UC.cols) |j| {
 
@@ -448,12 +447,12 @@ pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), 
 pub fn orthogonalize(comptime T: type, W: *Wavefunction(T), WOPT: []Wavefunction(T), states: usize, dr: T) void {
     for (0..states) |k| {
 
-        const overlap = wfn.overlap(T, WOPT[k], W.*, dr);
+        const overlap = WOPT[k].overlap(W.*, dr);
 
-        for (0..W.data.rows) |l| for (0..W.data.cols) |m| {
-            W.data.ptr(l, m).* = W.data.at(l, m).sub(WOPT[k].data.at(l, m).mul(overlap));
+        for (0..W.npoint) |l| for (0..W.nstate) |m| {
+            W.ptr(l, m).* = W.at(l, m).sub(WOPT[k].data.at(l, m).mul(overlap));
         };
     }
 
-    wfn.normalize(T, W, dr);
+    W.normalize(dr);
 }
