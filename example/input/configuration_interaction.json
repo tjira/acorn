@@ -12,10 +12,13 @@
             "integral" : {
                 "basis" : "sto-3g"
             },
-            "threshold" : 1e-8,
+            "threshold" : 1e-12,
             "maxiter" : 100,
             "dsize" : 5
         },
-        "excitation" : null
+        "active_space" : null,
+        "optimize" : {},
+        "gradient" : {},
+        "hessian" : {}
     }
 }

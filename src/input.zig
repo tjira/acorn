@@ -122,7 +122,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
         };
         pub const Gradient = struct {
             numeric: bool = true,
-            step: T = 1e-2,
+            step: T = 1e-3,
         };
         pub const Hessian = struct {
             numeric: bool = true,

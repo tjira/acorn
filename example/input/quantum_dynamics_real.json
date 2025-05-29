@@ -23,6 +23,10 @@
         },
         "write" : {
             "autocorrelation_function" : "ACF.mat",
+            "bohm_momentum" : "MOMENTUM_BOHM.mat",
+            "bohm_momentum_mean" : "MOMENTUM_BOHM_MEAN.mat",
+            "bohm_position" : "POSITION_BOHM.mat",
+            "bohm_position_mean" : "POSITION_BOHM_MEAN.mat",
             "kinetic_energy" : "KINETIC_ENERGY_EXACT.mat",
             "momentum" : "MOMENTUM_EXACT.mat",
             "population" : "POPULATION_EXACT.mat",
@@ -31,6 +35,9 @@
             "spectrum" : "SPECTRUM.mat",
             "total_energy" : "TOTAL_ENERGY_EXACT.mat",
             "wavefunction" : "WAVEFUNCTION.mat"
+        },
+        "bohmian_dynamics" : {
+            "trajectories" : 100
         }
     }
 }

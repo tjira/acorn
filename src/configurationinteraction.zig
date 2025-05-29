@@ -150,7 +150,7 @@ pub fn checkErrors(comptime T: type, opt: inp.ConfigurationInteractionOptions(T)
 
 /// Aligns the vector C to the vector B. The result is stored in the vector A and the sign of the permutation is returned.
 fn alignDeterminant(A: *Vector(usize), B: Vector(usize), C: Vector(usize)) !i32 {
-    @memcpy(A.data, C.data); var k: i32 = 0; var sign: i32 = 1;
+    C.memcpy(A.*); var k: i32 = 0; var sign: i32 = 1;
 
     while (k < A.rows) : (k += 1) {
         if (A.at(@intCast(k)) != B.at(@intCast(k))) for (@as(usize, @intCast(k)) + 1..A.rows) |l| if (A.at(@intCast(k)) == B.at(l) or A.at(l) == B.at(@intCast(k))) {

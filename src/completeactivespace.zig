@@ -14,7 +14,7 @@ pub fn generateAllDeterminants(nbf: usize, nel: usize, allocator: std.mem.Alloca
 
     for (1..D.rows) |i| {
 
-        @memcpy(D.row(i).data, D.row(i - 1).data); var index: usize = undefined;
+        D.row(i - 1).memcpy(D.row(i)); var index: usize = undefined;
 
         for (0..D.cols) |j| if (D.at(i, D.cols - j - 1) != nbf - j - 1) {
             D.ptr(i, D.cols - j - 1).* += 1; index = D.cols - j - 1; break;

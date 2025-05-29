@@ -167,7 +167,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         if (iter == opt.maxiter) return error.MaxIterationsExceeded;
 
-        @memcpy(F_A.data, H_A.data);
+        H_A.memcpy(F_A);
 
         try eig.contract(&T1, D_A, J_A, &[_]i32{0, 0, 1, 1});
         try eig.contract(&T2, D_A, J_A, &[_]i32{0, 0, 1, 3});
@@ -181,8 +181,8 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
             bls.dgemm(&T1, S_A, false, D_A, false); bls.dgemm(&T2, T1, false, F_A, true); bls.dgemm(&T1, F_A, false, D_A, false); bls.dgemm(&T3, T1, false, S_A, true); mat.sub(T, &ERR, T2, T3);
 
-            @memcpy(DIIS_F.items[iter % DIIS_F.items.len].data, F_A.data);
-            @memcpy(DIIS_E.items[iter % DIIS_E.items.len].data,  ERR.data);
+            F_A.memcpy(DIIS_F.items[iter % DIIS_F.items.len]);
+            ERR.memcpy(DIIS_E.items[iter % DIIS_E.items.len]);
 
             try diisExtrapolate(T, &F_A, &DIIS_F, &DIIS_E, iter, allocator);
         }

@@ -176,22 +176,16 @@ This example demonstrates the real-time quantum dynamics of a particle in a harm
             "gamma" : 2
         },
         "write" : {
-            "wavefunction" : "WAVEFUNCTION.mat",
-            "autocorrelation_function" : "ACF.mat",
-            "spectrum" : "SPECTRUM.mat"
+            "wavefunction" : "WAVEFUNCTION.mat"
         }
     }
 }
 ```
 
-The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction, autocorrelation function or the vibrational spectrum with the commands below.
+The input file can be run like any other program in Acorn, no special flags are required. This simulation is fast and should complete in under a second. You can visualize the wavefunction with the command below.
 
 ```bash
-lines.py WAVEFUNCTION.mat:0,1 --legends every "Re(\$\Psi_0\$)" "Im(\$\Psi_0\$)" --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 2
-```
-
-```bash
-lines.py ACF.mat:0,1 SPECTRUM.mat --figsize 6 16 --legends 0,1 "Re(\$<\Psi_0|\Psi>\$)" "Im(\$<\Psi_0|\Psi>\$)" --subplots 121 121 122 --xlabel "Time (a.u.)" "Energy (a.u.)" --xlim nan nan 0 6 --ylabel "ACF" "Intensity"
+lines.py WAVEFUNCTION.mat:0,1 --legends every "Re(\$\Psi\$)" "Im(\$\Psi\$)" --xlabel "Coordinate (a.u.)" --ylabel "Wavefunction" --animate 2
 ```
 
 Acorn also supports higher dimensions. As an example you can simulate a 2D wavefunction in a 2D harmonic potential using the following input.
@@ -218,22 +212,16 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
             "gamma" : 2
         },
         "write" : {
-            "wavefunction" : "WAVEFUNCTION.mat",
-            "autocorrelation_function" : "ACF.mat",
-            "spectrum" : "SPECTRUM.mat"
+            "wavefunction" : "WAVEFUNCTION.mat"
         }
     }
 }
 ```
 
-This simulation takes a few seconds, since the time complexity increases exponentially. Visualizing the 3D complex wavefunction is a little tricky. One way is to plot the square of the wavefunction on a 2D heatmap. You can visualize the wavefunction this way and ACF with spectrum the same way as above with the commands below.
+This simulation takes a few seconds, since the time complexity increases exponentially. Visualizing the 3D complex wavefunction is a little tricky. One way is to plot the square of the wavefunction on a 2D heatmap. You can visualize the wavefunction this way with the command below.
 
 ```bash
 heatmap.py WAVEFUNCTION.mat:0,1 --xlabel "Coordinate (a.u.)" --ylabel "Coordinate (a.u.)" --transform norm --animate 2
-```
-
-```bash
-lines.py ACF.mat:0,1 SPECTRUM.mat --figsize 6 16 --legends 0,1 "Re(\$<\Psi_0|\Psi>\$)" "Im(\$<\Psi_0|\Psi>\$)" --subplots 121 121 122 --xlabel "Time (a.u.)" "Energy (a.u.)" --xlim nan nan 0 9 --ylabel "ACF" "Intensity"
 ```
 
 ### Real Time Nonadiabatic Quantum Dynamics
