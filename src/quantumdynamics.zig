@@ -72,9 +72,9 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
         const dr = std.math.pow(T, (opt.grid.limits[1] - opt.grid.limits[0]) / asfloat(T, opt.grid.points - 1), asfloat(T, ndim));
 
-        var W0 = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer W0.deinit();
-        var W  = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer  W.deinit();
-        var WA = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator); defer WA.deinit();
+        var W0 = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer W0.deinit();
+        var W  = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer  W.deinit();
+        var WA = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer WA.deinit();
 
         var bohm_field:    Vector(T) = undefined; defer if (opt.bohmian_dynamics != null)    bohm_field.deinit();
         var bohm_position: Vector(T) = undefined; defer if (opt.bohmian_dynamics != null) bohm_position.deinit();
@@ -97,7 +97,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         var WOPT = try allocator.alloc(Wavefunction(T), if (opt.mode[0] > 0) opt.mode[0] - 1 else 0); defer allocator.free(WOPT);
 
         for (0..WOPT.len) |i| {
-            WOPT[i] = try Wavefunction(T).init(ndim, nstate, opt.grid.points, allocator);
+            WOPT[i] = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator);
         }
 
         var P = try Matrix(T).init(nstate, nstate, allocator); defer P.deinit();
@@ -127,7 +127,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             }
 
             if (i < opt.mode[0] or (opt.mode[0] == 0)) {
-                wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); W.normalize(dr);
+                wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); W.normalize();
             }
 
             if (opt.bohmian_dynamics != null) initBohmianTrajectories(T, &bohm_position, rvec, W, opt.bohmian_dynamics.?.seed);
@@ -148,15 +148,15 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 if (j > 0) try wfn.propagate(T, &W, R, K, &T1);
 
-                if (i < opt.mode[0]) orthogonalize(T, &W, WOPT, i, dr);
+                if (i < opt.mode[0]) orthogonalize(T, &W, WOPT, i);
 
                 if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
 
-                const Ekin = try wfn.ekin(T, W, kvec, opt.initial_conditions.mass, dr, &T1); const Epot: T = wfn.epot(T, W, V, dr);
+                const Ekin = try wfn.ekin(T, W, kvec, opt.initial_conditions.mass, &T1); const Epot: T = wfn.epot(T, W, V);
 
-                wfn.density(T, &P, if (opt.adiabatic) WA else W, dr); wfn.position(T, &r, W, rvec, dr); try wfn.momentum(T, &p, W, kvec, dr, &T1);
+                wfn.density(T, &P, if (opt.adiabatic) WA else W); wfn.position(T, &r, W, rvec); try wfn.momentum(T, &p, W, kvec, &T1);
 
-                const acfi = W0.overlap(W, dr);
+                const acfi = W0.overlap(W);
 
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.population       != null) for (0..nstate) |k| {pop.ptr(j, 1 + k).* = P.at(k, k);};
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.position         != null) for (0..ndim) |k| {position.ptr(j, 1 + k).* = r.at(k);};
@@ -321,8 +321,6 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
 
 /// Propagates the Bohmian trajectories.
 pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), bohm_momentum: *Vector(T), bohm_field: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), kvec: Matrix(T), time_step: T, mass: T, T1: *Matrix(Complex(T))) !void {
-    const dr = rvec.at(1, W.ndim - 1) - rvec.at(0, W.ndim - 1);
-
     for (0..W.ndim) |k| {
 
         bohm_field.fill(0);
@@ -350,7 +348,7 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 
             for (0..W.ndim) |j| {
 
-                const qj = std.math.clamp((bohm_position.at(i * W.ndim + j) - rvec.at(0, j)) / dr, 0, asfloat(T, W.shape[j] - 1));
+                const qj = std.math.clamp((bohm_position.at(i * W.ndim + j) - rvec.at(0, j)) / W.dr, 0, asfloat(T, W.shape[j] - 1));
 
                 q += @mod(qj, 1) * @mod(qj, 1);
 
@@ -444,15 +442,15 @@ pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), 
 }
 
 /// Orthogonalizes the wavefunction to the lower eigenstates.
-pub fn orthogonalize(comptime T: type, W: *Wavefunction(T), WOPT: []Wavefunction(T), states: usize, dr: T) void {
+pub fn orthogonalize(comptime T: type, W: *Wavefunction(T), WOPT: []Wavefunction(T), states: usize) void {
     for (0..states) |k| {
 
-        const overlap = WOPT[k].overlap(W.*, dr);
+        const overlap = WOPT[k].overlap(W.*);
 
         for (0..W.npoint) |l| for (0..W.nstate) |m| {
             W.ptr(l, m).* = W.at(l, m).sub(WOPT[k].data.at(l, m).mul(overlap));
         };
     }
 
-    W.normalize(dr);
+    W.normalize();
 }

@@ -12,16 +12,17 @@ const Vector = @import("vector.zig").Vector;
 /// The wavefunction object.
 pub fn Wavefunction(comptime T: type) type {
     return struct {
-        data: Matrix(Complex(T)), shape: []u32, ndim: usize, npoint: usize, nstate: usize, allocator: std.mem.Allocator,
+        data: Matrix(Complex(T)), shape: []u32, ndim: usize, npoint: usize, nstate: usize, dr: T, allocator: std.mem.Allocator,
 
         /// Initialize the wavefunction object with the given number of dimensions, states, and points.
-        pub fn init(ndim: usize, nstate: usize, points: usize, allocator: std.mem.Allocator) !Wavefunction(T) {
+        pub fn init(ndim: usize, nstate: usize, points: usize, dr: T, allocator: std.mem.Allocator) !Wavefunction(T) {
             const W = Wavefunction(T){
                 .data = try Matrix(Complex(T)).init(std.math.pow(usize, points, ndim), nstate, allocator),
                 .shape = try allocator.alloc(u32, ndim),
                 .ndim = ndim,
                 .npoint = std.math.pow(usize, points, ndim),
                 .nstate = nstate,
+                .dr = dr,
                 .allocator = allocator
             };
 
@@ -48,19 +49,19 @@ pub fn Wavefunction(comptime T: type) type {
         }
 
         /// Normalize the wavefunction.
-        pub fn normalize(self: *Wavefunction(T), dr: T) void {
-            mat.divs(Complex(T), &self.data, self.data, Complex(T).init(std.math.sqrt(self.overlap(self.*, dr).magnitude()), 0));
+        pub fn normalize(self: *Wavefunction(T)) void {
+            mat.divs(Complex(T), &self.data, self.data, Complex(T).init(std.math.sqrt(self.overlap(self.*).magnitude()), 0));
         }
 
         /// Calculate the overlap with another wavefunction.
-        pub fn overlap(self: Wavefunction(T), W: Wavefunction(T), dr: T) Complex(T) {
+        pub fn overlap(self: Wavefunction(T), W: Wavefunction(T)) Complex(T) {
             var s = Complex(T).init(0, 0);
 
             for (0..self.nstate) |i| for (0..self.nstate) |j| for (0..self.npoint) |k| {
                 s = s.add(self.at(k, i).conjugate().mul(W.at(k, j)));
             };
 
-            return s.mul(Complex(T).init(dr, 0));
+            return s.mul(Complex(T).init(self.dr, 0));
         }
 
         /// Get a pointer to the data at the given row and column.
@@ -83,16 +84,16 @@ pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC
 }
 
 /// Calculate the density matrix of the wavefunction W and store the result in P.
-pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T), dr: T) void {
+pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T)) void {
     P.fill(0);
 
     for (0..W.nstate) |i| for (0..W.nstate) |j| for (0..W.npoint) |k| {
-        P.ptr(i, j).* += W.at(k, i).mul(W.at(k, j).conjugate()).re * dr;
+        P.ptr(i, j).* += W.at(k, i).mul(W.at(k, j).conjugate()).re * W.dr;
     };
 }
 
 /// Calculate the kinetic energy of the wavefunction W. This function needs the grid in the k-space kvec.
-pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: T, T1: *Matrix(Complex(T))) !T {
+pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, T1: *Matrix(Complex(T))) !T {
     var Ekin: T = 0;
 
     for (0..W.nstate) |i| {
@@ -112,21 +113,21 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, dr: 
 
         ftw.fftwnd(T1.data, W.shape, 1);
 
-        for (0..W.npoint) |j| Ekin += T1.at(j, 0).mul(W.at(j, i).conjugate()).re * dr;
+        for (0..W.npoint) |j| Ekin += T1.at(j, 0).mul(W.at(j, i).conjugate()).re * W.dr;
     }
 
     return 0.5 * Ekin / mass;
 }
 
 /// Calculate the potential energy of the wavefunction W. This function needs the potential matrices at each point in the grid V.
-pub fn epot(comptime T: type, W: Wavefunction(T), V: std.ArrayList(Matrix(Complex(T))), dr: T) T {
+pub fn epot(comptime T: type, W: Wavefunction(T), V: std.ArrayList(Matrix(Complex(T)))) T {
     var Epot: T = 0;
 
     for (0..W.nstate) |i| for (0..W.nstate) |j| for (0..W.npoint) |k| {
         Epot += W.at(k, i).conjugate().mul(V.items[k].at(i, j).mul(W.at(k, j))).re;
     };
 
-    return Epot * dr;
+    return Epot * W.dr;
 }
 
 /// Calculate the guess wavefunction as a gaussian centered at r with momentum p on a given state.
@@ -153,7 +154,7 @@ pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const 
 }
 
 /// Calculate the momentum of the wavefunction W. This function needs the grid in the k-space kvec.
-pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matrix(T), dr: T, T1: *Matrix(Complex(T))) !void {
+pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matrix(T), T1: *Matrix(Complex(T))) !void {
     p.fill(0);
 
     for (0..W.nstate) |i| {
@@ -168,17 +169,17 @@ pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matri
 
             ftw.fftwnd(T1.data, W.shape, 1);
 
-            for (0..W.npoint) |j| p.ptr(k).* += T1.at(j, 0).mul(W.at(j, i).conjugate()).re * dr;
+            for (0..W.npoint) |j| p.ptr(k).* += T1.at(j, 0).mul(W.at(j, i).conjugate()).re * W.dr;
         }
     }
 }
 
 /// Calculate the position of the wavefunction W. This function needs the grid in the r-space rvec.
-pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matrix(T), dr: T) void {
+pub fn position(comptime T: type, r: *Vector(T), W: Wavefunction(T), rvec: Matrix(T)) void {
     r.fill(0);
 
     for (0..W.nstate) |i| for (0..W.npoint) |j| for (0..rvec.cols) |k| {
-        r.ptr(k).* += W.at(j, i).conjugate().mul(Complex(T).init(rvec.at(j, k), 0)).mul(W.at(j, i)).re * dr;
+        r.ptr(k).* += W.at(j, i).conjugate().mul(Complex(T).init(rvec.at(j, k), 0)).mul(W.at(j, i)).re * W.dr;
     };
 }
 
