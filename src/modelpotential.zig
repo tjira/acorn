@@ -1,6 +1,6 @@
 //! Module to store the potential energy surfaces of the model Hamiltonians.
 
-const std = @import("std"); const Complex = std.math.Complex;
+const std = @import("std");
 
 const cnt = @import("constant.zig");
 const inp = @import("input.zig"   );

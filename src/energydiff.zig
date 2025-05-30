@@ -9,9 +9,11 @@ const System = @import("system.zig").System;
 pub fn gradient(comptime T: type, opt: anytype, system: System(T), efunc: anytype, method: []const u8, print: bool, allocator: std.mem.Allocator) !Matrix(T) {
     var G = try Matrix(T).init(system.coords.rows, 3, allocator);
 
-    if (print) try std.io.getStdOut().writer().print("\n{s} NUMERICAL GRADIENT:\n{s:7} {s:20}\n", .{method, "INDEX", "GRADIENT ELEMENT"});
+    if (print) try std.io.getStdOut().writer().print("\n{s} NUMERICAL GRADIENT:\n{s:7} {s:20} {s:4}\n", .{method, "INDEX", "GRADIENT ELEMENT", "TIME"});
 
     for (0..system.coords.rows) |i| for (0..3) |j| {
+
+        var timer = try std.time.Timer.start();
 
         if (print) try std.io.getStdOut().writer().print("{d:3}/{d:3} ", .{3 * i + j + 1, 3 * system.coords.rows});
 
@@ -23,7 +25,7 @@ pub fn gradient(comptime T: type, opt: anytype, system: System(T), efunc: anytyp
 
         G.ptr(i, j).* = (Ep1 - Em1) / (2 * opt.gradient.?.step);
 
-        if (print) try std.io.getStdOut().writer().print("{d:20.14}\n", .{G.at(i, j)});
+        if (print) try std.io.getStdOut().writer().print("{d:20.14} {s}\n", .{G.at(i, j), std.fmt.fmtDuration(timer.read())});
     };
 
     return G;
@@ -33,9 +35,11 @@ pub fn gradient(comptime T: type, opt: anytype, system: System(T), efunc: anytyp
 pub fn hessian(comptime T: type, opt: anytype, system: System(T), efunc: anytype, method: []const u8, print: bool, allocator: std.mem.Allocator) !Matrix(T) {
     var H = try Matrix(T).init(system.coords.rows * system.coords.rows, system.coords.rows * system.coords.rows, allocator); var k: usize = 0;
 
-    if (print) try std.io.getStdOut().writer().print("\n{s} NUMERICAL HESSIAN:\n{s:7} {s:20}\n", .{method, "INDEX", "HESSIAN ELEMENT"});
+    if (print) try std.io.getStdOut().writer().print("\n{s} NUMERICAL HESSIAN:\n{s:7} {s:20} {s:4}\n", .{method, "INDEX", "HESSIAN ELEMENT", "TIME"});
 
     for (0..H.rows) |i| for (i..H.cols) |j| {
+
+        var timer = try std.time.Timer.start();
 
         if (print) try std.io.getStdOut().writer().print("{d:3}/{d:3} ", .{k + 1, H.rows * (H.rows - 1) / 2 + H.rows});
 
@@ -51,7 +55,7 @@ pub fn hessian(comptime T: type, opt: anytype, system: System(T), efunc: anytype
 
         H.ptr(i, j).* = (Ep2 - Ep1m1 - Em1p1 + Em2) / (4 * opt.hessian.?.step * opt.hessian.?.step); H.ptr(j, i).* = H.at(i, j); k += 1;
 
-        if (print) try std.io.getStdOut().writer().print("{d:20.14}\n", .{H.at(i, j)});
+        if (print) try std.io.getStdOut().writer().print("{d:20.14} {s}\n", .{H.at(i, j), std.fmt.fmtDuration(timer.read())});
     };
 
     return H;

@@ -14,17 +14,19 @@ pub fn optimize(comptime T: type, opt: anytype, system: System(T), efunc: anytyp
 
     var optsystem = try system.clone();
 
-    if (print) try std.io.getStdOut().writer().print("\n{s} GEOMETRY OPTIMIZATION:\n{s:4} {s:20}\n", .{method, "ITER", "GRADIENT NORM"});
+    if (print) try std.io.getStdOut().writer().print("\n{s} GEOMETRY OPTIMIZATION:\n{s:4} {s:20} {s:4}\n", .{method, "ITER", "GRADIENT NORM", "TIME"});
 
     for (0..opt.optimize.?.maxiter) |i| {
 
         if (i == opt.optimize.?.maxiter) return error.MaxIterationsExceeded;
 
+        var timer = try std.time.Timer.start();
+
         if (print) try std.io.getStdOut().writer().print("{d:4} ", .{i + 1});
 
         var G = try edf.gradient(T, opt, optsystem, efunc, method, false, allocator);
 
-        if (print) try std.io.getStdOut().writer().print("{d:20.14}\n", .{G.vector().norm()});
+        if (print) try std.io.getStdOut().writer().print("{d:20.14} {s}\n", .{G.vector().norm(), std.fmt.fmtDuration(timer.read())});
 
         if (G.vector().norm() < opt.optimize.?.threshold) break;
 

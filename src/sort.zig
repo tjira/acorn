@@ -27,9 +27,9 @@ pub fn bubble(comptime T: type, data: []T) void {
 
     for (0..data.len) |_| {
 
-        for (1..data.len) |i| {
-            if (data[i] < data[i - 1]) {std.mem.swap(T, &data[i], &data[i - 1]); sorted = false;}
-        }
+        for (1..data.len) |i| if (data[i] < data[i - 1]) {
+            std.mem.swap(T, &data[i], &data[i - 1]); sorted = false;
+        };
 
         if (sorted) return;
     }

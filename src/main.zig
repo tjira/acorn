@@ -24,6 +24,7 @@ pub const math                      = @import("math.zig"                    );
 pub const matrix                    = @import("matrix.zig"                  );
 pub const model_potential           = @import("modelpotential.zig"          );
 pub const moller_plesset            = @import("mollerplesset.zig"           );
+pub const optimize                  = @import("optimize.zig"                );
 pub const output                    = @import("input.zig"                   );
 pub const prime                     = @import("prime.zig"                   );
 pub const quantum_dynamics          = @import("quantumdynamics.zig"         );

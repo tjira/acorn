@@ -161,13 +161,13 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
     var iter: u32 = 0; var E: T = 0; var EP: T = 1; mat.add(T, &H_A, T_A, V_A);
 
-    if (print) try std.io.getStdOut().writer().print("\nHF SELF-CONSISTENT FIELD:\n{s:4} {s:20} {s:8}\n", .{"ITER", "ENERGY", "|DELTA E|"});
+    if (print) try std.io.getStdOut().writer().print("\nHF SELF-CONSISTENT FIELD:\n{s:4} {s:20} {s:8} {s:4}\n", .{"ITER", "ENERGY", "|DELTA E|", "TIME"});
 
     while (@abs(EP - E) > opt.threshold) : (iter += 1) {
 
         if (iter == opt.maxiter) return error.MaxIterationsExceeded;
 
-        H_A.memcpy(F_A);
+        timer = try std.time.Timer.start(); H_A.memcpy(F_A);
 
         try eig.contract(&T1, D_A, J_A, &[_]i32{0, 0, 1, 1});
         try eig.contract(&T2, D_A, J_A, &[_]i32{0, 0, 1, 3});
@@ -197,7 +197,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
             E += 0.5 * D_A.at(i, j) * (H_A.at(i, j) + F_A.at(i, j));
         };
 
-        if (print) try std.io.getStdOut().writer().print("{d:4} {d:20.14} {e:9.3}\n", .{iter + 1, E + VNN, @abs(EP - E)});
+        if (print) try std.io.getStdOut().writer().print("{d:4} {d:20.14} {e:9.3} {s}\n", .{iter + 1, E + VNN, @abs(EP - E), std.fmt.fmtDuration(timer.read())});
     }
 
     if (print) try std.io.getStdOut().writer().print("\nHF ENERGY: {d:.14}\n", .{E + VNN});
