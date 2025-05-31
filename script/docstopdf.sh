@@ -61,6 +61,8 @@ ACRONYMS=(
 rm -rf docs/tex && mkdir docs/tex && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
 
+% Compile with the "$TEX_COMPILER main && $BIB_COMPILER main && $GLOSSARY_COMPILER main && $TEX_COMPILER main && $TEX_COMPILER main" command.
+
 \documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\title{Algorithms of Quantum Chemistry}\author{Tomáš \textsc{Jíra}}
 EOL
 
@@ -207,17 +209,18 @@ EOL
 # loop over all pages
 for PAGE in ${PAGES[@]}; do
 
-    # replace some MD quirks with LaTeX quirks
-    sed 's/\\\\\\\\\\/\\\\/g ; s/\\_/_/g ; s/\[here\](\(.*\))//g ; s/<!--//g ; s/-->//g ; /mathjax/d ; /^{:/d ; /^>/d' "docs/pages/$PAGE.md" > temp.md
+    # replace kramdown math wrappers and remove markdown links, comments and hints
+    sed 's/\$\$/\$/g ; s/^\$$//g ; s/\[.*\](.*)//g ; s/<!--\|-->//g ; /^[{>]/d' "docs/pages/$PAGE.md" > temp.md
 
     # convert MD to LaTeX
-    pandoc --from markdown-auto_identifiers --listings --mathjax --to latex --wrap=none --output temp.tex temp.md && echo "" >> docs/tex/main.tex && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
+    pandoc --from=markdown-auto_identifiers --mathjax --to latex --wrap=none --output temp.tex temp.md
 
-# finish
+    # insert new line after the page and remove temporary
+    echo "" >> docs/tex/main.tex && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
 done
 
-# replace some conversion artifacts
-sed -i 's/\\(/$/g ; s/\\)/$/g ; s/\\mathbf{\\varepsilon}/\\bm{\\varepsilon}/g' docs/tex/main.tex
+# replace inline math and bold varepsilon
+sed -i 's/\\(\|\\)/$/g ; s/\\mathbf{\\varepsilon}/\\bm{\\varepsilon}/g' docs/tex/main.tex
 
 # set the chapters
 for CHAPTER in "${CHAPTERS[@]}"; do
