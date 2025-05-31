@@ -6,7 +6,7 @@ nav_order: 2
 ---
 {% include mathjax.html %}
 
-# Møller--Plesset Perturbation Theory
+# Møller--Plesset Perturbation Theory<!--\label{sec:moller_plesset_perturbation_theory}-->
 
 Møller--Plesset Perturbation Theory is a quantum mechanical method used to improve the accuracy of electronic structure calculations within the framework of Hartree--Fock theory. It involves treating electron-electron correlation effects as a perturbation to the reference Hartree--Fock wave function. The method is named after its developers, physicists C. Møller and M. S. Plesset. By systematically including higher-order corrections, Møller--Plesset Perturbation Theory provides more accurate predictions of molecular properties compared to the initial Hartree--Fock approximation.
 
@@ -37,11 +37,11 @@ and ask, how how does the total energy change with the included terms. After som
 E_{\mathrm{corr}}^{\mathrm{MP2}}=\sum\_{s>0}\frac{H\_{0s}^{'}H\_{s0}^{'}}{E\_0-E\_s}
 \end{equation}
 
-where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix element of the perturbation operator between the Hartree--Fock determinant and the doubly excited determinant, and $E\_0$ and $E\_s$ are the energies of the reference and doubly excited determinants, respectively.<!--\supercite{10.1002/wcms.58,1014569052}--> We could express all higher-order corrections in a similar way, using only the matrix elements of the perturbation operator and the energies of the determinants. For practical calculations, we apply Slater-Condon rules to evaluate the matrix elements and use the orbital energies obtained from the Hartree-Fock calculation. The expressions for calculation are summarised below.
+where $s$ runs over all doubly excited determinants, $H\_{0s}^{'}$ is the matrix element of the perturbation operator between the Hartree--Fock determinant and the doubly excited determinant, and $E\_0$ and $E\_s$ are the energies of the reference and doubly excited determinants, respectively.<!--\supercite{10.1002/wcms.58,1014569052}--> We could express all higher-order corrections in a similar way, using only the matrix elements of the perturbation operator and the energies of the determinants. For practical calculations, we apply Slater-Condon rules to evaluate the matrix elements and use the orbital energies obtained from the Hartree--Fock calculation. The expressions for calculation are summarised below.
 
 ## Implementation of 2nd and 3rd Order Corrections
 
-Having the antisymmetrized two-electron integrals in the Molecular Spinorbital basis and physicists' notation defined [here](hf.html#integral-transforms-to-the-basis-of-molecular-spinorbitals), we can now proceed with the calculation of the correlation energy. The 2nd order correlation energy can be expressed as
+Having the antisymmetrized two-electron integrals in the Molecular Spinorbital basis and physicists' notation defined [here](hartreefock.html#integral-transforms-to-the-basis-of-molecular-spinorbitals)<!--in Section \ref{sec:integral_transform}-->, we can now proceed with the calculation of the correlation energy. The 2nd order correlation energy can be expressed as
 
 \begin{equation}
 E_{\mathrm{corr}}^{\mathrm{MP2}}=\frac{1}{4}\sum\_{ijab}\frac{\braket{ab||ij}\braket{ij||ab}}{\varepsilon\_{ij}^{ab}}

@@ -2,7 +2,7 @@
 title: Configuration Interaction
 parent: Electronic Structure Methods
 layout: default
-nav_order: 1
+nav_order: 3
 ---
 {% include mathjax.html %}
 
@@ -48,7 +48,7 @@ where $\mathbf{C}^{\mathrm{CI}}$ is a matrix of coefficients and $\mathbf{\varep
 \end{cases}
 \end{equation}
 
-where $D\_i$ and $D\_j$ are Slater determinants, $\mathbf{H}^{\mathrm{core},\mathrm{MS}}$ is the core Hamiltonian in the Molecular Spinorbital basis, and $\braket{pk\|\|lk}$ are the antisymmetrized two-electron integrals in Molecular Spinorbital basis and physicists' notation. The sums extend over all spinorbitals common between the two determinants. These integrals were previously transformed [here](hf.html#integral-transforms-to-the-basis-of-molecular-spinorbitals). Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
+where $D\_i$ and $D\_j$ are Slater determinants, $\mathbf{H}^{\mathrm{core},\mathrm{MS}}$ is the core Hamiltonian in the Molecular Spinorbital basis, and $\braket{pk\|\|lk}$ are the antisymmetrized two-electron integrals in Molecular Spinorbital basis and physicists' notation. The sums extend over all spinorbitals common between the two determinants. These integrals were previously transformed [here](hartreefock.html#integral-transforms-to-the-basis-of-molecular-spinorbitals)<!--in Section \ref{sec:integral_transform}-->. Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
 
 An important caveat in Configuration Interaction theory is its lack of size-extensivity, which implies that the energy does not scale linearly with the number of electrons. This drawback stems from the fact that the Configuration Interaction wavefunction is not size-consistent, meaning the energy of a combined system is not simply the sum of the energies of its isolated parts. This limitation restricts the application of Configuration Interaction mainly to small molecular systems.
 

@@ -6,7 +6,7 @@ nav_order: 2
 ---
 {% include mathjax.html %}
 
-# Electronic Structure Methods
+# Electronic Structure Methods<!--\label{sec:electronic_structure_methods}-->
 
 This part provides an educational exploration into the computational techniques fundamental to understanding molecular electronic structure in quantum chemistry. Beginning with the Hartree--Fock method, the text introduces this foundational approach for determining molecular orbitals and electronic energies by approximating the interactions of electrons through a mean-field approximation. The HF method forms the basis for subsequent methods and is presented with a practical coding exercise that guides readers in implementing and calculating Hartree--Fock energies in Python.
 

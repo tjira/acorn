@@ -6,7 +6,7 @@ nav_order: 1
 ---
 {% include mathjax.html %}
 
-# Hartree--Fock Method
+# Hartree--Fock Method<!--\label{sec:hartree_fock_method}-->
 
 The Hartree--Fock method is a foundational approach in quantum chemistry, aimed at solving the electronic structure problem in molecules by determining an optimal wavefunction. This method simplifies the complex interactions of electrons through a mean-field approximation, where each electron moves in an average field created by all others. This allows for the use of a single set of orbitals, leading to the construction of the Fock operator and iterative solutions to one-electron equations.
 
@@ -93,7 +93,7 @@ After convergence of both the density matrix and total energy, the process concl
 E\_{\mathrm{nuc}}=\sum\_{A}\sum\_{B<A}\frac{Z\_{A}Z\_{B}}{R\_{AB}}
 \end{equation}
 
-where $Z\_A$ is the nuclear charge of atom $A$, and $R\_{AB}$ is the distance between atoms $A$ and $B$. The Roothaan equations \eqref{eq:roothaan} are a generalized eigenvalue problem, which can be transformed into a standard eigenvalue problem as explained [here](gep.html#generalized-eigenvalue-problem).
+where $Z\_A$ is the nuclear charge of atom $A$, and $R\_{AB}$ is the distance between atoms $A$ and $B$. The Roothaan equations \eqref{eq:roothaan} are a generalized eigenvalue problem, which can be transformed into a standard eigenvalue problem as explained [here](generalizedeigenvalueproblem.html#generalized-eigenvalue-problem)<!--in Section \ref{sec:generalized_eigenvalue_problem}-->.
 
 ### Direct Inversion in the Iterative Subspace
 

@@ -2,11 +2,11 @@
 title: Time Evolution in Quantum Mechanics
 has_children: true
 layout: default
-nav_order: 2
+nav_order: 3
 ---
 {% include mathjax.html %}
 
-# Time Evolution in Quantum Mechanics
+# Time Evolution in Quantum Mechanics<!--\label{sec:time_evolution}-->
 
 Quantum dynamics describes the evolution of quantum systems over time and is fundamental in quantum chemistry for understanding molecular behavior at the atomic level. It is governed by the principles of quantum mechanics, particularly the timedependent Schrödinger equation, which dictates how wavefunctions change with time. Due to the complex nature of these equations, practical solutions are often limited to small or model systems.
 

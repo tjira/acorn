@@ -2,7 +2,7 @@
 title: Imaginary Time Propagation
 parent: Time Evolution in Quantum Mechanics
 layout: default
-nav_order: 1
+nav_order: 2
 ---
 {% include mathjax.html %}
 

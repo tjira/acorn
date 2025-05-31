@@ -2,7 +2,7 @@
 title: Coupled Cluster Theory
 parent: Electronic Structure Methods
 layout: default
-nav_order: 1
+nav_order: 4
 ---
 {% include mathjax.html %}
 
@@ -54,7 +54,7 @@ taking advantage of the exponential form of the wavefunction. We could then proc
 
 ## Implementation of Truncated Coupled Cluster Methods
 
-We will not go into the details here, but we will provide the final expressions for the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods.<!--\supercite{10.1063/1.460620}--> The Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods are the most commonly used Coupled Cluster methods, and they are often used as benchmarks for other methods. All we need for the evaluation of the expressions below are the two-electron integrals in the Molecular Spinorbital basis and physicists' notation, Fock matrix in the Molecular Spinorbital basis and the orbital energy tensors obtained from the Hartree--Fock calculation. All these transformations are already explained [here](hf.html#integral-transforms-to-the-basis-of-molecular-spinorbitals). The expressions for the Coupled Cluster Doubles can be written as
+We will not go into the details here, but we will provide the final expressions for the Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods.<!--\supercite{10.1063/1.460620}--> The Coupled Cluster Doubles and Coupled Cluster Singles and Doubles methods are the most commonly used Coupled Cluster methods, and they are often used as benchmarks for other methods. All we need for the evaluation of the expressions below are the two-electron integrals in the Molecular Spinorbital basis and physicists' notation, Fock matrix in the Molecular Spinorbital basis and the orbital energy tensors obtained from the Hartree--Fock calculation. All these transformations are already explained [here](hartreefock.html#integral-transforms-to-the-basis-of-molecular-spinorbitals)<!--in Section \ref{sec:integral_transform}-->. The expressions for the Coupled Cluster Doubles can be written as
 
 \begin{equation}
 E\_{\text{CCD}}=\frac{1}{4}\braket{ij||ab}t\_{ij}^{ab}
