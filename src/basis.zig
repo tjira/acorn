@@ -60,23 +60,23 @@ pub fn Basis(comptime T: type) type {
             if (std.mem.eql(u8, lower, "sto-6g"     ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/sto-6g.json"     );}
             if (std.mem.eql(u8, lower, "3-21g"      ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/3-21g.json"      );}
             if (std.mem.eql(u8, lower, "6-31g"      ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31g.json"      );}
-            if (std.mem.eql(u8, lower, "6-31g*"     ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31g*.json"     );}
-            if (std.mem.eql(u8, lower, "6-31g**"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31g**.json"    );}
-            if (std.mem.eql(u8, lower, "6-31+g"     ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31+g.json"     );}
-            if (std.mem.eql(u8, lower, "6-31+g*"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31+g*.json"    );}
-            if (std.mem.eql(u8, lower, "6-31+g**"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31+g**.json"   );}
-            if (std.mem.eql(u8, lower, "6-31++g"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31++g.json"    );}
-            if (std.mem.eql(u8, lower, "6-31++g*"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31++g*.json"   );}
-            if (std.mem.eql(u8, lower, "6-31++g**"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31++g**.json"  );}
+            if (std.mem.eql(u8, lower, "6-31g*"     ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31gs.json"     );}
+            if (std.mem.eql(u8, lower, "6-31g**"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31gss.json"    );}
+            if (std.mem.eql(u8, lower, "6-31+g"     ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31pg.json"     );}
+            if (std.mem.eql(u8, lower, "6-31+g*"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31pgs.json"    );}
+            if (std.mem.eql(u8, lower, "6-31+g**"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31pgss.json"   );}
+            if (std.mem.eql(u8, lower, "6-31++g"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31ppg.json"    );}
+            if (std.mem.eql(u8, lower, "6-31++g*"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31ppgs.json"   );}
+            if (std.mem.eql(u8, lower, "6-31++g**"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-31ppgss.json"  );}
             if (std.mem.eql(u8, lower, "6-311g"     ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311g.json"     );}
-            if (std.mem.eql(u8, lower, "6-311g*"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311g*.json"    );}
-            if (std.mem.eql(u8, lower, "6-311g**"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311g**.json"   );}
-            if (std.mem.eql(u8, lower, "6-311+g"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311+g.json"    );}
-            if (std.mem.eql(u8, lower, "6-311+g*"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311+g*.json"   );}
-            if (std.mem.eql(u8, lower, "6-311+g**"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311+g**.json"  );}
-            if (std.mem.eql(u8, lower, "6-311++g"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311++g.json"   );}
-            if (std.mem.eql(u8, lower, "6-311++g*"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311++g*.json"  );}
-            if (std.mem.eql(u8, lower, "6-311++g**" ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311++g**.json" );}
+            if (std.mem.eql(u8, lower, "6-311g*"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311gs.json"    );}
+            if (std.mem.eql(u8, lower, "6-311g**"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311gss.json"   );}
+            if (std.mem.eql(u8, lower, "6-311+g"    ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311pg.json"    );}
+            if (std.mem.eql(u8, lower, "6-311+g*"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311pgs.json"   );}
+            if (std.mem.eql(u8, lower, "6-311+g**"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311pgss.json"  );}
+            if (std.mem.eql(u8, lower, "6-311++g"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311ppg.json"   );}
+            if (std.mem.eql(u8, lower, "6-311++g*"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311ppgs.json"  );}
+            if (std.mem.eql(u8, lower, "6-311++g**" ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/6-311ppgss.json" );}
             if (std.mem.eql(u8, lower, "def2-svp"   ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/def2-svp.json"   );}
             if (std.mem.eql(u8, lower, "def2-svpd"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/def2-svpd.json"  );}
             if (std.mem.eql(u8, lower, "def2-tzvp"  ) and std.mem.eql(u8, format, "json")) {return @embedFile("basis/def2-tzvp.json"  );}

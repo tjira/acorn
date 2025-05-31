@@ -47,5 +47,5 @@ BASES=(
 )
 
 for BASIS in ${BASES[@]}; do
-    bse get-basis "${BASIS}" json --unc-spdf > "src/basis/${BASIS}.json"
+    bse get-basis "${BASIS}" json --unc-spdf > $(echo "src/basis/${BASIS}.json" | sed 's/*/s/g ; s/+/p/g')
 done
