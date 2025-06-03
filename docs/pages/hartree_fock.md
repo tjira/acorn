@@ -44,11 +44,11 @@ where $$\Phi_i$$ represents a spatial orbital. Notably, the Restricted Hartree--
 
 $$
 \begin{equation}\label{eq:roothaan}
-\mathbf{FC}=\mathbf{SC}\mathbf{\varepsilon}
+\mathbf{FC}=\mathbf{SC}\symbf{\varepsilon}
 \end{equation}
 $$
 
-where $$\mathbf{F}$$ is the Fock matrix, $$\mathbf{C}$$ is the matrix of orbital coefficients, $$\mathbf{S}$$ is the overlap matrix, and $$\mathbf{\varepsilon}$$ represents the orbital energies. These matrices will be defined in detail later.
+where $$\mathbf{F}$$ is the Fock matrix, $$\mathbf{C}$$ is the matrix of orbital coefficients, $$\mathbf{S}$$ is the overlap matrix, and $$\symbf{\varepsilon}$$ represents the orbital energies. These matrices will be defined in detail later.
 
 ## Implementation of the Restricted Hartree--Fock Method
 
@@ -117,7 +117,7 @@ E_{\mathrm{nuc}}=\sum_{A}\sum_{B<A}\frac{Z_{A}Z_{B}}{R_{AB}}
 \end{equation}
 $$
 
-where $$Z_A$$ is the nuclear charge of atom $$A$$, and $$R_{AB}$$ is the distance between atoms $$A$$ and $$B$$. The Roothaan equations \eqref{eq:roothaan} are a generalized eigenvalue problem, which can be transformed into a standard eigenvalue problem as explained [here](generalizedeigenvalueproblem.html#generalized-eigenvalue-problem)<!--in Section \ref{sec:generalized_eigenvalue_problem}-->.
+where $$Z_A$$ is the nuclear charge of atom $$A$$, and $$R_{AB}$$ is the distance between atoms $$A$$ and $$B$$. The Roothaan equations \eqref{eq:roothaan} are a generalized eigenvalue problem, which can be transformed into a standard eigenvalue problem as explained [here](generalized_eigenvalue_problem.html#generalized-eigenvalue-problem)<!--in Section \ref{sec:generalized_eigenvalue_problem}-->.
 
 ### Direct Inversion in the Iterative Subspace
 

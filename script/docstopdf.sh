@@ -3,24 +3,25 @@
 BIB_COMPILER="biber"; GLOSSARY_COMPILER="makeglossaries"; TEX_COMPILER="lualatex"
 
 PAGES=(
-    "mathematicalbackground"
-    "hilbertspaces"
-    "electronicstructuremethods"
-    "hartreefock"
-    "mollerplessetperturbationtheory"
-    "configurationinteraction"
-    "coupledcluster"
-    "timeevolution"
-    "realtimepropagation"
-    "imaginarytimepropagation"
-    "mixedquantumclassical"
-    "trajectorysurfacehopping"
-    "fewestswitches"
-    "landauzener"
-    "mappingapproach"
-    "mathematicalmethods"
-    "matrixexponential"
-    "generalizedeigenvalueproblem"
+    "mathematical_background"
+    "hilbert_space"
+    "electronic_structure_methods"
+    "hartree_fock"
+    "moller_plesset_perturbation_theory"
+    "configuration_interaction"
+    "coupled_cluster"
+    "time_evolution_in_quantum_mechanics"
+    "real_time_propagation"
+    "imaginary_time_propagation"
+    "mixed_quantum_classical_dynamics"
+    "electronic_amplitude_propagation"
+    "time_derivative_coupling"
+    "fewest_switches"
+    "landau_zener"
+    "mapping_approach"
+    "mathematical_methods"
+    "matrix_exponential"
+    "generalized_eigenvalue_problem"
 )
 
 CHAPTERS=(
@@ -48,6 +49,7 @@ ACRONYMS=(
     "Coupled Cluster Doubles/CCD"
     "Coupled Cluster/CC"
     "Time-Dependent Schrödinger Equation/TDSE"
+    "Time-Independent Schrödinger Equation/TISE"
     "Direct Inversion in the Iterative Subspace/DIIS"
     "Molecular Spinorbital/MS"
     "Fast Fourier Transform/FFT"
@@ -55,13 +57,26 @@ ACRONYMS=(
     "Discrete Fourier Transform/DFT"
     "Fourier Transform/FT"
     "Self-Consistent Field/SCF"
+    "Time Derivative Coupling/TDC"
+    "Nonadiabatic Coupling Vector/NACV"
+    "Trajectory Surface Hopping/TSH"
+    "Born--Oppenheimer Approximation/BOA"
+    "Potential Energy Surface/PES"
+    "Hammes-Schiffer Tully/HST"
+    "Norm-Preserving Interpolation/NPI"
 )
 
 # create the document class in the tex file
-rm -rf docs/tex && mkdir docs/tex && cat > docs/tex/main.tex << EOL
+mkdir -p docs/tex && rm -f docs/tex/* && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
 
 % Compile with the "$TEX_COMPILER main && $BIB_COMPILER main && $GLOSSARY_COMPILER main && $TEX_COMPILER main && $TEX_COMPILER main" command.
+
+\DocumentMetadata{
+    lang = en,
+    pdfversion = 1.7,
+    pdfstandard = A-3a,
+}
 
 \documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\title{Algorithms of Quantum Chemistry}\author{Tomáš \textsc{Jíra}}
 EOL
@@ -152,13 +167,13 @@ cat >> docs/tex/main.tex << EOL
 }
 \end{filecontents*}
 
-\usepackage[colorlinks=true,linkcolor=blue,pdfa]{hyperref} % hyperlink package should be on top
+\usepackage[hidelinks]{hyperref}\makeatletter\hypersetup{pdfauthor={\@author},pdftitle={\@title}}\makeatother % hyperlinks and metadata
 
 \usepackage{amsmath} % all the math environments and symbols
 \usepackage{amssymb} % additional math symbols
 \usepackage[toc,page]{appendix} % appendices
 \usepackage[backend=biber,style=chem-acs]{biblatex} % bibliography package
-\usepackage{bm} % bold math symbols
+\usepackage{fontspec} % font selection
 \usepackage{braket} % braket notation
 \usepackage[format=plain,labelfont=bf]{caption} % bold captions
 \usepackage[left=1.5cm,top=2cm,right=1.5cm,bottom=2cm]{geometry} % page layout
@@ -166,20 +181,16 @@ cat >> docs/tex/main.tex << EOL
 \usepackage{mathrsfs} % mathscr environment
 \usepackage[automark]{scrlayer-scrpage} % page styles
 \usepackage{subcaption} % subfigures
-
-% pdf metadata setup
-\makeatletter\hypersetup{
-    pdfauthor={\@author},
-    pdftitle={\@title},
-    pdfsubject={Quantum Chemistry},
-    pdfkeywords={quantum,chemistry,algorithm}
-}\makeatother
+\usepackage{unicode-math} % unicode math support
 
 \addbibresource{library.bib} % set the library file
 \clearpairofpagestyles % clear the default page styles
 \ihead{\pagemark} % add page number to the inner header
 \makeglossaries % make the glossary
 \ohead{\headmark} % add chapter name to the outer header
+\setmainfont{Libertinus Serif} % set the main font
+\setmathfont{Libertinus Math} % set the math font
+\setsansfont{Libertinus Sans} % set the sans-serif font
 EOL
 
 # add the acronym definitions
@@ -209,8 +220,8 @@ EOL
 # loop over all pages
 for PAGE in ${PAGES[@]}; do
 
-    # replace kramdown math wrappers and remove markdown links, comments and hints
-    sed 's/\$\$/\$/g ; s/^\$$//g ; s/\[.*\](.*)//g ; s/<!--\|-->//g ; /^[{>]/d' "docs/pages/$PAGE.md" > temp.md
+    # replace kramdown math wrappers, remove escapes in front of | symbols and remove markdown links, comments and hints
+    sed 's/\$\$/\$/g ; s/^\$$//g ; s/\\\\|/|/g ; s/\[.*\](.*)//g ; s/<!--\|-->//g ; /^[{>]/d' "docs/pages/$PAGE.md" > temp.md
 
     # convert MD to LaTeX
     pandoc --from=markdown-auto_identifiers --mathjax --to latex --wrap=none --output temp.tex temp.md
@@ -218,9 +229,6 @@ for PAGE in ${PAGES[@]}; do
     # insert new line after the page and remove temporary
     echo "" >> docs/tex/main.tex && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
 done
-
-# replace inline math and bold varepsilon
-sed -i 's/\\(\|\\)/$/g ; s/\\mathbf{\\varepsilon}/\\bm{\\varepsilon}/g' docs/tex/main.tex
 
 # set the chapters
 for CHAPTER in "${CHAPTERS[@]}"; do
@@ -244,7 +252,7 @@ for ACRONYM in "${ACRONYMS[@]}"; do
 done
 
 # set the start of the appendix
-sed -i "s/\\\\chapter{\\\\texorpdfstring{Mathematical Methods/\\n\\\\begin{appendices}\\\\chapter{\\\\texorpdfstring{Mathematical Methods/" docs/tex/main.tex
+sed -i "s/\\\\chapter{\\\\texorpdfstring{Mathematical Methods/\\\\begin{appendices}\\\\chapter{\\\\texorpdfstring{Mathematical Methods/" docs/tex/main.tex
 
 # end the document
 cat >> docs/tex/main.tex << EOL
@@ -258,11 +266,11 @@ cat >> docs/tex/main.tex << EOL
 EOL
 
 # first pass of the compiler
-cd docs/tex && $TEX_COMPILER --interaction=batchmode --no-shell-escape main | grep -v "entering extended mode" && cd ../..
+cd docs/tex && $TEX_COMPILER main | grep -v "entering extended mode" && cd ../..
 
 # generate the glossary and library
 cd docs/tex && $GLOSSARY_COMPILER -q main && $BIB_COMPILER --quiet main && cd ../..
 
 # second and third pass of the compiler
-cd docs/tex && $TEX_COMPILER --interaction=batchmode --no-shell-escape main | grep -v "entering extended mode" && cd ../..
-cd docs/tex && $TEX_COMPILER --interaction=batchmode --no-shell-escape main | grep -v "entering extended mode" && cd ../..
+cd docs/tex && $TEX_COMPILER main | grep -v "entering extended mode" && cd ../..
+cd docs/tex && $TEX_COMPILER main | grep -v "entering extended mode" && cd ../..

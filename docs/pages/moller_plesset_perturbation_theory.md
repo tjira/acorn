@@ -49,7 +49,7 @@ where $$s$$ runs over all doubly excited determinants, $$H_{0s}^{'}$$ is the mat
 
 ## Implementation of 2nd and 3rd Order Corrections
 
-Having the antisymmetrized two-electron integrals in the Molecular Spinorbital basis and physicists' notation defined [here](hartreefock.html#integral-transforms-to-the-basis-of-molecular-spinorbitals)<!--in Section \ref{sec:integral_transform}-->, we can now proceed with the calculation of the correlation energy. The 2nd order correlation energy can be expressed as
+Having the antisymmetrized two-electron integrals in the Molecular Spinorbital basis and physicists' notation defined [here](hartree_fock.html#integral-transforms-to-the-basis-of-molecular-spinorbitals)<!--in Section \ref{sec:integral_transform}-->, we can now proceed with the calculation of the correlation energy. The 2nd order correlation energy can be expressed as
 
 $$
 \begin{equation}
