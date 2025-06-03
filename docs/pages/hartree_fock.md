@@ -18,11 +18,11 @@ Our primary objective is to solve the Schrödinger equation in the form
 
 $$
 \begin{equation}
-\hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi}
+\hat{\symbf{H}}\ket{\Psi}=E\ket{\Psi}
 \end{equation}
 $$
 
-where $$\hat{\mathbf{H}}$$ denotes the molecular Hamiltonian operator, $$\ket{\Psi}$$ represents the molecular wavefunction, and $$E$$ is the total energy of the system. The Hartree--Fock approximates the total wavefunction $$\ket{\Psi}$$ as a single Slater determinant, expressed as
+where $$\hat{\symbf{H}}$$ denotes the molecular Hamiltonian operator, $$\ket{\Psi}$$ represents the molecular wavefunction, and $$E$$ is the total energy of the system. The Hartree--Fock approximates the total wavefunction $$\ket{\Psi}$$ as a single Slater determinant, expressed as
 
 $$
 \begin{equation}
@@ -44,11 +44,11 @@ where $$\Phi_i$$ represents a spatial orbital. Notably, the Restricted Hartree--
 
 $$
 \begin{equation}\label{eq:roothaan}
-\mathbf{FC}=\mathbf{SC}\symbf{\varepsilon}
+\symbf{FC}=\symbf{SC}\symbf{\varepsilon}
 \end{equation}
 $$
 
-where $$\mathbf{F}$$ is the Fock matrix, $$\mathbf{C}$$ is the matrix of orbital coefficients, $$\mathbf{S}$$ is the overlap matrix, and $$\symbf{\varepsilon}$$ represents the orbital energies. These matrices will be defined in detail later.
+where $$\symbf{F}$$ is the Fock matrix, $$\symbf{C}$$ is the matrix of orbital coefficients, $$\symbf{S}$$ is the overlap matrix, and $$\symbf{\varepsilon}$$ represents the orbital energies. These matrices will be defined in detail later.
 
 ## Implementation of the Restricted Hartree--Fock Method
 
@@ -56,7 +56,7 @@ To begin, we define the core Hamiltonian, also known as the one-electron Hamilto
 
 $$
 \begin{equation}\label{eq:hamiltonian}
-H_{\mu\nu}^{\mathrm{core}}=T_{\mu\nu}+V_{\mu\nu}
+H_{\mu\nu}^{\symrm{core}}=T_{\mu\nu}+V_{\mu\nu}
 \end{equation}
 $$
 
@@ -89,11 +89,11 @@ which play crucial roles in the Hartree--Fock calculation. All of these integral
 
 $$
 \begin{equation}\label{eq:fock}
-F_{\mu\nu}=H_{\mu\nu}^{\mathrm{core}}+D_{\kappa\lambda}\left(J_{\mu\nu\kappa\lambda}-\frac{1}{2}J_{\mu\lambda\kappa\nu}\right)
+F_{\mu\nu}=H_{\mu\nu}^{\symrm{core}}+D_{\kappa\lambda}\left(J_{\mu\nu\kappa\lambda}-\frac{1}{2}J_{\mu\lambda\kappa\nu}\right)
 \end{equation}
 $$
 
-depends on the unknown density matrix $$\mathbf{D}$$, defined as
+depends on the unknown density matrix $$\symbf{D}$$, defined as
 
 $$
 \begin{equation}\label{eq:hf_density}
@@ -101,11 +101,11 @@ D_{\mu\nu}=2C_{\mu i}C_{\nu i}
 \end{equation}
 $$
 
-This iterative procedure is executed through the Self-Consistent Field method. An initial guess is made for the density matrix $$\mathbf{D}$$ (usually zero), the Roothaan equations \eqref{eq:roothaan} are solved and the density matix is updated using the equation \eqref{eq:hf_density}. The total energy of the system is then calculated using the core Hamiltonian and the Fock matrix as
+This iterative procedure is executed through the Self-Consistent Field method. An initial guess is made for the density matrix $$\symbf{D}$$ (usually zero), the Roothaan equations \eqref{eq:roothaan} are solved and the density matix is updated using the equation \eqref{eq:hf_density}. The total energy of the system is then calculated using the core Hamiltonian and the Fock matrix as
 
 $$
 \begin{equation}
-E=\frac{1}{2}D_{\mu\nu}(H_{\mu\nu}^{\mathrm{core}}+F_{\mu\nu})+E_{\mathrm{nuc}}
+E=\frac{1}{2}D_{\mu\nu}(H_{\mu\nu}^{\symrm{core}}+F_{\mu\nu})+E_{\symrm{nuc}}
 \end{equation}
 $$
 
@@ -113,7 +113,7 @@ After convergence of both the density matrix and total energy, the process concl
 
 $$
 \begin{equation}
-E_{\mathrm{nuc}}=\sum_{A}\sum_{B<A}\frac{Z_{A}Z_{B}}{R_{AB}}
+E_{\symrm{nuc}}=\sum_{A}\sum_{B<A}\frac{Z_{A}Z_{B}}{R_{AB}}
 \end{equation}
 $$
 
@@ -123,30 +123,30 @@ where $$Z_A$$ is the nuclear charge of atom $$A$$, and $$R_{AB}$$ is the distanc
 
 In the Hartree--Fock method, convergence of the density matrix and energy can be significantly accelerated by employing the Direct Inversion in the Iterative Subspace technique. Direct Inversion in the Iterative Subspace achieves this by storing Fock matrices from previous iterations and constructing an optimized linear combination that minimizes the current iteration's error. This approach is especially valuable in Hartree--Fock calculations for large systems, where convergence issues are more common and challenging to resolve.
 
-We start by defining the error vector of $$i$$-th iteration $$\mathbf{e}_i$$ as
+We start by defining the error vector of $$i$$-th iteration $$\symbf{e}_i$$ as
 
 $$
 \begin{equation}
-\mathbf{e}_i=\mathbf{S}_i\mathbf{D}_i\mathbf{F}_i-\mathbf{F}_i\mathbf{D}_i\mathbf{S}_i
+\symbf{e}_i=\symbf{S}_i\symbf{D}_i\symbf{F}_i-\symbf{F}_i\symbf{D}_i\symbf{S}_i
 \end{equation}
 $$
 
-Our goal is to transform the Fock matrix $$\mathbf{F}_i$$ as
+Our goal is to transform the Fock matrix $$\symbf{F}_i$$ as
 
 $$
 \begin{equation}\label{eq:fock_extrapolate}
-\mathbf{F}_i=\sum_{j=i-(L+1)}^{i-1}c_j\mathbf{F}_j
+\symbf{F}_i=\sum_{j=i-(L+1)}^{i-1}c_j\symbf{F}_j
 \end{equation}
 $$
 
-where $$c_j$$ are the coefficients that minimize the error matrix $$\mathbf{e}_i$$ and $$L$$ is the number of Fock matrices we store called the subspace size. To calculate the coefficients $$c_j$$, we solve the set linear equations
+where $$c_j$$ are the coefficients that minimize the error matrix $$\symbf{e}_i$$ and $$L$$ is the number of Fock matrices we store called the subspace size. To calculate the coefficients $$c_j$$, we solve the set linear equations
 
 $$
 \begin{equation}
 \begin{bmatrix}
-\mathbf{e}_1\cdot\mathbf{e}_1 & \dots & \mathbf{e}_1\cdot\mathbf{e}_{L+1} & 1 \\
+\symbf{e}_1\cdot\symbf{e}_1 & \dots & \symbf{e}_1\cdot\symbf{e}_{L+1} & 1 \\
 \vdots & \ddots & \vdots & \vdots \\
-\mathbf{e}_{L+1}\cdot\mathbf{e}_1 & \dots & \mathbf{e}_{L+1}\cdot\mathbf{e}_{L+1} & 1 \\
+\symbf{e}_{L+1}\cdot\symbf{e}_1 & \dots & \symbf{e}_{L+1}\cdot\symbf{e}_{L+1} & 1 \\
 1 & \dots & 1 & 0 \\
 \end{bmatrix}
 \begin{bmatrix}
@@ -165,19 +165,19 @@ c_{L+1} \\
 \end{equation}
 $$
 
-After solving the linear equations, we use the coefficients $$c_j$$ to construct the new Fock matrix $$\mathbf{F}_i$$ according to the equation \eqref{eq:fock_extrapolate} and proceed as usual with the Hartree--Fock calculation.
+After solving the linear equations, we use the coefficients $$c_j$$ to construct the new Fock matrix $$\symbf{F}_i$$ according to the equation \eqref{eq:fock_extrapolate} and proceed as usual with the Hartree--Fock calculation.
 
 ### Gradient of the Restricted Hartree--Fock Method
 
-If we perform the calculation as described above and get the density matrix $$\mathbf{D}$$ we can evaluate the nuclear energy gradient as<!--\supercite{10.1002/9780470749593.hrs006}-->
+If we perform the calculation as described above and get the density matrix $$\symbf{D}$$ we can evaluate the nuclear energy gradient as<!--\supercite{10.1002/9780470749593.hrs006}-->
 
 $$
 \begin{equation}\label{eq:hf_gradient}
-\frac{\partial E}{\partial X_{A,i}}=\sum_{\mu\nu\in\left\lbrace\phi_A\right\rbrace}D_{\mu\nu}\frac{\partial H_{\mu\nu}^{\mathrm{core}}}{\partial X_{A,i}}+2\sum_{\mu\nu\in\left\lbrace\phi_A\right\rbrace}D_{\mu\nu}D_{\kappa\lambda}\frac{\partial\left(J_{\mu\nu\kappa\lambda}-\frac{1}{2}J_{\mu\lambda\kappa\nu}\right)}{\partial X_{A,i}}-2W_{\mu\nu}\frac{\partial S_{\mu\nu}}{\partial X_{A,i}}
+\frac{\partial E}{\partial X_{A,i}}=\sum_{\mu\nu\in\left\lbrace\phi_A\right\rbrace}D_{\mu\nu}\frac{\partial H_{\mu\nu}^{\symrm{core}}}{\partial X_{A,i}}+2\sum_{\mu\nu\in\left\lbrace\phi_A\right\rbrace}D_{\mu\nu}D_{\kappa\lambda}\frac{\partial\left(J_{\mu\nu\kappa\lambda}-\frac{1}{2}J_{\mu\lambda\kappa\nu}\right)}{\partial X_{A,i}}-2W_{\mu\nu}\frac{\partial S_{\mu\nu}}{\partial X_{A,i}}
 \end{equation}
 $$
 
-where $$A$$ is the index of an atom, $$i$$ is the index of the coordinate, $$\left\lbrace\phi_A\right\rbrace$$ is the set of all basis functions located at atom $$A$$ and $$\mathbf{W}$$ is energy weighed density matrix defined as
+where $$A$$ is the index of an atom, $$i$$ is the index of the coordinate, $$\left\lbrace\phi_A\right\rbrace$$ is the set of all basis functions located at atom $$A$$ and $$\symbf{W}$$ is energy weighed density matrix defined as
 
 $$
 \begin{equation}
@@ -191,20 +191,20 @@ Keep in mind that the indices $$\kappa$$ and $$\lambda$$ in the gradient equatio
 
 To carry out most post-Hartree--Fock calculations, it is essential to transform the integrals into the Molecular Spinorbital basis. We will outline this transformation process here and refer to it in subsequent sections on post-Hartree--Fock methods. The post-Hartree--Fock methods in this document will be presented using the integrals in the Molecular Spinorbital basis (and in its antisymmetrized form for the two-electron integrals) as this approach is more general.
 
-All the integrals defined in the equations \eqref{eq:hamiltonian}, \eqref{eq:overlap}, and \eqref{eq:coulomb}, as well as Fock matrix in the equation \eqref{eq:fock} are defined in the basis of atomic orbitals. To transform these integrals to the Molecular Spinorbital basis, we utilize the coefficient matrix $$\mathbf{C}$$ obtained from the solution of the Roothaan equations \eqref{eq:roothaan}. This coefficient matrix $$\mathbf{C}$$ is initially calculated in the spatial molecular orbital basis (in the Restricted Hartree--Fock calculation).
+All the integrals defined in the equations \eqref{eq:hamiltonian}, \eqref{eq:overlap}, and \eqref{eq:coulomb}, as well as Fock matrix in the equation \eqref{eq:fock} are defined in the basis of atomic orbitals. To transform these integrals to the Molecular Spinorbital basis, we utilize the coefficient matrix $$\symbf{C}$$ obtained from the solution of the Roothaan equations \eqref{eq:roothaan}. This coefficient matrix $$\symbf{C}$$ is initially calculated in the spatial molecular orbital basis (in the Restricted Hartree--Fock calculation).
 
-The first step involves expanding the coefficient matrix $$\mathbf{C}$$ to the Molecular Spinorbital basis. This transformation can be mathematically expressed using the tiling matrix $$\mathbf{P}_{n\times 2n}$$, defined as
+The first step involves expanding the coefficient matrix $$\symbf{C}$$ to the Molecular Spinorbital basis. This transformation can be mathematically expressed using the tiling matrix $$\symbf{P}_{n\times 2n}$$, defined as
 
 $$
 \begin{equation}
-\mathbf{P}=
+\symbf{P}=
 \begin{pmatrix}
 e_1&e_1&e_2&e_2&\dots&e_n&e_n
 \end{pmatrix}
 \end{equation}
 $$
 
-where $$e_i$$ represents the $$i$$-th column of the identity matrix $$\mathbf{I}_n$$. Additionally, we define the matrices $$\mathbf{M}_{n\times 2n}$$ and $$\mathbf{N}_{n\times 2n}$ with elements given by
+where $$e_i$$ represents the $$i$$-th column of the identity matrix $$\symbf{I}_n$$. Additionally, we define the matrices $$\symbf{M}_{n\times 2n}$$ and $$\symbf{N}_{n\times 2n}$ with elements given by
 
 $$
 \begin{equation}
@@ -212,28 +212,28 @@ M_{ij}=1-j\bmod 2,N_{ij}=j \bmod 2
 \end{equation}
 $$
 
-The coefficient matrix $$\mathbf{C}$$ in the Molecular Spinorbital basis can be then expressed as
+The coefficient matrix $$\symbf{C}$$ in the Molecular Spinorbital basis can be then expressed as
 
 $$
 \begin{equation}
-\mathbf{C}^{\mathrm{MS}}=
+\symbf{C}^{\symrm{MS}}=
 \begin{pmatrix}
-\mathbf{CP} \\
-\mathbf{CP}
+\symbf{CP} \\
+\symbf{CP}
 \end{pmatrix}
 \odot
 \begin{pmatrix}
-\mathbf{M} \\
-\mathbf{N}
+\symbf{M} \\
+\symbf{N}
 \end{pmatrix}
 \end{equation}
 $$
 
-where $$\odot$$ denotes the Hadamard product. This transformed matrix $$\mathbf{C}^{\mathrm{MS}}$$ is subsequently used to transform the two-electron integrals $$\mathbf{J}$$ to the Molecular Spinorbital basis as
+where $$\odot$$ denotes the Hadamard product. This transformed matrix $$\symbf{C}^{\symrm{MS}}$$ is subsequently used to transform the two-electron integrals $$\symbf{J}$$ to the Molecular Spinorbital basis as
 
 $$
 \begin{equation}
-J_{pqrs}^{\mathrm{MS}}=C_{\mu p}^{\mathrm{MS}}C_{\nu q}^{\mathrm{MS}}(\mathbf{I}_{2}\otimes_K(\mathbf{I}_{2}\otimes_K\mathbf{J})^{(4,3,2,1)})_{\mu\nu\kappa\lambda}C_{\kappa r}^{\mathrm{MS}}C_{\lambda s}^{\mathrm{MS}}
+J_{pqrs}^{\symrm{MS}}=C_{\mu p}^{\symrm{MS}}C_{\nu q}^{\symrm{MS}}(\symbf{I}_{2}\otimes_K(\symbf{I}_{2}\otimes_K\symbf{J})^{(4,3,2,1)})_{\mu\nu\kappa\lambda}C_{\kappa r}^{\symrm{MS}}C_{\lambda s}^{\symrm{MS}}
 \end{equation}
 $$
 
@@ -241,7 +241,7 @@ where the superscript $$(4,3,2,1)$$ denotes the axes transposition and $$\otimes
 
 $$
 \begin{equation}
-\braket{pq\vert\vert rs}=(J_{pqrs}^{\mathrm{MS}}-J_{psrq}^{\mathrm{MS}})^{(1,3,2,4)}
+\braket{pq\vert\vert rs}=(J_{pqrs}^{\symrm{MS}}-J_{psrq}^{\symrm{MS}})^{(1,3,2,4)}
 \end{equation}
 $$
 
@@ -249,11 +249,11 @@ For the transformation of the one-electron integrals such as the core Hamiltonia
 
 $$
 \begin{equation}
-A_{pq}^{\mathrm{MS}}=C_{\mu p}^{\mathrm{MS}}(\mathbf{I}_{2}\otimes_K\mathbf{A})_{\mu\nu}C_{\nu q}^{\mathrm{MS}}
+A_{pq}^{\symrm{MS}}=C_{\mu p}^{\symrm{MS}}(\symbf{I}_{2}\otimes_K\symbf{A})_{\mu\nu}C_{\nu q}^{\symrm{MS}}
 \end{equation}
 $$
 
-where $$\mathbf{A}$$ is an arbitrary matrix of one-electron integrals. Since many post-Hartree--Fock methods rely on differences of orbital energies in the denominator, we define the tensors
+where $$\symbf{A}$$ is an arbitrary matrix of one-electron integrals. Since many post-Hartree--Fock methods rely on differences of orbital energies in the denominator, we define the tensors
 
 $$
 \begin{align}

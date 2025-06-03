@@ -8,7 +8,7 @@ nav_order: 2
 
 # The Time Derivative Coupling<!--\label{sec:time_derivative_coupling}-->
 
-Time Derivative Coupling is a pivotal quantity in Trajectory Surface Hopping simulations because it enters the electronic equations of motion given in Eq. [here](trajectory_surface_hopping.html#mjx-eqn:eq:tsh_eom)<!--\eqref{eq:tsh_eom}-->. In *ab initio* molecular dynamics, the Time Derivative Coupling is commonly evaluated using the full Nonadiabatic Coupling Vector as $$\sigma_{jk}=\mathbf{v}\cdot\mathbf{d}_{jk}$$, where $$\mathbf{v}$$ is the nuclear velocity. When the dynamics evolves on analytic Potential Energy Surface or the Nonadiabatic Coupling Vector is for any reason not available, it is often preferable to calculate the Time Derivative Coupling directly. The most straightforward strategy applies a finite-difference formula to the adiabatic wavefunctions
+Time Derivative Coupling is a pivotal quantity in Trajectory Surface Hopping simulations because it enters the electronic equations of motion given in Eq. [here](trajectory_surface_hopping.html#mjx-eqn:eq:tsh_eom)<!--\eqref{eq:tsh_eom}-->. In *ab initio* molecular dynamics, the Time Derivative Coupling is commonly evaluated using the full Nonadiabatic Coupling Vector as $$\sigma_{jk}=\symbf{v}\cdot\symbf{d}_{jk}$$, where $$\symbf{v}$$ is the nuclear velocity. When the dynamics evolves on analytic Potential Energy Surface or the Nonadiabatic Coupling Vector is for any reason not available, it is often preferable to calculate the Time Derivative Coupling directly. The most straightforward strategy applies a finite-difference formula to the adiabatic wavefunctions
 
 $$
 \begin{equation}\label{eq:tdc_fd1}
@@ -52,7 +52,7 @@ $$
 \end{equation}
 $$
 
-The Hammes-Schiffer Tully scheme in Eq. \eqref{eq:hst_tdc} is a finite-difference approximation of the Time Derivative Coupling, which is also antisymmetric, i.e., $$\sigma_{jk}=-\sigma_{kj}$$. The scheme is numerically stable and robust, but it does not preserve the norm of the adiabatic wavefunction. Any rapidly varying wavefunction will suffer from a significant normalization error, which can lead to unphysical results. To address this issue, we can apply a Norm-Preserving Interpolation to the adiabatic wavefunction, which is discussed in the next section.
+The Hammes-Schiffer Tully scheme in Eq. \eqref{eq:hst_tdc} is a finite-difference approximation of the Time Derivative Coupling, which is also antisymmetric, i.e., $$\sigma_{jk}=-\sigma_{kj}$$. The scheme is numerically stable, but it does not preserve the norm of the adiabatic wavefunction in between the timesteps. Any rapidly varying wavefunction will suffer from a significant normalization error, which can lead to unphysical results. Such a case occurs for two diabatic surfaces coupled by zero diabatic interaction: in the adiabatic basis the exact Time Derivative Coupling diverges, yet the Hammes-Schiffer Tully formula collapses to zero, predicting no population transfer. To address this issue, we can apply a Norm-Preserving Interpolation to the adiabatic wavefunction, which is discussed in the next section.
 
 ## The Norm-Preserving Interpolation<!--\label{sec:norm_preserving_interpolation}-->
 

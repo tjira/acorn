@@ -18,7 +18,7 @@ In the Coupled Cluster formalism, we write the total wavefunction in an exponent
 
 $$
 \begin{equation}
-\ket{\Psi}=e^{\hat{\mathbf{T}}}\ket{\Psi_0}
+\ket{\Psi}=e^{\hat{\symbf{T}}}\ket{\Psi_0}
 \end{equation}
 $$
 
@@ -26,29 +26,29 @@ where $$\ket{\Psi_0}$$ is the reference wavefunction, usually the Hartree--Fock 
 
 $$
 \begin{equation}
-\hat{\mathbf{T}}=\hat{\mathbf{T}}_1+\hat{\mathbf{T}}_2+\hat{\mathbf{T}}_3+\dots
+\hat{\symbf{T}}=\hat{\symbf{T}}_1+\hat{\symbf{T}}_2+\hat{\symbf{T}}_3+\dots
 \end{equation}
 $$
 
-where $$\hat{\mathbf{T}}_1$$ generates single excitations, $$\hat{\mathbf{T}}_2$$ generates double excitations, and so on. For example
+where $$\hat{\symbf{T}}_1$$ generates single excitations, $$\hat{\symbf{T}}_2$$ generates double excitations, and so on. For example
 
 $$
 \begin{equation}
-\hat{\mathbf{T}}_1\ket{\Psi_0}=\left(\frac{1}{1!}\right)^2t_i^a\ket{\Psi_i^a}
+\hat{\symbf{T}}_1\ket{\Psi_0}=\left(\frac{1}{1!}\right)^2t_i^a\ket{\Psi_i^a}
 \end{equation}
 $$
 
 where $$t_i^a$$ are the single excitation amplitudes. These amplitudes are just expansion coefficients that determine the contribution of each excitation to the total wavefunction. In the context of configuration interaction, we denoted these coefficients as $$c_i^a$$. Now that we have the total wavefunction, we want to solve the Schrödinger equation
 
 \begin{equation}
-\hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi}
+\hat{\symbf{H}}\ket{\Psi}=E\ket{\Psi}
 \end{equation}
 
 where $$\hat{H}$$ is the molecular Hamiltonian operator, $$E$$ is the total energy of the system, and $$\ket{\Psi}$$ is the total wavefunction. In the Coupled Cluster theory, we usually rewrite the Schrödinger equation in the exponential form as
 
 $$
 \begin{equation}
-e^{-\hat{\mathbf{T}}}\hat{\mathbf{H}}e^{\hat{\mathbf{T}}}\ket{\Psi_0}=E\ket{\Psi_0}
+e^{-\hat{\symbf{T}}}\hat{\symbf{H}}e^{\hat{\symbf{T}}}\ket{\Psi_0}=E\ket{\Psi_0}
 \end{equation}
 $$
 
@@ -56,7 +56,7 @@ because we can then express the Coupled Cluster energy as
 
 $$
 \begin{equation}
-E=\braket{\Psi_0\vert e^{-\hat{\mathbf{T}}}\hat{\mathbf{H}}e^{\hat{\mathbf{T}}}\vert\Psi_0}
+E=\braket{\Psi_0\vert e^{-\hat{\symbf{T}}}\hat{\symbf{H}}e^{\hat{\symbf{T}}}\vert\Psi_0}
 \end{equation}
 $$
 
@@ -86,7 +86,7 @@ where $$\hat{P}_{(a/b)}$$ and $$\hat{P}_{(i/j)}$$ are permutation operators that
 
 $$
 \begin{equation}
-E_{\text{CCSD}}=F_{ia}^{\mathrm{MS}}t_a^i+\frac{1}{4}\braket{ij\vert\vert ab}t_{ij}^{ab}+\frac{1}{2}\braket{ij\vert\vert ab}t_{i}^{a}t_{b}^{j}
+E_{\text{CCSD}}=F_{ia}^{\symrm{MS}}t_a^i+\frac{1}{4}\braket{ij\vert\vert ab}t_{ij}^{ab}+\frac{1}{2}\braket{ij\vert\vert ab}t_{i}^{a}t_{b}^{j}
 \end{equation}
 $$
 
@@ -116,7 +116,7 @@ The Coupled Cluster Singles and Doubles single excitations amplitude equations a
 
 $$
 \begin{align}
-t_i^a=&F_{ai}^{\mathrm{MS}}+t_i^e\mathscr{F}_{ae}-t_m^a\mathscr{F}_{mi}t_{im}^{ae}\mathscr{F}_{me}-t_n^f\braket{na\vert\vert if}-\nonumber-\frac{1}{2}t_{im}^{ef}\braket{ma\vert\vert ef}- \\
+t_i^a=&F_{ai}^{\symrm{MS}}+t_i^e\mathscr{F}_{ae}-t_m^a\mathscr{F}_{mi}t_{im}^{ae}\mathscr{F}_{me}-t_n^f\braket{na\vert\vert if}-\nonumber-\frac{1}{2}t_{im}^{ef}\braket{ma\vert\vert ef}- \\
 &-\frac{1}{2}t_{mn}^{ae}\braket{nm\vert\vert ei}
 \end{align}
 $$

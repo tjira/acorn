@@ -20,11 +20,11 @@ $$
 \end{equation}
 $$
 
-where we seek the coefficients $$\mathbf{c}$$ that minimize the energy. To determine these coefficients, we construct and diagonalize the Hamiltonian matrix in the basis of these excited determinants. The Configuration Interaction Hamiltonian matrix $$\mathbf{H}^{\mathrm{CI}}$$ is represented as
+where we seek the coefficients $$\symbf{c}$$ that minimize the energy. To determine these coefficients, we construct and diagonalize the Hamiltonian matrix in the basis of these excited determinants. The Configuration Interaction Hamiltonian matrix $$\symbf{H}^{\symrm{CI}}$$ is represented as
 
 $$
 \begin{equation}\label{eq:ci-hamiltonian}
-\mathbf{H}^{\mathrm{CI}}=
+\symbf{H}^{\symrm{CI}}=
 \begin{bmatrix}
 \braket{\Psi_0\vert\hat{H}\vert\Psi_0} & \braket{\Psi_0\vert\hat{H}\vert\Psi_i^a} & \braket{\Psi_0\vert\hat{H}\vert\Psi_{ij}^{ab}} & \dots \\
 \braket{\Psi_i^a\vert\hat{H}\vert\Psi_0} & \braket{\Psi_i^a\vert\hat{H}\vert\Psi_i^a} & \braket{\Psi_i^a\vert\hat{H}\vert\Psi_{ij}^{ab}} & \dots \\
@@ -38,25 +38,25 @@ After the Hamiltonian matrix is constructed, we solve the eigenvalue problem
 
 $$
 \begin{equation}\label{eq:ci-eigenvalue-problem}
-\mathbf{H}^{\mathrm{CI}}\mathbf{C}^{\mathrm{CI}}=\mathbf{C}^{\mathrm{CI}}\mathbf{\varepsilon}^{\mathrm{CI}}
+\symbf{H}^{\symrm{CI}}\symbf{C}^{\symrm{CI}}=\symbf{C}^{\symrm{CI}}\symbf{\varepsilon}^{\symrm{CI}}
 \end{equation}
 $$
 
-where $$\mathbf{C}^{\mathrm{CI}}$$ is a matrix of coefficients and $$\mathbf{\varepsilon}^{\mathrm{CI}}$$ is a diagonal matrix of eigenvalues. The lowest eigenvalue gives the ground-state energy, and the corresponding eigenvector provides the coefficients that minimize the energy. The elements of the Configuration Interaction Hamiltonian matrix are computed using the Slater--Condon rules, summarized in one function as
+where $$\symbf{C}^{\symrm{CI}}$$ is a matrix of coefficients and $$\symbf{\varepsilon}^{\symrm{CI}}$$ is a diagonal matrix of eigenvalues. The lowest eigenvalue gives the ground-state energy, and the corresponding eigenvector provides the coefficients that minimize the energy. The elements of the Configuration Interaction Hamiltonian matrix are computed using the Slater--Condon rules, summarized in one function as
 
 $$
 \begin{equation}\label{eq:slater-condon-rules}
-\mathbf{H}_{ij}^{\mathrm{CI}}=
+\symbf{H}_{ij}^{\symrm{CI}}=
 \begin{cases} 
-\displaystyle \sum_kH_{kk}^{\mathrm{core},\mathrm{MS}}+\frac{1}{2}\sum_k\sum_l\braket{kl\vert\vert kl}&D_i=D_j \\
-\displaystyle H_{pr}^{\mathrm{core},\mathrm{MS}}+\sum_k\braket{pk\vert\vert rk}&D_i=\left\lbrace\dotsi p\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi\right\rbrace \\
+\displaystyle \sum_kH_{kk}^{\symrm{core},\symrm{MS}}+\frac{1}{2}\sum_k\sum_l\braket{kl\vert\vert kl}&D_i=D_j \\
+\displaystyle H_{pr}^{\symrm{core},\symrm{MS}}+\sum_k\braket{pk\vert\vert rk}&D_i=\left\lbrace\dotsi p\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi\right\rbrace \\
 \displaystyle \vphantom{\sum_k}\braket{pq\vert\vert rs}&D_i=\left\lbrace\dotsi p\dotsi q\dotsi\right\rbrace\land D_j=\left\lbrace\dotsi r\dotsi s\dotsi\right\rbrace \\
 \displaystyle \vphantom{\sum_k}0&\text{otherwise}
 \end{cases}
 \end{equation}
 $$
 
-where $$D_i$$ and $$D_j$$ are Slater determinants, $$\mathbf{H}^{\mathrm{core},\mathrm{MS}}$$ is the core Hamiltonian in the Molecular Spinorbital basis, and $$\braket{pk\vert\vert lk}$$ are the antisymmetrized two-electron integrals in Molecular Spinorbital basis and physicists' notation. The sums extend over all spinorbitals common between the two determinants. These integrals were previously transformed [here](hartree_fock.html#integral-transforms-to-the-basis-of-molecular-spinorbitals)<!--in Section \ref{sec:integral_transform}-->. Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
+where $$D_i$$ and $$D_j$$ are Slater determinants, $$\symbf{H}^{\symrm{core},\symrm{MS}}$$ is the core Hamiltonian in the Molecular Spinorbital basis, and $$\braket{pk\vert\vert lk}$$ are the antisymmetrized two-electron integrals in Molecular Spinorbital basis and physicists' notation. The sums extend over all spinorbitals common between the two determinants. These integrals were previously transformed [here](hartree_fock.html#integral-transforms-to-the-basis-of-molecular-spinorbitals)<!--in Section \ref{sec:integral_transform}-->. Keep in mind, that to apply the Slater-Condon rules, the determinants must be aligned, and the sign of the matrix elements must be adjusted accordingly, based on the number of permutations needed to align the determinants.
 
 An important caveat in Configuration Interaction theory is its lack of size-extensivity, which implies that the energy does not scale linearly with the number of electrons. This drawback stems from the fact that the Configuration Interaction wavefunction is not size-consistent, meaning the energy of a combined system is not simply the sum of the energies of its isolated parts. This limitation restricts the application of Configuration Interaction mainly to small molecular systems.
 

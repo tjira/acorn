@@ -16,19 +16,19 @@ As for the Hartree--Fock method, we start with the Schrödinger equation in the 
 
 $$
 \begin{equation}
-\hat{\mathbf{H}}\ket{\Psi}=E\ket{\Psi}
+\hat{\symbf{H}}\ket{\Psi}=E\ket{\Psi}
 \end{equation}
 $$
 
-where $$\hat{\mathbf{H}}$$ is the molecular Hamiltonian operator, $$\ket{\Psi}$$ is the molecular wave function, and $$E$$ is the total energy of the system. In the Møller--Plesset perturbation theory we write the Hamiltonian operator as
+where $$\hat{\symbf{H}}$$ is the molecular Hamiltonian operator, $$\ket{\Psi}$$ is the molecular wave function, and $$E$$ is the total energy of the system. In the Møller--Plesset perturbation theory we write the Hamiltonian operator as
 
 $$
 \begin{equation}
-\hat{\mathbf{H}}=\hat{\mathbf{H}}^{(0)}+\lambda\hat{\mathbf{H}}^{'}
+\hat{\symbf{H}}=\hat{\symbf{H}}^{(0)}+\lambda\hat{\symbf{H}}^{'}
 \end{equation}
 $$
 
-where $$\hat{\mathbf{H}}^{(0)}$$ is the Hamiltonian used in the Hartree--Fock method (representing electrons moving in the mean field), $$\lambda$$ is a parameter between 0 and 1, and $$\hat{\mathbf{H}}^{'}$$ is the perturbation operator representing the missing electron-electron interactions not included in the Hartree--Fock approximation. We then expand the wavefunction $$\ket{\Psi}$$ and total energy $$E$$ as a power series in $$\lambda$$ as
+where $$\hat{\symbf{H}}^{(0)}$$ is the Hamiltonian used in the Hartree--Fock method (representing electrons moving in the mean field), $$\lambda$$ is a parameter between 0 and 1, and $$\hat{\symbf{H}}^{'}$$ is the perturbation operator representing the missing electron-electron interactions not included in the Hartree--Fock approximation. We then expand the wavefunction $$\ket{\Psi}$$ and total energy $$E$$ as a power series in $$\lambda$$ as
 
 $$
 \begin{align}
@@ -41,7 +41,7 @@ and ask, how how does the total energy change with the included terms. After som
 
 $$
 \begin{equation}
-E_{\mathrm{corr}}^{\mathrm{MP2}}=\sum_{s>0}\frac{H_{0s}^{'}H_{s0}^{'}}{E_0-E_s}
+E_{\symrm{corr}}^{\symrm{MP2}}=\sum_{s>0}\frac{H_{0s}^{'}H_{s0}^{'}}{E_0-E_s}
 \end{equation}
 $$
 
@@ -53,7 +53,7 @@ Having the antisymmetrized two-electron integrals in the Molecular Spinorbital b
 
 $$
 \begin{equation}
-E_{\mathrm{corr}}^{\mathrm{MP2}}=\frac{1}{4}\sum_{ijab}\frac{\braket{ab\vert\vert ij}\braket{ij\vert\vert ab}}{\varepsilon_{ij}^{ab}}
+E_{\symrm{corr}}^{\symrm{MP2}}=\frac{1}{4}\sum_{ijab}\frac{\braket{ab\vert\vert ij}\braket{ij\vert\vert ab}}{\varepsilon_{ij}^{ab}}
 \end{equation}
 $$
 
@@ -61,7 +61,7 @@ and the 3rd order correlation energy as
 
 $$
 \begin{align}
-E_{\mathrm{corr}}^{\mathrm{MP3}}=&\frac{1}{8}\sum_{ijab}\frac{\braket{ab\vert\vert ij}\braket{cd\vert\vert ab}\braket{ij\vert\vert cd}}{\varepsilon_{ij}^{ab}\varepsilon_{ij}^{cd}}+\nonumber \\
+E_{\symrm{corr}}^{\symrm{MP3}}=&\frac{1}{8}\sum_{ijab}\frac{\braket{ab\vert\vert ij}\braket{cd\vert\vert ab}\braket{ij\vert\vert cd}}{\varepsilon_{ij}^{ab}\varepsilon_{ij}^{cd}}+\nonumber \\
 &+\frac{1}{8}\sum_{ijab}\frac{\braket{ab\vert\vert ij}\braket{ij\vert\vert kl}\braket{kl\vert\vert ab}}{\varepsilon_{ij}^{ab}\varepsilon_{kl}^{ab}}+\nonumber \\
 &+\sum_{ijab}\frac{\braket{ab\vert\vert ij}\braket{cj\vert\vert kb}\braket{ik\vert\vert ac}}{\varepsilon_{ij}^{ab}\varepsilon_{ik}^{ac}}
 \end{align}

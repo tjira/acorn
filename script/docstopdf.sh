@@ -66,7 +66,7 @@ ACRONYMS=(
     "Norm-Preserving Interpolation/NPI"
 )
 
-# create the document class in the tex file
+# create the document class and define the header in the tex file
 mkdir -p docs/tex && rm -f docs/tex/* && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
 
@@ -75,97 +75,10 @@ mkdir -p docs/tex && rm -f docs/tex/* && cat > docs/tex/main.tex << EOL
 \DocumentMetadata{
     lang = en,
     pdfversion = 1.7,
-    pdfstandard = A-3a,
+    pdfstandard = A-3b,
 }
 
 \documentclass[headsepline=true,parskip=half,open=any,11pt]{scrbook}\title{Algorithms of Quantum Chemistry}\author{Tomáš \textsc{Jíra}}
-EOL
-
-# add the rest of the header
-cat >> docs/tex/main.tex << EOL
-
-\begin{filecontents*}{library.bib}
-@article{10.1002/wcms.58,
-    author = {Dieter Cremer},
-    title = {Møller--Plesset perturbation theory: from small molecule methods to methods for thousands of atoms},
-    journal = {WIREs Computational Molecular Science},
-    volume = {1},
-    pages = {509-530},
-    year = {2011},
-    doi = {10.1002/wcms.58}
-}
-
-@article{10.1063/1.460620,
-    author = {John F. Stanton and Jürgen Gauss and John D. Watts and Rodney J. Bartlett},
-    title = {A direct product decomposition approach for symmetry exploitation in many-body methods. I. Energy calculations},
-    journal = {The Journal of Chemical Physics},
-    volume = {94},
-    pages = {4334-4345},
-    year = {1991},
-    doi = {10.1063/1.460620}
-}
-
-@article{10.1021/acs.jpclett.9b01641,
-    author = {Luke W. Bertels and Joonho Lee and Martin Head-Gordon},
-    title = {Third-Order Møller–Plesset Perturbation Theory Made Useful? Choice of Orbitals and Scaling Greatly Improves Accuracy for Thermochemistry, Kinetics, and Intermolecular Interactions},
-    journal = {The Journal of Physical Chemistry Letters},
-    volume = {10},
-    pages = {4170-4176},
-    year = {2019},
-    doi = {10.1021/acs.jpclett.9b01641}
-}
-
-@book{10.1016/S0065-3276!08!60019-2,
-    author = {Peter M.W. Gill},
-    title = {Molecular integrals Over Gaussian Basis Functions},
-    publisher = {Academic Press},
-    year = {1994},
-    doi = {10.1016/S0065-3276(08)60019-2}
-}
-
-@book{1014569052,
-    author = {Attila Szabo and Neil S. Ostlund},
-    title = {Modern quantum chemistry: introduction to advanced electronic structure theory},
-    publisher = {Courier Corporation},
-    year = {1996},
-    url = {https://www.worldcat.org/title/1014569052}
-}
-
-@article{10.1016/0010-4655!73!90016-7,
-    author = {Josef Paldus and Heymans H.C. Wong},
-    title = {Computer generation of Feynman diagrams for perturbation theory I. General algorithm},
-    journal = {Computer Physics Communications},
-    volume = {6},
-    pages = {1-7},
-    year = {1973},
-    doi = {10.1016/0010-4655(73)90016-7}
-}
-
-@article{10.1016/0010-4655!73!90017-9,
-    author = {Heymans H.C. Wong and Josef Paldus},
-    title = {Computer generation of Feynman diagrams for perturbation theory II. Program description},
-    journal = {Computer Physics Communications},
-    volume = {6},
-    pages = {9-16},
-    year = {1973},
-    doi = {10.1016/0010-4655(73)90017-9}
-}
-
-@article{10.48550/arXiv.1903.11240,
-    author = {Benyamin Ghojogh and Fakhri Karray and Mark Crowley},
-    title = {Eigenvalue and Generalized Eigenvalue Problems: Tutorial},
-    year = {2019},
-    doi = {10.48550/arXiv.1903.11240}
-}
-
-@book{10.1002/9780470749593.hrs006,
-    author = {Yukio Yamaguchi and Henry F. Schaefer},
-    title = {Analytic Derivative Methods in Molecular Electronic Structure Theory: A New Dimension to Quantum Chemistry and its Applications to Spectroscopy},
-    publisher = {John Wiley \& Sons, Ltd},
-    year = {2011},
-    doi = {10.1002/9780470749593.hrs006}
-}
-\end{filecontents*}
 
 \usepackage[hidelinks]{hyperref}\makeatletter\hypersetup{pdfauthor={\@author},pdftitle={\@title}}\makeatother % hyperlinks and metadata
 
@@ -230,6 +143,9 @@ for PAGE in ${PAGES[@]}; do
     echo "" >> docs/tex/main.tex && cat temp.tex >> docs/tex/main.tex && rm temp.md temp.tex
 done
 
+# some post-processing
+sed -i 's/ \\eqref/~\\eqref/g' docs/tex/main.tex
+
 # set the chapters
 for CHAPTER in "${CHAPTERS[@]}"; do
     sed -i "s/\\\\section{\\\\texorpdfstring{$CHAPTER/\\\\chapter{\\\\texorpdfstring{$CHAPTER/g" docs/tex/main.tex
@@ -254,23 +170,24 @@ done
 # set the start of the appendix
 sed -i "s/\\\\chapter{\\\\texorpdfstring{Mathematical Methods/\\\\begin{appendices}\\\\chapter{\\\\texorpdfstring{Mathematical Methods/" docs/tex/main.tex
 
-# end the document
+# additional sections
 cat >> docs/tex/main.tex << EOL
 \end{appendices}
 
 \printglossary[type=\acronymtype]
 
 \printbibliography
-
-\end{document}
 EOL
 
+# save the bibliography and end the document
+echo -e "\n\\\begin{filecontents*}{library.bib}" >> docs/tex/main.tex && cat library.bib >> docs/tex/main.tex && echo -e "\\\end{filecontents*}\n\n\\\end{document}" >> docs/tex/main.tex
+
 # first pass of the compiler
-cd docs/tex && $TEX_COMPILER main | grep -v "entering extended mode" && cd ../..
+cd docs/tex && $TEX_COMPILER main && cd ../..
 
 # generate the glossary and library
 cd docs/tex && $GLOSSARY_COMPILER -q main && $BIB_COMPILER --quiet main && cd ../..
 
 # second and third pass of the compiler
-cd docs/tex && $TEX_COMPILER main | grep -v "entering extended mode" && cd ../..
-cd docs/tex && $TEX_COMPILER main | grep -v "entering extended mode" && cd ../..
+cd docs/tex && $TEX_COMPILER main && cd ../..
+cd docs/tex && $TEX_COMPILER main && cd ../..
