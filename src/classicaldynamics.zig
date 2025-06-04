@@ -161,6 +161,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
             if (mash) {try initialBlochVector(T, &S, s, rand_bloc);                      }
 
+            const weight = if (mash) 2 * mth.h(S.at(2)) else 1; const Sz0 = S.at(2);
+
             S.memcpy(S0); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
             for (0..opt.iterations + 1) |j| {
@@ -211,15 +213,15 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (opt.write.time_derivative_coupling != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k + i * nstate * nstate).* = TDC.data[k];}          ;
 
                 if (opt.write.bloch_vector != null) {
-                    svec.ptr(j, 1 + i * 3 + 0).* = S.at(0);
-                    svec.ptr(j, 1 + i * 3 + 1).* = S.at(1);
-                    svec.ptr(j, 1 + i * 3 + 2).* = S.at(2);
+                    svec.ptr(j, 1 + i * 3 + 0).* = weight * S.at(0);
+                    svec.ptr(j, 1 + i * 3 + 1).* = weight * S.at(1);
+                    svec.ptr(j, 1 + i * 3 + 2).* = if (!mash) weight * S.at(2) else weight * @abs(Sz0) * mth.sgn(S.at(2));
                 }
 
                 if (opt.write.bloch_vector_mean != null) {
-                    svec_mean.ptr(j, 1 + 0).* += S.at(0);
-                    svec_mean.ptr(j, 1 + 1).* += S.at(1);
-                    svec_mean.ptr(j, 1 + 2).* += S.at(2);
+                    svec_mean.ptr(j, 1 + 0).* += weight * S.at(0);
+                    svec_mean.ptr(j, 1 + 1).* += weight * S.at(1);
+                    svec_mean.ptr(j, 1 + 2).* += if (!mash) weight * S.at(2) else weight * @abs(Sz0) * mth.sgn(S.at(2));
                 }
 
                 if (j == opt.iterations) assignOutput(T, &output, r, v, s, Ekin, Epot, opt.initial_conditions.mass);
@@ -483,7 +485,7 @@ pub fn initialBlochVector(comptime T: type, S: *Vector(T), s: u32, rand: std.Ran
 
     _ = s;
 
-    const cos_theta = std.math.sqrt(rand.float(T));
+    const cos_theta = rand.float(T);
     const sin_theta = std.math.sqrt(1 - cos_theta * cos_theta);
 
     S.ptr(0).* = sin_theta * std.math.cos(phi);
