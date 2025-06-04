@@ -35,6 +35,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     if (opt.initial_conditions.momentum_std.len  != ndim  ) return error.InvalidStdMomentum ;
     if (opt.initial_conditions.mass.len          != ndim  ) return error.InvalidMass        ;
     if (mth.sum(T, opt.initial_conditions.state) != 1     ) return error.InvalidStateSum    ;
+    if (opt.write.bloch_vector != null and nstate != 2     ) return error.SpinNotCalculable  ;
+    if (opt.write.bloch_vector_mean != null and nstate != 2) return error.SpinNotCalculable  ;
 
     var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator); output.pop.fill(0);
 
@@ -49,6 +51,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     var momentum_mean = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer momentum_mean.deinit(); momentum_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var pop_mean      = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer      pop_mean.deinit(); pop_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var position_mean = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer position_mean.deinit(); position_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var svec_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 3,               allocator); defer     svec_mean.deinit(); svec_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var tdc_mean      = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer      tdc_mean.deinit(); tdc_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
     var coef:     Matrix(T) = undefined;
@@ -58,6 +61,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     var momentum: Matrix(T) = undefined;
     var pop:      Matrix(T) = undefined;
     var position: Matrix(T) = undefined;
+    var svec:     Matrix(T) = undefined;
     var tdc:      Matrix(T) = undefined;
 
     if (opt.write.coefficient != null) {
@@ -80,6 +84,9 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     }
     if (opt.write.position != null) {
         position = try Matrix(T).init(opt.iterations + 1, 1 + ndim * opt.trajectories, allocator); position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
+    if (opt.write.bloch_vector != null) {
+        svec = try Matrix(T).init(opt.iterations + 1, 1 + 3 * opt.trajectories, allocator); svec.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     }
     if (opt.write.time_derivative_coupling != null) {
         tdc = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate * opt.trajectories, allocator); tdc.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
@@ -180,10 +187,18 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 if (mash and opt.spin_mapping.?.resample != null) try resampleBlochVector(T, opt.spin_mapping.?.resample.?, &S, &SI, v, vp, s, rand_bloc);
 
+                if (fssh) {
+
+                    S.ptr(0, 0).* = 2 * (C.at(0).mul(C.at(1).conjugate())).re;
+                    S.ptr(0, 1).* = 2 * (C.at(0).mul(C.at(1).conjugate())).im;
+
+                    S.ptr(0, 2).* = C.at(1).magnitude() * C.at(1).magnitude() - C.at(0).magnitude() * C.at(0).magnitude();
+                }
+
                 if (opt.write.coefficient_mean              != null) for (0..C.rows) |k| {coef_mean.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();}   ;
                 if (opt.write.kinetic_energy_mean           != null) ekin_mean.ptr(j, 1 + 0).* += Ekin                                                               ;
                 if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum_mean.ptr(j, 1 + k).* += v.at(k) * opt.initial_conditions.mass[k];};
-                if (opt.write.population_mean               != null)  pop_mean.ptr(j, 1 + s).* += 1                                                                  ;
+                if (opt.write.population_mean               != null) pop_mean.ptr(j, 1 + s).* += 1                                                                   ;
                 if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position_mean.ptr(j, 1 + k).* += r.at(k);}                                 ;
                 if (opt.write.potential_energy_mean         != null) epot_mean.ptr(j, 1 + 0).* += Epot                                                               ;
                 if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc_mean.ptr(j, 1 + k).* += TDC.data[k];}                     ;
@@ -198,6 +213,18 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (opt.write.total_energy             != null) etot.ptr(j, 1 + i).* = Ekin + Epot                                                                   ;
                 if (opt.write.time_derivative_coupling != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k + i * nstate * nstate).* = TDC.data[k];}          ;
 
+                if (opt.write.bloch_vector != null) {
+                    svec.ptr(j, 1 + i * 3 + 0).* = S.at(0, 0);
+                    svec.ptr(j, 1 + i * 3 + 1).* = S.at(0, 1);
+                    svec.ptr(j, 1 + i * 3 + 2).* = S.at(0, 2);
+                }
+
+                if (opt.write.bloch_vector_mean != null) {
+                    svec_mean.ptr(j, 1 + 0).* += S.at(0, 0);
+                    svec_mean.ptr(j, 1 + 1).* += S.at(0, 1);
+                    svec_mean.ptr(j, 1 + 2).* += S.at(0, 2);
+                }
+
                 if (j == opt.iterations) assignOutput(T, &output, r, v, s, Ekin, Epot, opt.initial_conditions.mass);
 
                 if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j % opt.log_intervals.iteration == 0 or S3[j % 3] != S3[(j - 1) % 3])) {
@@ -207,14 +234,15 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         }
     }
 
-    for (0..opt.iterations + 1) |i| {for (1..pop_mean.cols     ) |j|      pop_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..coef_mean.cols    ) |j|     coef_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..ekin_mean.cols    ) |j|     ekin_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..epot_mean.cols    ) |j|     epot_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..etot_mean.cols    ) |j|     etot_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..position_mean.cols) |j| position_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..momentum_mean.cols) |j| momentum_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..pop_mean.cols     ) |j|      pop_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..position_mean.cols) |j| position_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..svec_mean.cols    ) |j|     svec_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..tdc_mean.cols     ) |j|      tdc_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..coef_mean.cols    ) |j|     coef_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
 
     for (0..output.pop.rows) |i| output.pop.ptr(i).* /= asfloat(T, opt.trajectories);
     for (0..output.r.rows  ) |i|   output.r.ptr(i).* /= asfloat(T, opt.trajectories);
@@ -227,6 +255,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         if (print) try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.pop.at(i)});
     }
 
+    if (opt.write.bloch_vector                 ) |path| try          svec.write(path);
+    if (opt.write.bloch_vector_mean            ) |path| try     svec_mean.write(path);
     if (opt.write.coefficient                  ) |path| try          coef.write(path);
     if (opt.write.coefficient_mean             ) |path| try     coef_mean.write(path);
     if (opt.write.kinetic_energy               ) |path| try          ekin.write(path);

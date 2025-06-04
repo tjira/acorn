@@ -102,7 +102,8 @@ pub fn MollerPlessetOutput(comptime T: type) type {
 /// The quantum dynamics output struct.
 pub fn QuantumDynamicsOutput(comptime T: type) type {
     return struct {
-        P: []Matrix(T),
+        P: []Matrix(std.math.Complex(T)),
+
         r: []Vector(T),
         p: []Vector(T),
 
@@ -114,7 +115,8 @@ pub fn QuantumDynamicsOutput(comptime T: type) type {
         /// Initialize the quantum dynamics output struct.
         pub fn init(ndim: usize, nstate: usize, propagations: usize, allocator: std.mem.Allocator) !QuantumDynamicsOutput(T) {
             var output = QuantumDynamicsOutput(T){
-                .P = try allocator.alloc(Matrix(T), propagations),
+                .P = try allocator.alloc(Matrix(std.math.Complex(T)), propagations),
+
                 .r = try allocator.alloc(Vector(T), propagations),
                 .p = try allocator.alloc(Vector(T), propagations),
 
@@ -125,9 +127,9 @@ pub fn QuantumDynamicsOutput(comptime T: type) type {
             };
 
             for (0..propagations) |i| {
-                output.P[i] = try Matrix(T).init(nstate, nstate, allocator);
-                output.r[i] = try Vector(T).init(ndim,           allocator);
-                output.p[i] = try Vector(T).init(ndim,           allocator);
+                output.P[i] = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator);
+                output.r[i] = try Vector(T                  ).init(ndim,           allocator);
+                output.p[i] = try Vector(T                  ).init(ndim,           allocator);
             }
 
             return output;

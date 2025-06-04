@@ -27,15 +27,17 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
     const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim); defer pot.?.deinit();
 
-    if (pot == null                                ) return error.UnknownPotential      ;
-    if (opt.initial_conditions.state > nstate - 1  ) return error.InvalidInitialState   ;
-    if (opt.initial_conditions.position.len != ndim) return error.InvalidInitialPosition;
-    if (opt.initial_conditions.momentum.len != ndim) return error.InvalidInitialMomentum;
+    if (pot == null                                   ) return error.UnknownPotential        ;
+    if (opt.initial_conditions.state > nstate - 1     ) return error.InvalidInitialState     ;
+    if (opt.initial_conditions.position.len != ndim   ) return error.InvalidInitialPosition  ;
+    if (opt.initial_conditions.momentum.len != ndim   ) return error.InvalidInitialMomentum  ;
+    if (opt.write.bloch_vector != null and nstate != 2) return error.CantCalculateBlochVector;
 
     var spectrum_points = std.math.pow(u32, 2, std.math.log2(opt.iterations + 1) + opt.spectrum.nearest_power_of_two); if (opt.spectrum.flip) spectrum_points *= 2;
 
     var output = try out.QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
+    var bloch    = try Matrix(T).init(opt.iterations + 1, 1 + 3,      allocator); defer    bloch.deinit(); bloch   .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate, allocator); defer      pop.deinit(); pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     ekin.deinit(); ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     epot.deinit(); epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
@@ -100,7 +102,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             WOPT[i] = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator);
         }
 
-        var P = try Matrix(T).init(nstate, nstate, allocator); defer P.deinit();
+        var P = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer P.deinit();
 
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
@@ -158,12 +160,20 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 const acfi = W0.overlap(W);
 
-                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.population       != null) for (0..nstate) |k| {pop.ptr(j, 1 + k).* = P.at(k, k);};
-                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.position         != null) for (0..ndim) |k| {position.ptr(j, 1 + k).* = r.at(k);};
-                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.momentum         != null) for (0..ndim) |k| {momentum.ptr(j, 1 + k).* = p.at(k);};
-                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.kinetic_energy   != null) ekin.ptr(j, 1 + 0).* = Ekin                            ;
-                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.potential_energy != null) epot.ptr(j, 1 + 0).* = Epot                            ;
-                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.total_energy     != null) etot.ptr(j, 1 + 0).* = Ekin + Epot                     ;
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.population       != null) for (0..nstate) |k| {pop.ptr(j, 1 + k).* = P.at(k, k).re;};
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.position         != null) for (0..ndim) |k| {position.ptr(j, 1 + k).* = r.at(k);}   ;
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.momentum         != null) for (0..ndim) |k| {momentum.ptr(j, 1 + k).* = p.at(k);}   ;
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.kinetic_energy   != null) ekin.ptr(j, 1 + 0).* = Ekin                               ;
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.potential_energy != null) epot.ptr(j, 1 + 0).* = Epot                               ;
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.total_energy     != null) etot.ptr(j, 1 + 0).* = Ekin + Epot                        ;
+
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.bloch_vector != null) {
+
+                    bloch.ptr(j, 1 + 0).* = 2 * P.at(0, 1).re;
+                    bloch.ptr(j, 1 + 1).* = 2 * P.at(0, 1).im;
+
+                    bloch.ptr(j, 1 + 2).* = P.at(1, 1).re - P.at(0, 0).re;
+                }
 
                 if (i == opt.mode[0] + opt.mode[1] - 1 and (opt.write.autocorrelation_function != null or opt.write.spectrum != null)) {
                     acf.ptr(j, 1 + 0).* = acfi.re; acf.ptr(j, 1 + 1).* = acfi.im;
@@ -200,7 +210,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                 }
 
                 if (print and j == opt.iterations and nstate > 1) for (0..nstate) |k| {
-                    try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P[i].at(k, k)});
+                    try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P[i].at(k, k).re});
                 };
             }
         }
@@ -220,6 +230,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
     if (opt.write.spectrum != null or opt.write.transformed_autocorrelation_function != null) try makeSpectrum(T, opt.spectrum, &acft, &spectrum, acf, allocator);
 
     if (opt.write.autocorrelation_function            ) |path| try          acf.write(path);
+    if (opt.write.bloch_vector                        ) |path| try        bloch.write(path);
     if (opt.write.kinetic_energy                      ) |path| try         ekin.write(path);
     if (opt.write.momentum                            ) |path| try     momentum.write(path);
     if (opt.write.population                          ) |path| try          pop.write(path);
@@ -239,7 +250,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 }
 
 /// Assigns the calculated properties to the output struct.
-pub fn assignOutput(comptime T: type, output: *out.QuantumDynamicsOutput(T), r: Vector(T), p: Vector(T), P: Matrix(T), Ekin: T, Epot: T, i: usize) void {
+pub fn assignOutput(comptime T: type, output: *out.QuantumDynamicsOutput(T), r: Vector(T), p: Vector(T), P: Matrix(std.math.Complex(T)), Ekin: T, Epot: T, i: usize) void {
     r.memcpy(output.r[i]);
     p.memcpy(output.p[i]);
     P.memcpy(output.P[i]);
@@ -422,7 +433,7 @@ pub fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(std.math.Comp
 }
 
 /// Prints the iteration information.
-pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), p: Vector(T), P: Matrix(T), acfi: std.math.Complex(T)) !void {
+pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), p: Vector(T), P: Matrix(std.math.Complex(T)), acfi: std.math.Complex(T)) !void {
         try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6} {d:6.3}{s}{d:5.3}i [", .{i, Ekin, Epot, Ekin + Epot, acfi.re, if (acfi.im < 0) "-" else "+", @abs(acfi.im)});
 
         for (0..r.rows) |j| {
@@ -438,7 +449,7 @@ pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), 
         try std.io.getStdOut().writer().print("] [", .{});
 
         for (0..P.rows) |j| {
-            try std.io.getStdOut().writer().print("{s}{d:8.5}", .{if (j == 0) "" else ", ", P.at(j, j)});
+            try std.io.getStdOut().writer().print("{s}{d:8.5}", .{if (j == 0) "" else ", ", P.at(j, j).re});
         }
 
         try std.io.getStdOut().writer().print("]\n", .{});

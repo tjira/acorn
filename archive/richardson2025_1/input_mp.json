@@ -1,0 +1,14 @@
+{
+    "model_potential" : {
+        "adiabatic" : true,
+        "limits" : [-12, 10],
+        "points" : 2048,
+        "hamiltonian" : {
+            "dims" : 1,
+            "matrix" : [
+                ["0.5*r1^2+3*r1+4", "2"               ],
+                ["2",               "0.5*r1^2-3*r1-4"]
+            ]
+        }
+    }
+}
