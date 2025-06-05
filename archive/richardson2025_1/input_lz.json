@@ -5,7 +5,7 @@
         "iterations" : 300,
         "seed" : 1,
         "time_step" : 0.02,
-        "trajectories" : 1000,
+        "trajectories" : 10000,
         "hamiltonian" : {
             "dims" : 1,
             "matrix" : [

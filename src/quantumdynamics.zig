@@ -37,7 +37,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
     var output = try out.QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
-    var bloch    = try Matrix(T).init(opt.iterations + 1, 1 + 3,      allocator); defer    bloch.deinit(); bloch   .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var bloch    = try Matrix(T).init(opt.iterations + 1, 1 + 4,      allocator); defer    bloch.deinit(); bloch   .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate, allocator); defer      pop.deinit(); pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     ekin.deinit(); ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     epot.deinit(); epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
@@ -129,7 +129,10 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             }
 
             if (i < opt.mode[0] or (opt.mode[0] == 0)) {
+
                 wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); W.normalize();
+
+                if (opt.initial_conditions.adiabatic) {wfn.diabatize(T, &WA, W, VC); WA.memcpy(W);}
             }
 
             if (opt.bohmian_dynamics != null) initBohmianTrajectories(T, &bohm_position, rvec, W, opt.bohmian_dynamics.?.seed);
@@ -173,6 +176,8 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                     bloch.ptr(j, 1 + 1).* = 2 * P.at(0, 1).im;
 
                     bloch.ptr(j, 1 + 2).* = P.at(1, 1).re - P.at(0, 0).re;
+
+                    bloch.ptr(j, 1 + 3).* = std.math.sqrt(bloch.at(j, 1) * bloch.at(j, 1) + bloch.at(j, 2) * bloch.at(j, 2));
                 }
 
                 if (i == opt.mode[0] + opt.mode[1] - 1 and (opt.write.autocorrelation_function != null or opt.write.spectrum != null)) {

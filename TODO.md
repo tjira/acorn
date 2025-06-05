@@ -14,3 +14,4 @@
 - [x] Multidimensional Bohmian dynamics.
 - [x] Maybe do some better field interpolation than nearest neighbour for the Bohmian trajectories.
 - [ ] Resolve the correct weighing in MASH algorithm.
+- [ ] Check the suspicious sign in front of TDC during formation of MASH propagation matrix.

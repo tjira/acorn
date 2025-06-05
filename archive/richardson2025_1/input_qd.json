@@ -19,15 +19,15 @@
             "mass" : 1,
             "momentum" : [0],
             "position" : [3],
-            "state" : 0
+            "state" : 1,
+            "adiabatic" : true
         },
         "log_intervals" : {
             "iteration" : 1
         },
         "write" : {
             "bloch_vector" : "BLOCH_VECTOR_EXACT.mat",
-            "population" : "POPULATION_EXACT.mat",
-            "wavefunction" : "WAVEFUNCTION.mat"
+            "population" : "POPULATION_EXACT.mat"
         }
     }
 }
