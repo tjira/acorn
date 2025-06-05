@@ -7,7 +7,7 @@ esc    = "\\" if os.name == "nt" else "\\\\"
 
 KTSH_COUPLING = 1; KTSH_HO = 1; LZ_COMPARE = 1; URACIL_LVC = 1
 
-TRAJS, NGRID = 1000, 8192
+TRAJS, NGRID = 10000, 8192
 
 # KTSH TDC TESTING ON MODEL POTENTIALS ======================================================================================================================================================
 
