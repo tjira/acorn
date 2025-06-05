@@ -2,6 +2,14 @@
 
 import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, matplotlib.ticker as tck, numpy as np
 
+# set rcParams
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Libertinus Serif"],
+    "text.latex.preamble": r"\usepackage{braket}"
+})
+
 # create the parser
 parser = ap.ArgumentParser(
     prog="Acorn Lines Plotter", description="Lines plotting script for the Quantum Acorn package.",
@@ -130,7 +138,7 @@ for i, ax in enumerate(axes.values()):
     ax.xaxis.set_minor_locator(tck.AutoMinorLocator()); ax.yaxis.set_minor_locator(tck.AutoMinorLocator()); ax.tick_params(which="both", direction="in", top=True, right=True)
 
     # add the legend
-    if any([line.get_label()[0] != "_" for line in ax.lines]): ax.legend(frameon=False)
+    if any([line.get_label()[0] != "_" for line in ax.lines]): ax.legend(frameon=False, prop={"size": 8})
 
     # set the title
     if args.title and len(args.title) > i: ax.set_title(args.title[i], fontsize=args.fontsize_title[i] if args.fontsize_title and len(args.fontsize_title) > i else 16)
