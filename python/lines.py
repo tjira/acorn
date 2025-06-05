@@ -24,7 +24,7 @@ parser.add_argument("-a", "--animate", type=int, help="Animate the plot.")
 
 # add the plotting arguments
 parser.add_argument("--colormap", type=str, nargs=2, default=["tab10", "10"], help="The colormap to use for the plot.")
-parser.add_argument("--dpi", type=int, default=96, help="The DPI of the plot.")
+parser.add_argument("--dpi", type=int, default=256, help="The DPI of the plot.")
 parser.add_argument("--figsize", type=int, nargs=2, default=[6, 8], help="The dimensions of the plot in inches.")
 parser.add_argument("--fontsize_label", type=int, nargs="+", help="The font size for the x and y axis labels.")
 parser.add_argument("--fontsize_title", type=int, nargs="+", help="The font size for the title of each subplot.")
