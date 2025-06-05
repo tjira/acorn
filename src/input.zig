@@ -283,9 +283,6 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
 /// The sort options
 pub fn SortOptions() type {
     return struct {
-        input:     []const u8,
-        algorithm: []const u8,
-        output:    []const u8,
-        column:    usize
+        algorithm: []const u8 = "bubble", column: usize = 0, input: []const u8, output: ?[]const u8 = null, print: bool = true
     };
 }

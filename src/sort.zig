@@ -16,9 +16,11 @@ pub fn run(comptime T: type, opt: inp.SortOptions(), print: bool, allocator: std
 
     else return error.InvalidSortingAlgorithm;
 
+    if (print and opt.print) {try std.io.getStdOut().writer().print("\nSORTED MATRIX\n", .{}); try A.print(std.io.getStdOut().writer());}
+
     if (print) try std.io.getStdOut().writer().print("\nSORTING THE ARRAY OF {d} NUMBERS TOOK {}\n", .{A.data.len, std.fmt.fmtDuration(timer.read())});
 
-    try A.write(opt.output);
+    if (opt.output != null) try A.write(opt.output.?);
 }
 
 // The bubble sort algorithm for matrices.
