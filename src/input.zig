@@ -285,6 +285,7 @@ pub fn SortOptions() type {
     return struct {
         input:     []const u8,
         algorithm: []const u8,
-        output:    []const u8
+        output:    []const u8,
+        column:    usize
     };
 }

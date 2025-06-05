@@ -117,21 +117,24 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     ;
 
     const content_matsort =
-        \\  -m <count> Matrix to sort.
-        \\  -h         Display this help message and exit.
+        \\  -c <column> Reference column.
+        \\  -m <matrix> Matrix to sort.
+        \\  -o <output> Output matrix.
+        \\  -h          Display this help message and exit.
         \\EOF
         \\
-        \\}}
+        \\}}; COLUMN=0
         \\
-        \\while getopts "m:h" OPT; do case "$OPT" in
-        \\  m ) MATRIX="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\while getopts "c:m:o:h" OPT; do case "$OPT" in
+        \\  c ) COLUMN="$OPTARG" ;; m ) MATRIX="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
         \\esac done
         \\
         \\echo '{{
         \\  "sort" : {{
         \\    "input" : "'"$MATRIX"'",
         \\    "algorithm" : "bubble",
-        \\    "output" : "'"$MATRIX"'"
+        \\    "output" : "'"$OUTPUT"'",
+        \\    "column" : '$COLUMN'
         \\  }}
         \\}}' > .input.json
     ;
@@ -193,7 +196,7 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     ;
 
     try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nacorn .input.json && clean", .{}); file_fibonacci.close();
-    try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nacorn .input.json && clean", .{});  file_matsort .close();
+    try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nacorn .input.json", .{});  file_matsort .close();
     try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nacorn .input.json && clean", .{});  file_mersenne.close();
     try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nacorn .input.json && clean", .{});     file_prime.close();
 }
