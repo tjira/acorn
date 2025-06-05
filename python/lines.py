@@ -92,7 +92,7 @@ for i, (data_i, j) in enumerate(dcit(data, data_cols)):
     legend =   str(args.legends[indc(line_legends, i)[0] + 1 if args.legends[0] != "all" else 1]) if indc(line_legends, i) else ""
     marker =   str(args.markers[indc(line_markers, i)[0] + 1 if args.markers[0] != "all" else 1]) if indc(line_markers, i) else ""
     style  =   str(args.styles [indc(line_styles,  i)[0] + 1 if args.styles [0] != "all" else 1]) if indc(line_styles,  i) else "-"
-    width  = float(args.widths [indc(line_widths,  i)[0] + 1 if args.widths [0] != "all" else 1]) if indc(line_widths,  i) else 1.8
+    width  = float(args.widths [indc(line_widths,  i)[0] + 1 if args.widths [0] != "all" else 1]) if indc(line_widths,  i) else 2.2
 
     # plot the data and append the plot to the list
     plots.append(axes[args.subplots[len(plots) % len(args.subplots)]].plot(data_i[:, 0], data_i[:, j + 1], alpha=alpha, color=color, label=legend, linestyle=style, linewidth=width, marker=marker))
@@ -133,11 +133,11 @@ for i, ax in enumerate(axes.values()):
     if any([line.get_label()[0] != "_" for line in ax.lines]): ax.legend(frameon=False)
 
     # set the title
-    if args.title and len(args.title) > i: ax.set_title(args.title[i], fontsize=args.fontsize_title[i] if args.fontsize_title and len(args.fontsize_title) > i else 20)
+    if args.title and len(args.title) > i: ax.set_title(args.title[i], fontsize=args.fontsize_title[i] if args.fontsize_title and len(args.fontsize_title) > i else 16)
 
     # set the axis labels
-    if args.xlabel and len(args.xlabel) > i: ax.set_xlabel(args.xlabel[i], fontsize=args.fontsize_label[i] if args.fontsize_label and len(args.fontsize_label) > i else 14)
-    if args.ylabel and len(args.ylabel) > i: ax.set_ylabel(args.ylabel[i], fontsize=args.fontsize_label[i] if args.fontsize_label and len(args.fontsize_label) > i else 14)
+    if args.xlabel and len(args.xlabel) > i: ax.set_xlabel(args.xlabel[i], fontsize=args.fontsize_label[i] if args.fontsize_label and len(args.fontsize_label) > i else 12)
+    if args.ylabel and len(args.ylabel) > i: ax.set_ylabel(args.ylabel[i], fontsize=args.fontsize_label[i] if args.fontsize_label and len(args.fontsize_label) > i else 12)
 
     # set the axis limits
     if args.xlim and len(args.xlim) > 2 * i and not np.isnan(args.xlim[2 * i]): ax.set_xlim(args.xlim[2 * i + 0:2 * i + 2])

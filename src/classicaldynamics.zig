@@ -27,14 +27,14 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
     const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 
-    if (pot == null                                       ) return error.UnknownPotential   ;
-    if (opt.initial_conditions.state.len         != nstate) return error.InvalidInitialState;
-    if (opt.initial_conditions.position_mean.len != ndim  ) return error.InvalidMeanPosition;
-    if (opt.initial_conditions.position_std.len  != ndim  ) return error.InvalidStdPosition ;
-    if (opt.initial_conditions.momentum_mean.len != ndim  ) return error.InvalidMeanMomentum;
-    if (opt.initial_conditions.momentum_std.len  != ndim  ) return error.InvalidStdMomentum ;
-    if (opt.initial_conditions.mass.len          != ndim  ) return error.InvalidMass        ;
-    if (mth.sum(T, opt.initial_conditions.state) != 1     ) return error.InvalidStateSum    ;
+    if (pot == null                                        ) return error.UnknownPotential   ;
+    if (opt.initial_conditions.state.len         != nstate ) return error.InvalidInitialState;
+    if (opt.initial_conditions.position_mean.len != ndim   ) return error.InvalidMeanPosition;
+    if (opt.initial_conditions.position_std.len  != ndim   ) return error.InvalidStdPosition ;
+    if (opt.initial_conditions.momentum_mean.len != ndim   ) return error.InvalidMeanMomentum;
+    if (opt.initial_conditions.momentum_std.len  != ndim   ) return error.InvalidStdMomentum ;
+    if (opt.initial_conditions.mass.len          != ndim   ) return error.InvalidMass        ;
+    if (mth.sum(T, opt.initial_conditions.state) != 1      ) return error.InvalidStateSum    ;
     if (opt.write.bloch_vector != null and nstate != 2     ) return error.SpinNotCalculable ;
     if (opt.write.bloch_vector_mean != null and nstate != 2) return error.SpinNotCalculable ;
 
@@ -161,8 +161,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
             if (mash) {try initialBlochVector(T, &S, s, rand_bloc);                      }
 
-            const weight = if (mash) 2 * mth.h(S.at(2)) else 1; const Sz0 = S.at(2);
-
+            const Wcp: T = if (mash) 2 else 1; const Wpp: T = if (mash) 2 * @abs(S.at(2)) else 1;
             S.memcpy(S0); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
             for (0..opt.iterations + 1) |j| {
@@ -194,14 +193,14 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                     S.ptr(2).* = C.at(1).magnitude() * C.at(1).magnitude() - C.at(0).magnitude() * C.at(0).magnitude();
                 }
 
-                if (opt.write.coefficient_mean              != null) for (0..C.rows) |k| {coef_mean.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();}   ;
-                if (opt.write.kinetic_energy_mean           != null) ekin_mean.ptr(j, 1 + 0).* += Ekin                                                               ;
-                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum_mean.ptr(j, 1 + k).* += v.at(k) * opt.initial_conditions.mass[k];};
-                if (opt.write.population_mean               != null) pop_mean.ptr(j, 1 + s).* += 1                                                                   ;
-                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position_mean.ptr(j, 1 + k).* += r.at(k);}                                 ;
-                if (opt.write.potential_energy_mean         != null) epot_mean.ptr(j, 1 + 0).* += Epot                                                               ;
-                if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc_mean.ptr(j, 1 + k).* += TDC.data[k];}                     ;
-                if (opt.write.total_energy_mean             != null) etot_mean.ptr(j, 1 + 0).* += Ekin + Epot                                                        ;
+                if (opt.write.coefficient_mean              != null) for (0..C.rows) |k| {coef_mean.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();}         ;
+                if (opt.write.kinetic_energy_mean           != null) ekin_mean.ptr(j, 1 + 0).* += Wpp * Ekin                                                               ;
+                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum_mean.ptr(j, 1 + k).* += Wpp * v.at(k) * opt.initial_conditions.mass[k];};
+                if (opt.write.population_mean               != null) pop_mean.ptr(j, 1 + s).* += Wpp                                                                       ;
+                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position_mean.ptr(j, 1 + k).* += Wpp * r.at(k);}                                 ;
+                if (opt.write.potential_energy_mean         != null) epot_mean.ptr(j, 1 + 0).* += Wpp * Epot                                                               ;
+                if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc_mean.ptr(j, 1 + k).* += Wpp * TDC.data[k];}                     ;
+                if (opt.write.total_energy_mean             != null) etot_mean.ptr(j, 1 + 0).* += Wpp * (Ekin + Epot)                                                      ;
 
                 if (opt.write.coefficient              != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k + i * nstate).* = C.at(k).magnitude() * C.at(k).magnitude();} ;
                 if (opt.write.kinetic_energy           != null) ekin.ptr(j, 1 + i).* = Ekin                                                                          ;
@@ -213,21 +212,11 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (opt.write.time_derivative_coupling != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k + i * nstate * nstate).* = TDC.data[k];}          ;
 
                 if (opt.write.bloch_vector != null) {
-
-                    bloch.ptr(j, 1 + i * 3 + 0).* = weight * S.at(0);
-                    bloch.ptr(j, 1 + i * 3 + 1).* = weight * S.at(1);
-
-                    bloch.ptr(j, 1 + i * 3 + 2).* = if (!mash) weight * S.at(2) else weight * @abs(Sz0) * mth.sgn(S.at(2));
-
-                    bloch.ptr(j, 1 + i * 3 + 3).* = std.math.sqrt(S.at(0) * S.at(0) + S.at(1) * S.at(1));
+                    bloch.ptr(j, 1 + i * 4 + 0).* = S.at(0); bloch.ptr(j, 1 + i * 4 + 1).* = S.at(1); bloch.ptr(j, 1 + i * 4 + 2).* = S.at(2);
                 }
 
                 if (opt.write.bloch_vector_mean != null) {
-
-                    bloch_mean.ptr(j, 1 + 0).* += weight * S.at(0);
-                    bloch_mean.ptr(j, 1 + 1).* += weight * S.at(1);
-
-                    bloch_mean.ptr(j, 1 + 2).* += if (!mash) weight * S.at(2) else weight * @abs(Sz0) * mth.sgn(S.at(2));
+                    bloch_mean.ptr(j, 1 + 0).* += Wcp * S.at(0); bloch_mean.ptr(j, 1 + 1).* += Wcp * S.at(1); bloch_mean.ptr(j, 1 + 2).* += Wpp * (if (mash) mth.sgn(S.at(2)) else S.at(2));
                 }
 
                 if (j == opt.iterations) assignOutput(T, &output, r, v, s, Ekin, Epot, opt.initial_conditions.mass);
@@ -243,8 +232,12 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         }
     }
 
+    if (opt.write.bloch_vector != null) for (0..opt.trajectories) |i| for (0..opt.iterations + 1) |j| {
+        bloch.ptr(j, 1 + i * 4 + 3).* = std.math.sqrt(bloch.at(j, 1 + i * 4 + 0) * bloch.at(j, 1 + i * 4 + 0) + bloch.at(j, 1 + i * 4 + 1) * bloch.at(j, 1 + i * 4 + 1));
+    };
+
     if (opt.write.bloch_vector_mean != null) for (0..opt.iterations + 1) |j| {
-        bloch_mean.ptr(j, 1 + 3).* += std.math.sqrt(bloch_mean.at(j, 1 + 0) * bloch_mean.at(j, 1 + 0) + bloch_mean.at(j, 1 + 1) * bloch_mean.at(j, 1 + 1));
+        bloch_mean.ptr(j, 1 + 3).* = std.math.sqrt(bloch_mean.at(j, 1 + 0) * bloch_mean.at(j, 1 + 0) + bloch_mean.at(j, 1 + 1) * bloch_mean.at(j, 1 + 1));
     };
 
     for (0..opt.iterations + 1) |i| {for (1..coef_mean.cols    ) |j|     coef_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}

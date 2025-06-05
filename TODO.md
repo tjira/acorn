@@ -13,5 +13,6 @@
 - [x] Bohmian dynamics should have an option to output only the mean trajectories.
 - [x] Multidimensional Bohmian dynamics.
 - [x] Maybe do some better field interpolation than nearest neighbour for the Bohmian trajectories.
-- [ ] Resolve the correct weighing in MASH algorithm.
+- [x] Resolve the correct weighing in MASH algorithm.
+- [x] Should I weigh also the other observables like energy in MASH algorithm?
 - [ ] Check the suspicious sign in front of TDC during formation of MASH propagation matrix.

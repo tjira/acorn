@@ -20,7 +20,8 @@
             "momentum" : [0],
             "position" : [3],
             "state" : 1,
-            "adiabatic" : true
+            "adiabatic" : true,
+            "gamma" : 1
         },
         "log_intervals" : {
             "iteration" : 1

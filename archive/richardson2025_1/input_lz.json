@@ -16,9 +16,9 @@
         "initial_conditions" : {
             "mass" : [1],
             "momentum_mean" : [0],
-            "momentum_std" : [1],
+            "momentum_std" : [0.70710678118],
             "position_mean" : [3],
-            "position_std" : [0.5],
+            "position_std" : [1],
             "state" : [0, 1]
         },
         "log_intervals" : {
