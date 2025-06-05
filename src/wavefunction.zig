@@ -84,12 +84,19 @@ pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC
 }
 
 /// Calculate the density matrix of the wavefunction W and store the result in P.
-pub fn density(comptime T: type, P: *Matrix(T), W: Wavefunction(T)) void {
-    P.fill(0);
+pub fn density(comptime T: type, P: *Matrix(std.math.Complex(T)), W: Wavefunction(T)) void {
+    P.fill(std.math.Complex(T).init(0, 0));
 
     for (0..W.nstate) |i| for (0..W.nstate) |j| for (0..W.npoint) |k| {
-        P.ptr(i, j).* += W.at(k, i).mul(W.at(k, j).conjugate()).re * W.dr;
+        P.ptr(i, j).* = P.at(i, j).add(W.at(k, i).mul(W.at(k, j).conjugate()).mul(std.math.Complex(T).init(W.dr, 0)));
     };
+}
+
+/// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction W and stores the result in WA.
+pub fn diabatize(comptime T: type, WD: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T)))) void {
+    for (0..W.npoint) |i| {
+        var rowd = WD.row(i).vector().matrix(); bls.zgemm(&rowd, VC.items[i], false, W.row(i).vector().matrix(), false);
+    }
 }
 
 /// Calculate the kinetic energy of the wavefunction W. This function needs the grid in the k-space kvec.

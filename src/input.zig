@@ -17,7 +17,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             mass:          []const T
         };
         pub const FewestSwitches = struct {
-            quantum_substep: u32 = 100,
+            quantum_substep: u32 = 10,
             decoherence_alpha: ?T = null
         };
         pub const Hamiltonian = struct {
@@ -37,6 +37,8 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             trajectory: u32 = 1, iteration: u32 = 1
         };
         pub const Write = struct {
+            bloch_vector:                  ?[]const u8 = null,
+            bloch_vector_mean:             ?[]const u8 = null,
             coefficient:                   ?[]const u8 = null,
             coefficient_mean:              ?[]const u8 = null,
             kinetic_energy:                ?[]const u8 = null,
@@ -241,7 +243,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             dims: ?u32 = null, states: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null
         };
         pub const InitialConditions = struct {
-            position: []const T, momentum: []const T, gamma: T, state: u32, mass: T
+            position: []const T, momentum: []const T, gamma: T = 2, state: u32, mass: T, adiabatic: bool = false
         };
         pub const LogIntervals = struct {
             iteration: u32 = 1
@@ -253,7 +255,11 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
         };
         pub const Write = struct {
             autocorrelation_function:             ?[]const u8 = null,
-            transformed_autocorrelation_function: ?[]const u8 = null,
+            bloch_vector:                         ?[]const u8 = null,
+            bohm_momentum:                        ?[]const u8 = null,
+            bohm_momentum_mean:                   ?[]const u8 = null,
+            bohm_position:                        ?[]const u8 = null,
+            bohm_position_mean:                   ?[]const u8 = null,
             kinetic_energy:                       ?[]const u8 = null,
             momentum:                             ?[]const u8 = null,
             population:                           ?[]const u8 = null,
@@ -261,11 +267,8 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             potential_energy:                     ?[]const u8 = null,
             spectrum:                             ?[]const u8 = null,
             total_energy:                         ?[]const u8 = null,
+            transformed_autocorrelation_function: ?[]const u8 = null,
             wavefunction:                         ?[]const u8 = null,
-            bohm_position:                        ?[]const u8 = null,
-            bohm_position_mean:                   ?[]const u8 = null,
-            bohm_momentum:                        ?[]const u8 = null,
-            bohm_momentum_mean:                   ?[]const u8 = null,
         };
 
         adiabatic: bool,

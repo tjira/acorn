@@ -112,27 +112,27 @@ test "quantum_dynamics_real_nonadiabatic-1d/2s" {
     const output_tully1D_2 = try quantum_dynamics.run(f64, opt_tully1D_2, false, allocator); defer output_tully1D_2.deinit();
     const output_tully1D_3 = try quantum_dynamics.run(f64, opt_tully1D_3, false, allocator); defer output_tully1D_3.deinit();
 
-    try expect(output_tully1D_1.r[0].at(0)                        , 21.01938968491548);
-    try expect(output_tully1D_1.p[0].at(0)                        , 21.02856421418760);
+    try expect(output_tully1D_1.r[0].at(0)                        , 21.01938968491557);
+    try expect(output_tully1D_1.p[0].at(0)                        , 21.02856421418769);
     try expect(output_tully1D_1.Ekin[0] + output_tully1D_1.Epot[0],  0.11177076998784);
-    try expect(output_tully1D_1.P[0].at(0, 0)                     ,  0.54705439670020);
-    try expect(output_tully1D_1.P[0].at(0, 1)                     ,  0.09068606015860);
-    try expect(output_tully1D_1.P[0].at(1, 0)                     ,  0.09068606015860);
-    try expect(output_tully1D_1.P[0].at(1, 1)                     ,  0.45294560329986);
+    try expect(output_tully1D_1.P[0].at(0, 0).re                  ,  0.54705439670020);
+    try expect(output_tully1D_1.P[0].at(0, 1).re                  ,  0.09068606015860);
+    try expect(output_tully1D_1.P[0].at(1, 0).re                  ,  0.09068606015860);
+    try expect(output_tully1D_1.P[0].at(1, 1).re                  ,  0.45294560329986);
 
-    try expect(output_tully1D_2.r[0].at(0)                        , 21.58373845982894);
-    try expect(output_tully1D_2.p[0].at(0)                        , 20.83738069203515);
+    try expect(output_tully1D_2.r[0].at(0)                        , 21.58373845982900);
+    try expect(output_tully1D_2.p[0].at(0)                        , 20.83738069203519);
     try expect(output_tully1D_2.Ekin[0] + output_tully1D_2.Epot[0],  0.15176981510263);
-    try expect(output_tully1D_2.P[0].at(0, 0)                     ,  0.19319230897050);
-    try expect(output_tully1D_2.P[0].at(0, 1)                     , -0.00121002615618);
-    try expect(output_tully1D_2.P[0].at(1, 0)                     , -0.00121002615618);
-    try expect(output_tully1D_2.P[0].at(1, 1)                     ,  0.80680769102958);
+    try expect(output_tully1D_2.P[0].at(0, 0).re                  ,  0.19319230897050);
+    try expect(output_tully1D_2.P[0].at(0, 1).re                  , -0.00121002615618);
+    try expect(output_tully1D_2.P[0].at(1, 0).re                  , -0.00121002615618);
+    try expect(output_tully1D_2.P[0].at(1, 1).re                  ,  0.80680769102958);
 
-    try expect(output_tully1D_3.r[0].at(0)                        , -3.63335060067552);
-    try expect(output_tully1D_3.p[0].at(0)                        ,  9.79711483366318);
+    try expect(output_tully1D_3.r[0].at(0)                        , -3.63335060067555);
+    try expect(output_tully1D_3.p[0].at(0)                        ,  9.79711483366324);
     try expect(output_tully1D_3.Ekin[0] + output_tully1D_3.Epot[0],  0.39648649056319);
-    try expect(output_tully1D_3.P[0].at(0, 0)                     ,  0.65976772649603);
-    try expect(output_tully1D_3.P[0].at(0, 1)                     , -0.18336140276161);
-    try expect(output_tully1D_3.P[0].at(1, 0)                     , -0.18336140276161);
-    try expect(output_tully1D_3.P[0].at(1, 1)                     ,  0.34023227350403);
+    try expect(output_tully1D_3.P[0].at(0, 0).re                  ,  0.65976772649603);
+    try expect(output_tully1D_3.P[0].at(0, 1).re                  , -0.18336140276161);
+    try expect(output_tully1D_3.P[0].at(1, 0).re                  , -0.18336140276161);
+    try expect(output_tully1D_3.P[0].at(1, 1).re                  ,  0.34023227350403);
 }

@@ -26,3 +26,6 @@ education/**/*.mat*
 *zig*/
 
 run.sh*
+
+archive/**/*.mat*
+archive/**/*.png*

@@ -27,14 +27,16 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
     const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 
-    if (pot == null                                       ) return error.UnknownPotential   ;
-    if (opt.initial_conditions.state.len         != nstate) return error.InvalidInitialState;
-    if (opt.initial_conditions.position_mean.len != ndim  ) return error.InvalidMeanPosition;
-    if (opt.initial_conditions.position_std.len  != ndim  ) return error.InvalidStdPosition ;
-    if (opt.initial_conditions.momentum_mean.len != ndim  ) return error.InvalidMeanMomentum;
-    if (opt.initial_conditions.momentum_std.len  != ndim  ) return error.InvalidStdMomentum ;
-    if (opt.initial_conditions.mass.len          != ndim  ) return error.InvalidMass        ;
-    if (mth.sum(T, opt.initial_conditions.state) != 1     ) return error.InvalidStateSum    ;
+    if (pot == null                                        ) return error.UnknownPotential   ;
+    if (opt.initial_conditions.state.len         != nstate ) return error.InvalidInitialState;
+    if (opt.initial_conditions.position_mean.len != ndim   ) return error.InvalidMeanPosition;
+    if (opt.initial_conditions.position_std.len  != ndim   ) return error.InvalidStdPosition ;
+    if (opt.initial_conditions.momentum_mean.len != ndim   ) return error.InvalidMeanMomentum;
+    if (opt.initial_conditions.momentum_std.len  != ndim   ) return error.InvalidStdMomentum ;
+    if (opt.initial_conditions.mass.len          != ndim   ) return error.InvalidMass        ;
+    if (mth.sum(T, opt.initial_conditions.state) != 1      ) return error.InvalidStateSum    ;
+    if (opt.write.bloch_vector != null and nstate != 2     ) return error.SpinNotCalculable ;
+    if (opt.write.bloch_vector_mean != null and nstate != 2) return error.SpinNotCalculable ;
 
     var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator); output.pop.fill(0);
 
@@ -42,6 +44,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
     var prng_bloc = std.Random.DefaultPrng.init(opt.seed); const rand_bloc = prng_bloc.random();
 
+    var bloch_mean    = try Matrix(T).init(opt.iterations + 1, 1 + 4,               allocator); defer    bloch_mean.deinit(); bloch_mean   .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var coef_mean     = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer     coef_mean.deinit(); coef_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var ekin_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     ekin_mean.deinit(); ekin_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var epot_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     epot_mean.deinit(); epot_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
@@ -51,6 +54,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     var position_mean = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer position_mean.deinit(); position_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     var tdc_mean      = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer      tdc_mean.deinit(); tdc_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
+    var bloch:    Matrix(T) = undefined;
     var coef:     Matrix(T) = undefined;
     var ekin:     Matrix(T) = undefined;
     var epot:     Matrix(T) = undefined;
@@ -81,6 +85,9 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     if (opt.write.position != null) {
         position = try Matrix(T).init(opt.iterations + 1, 1 + ndim * opt.trajectories, allocator); position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     }
+    if (opt.write.bloch_vector != null) {
+        bloch = try Matrix(T).init(opt.iterations + 1, 1 + 4 * opt.trajectories, allocator); bloch.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    }
     if (opt.write.time_derivative_coupling != null) {
         tdc = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate * opt.trajectories, allocator); tdc.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
     }
@@ -92,6 +99,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     if ((fssh and lzsh and mash) or (fssh and lzsh) or (fssh and mash) or (lzsh and mash)) {
         return error.MultipleHoppingMechanisms;
     }
+
+    if (mash and nstate != 2) return error.IncompatibleSurfaceHoppingAlgorithm;
 
     const tdc_hst    = std.mem.eql(u8, opt.time_derivative_coupling.?, "hst"   );
     const tdc_kappa  = std.mem.eql(u8, opt.time_derivative_coupling.?, "kappa" );
@@ -122,19 +131,18 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var UCS = try Matrix(T).init(nstate, nstate, allocator); defer UCS.deinit(); UCS.fill(0);
         var TDC = try Matrix(T).init(nstate, nstate, allocator); defer TDC.deinit(); TDC.fill(0);
 
-        var P  = try Vector(T         ).init(nstate    ,    allocator); defer  P.deinit();
-        var C  = try Vector(Complex(T)).init(nstate    ,    allocator); defer  C.deinit();
-        var S  = try Matrix(T         ).init(nstate - 1, 3, allocator); defer  S.deinit();
-        var SI = try Matrix(usize     ).init(nstate - 1, 2, allocator); defer SI.deinit();
+        var P = try Vector(T         ).init(nstate, allocator); defer P.deinit();
+        var C = try Vector(Complex(T)).init(nstate, allocator); defer C.deinit();
+        var S = try Vector(T         ).init(3,      allocator); defer S.deinit();
 
         var KC1 = try Vector(Complex(T)).init(C.rows, allocator); defer KC1.deinit();
         var KC2 = try Vector(Complex(T)).init(C.rows, allocator); defer KC2.deinit();
         var KC3 = try Vector(Complex(T)).init(C.rows, allocator); defer KC3.deinit();
         var KC4 = try Vector(Complex(T)).init(C.rows, allocator); defer KC4.deinit();
 
-        var SP = try Matrix(T).init(3,          3, allocator); defer SP.deinit();
-        var SN = try Matrix(T).init(nstate - 1, 3, allocator); defer SN.deinit();
-        var S0 = try Matrix(T).init(nstate - 1, 3, allocator); defer S0.deinit();
+        var SP = try Matrix(T).init(3, 3, allocator); defer SP.deinit();
+        var SN = try Vector(T).init(3,    allocator); defer SN.deinit();
+        var S0 = try Vector(T).init(3,    allocator); defer S0.deinit();
 
         var U3  = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer  U3[0].deinit(); defer  U3[1].deinit(); defer U3[2].deinit();
         var UC2 = [2]Matrix(T){try U.clone(), try U.clone()               }; defer UC2[0].deinit(); defer UC2[1].deinit()                      ;
@@ -151,43 +159,48 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
             a.fill(0); p.memcpy(v); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j];
 
             if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
-            if (mash) {try initialBlochVector(T, &S, &SI, s, rand_bloc);                 }
+            if (mash) {try initialBlochVector(T, &S, s, rand_bloc);                      }
 
+            const Wcp: T = if (mash) 2 else 1; const Wpp: T = if (mash) 2 * @abs(S.at(2)) else 1;
             S.memcpy(S0); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
             for (0..opt.iterations + 1) |j| {
 
-                r.memcpy(rp); p.memcpy(pp); v.memcpy(vp); a.memcpy(ap); S3[j % 3] = s;
-
-                if (j > 0) try propagate(T, opt, pot.?, &r, &v, &a, &U, &UA, &UC, s);
-
-                pot.?.evaluate(&U, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
+                S3[j % 3] = s; pot.?.evaluate(&U, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
 
                 U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
-                if (opt.adiabatic and tdc_hst    and j > 0) derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
+                if (opt.adiabatic and tdc_hst    and j > 1) derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
                 if (opt.adiabatic and tdc_kappa  and j > 1) derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
                 if (opt.adiabatic and tdc_lambda and j > 1) derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
-                if (opt.adiabatic and tdc_npi    and j > 0) derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
+                if (opt.adiabatic and tdc_npi    and j > 1) derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
 
                 if (lzsh and j > 1) ns = try landauZener(T, &P, opt.landau_zener.?, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
-                if (mash and j > 1) ns = try spinMapping(T, &S, &SI, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
+                if (mash and j > 1) ns = try spinMapping(T, &S, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
                 if (s != ns and Ekin >= U.at(ns, ns) - U.at(s, s)) {
                     rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
                 }
 
-                if (mash and opt.spin_mapping.?.resample != null) try resampleBlochVector(T, opt.spin_mapping.?.resample.?, &S, &SI, v, vp, s, rand_bloc);
+                if (mash and opt.spin_mapping.?.resample != null) try resampleBlochVector(T, opt.spin_mapping.?.resample.?, &S, v, vp, s, rand_bloc);
 
-                if (opt.write.coefficient_mean              != null) for (0..C.rows) |k| {coef_mean.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();}   ;
-                if (opt.write.kinetic_energy_mean           != null) ekin_mean.ptr(j, 1 + 0).* += Ekin                                                               ;
-                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum_mean.ptr(j, 1 + k).* += v.at(k) * opt.initial_conditions.mass[k];};
-                if (opt.write.population_mean               != null)  pop_mean.ptr(j, 1 + s).* += 1                                                                  ;
-                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position_mean.ptr(j, 1 + k).* += r.at(k);}                                 ;
-                if (opt.write.potential_energy_mean         != null) epot_mean.ptr(j, 1 + 0).* += Epot                                                               ;
-                if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc_mean.ptr(j, 1 + k).* += TDC.data[k];}                     ;
-                if (opt.write.total_energy_mean             != null) etot_mean.ptr(j, 1 + 0).* += Ekin + Epot                                                        ;
+                if (fssh) {
+
+                    S.ptr(0).* = 2 * (C.at(0).mul(C.at(1).conjugate())).re;
+                    S.ptr(1).* = 2 * (C.at(0).mul(C.at(1).conjugate())).im;
+
+                    S.ptr(2).* = C.at(1).magnitude() * C.at(1).magnitude() - C.at(0).magnitude() * C.at(0).magnitude();
+                }
+
+                if (opt.write.coefficient_mean              != null) for (0..C.rows) |k| {coef_mean.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();}         ;
+                if (opt.write.kinetic_energy_mean           != null) ekin_mean.ptr(j, 1 + 0).* += Wpp * Ekin                                                               ;
+                if (opt.write.momentum_mean                 != null) for (0..v.rows) |k| {momentum_mean.ptr(j, 1 + k).* += Wpp * v.at(k) * opt.initial_conditions.mass[k];};
+                if (opt.write.population_mean               != null) pop_mean.ptr(j, 1 + s).* += Wpp                                                                       ;
+                if (opt.write.position_mean                 != null) for (0..r.rows) |k| {position_mean.ptr(j, 1 + k).* += Wpp * r.at(k);}                                 ;
+                if (opt.write.potential_energy_mean         != null) epot_mean.ptr(j, 1 + 0).* += Wpp * Epot                                                               ;
+                if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc_mean.ptr(j, 1 + k).* += Wpp * TDC.data[k];}                     ;
+                if (opt.write.total_energy_mean             != null) etot_mean.ptr(j, 1 + 0).* += Wpp * (Ekin + Epot)                                                      ;
 
                 if (opt.write.coefficient              != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k + i * nstate).* = C.at(k).magnitude() * C.at(k).magnitude();} ;
                 if (opt.write.kinetic_energy           != null) ekin.ptr(j, 1 + i).* = Ekin                                                                          ;
@@ -198,23 +211,44 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (opt.write.total_energy             != null) etot.ptr(j, 1 + i).* = Ekin + Epot                                                                   ;
                 if (opt.write.time_derivative_coupling != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k + i * nstate * nstate).* = TDC.data[k];}          ;
 
+                if (opt.write.bloch_vector != null) {
+                    bloch.ptr(j, 1 + i * 4 + 0).* = S.at(0); bloch.ptr(j, 1 + i * 4 + 1).* = S.at(1); bloch.ptr(j, 1 + i * 4 + 2).* = S.at(2);
+                }
+
+                if (opt.write.bloch_vector_mean != null) {
+                    bloch_mean.ptr(j, 1 + 0).* += Wcp * S.at(0); bloch_mean.ptr(j, 1 + 1).* += Wcp * S.at(1); bloch_mean.ptr(j, 1 + 2).* += Wpp * (if (mash) mth.sgn(S.at(2)) else S.at(2));
+                }
+
                 if (j == opt.iterations) assignOutput(T, &output, r, v, s, Ekin, Epot, opt.initial_conditions.mass);
 
                 if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j % opt.log_intervals.iteration == 0 or S3[j % 3] != S3[(j - 1) % 3])) {
                     try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, C, S, opt.initial_conditions.mass, fssh, mash);
                 }
+
+                r.memcpy(rp); p.memcpy(pp); v.memcpy(vp); a.memcpy(ap);
+
+                try propagate(T, opt, pot.?, &r, &v, &a, &U, &UA, &UC, s);
             }
         }
     }
 
-    for (0..opt.iterations + 1) |i| {for (1..pop_mean.cols     ) |j|      pop_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    if (opt.write.bloch_vector != null) for (0..opt.trajectories) |i| for (0..opt.iterations + 1) |j| {
+        bloch.ptr(j, 1 + i * 4 + 3).* = std.math.sqrt(bloch.at(j, 1 + i * 4 + 0) * bloch.at(j, 1 + i * 4 + 0) + bloch.at(j, 1 + i * 4 + 1) * bloch.at(j, 1 + i * 4 + 1));
+    };
+
+    if (opt.write.bloch_vector_mean != null) for (0..opt.iterations + 1) |j| {
+        bloch_mean.ptr(j, 1 + 3).* = std.math.sqrt(bloch_mean.at(j, 1 + 0) * bloch_mean.at(j, 1 + 0) + bloch_mean.at(j, 1 + 1) * bloch_mean.at(j, 1 + 1));
+    };
+
+    for (0..opt.iterations + 1) |i| {for (1..coef_mean.cols    ) |j|     coef_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..ekin_mean.cols    ) |j|     ekin_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..epot_mean.cols    ) |j|     epot_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..etot_mean.cols    ) |j|     etot_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..position_mean.cols) |j| position_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..momentum_mean.cols) |j| momentum_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..pop_mean.cols     ) |j|      pop_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..position_mean.cols) |j| position_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
+    for (0..opt.iterations + 1) |i| {for (1..bloch_mean.cols   ) |j|    bloch_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
     for (0..opt.iterations + 1) |i| {for (1..tdc_mean.cols     ) |j|      tdc_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
-    for (0..opt.iterations + 1) |i| {for (1..coef_mean.cols    ) |j|     coef_mean.ptr(i, j).* /= asfloat(T, opt.trajectories);}
 
     for (0..output.pop.rows) |i| output.pop.ptr(i).* /= asfloat(T, opt.trajectories);
     for (0..output.r.rows  ) |i|   output.r.ptr(i).* /= asfloat(T, opt.trajectories);
@@ -227,6 +261,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         if (print) try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.pop.at(i)});
     }
 
+    if (opt.write.bloch_vector                 ) |path| try         bloch.write(path);
+    if (opt.write.bloch_vector_mean            ) |path| try    bloch_mean.write(path);
     if (opt.write.coefficient                  ) |path| try          coef.write(path);
     if (opt.write.coefficient_mean             ) |path| try     coef_mean.write(path);
     if (opt.write.kinetic_energy               ) |path| try          ekin.write(path);
@@ -447,37 +483,30 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), o
 }
 
 /// Function to initialize the initial vector on the Bloch sphere for the spin mapping methods.
-pub fn initialBlochVector(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), s: u32, rand: std.Random) !void {
-    for (0..SI.rows) |i| {
-        SI.ptr(i, 0).* = s; SI.ptr(i, 1).* = if (i >= s) i + 1 else i;
-    }
+pub fn initialBlochVector(comptime T: type, S: *Vector(T), s: u32, rand: std.Random) !void {
+    const phi = 2 * std.math.pi * rand.float(T);
 
-    for (0..S.rows) |i| {
+    const cos_theta = if (s == 1) rand.float(T) else rand.float(T) - 1;
+    const sin_theta = std.math.sqrt(1 - cos_theta * cos_theta);
 
-        const phi = 2 * std.math.pi * rand.float(T);
-
-        const cos_theta = std.math.sqrt(rand.float(T));
-        const sin_theta = std.math.sqrt(1 - cos_theta * cos_theta);
-
-        S.ptr(i, 0).* = sin_theta * std.math.cos(phi);
-        S.ptr(i, 1).* = sin_theta * std.math.sin(phi);
-        S.ptr(i, 2).* = cos_theta;
-    }
+    S.ptr(0).* = sin_theta * std.math.cos(phi);
+    S.ptr(1).* = sin_theta * std.math.sin(phi);
+    S.ptr(2).* = cos_theta;
 }
 
 /// Function to resample the Bloch sphere at apecified time points.
-pub fn resampleBlochVector(comptime T: type, opt: inp.ClassicalDynamicsOptions(T).SpinMapping.Resample, S: *Matrix(T), SI: *Matrix(usize), v: Vector(T), vp: Vector(T), s: u32, rand: std.Random) !void {
-    for (0..S.rows) |k| if (@abs(S.at(k, 0)) < opt.threshold and @abs(S.at(k, 1)) < opt.threshold) {
-        try initialBlochVector(T, S, SI, s, rand); break;
-    };
+pub fn resampleBlochVector(comptime T: type, opt: inp.ClassicalDynamicsOptions(T).SpinMapping.Resample, S: *Vector(T), v: Vector(T), vp: Vector(T), s: u32, rand: std.Random) !void {
+    if (@abs(S.at(0)) < opt.threshold and @abs(S.at(1)) < opt.threshold) {
+        try initialBlochVector(T, S, s, rand);
+    }
 
     for (0..v.rows) |k| if (opt.reflect and vp.at(k) * v.at(k) < 0) {
-        try initialBlochVector(T, S, SI, s, rand); break;
+        try initialBlochVector(T, S, s, rand); break;
     };
 }
 
 /// Function to propagate the vector on the Bloch sphere for the spin mapping methods. The function returns the new state, if a switch occurs.
-pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, SP: *Matrix(T), SN: *Matrix(T)) !u32 {
+pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, SP: *Matrix(T), SN: *Vector(T)) !u32 {
     var sn = s;
 
     const OmegaExp = struct { fn get (E: *Matrix(T), VV: T, TT: T) void {
@@ -496,29 +525,14 @@ pub fn spinMapping(comptime T: type, S: *Matrix(T), SI: *Matrix(usize), U: Matri
         E.ptr(2, 2).* = (VV * VV + 4 * TT * TT * coshb.re) / a;
     }};
 
-    for (0..S.rows) |i| {
+    // TODO: Check the correctnes of the sign in front of TDC.
+    OmegaExp.get(SP, (U.at(1, 1) - U.at(0, 0)) * time_step, -TDC.at(0, 1) * time_step);
 
-        const nu = mth.max(SI.at(i, 0), SI.at(i, 1)); const nd = mth.min(SI.at(i, 0), SI.at(i, 1));
-        
-        OmegaExp.get(SP, (U.at(nu, nu) - U.at(nd, nd)) * time_step, TDC.at(nd, nu) * time_step);
+    const SM = S.matrix(); var SNM = SN.matrix(); bls.dgemm(&SNM, SP.*, false, SM, false);
 
-        var SM = S.row(i); var SNM = SN.row(i); std.mem.swap(usize, &SM.rows, &SM.cols); std.mem.swap(usize, &SNM.rows, &SNM.cols);
+    if (S.at(2) * SN.at(2) < 0) sn = if (SN.at(2) < 0) 0 else 1;
 
-        bls.dgemm(&SNM, SP.*, false, SM, false);
-    }
-
-    for (0..S.rows) |i| if (S.at(i, 2) * SN.at(i, 2) < 0) {
-        sn = if (SI.at(i, 0) == s) @intCast(SI.at(i, 1)) else @intCast(SI.at(i, 0));
-    };
-
-    if (s != sn and Ekin >= U.at(sn, sn) - U.at(s, s)) for (0..SI.rows) |i| {
-        if (SI.at(i, 0) == s and SI.at(i, 1) != sn) SI.ptr(i, 0).* = sn;
-        if (SI.at(i, 1) == s and SI.at(i, 0) != sn) SI.ptr(i, 1).* = sn;
-    };
-
-    if (s != sn and Ekin < U.at(sn, sn) - U.at(s, s)) {
-        sn = s;
-    }
+    if (s != sn and Ekin < U.at(sn, sn) - U.at(s, s)) sn = s;
 
     SN.memcpy(S.*); return sn;
 }
@@ -584,7 +598,7 @@ pub fn landauZener(comptime T: type, P: *Vector(T), opt: inp.ClassicalDynamicsOp
 }
 
 /// Function to print the results of a single iteration.
-pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Matrix(T), mass: []const T, fssh: bool, mash: bool) !void {
+pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Vector(T), mass: []const T, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, s});
 
     for (0..mth.min(r.rows, 3)) |k| {
@@ -607,8 +621,8 @@ pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: 
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", C.at(k).magnitude() * C.at(k).magnitude()});
     };
 
-    if (mash) for (0..S.cols) |k| {
-        try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", S.at(0, k)});
+    if (mash) for (0..S.rows) |k| {
+        try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", S.at(k)});
     };
 
     try std.io.getStdOut().writer().print("]\n", .{});

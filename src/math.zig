@@ -45,6 +45,11 @@ pub fn combinations(comptime T: type, array: []const T, n: usize, allocator: std
     try Backtrack.get(&result, array, n, &current, 0, allocator); return result;
 }
 
+/// Return the Heaviside function
+pub fn h(x: anytype) @TypeOf(x) {
+    return if (x >= 0) 1.0 else 0;
+}
+
 /// Return the maximum of two numbers
 pub fn max(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a > b) a else b;
