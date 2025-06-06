@@ -197,8 +197,8 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\}}' > .input.json
     ;
 
-    try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nacorn .input.json && clean", .{}); file_fibonacci.close();
-    try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nacorn .input.json && clean", .{});  file_matsort .close();
-    try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nacorn .input.json && clean", .{});  file_mersenne.close();
-    try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nacorn .input.json && clean", .{});     file_prime.close();
+    try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{}); file_fibonacci.close();
+    try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_matsort .close();
+    try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_mersenne.close();
+    try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});     file_prime.close();
 }
