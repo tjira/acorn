@@ -80,7 +80,7 @@ for (f, s) in ((frame, args.animate if args.animate else 0) for frame in range((
     for i, (data_i, j) in enumerate(dcit(data, data_cols)): data_i[:, j + f * s + 1] += float(args.offsets[indc(lind_offsets, i)[0] + 1 if args.offsets[0] != "all" else 1]) if indc(lind_offsets, i) else 0
 
 # create the figure and the container for plots and error bars
-fig = plt.figure(dpi=args.dpi, figsize=(args.figsize[1], args.figsize[0])); axes, plots, ebars = {}, [], []
+fig = plt.figure(dpi=args.dpi if args.output else 96, figsize=(args.figsize[1], args.figsize[0])); axes, plots, ebars = {}, [], []
 
 # fill the axes dictionary
 for subplot in args.subplots: axes[subplot] = (fig.add_subplot(int(subplot)) if len(subplot) == 3 else fig.add_subplot(*[int(num) for num in subplot.split("-")])) if subplot not in axes else axes[subplot]
