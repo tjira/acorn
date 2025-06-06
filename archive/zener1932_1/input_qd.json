@@ -1,0 +1,34 @@
+{
+    "quantum_dynamics" : {
+        "adiabatic" : true,
+        "iterations" : 400,
+        "mode" : [0, 1],
+        "time_step" : 0.01,
+        "grid" : {
+            "limits" : [-32, 32],
+            "points" : 8192
+        },
+        "hamiltonian" : {
+            "dims" : 1,
+            "matrix" : [
+                ["3*r1", "2"    ],
+                ["2",    "-3*r1"]
+            ]
+        },
+        "initial_conditions" : {
+            "mass" : 1,
+            "momentum" : [0],
+            "position" : [-5],
+            "state" : 1,
+            "gamma" : 2,
+            "adiabatic" : true
+        },
+        "log_intervals" : {
+            "iteration" : 1
+        },
+        "write" : {
+            "bloch_vector" : "BLOCH_VECTOR_EXACT.mat",
+            "population" : "POPULATION_EXACT.mat"
+        }
+    }
+}

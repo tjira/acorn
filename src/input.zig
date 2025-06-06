@@ -57,7 +57,6 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             total_energy_mean:             ?[]const u8 = null
         };
 
-        adiabatic: bool,
         derivative_step: T = 0.001,
         iterations: u32,
         seed: u32 = 1,

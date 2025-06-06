@@ -21,7 +21,6 @@ test "classical_dynamics_adiabatic" {
             .state = &[_]f64{1}, .mass = &[_]f64{1}
         },
 
-        .adiabatic = true,
         .iterations = 1000,
         .time_step = 0.01,
         .trajectories = 1000,
@@ -49,7 +48,6 @@ test "classical_dynamics_nonadiabatic_fssh" {
 
         .fewest_switches = .{},
 
-        .adiabatic = true,
         .iterations = 3500,
         .time_step = 1,
         .trajectories = 100,
@@ -96,7 +94,6 @@ test "classical_dynamics_nonadiabatic_lzsh" {
 
         .landau_zener = .{},
 
-        .adiabatic = true,
         .iterations = 3500,
         .time_step = 1,
         .trajectories = 100,
@@ -143,7 +140,6 @@ test "classical_dynamics_nonadiabatic_mash" {
 
         .spin_mapping = .{},
 
-        .adiabatic = true,
         .iterations = 3500,
         .time_step = 1,
         .trajectories = 100,

@@ -135,10 +135,11 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var C = try Vector(Complex(T)).init(nstate, allocator); defer C.deinit();
         var S = try Vector(T         ).init(3,      allocator); defer S.deinit();
 
-        var KC1 = try Vector(Complex(T)).init(C.rows, allocator); defer KC1.deinit();
-        var KC2 = try Vector(Complex(T)).init(C.rows, allocator); defer KC2.deinit();
-        var KC3 = try Vector(Complex(T)).init(C.rows, allocator); defer KC3.deinit();
-        var KC4 = try Vector(Complex(T)).init(C.rows, allocator); defer KC4.deinit();
+        var I   = try Matrix(Complex(T)).init(nstate, nstate, allocator); defer   I.deinit();
+        var KC1 = try Vector(Complex(T)).init(C.rows,         allocator); defer KC1.deinit();
+        var KC2 = try Vector(Complex(T)).init(C.rows,         allocator); defer KC2.deinit();
+        var KC3 = try Vector(Complex(T)).init(C.rows,         allocator); defer KC3.deinit();
+        var KC4 = try Vector(Complex(T)).init(C.rows,         allocator); defer KC4.deinit();
 
         var SP = try Matrix(T).init(3, 3, allocator); defer SP.deinit();
         var SN = try Vector(T).init(3,    allocator); defer SN.deinit();
@@ -158,24 +159,24 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
             a.fill(0); p.memcpy(v); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j];
 
-            if (fssh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
-            if (mash) {try initialBlochVector(T, &S, s, rand_bloc);                      }
+            if (fssh or lzsh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
+            if (mash        ) {try initialBlochVector(T, &S, s, rand_bloc);                      }
 
             const Wcp: T = if (mash) 2 else 1; const Wpp: T = if (mash) 2 * @abs(S.at(2)) else 1;
             S.memcpy(S0); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
             for (0..opt.iterations + 1) |j| {
 
-                S3[j % 3] = s; pot.?.evaluate(&U, r); if (opt.adiabatic) adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
+                S3[j % 3] = s; pot.?.evaluate(&U, r); adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
 
                 U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
-                if (opt.adiabatic and tdc_hst    and j > 1) derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
-                if (opt.adiabatic and tdc_kappa  and j > 1) derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
-                if (opt.adiabatic and tdc_lambda and j > 1) derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
-                if (opt.adiabatic and tdc_npi    and j > 1) derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
+                if (tdc_hst    and j > 1) derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
+                if (tdc_kappa  and j > 1) derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
+                if (tdc_lambda and j > 1) derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
+                if (tdc_npi    and j > 1) derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
 
-                if (lzsh and j > 1) ns = try landauZener(T, &P, opt.landau_zener.?, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, opt.adiabatic, rand_jump);
+                if (lzsh and j > 1) ns = try landauZener(T, &C, &P, opt.landau_zener.?, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, rand_jump, &I, &KC1);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
                 if (mash and j > 1) ns = try spinMapping(T, &S, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
@@ -185,7 +186,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 if (mash and opt.spin_mapping.?.resample != null) try resampleBlochVector(T, opt.spin_mapping.?.resample.?, &S, v, vp, s, rand_bloc);
 
-                if (fssh) {
+                if (fssh or lzsh) {
 
                     S.ptr(0).* = 2 * (C.at(0).mul(C.at(1).conjugate())).re;
                     S.ptr(1).* = 2 * (C.at(0).mul(C.at(1).conjugate())).im;
@@ -328,11 +329,11 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
     r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*);
 
-    if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); UA.memcpy(U.*);} const Up = U.at(s, s);
+    lpk.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
 
     r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*);
 
-    if (opt.adiabatic) {lpk.dsyevd(UA, UC, U.*); UA.memcpy(U.*);} const Um = U.at(s, s);
+    lpk.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
 
     r.ptr(c).* += opt.derivative_step;
 
@@ -538,21 +539,10 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
 }
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.
-pub fn landauZener(comptime T: type, P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), s: u32, time_step: T, adiabatic: bool, rand: std.Random) !u32 {
+pub fn landauZener(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), s: u32, time_step: T, rand: std.Random, I: *Matrix(Complex(T)), T1: *Vector(Complex(T))) !u32 {
     var ns = s; var rn: T = 0; var maxddZ0: T = 0; P.fill(0);
 
-    if (!adiabatic) for (0..U3[0].rows) |i| if (i != s) {
-
-        if ((U3[0].at(i, i) - U3[0].at(s, s)) * (U3[1].at(i, i) - U3[1].at(s, s)) > 0) continue;
-
-        const di = (U3[0].at(i, i) - U3[1].at(i, i)) / time_step; const ds = (U3[0].at(s, s) - U3[1].at(s, s)) / time_step;
-
-        P.ptr(i).* = 1 - std.math.exp(-2 * std.math.pi * std.math.pow(T, U3[0].at(i, s), 2) / @abs(di - ds));
-
-        if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
-    };
-
-    if (adiabatic) for (0..U3[0].rows) |i| if (i != s) {
+    for (0..U3[0].rows) |i| if (i != s) {
 
         const Z0 = @abs(U3[0].at(i, i) - U3[0].at(s, s)); const Z1 = @abs(U3[1].at(i, i) - U3[1].at(s, s)); const Z2 = @abs(U3[2].at(i, i) - U3[2].at(s, s));
 
@@ -591,7 +581,23 @@ pub fn landauZener(comptime T: type, P: *Vector(T), opt: inp.ClassicalDynamicsOp
     if (mth.sum(T, P.data) > 0) rn = rand.float(T);
 
     if (mth.sum(T, P.data) > 0 and s == ns) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
-        ns = @intCast(i);
+
+        if (C.rows == 2) {
+
+            I.ptr(0, 0).* = std.math.Complex(T).init(std.math.sqrt(1 - P.at(i)), 0);
+            I.ptr(0, 1).* = std.math.Complex(T).init(std.math.sqrt(    P.at(i)), 0);
+            I.ptr(1, 0).* = I.at(0, 1).neg(); I.ptr(1, 1).* = I.at(0, 0);
+
+            const exp1 = std.math.complex.exp(Complex(T).init(0,  std.math.pi / 4.0));
+            const exp2 = std.math.complex.exp(Complex(T).init(0, -std.math.pi / 4.0));
+
+            I.ptr(0, 1).* = I.at(0, 1).mul(exp1);
+            I.ptr(1, 0).* = I.at(1, 0).mul(exp2);
+
+            var T1M = T1.matrix(); bls.zgemm(&T1M, I.*, true, C.matrix(), false); T1.memcpy(C.*);
+        }
+
+        else {std.mem.swap(Complex(T), C.ptr(i), C.ptr(ns));} ns = @intCast(i); break;
     };
 
     return ns;

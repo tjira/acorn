@@ -317,7 +317,6 @@ This example demonstrates how to run a surface hopping dynamics. The below examp
 ```json
 {
     "classical_dynamics" : {
-        "adiabatic" : true,
         "iterations" : 5000,
         "time_step" : 1,
         "trajectories" : 1000,

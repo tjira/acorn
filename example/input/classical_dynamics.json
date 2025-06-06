@@ -1,6 +1,5 @@
 {
     "classical_dynamics" : {
-        "adiabatic" : true,
         "derivative_step" : 0.001,
         "iterations" : 3500,
         "seed" : 1,
@@ -42,7 +41,6 @@
         "fewest_switches" : {
             "quantum_substep" : 10,
             "decoherence_alpha" : null
-        },
-        "time_derivative_coupling" : "hst"
+        }
     }
 }
