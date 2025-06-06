@@ -72,6 +72,13 @@ pub fn parse(filebuf: []const u8) !void {
         _ = try hartree_fock.run(f64, obj.value, true, allocator);
     }
 
+    if (inputjs.value.object.contains("matrix")) {
+
+        const obj = try std.json.parseFromValue(input.MatrixOptions(f64), allocator, inputjs.value.object.get("matrix").?, .{}); defer obj.deinit();
+
+        _ = try matrix.run(f64, obj.value, true, allocator);
+    }
+
     if (inputjs.value.object.contains("model_potential")) {
 
         const obj = try std.json.parseFromValue(input.ModelPotentialOptions(f64), allocator, inputjs.value.object.get("model_potential").?, .{}); defer obj.deinit();
@@ -102,7 +109,7 @@ pub fn parse(filebuf: []const u8) !void {
 
     if (inputjs.value.object.contains("sort")) {
 
-        const obj = try std.json.parseFromValue(input.SortOptions(), allocator, inputjs.value.object.get("sort").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.SortOptions(f64), allocator, inputjs.value.object.get("sort").?, .{}); defer obj.deinit();
 
         _ = try sort.run(f64, obj.value, true, allocator);
     }

@@ -165,6 +165,21 @@ pub fn HartreeFockOptions(comptime T: type) type {
     };
 }
 
+/// Option struct for the matrix manipulation target.
+pub fn MatrixOptions(comptime T: type) type {
+    return struct {
+        pub const Random = struct {
+            dims: [2]usize,
+            outputs: []const []const u8,
+            distribution: []const u8 = "normal",
+            parameters: [2]T = .{0, 1},
+            seed: usize = 1
+        };
+
+        random: ?Random = null
+    };
+}
+
 /// Option struct for the model potential run target
 pub fn ModelPotentialOptions(comptime T: type) type {
     return struct {
@@ -280,7 +295,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
 }
 
 /// The sort options
-pub fn SortOptions() type {
+pub fn SortOptions(comptime _: type) type {
     return struct {
         algorithm: []const u8 = "bubble", column: usize = 0, input: []const u8, output: ?[]const u8 = null, print: bool = true
     };

@@ -9,8 +9,12 @@ const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
 
 /// The main function for sorting files
-pub fn run(comptime T: type, opt: inp.SortOptions(), print: bool, allocator: std.mem.Allocator) !void {
-    var A = try mat.read(T, opt.input, allocator); var timer = try std.time.Timer.start();
+pub fn run(comptime T: type, opt: inp.SortOptions(T), print: bool, allocator: std.mem.Allocator) !void {
+    var timer = try std.time.Timer.start(); var A = try mat.read(T, opt.input, allocator);
+
+    if (print) try std.io.getStdOut().writer().print("\nREADING THE ARRAY OF {d} NUMBERS TOOK {}", .{A.data.len, std.fmt.fmtDuration(timer.read())});
+
+    timer = try std.time.Timer.start();
 
     if (std.mem.eql(u8, opt.algorithm, "bubble")) {bubbleMatrix(T, &A, opt.column);}
 
@@ -18,9 +22,13 @@ pub fn run(comptime T: type, opt: inp.SortOptions(), print: bool, allocator: std
 
     if (print and opt.print) {try std.io.getStdOut().writer().print("\nSORTED MATRIX\n", .{}); try A.print(std.io.getStdOut().writer());}
 
-    if (print) try std.io.getStdOut().writer().print("\nSORTING THE ARRAY OF {d} NUMBERS TOOK {}\n", .{A.data.len, std.fmt.fmtDuration(timer.read())});
+    if (print) try std.io.getStdOut().writer().print("\nSORTING THE ARRAY OF {d} NUMBERS TOOK {}", .{A.data.len, std.fmt.fmtDuration(timer.read())});
+
+    timer = try std.time.Timer.start();
 
     if (opt.output != null) try A.write(opt.output.?);
+
+    if (print and opt.output != null) try std.io.getStdOut().writer().print("\nWRITING THE ARRAY OF {d} NUMBERS TOOK {}\n", .{A.data.len, std.fmt.fmtDuration(timer.read())});
 }
 
 // The bubble sort algorithm for matrices.

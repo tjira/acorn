@@ -79,6 +79,7 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     const file_matsort   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort"  }), .{.mode=0o755});
     const file_mersenne  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne" }), .{.mode=0o755});
     const file_prime     = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime"    }), .{.mode=0o755});
+    const file_randmat   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "randmat"  }), .{.mode=0o755});
 
     const header =
         \\#!/usr/bin/bash
@@ -118,15 +119,16 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
 
     const content_matsort =
         \\  -c <column> Reference column.
-        \\  -m <matrix> Matrix to sort.
+        \\  -i <matrix> Matrix to sort.
         \\  -o <output> Output matrix.
+        \\  -p <print>  Boolean print flag.
         \\  -h          Display this help message and exit.
         \\EOF
         \\
-        \\}}; COLUMN=0; OUTPUT=null
+        \\}}; COLUMN=0; OUTPUT=null; PRINT=false
         \\
-        \\while getopts "c:m:o:h" OPT; do case "$OPT" in
-        \\  c ) COLUMN="$OPTARG" ;; m ) MATRIX="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\while getopts "c:i:o:ph" OPT; do case "$OPT" in
+        \\  c ) COLUMN="$OPTARG" ;; i ) MATRIX="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
         \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
@@ -136,7 +138,8 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\    "input" : "'"$MATRIX"'",
         \\    "algorithm" : "bubble",
         \\    "output" : '"$OUTPUT"',
-        \\    "column" : '$COLUMN'
+        \\    "column" : '$COLUMN',
+        \\    "print" : '$PRINT'
         \\  }}
         \\}}' > .input.json
     ;
@@ -197,8 +200,37 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\}}' > .input.json
     ;
 
+    const content_randmat =
+        \\  -c <rows>         Number of cols.
+        \\  -d <distribution> Distribution.
+        \\  -o <output>       Output matrix.
+        \\  -r <rows>         Number of rows.
+        \\  -s <seed>         Random seed.
+        \\  -h                Display this help message and exit.
+        \\EOF
+        \\
+        \\}}; COLS=2; DISTRIBUTION="normal"; OUTPUT="matrix.mat"; ROWS=2; SEED=1;
+        \\
+        \\while getopts "c:d:o:r:s:h" OPT; do case "$OPT" in
+        \\  c ) COLS="$OPTARG" ;; d ) DISTRIBUTION="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; r ) ROWS="$OPTARG" ;; s ) SEED="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\esac done
+        \\
+        \\echo '{{
+        \\  "matrix" : {{
+        \\    "random" : {{
+        \\      "outputs" : ["'"$OUTPUT"'"],
+        \\      "distribution" : "'"$DISTRIBUTION"'",
+        \\      "parameters" : [0, 1],
+        \\      "seed" : '$SEED',
+        \\      "dims" : ['$ROWS', '$COLS']
+        \\    }}
+        \\  }}
+        \\}}' > .input.json
+    ;
+
     try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{}); file_fibonacci.close();
     try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_matsort .close();
     try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_mersenne.close();
     try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});     file_prime.close();
+    try file_randmat  .writer().print(header ++ "\n" ++ content_randmat   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});   file_randmat.close();
 }
