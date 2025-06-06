@@ -29,6 +29,6 @@
             "coefficient_mean" : "COEFFICIENT_MEAN_MASH.mat",
             "population_mean" : "POPULATION_MEAN_MASH.mat"
         },
-        "landau_zener" : {}
+        "spin_mapping" : {}
     }
 }

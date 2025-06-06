@@ -29,6 +29,6 @@
             "coefficient_mean" : "COEFFICIENT_MEAN_FSSH.mat",
             "population_mean" : "POPULATION_MEAN_FSSH.mat"
         },
-        "landau_zener" : {}
+        "fewest_switches" : {}
     }
 }
