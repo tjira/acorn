@@ -1,14 +1,14 @@
 //! Wrappers for the C/C++ libraries.
 
-const eigen = @cImport(@cInclude("eigen.h"));
+const cblas         = @cImport(@cInclude("cblas.h"            ));
+const eigen         = @cImport(@cInclude("eigen.h"            ));
+const exprtk        = @cImport(@cInclude("exprtk.h"           ));
+const fftw          = @cImport(@cInclude("fftw3.h"            ));
 const gsl_sf_fact   = @cImport(@cInclude("gsl/gsl_sf_fact.h"  ));
 const gsl_sf_gamma  = @cImport(@cInclude("gsl/gsl_sf_gamma.h" ));
 const gsl_sf_hyperg = @cImport(@cInclude("gsl/gsl_sf_hyperg.h"));
-const lapacke = @cImport(@cInclude("lapacke.h"));
-const cblas = @cImport(@cInclude("cblas.h"));
-const fftw = @cImport(@cInclude("fftw3.h"));
-const libint = @cImport(@cInclude("libint.h"));
-const exprtk = @cImport(@cInclude("exprtk.h"));
+const lapacke       = @cImport(@cInclude("lapacke.h"          ));
+const libint        = @cImport(@cInclude("libint.h"           ));
 
 const std = @import("std");
 
@@ -179,4 +179,33 @@ pub fn zgemm(C: *Matrix(std.math.Complex(f64)), A: Matrix(std.math.Complex(f64))
     const bh: c_uint = if (BH) cblas.CblasConjTrans else cblas.CblasNoTrans;
 
     _ = cblas.cblas_zgemm(cblas.CblasRowMajor, ah, bh, m, n, k, &std.math.Complex(f64).init(1.0, 0.0), &A.data[0], m, &B.data[0], n, &std.math.Complex(f64).init(0.0, 0.0), &C.data[0], n);
+}
+
+/// Calculate the eigenvalues and eigenvectors of a symmetric matrix A. The eigenvalues are stored in J and the eigenvectors are stored in C.
+pub fn zheevd(J: *Matrix(std.math.Complex(f64)), C: *Matrix(std.math.Complex(f64)), A: Matrix(std.math.Complex(f64))) !void {
+    A.memcpy(C.*); J.fill(std.math.Complex(f64).init(0, 0));
+
+    const AR = try Matrix(f64).init(2 * A.rows, 2 * A.cols, A.allocator);
+    var   JR = try Matrix(f64).init(2 * J.rows, 2 * J.cols, J.allocator);
+    var   CR = try Matrix(f64).init(2 * C.rows, 2 * C.cols, C.allocator);
+
+    for (0..A.rows) |i| for (0..A.cols) |j| {
+        AR.ptr(i,          j         ).* =  A.at(i, j).re;
+        AR.ptr(i,          j + A.cols).* = -A.at(i, j).im;
+        AR.ptr(i + A.rows, j         ).* =  A.at(i, j).im;
+        AR.ptr(i + A.rows, j + A.cols).* =  A.at(i, j).re;
+    };
+
+    dsyevd(&JR, &CR, AR);
+
+    // try AR.print(std.io.getStdOut().writer());
+    // try JR.print(std.io.getStdOut().writer());
+    // try CR.print(std.io.getStdOut().writer());
+
+    for (0..J.rows) |i| J.ptr(i, i).*.re = JR.at(2 * i, 2 * i);
+
+    for (0..C.rows) |i| for (0..C.cols) |j| {
+        C.ptr(i, j).*.re = CR.at(i,          2 * j);
+        C.ptr(i, j).*.im = CR.at(i + C.rows, 2 * j);
+    };
 }

@@ -104,7 +104,12 @@ pub fn Matrix(comptime T: type) type {
             try writer.print("{d} {d}\n", .{self.rows, self.cols});
 
             for (self.data, 1..) |e, i| {
-                try writer.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
+
+                if (comptime istruct(T)) {
+                    try writer.print("({d:20.14}, {d:20.14}){s}", .{e.re, e.im, if(i % self.cols == 0) "\n" else " "});
+                }
+
+                else try writer.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
             }
 
             try buffered.flush();

@@ -133,4 +133,21 @@ pub fn main() !void {
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+
+    const N: usize = 2;
+
+    const A = try Matrix(std.math.Complex(f64)).init(N, N, allocator);
+    var   J = try Matrix(std.math.Complex(f64)).init(N, N, allocator);
+    var   C = try Matrix(std.math.Complex(f64)).init(N, N, allocator);
+
+    A.ptr(0, 0).* = std.math.Complex(f64).init(1, 0);
+    A.ptr(0, 1).* = std.math.Complex(f64).init(2, 0);
+    A.ptr(1, 0).* = std.math.Complex(f64).init(2, 0);
+    A.ptr(1, 1).* = std.math.Complex(f64).init(3, 0);
+
+    try cwrapper.zheevd(&J, &C, A);
+
+    std.debug.print("\nMATRIX A\n",     .{}); try A.print(std.io.getStdOut().writer());
+    std.debug.print("\nEIGENVALUES\n",  .{}); try J.print(std.io.getStdOut().writer());
+    std.debug.print("\nEIGENVECTORS\n", .{}); try C.print(std.io.getStdOut().writer());
 }
