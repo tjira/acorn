@@ -420,6 +420,8 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8
         try V.append(try U.complex()); try VA.append(UAC); try VC.append(try UC.complex());
     }
 
+    if (capexpr != null) cwp.deinitExpression(capexpr.?);
+
     return .{V, VA, VC};
 }
 
