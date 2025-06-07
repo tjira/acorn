@@ -104,7 +104,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
 
-        const VS = try rgridPotentials(T, pot.?, rvec, allocator); var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
+        const VS = try rgridPotentials(T, pot.?, opt.hamiltonian.cap, rvec, allocator); var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
 
         var R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              opt.mode[0] > 0, allocator); defer R.deinit();
         var K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.mode[0] > 0, allocator); defer K.deinit();
@@ -382,7 +382,7 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 }
 
 /// Returns the potential matrices for each point in the space.
-pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(std.math.Complex(T))) {
+pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8, rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(std.math.Complex(T))) {
     const nstate = pot.states;
 
     var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();
@@ -393,6 +393,8 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T),
     var V  = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
     var VA = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
     var VC = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
+
+    const capexpr: ?*anyopaque = if (cap != null) try cwp.compileExpression(cap.?, rvec.rows, allocator) else null;
 
     for (0..rvec.rows) |i| {
 
@@ -407,7 +409,15 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T),
             if (overlap < 0) for (0..UC.rows) |k| {UC.ptr(k, j).* *= -1;};
         };
 
-        try V.append(try U.complex()); try VA.append(try UA.complex()); try VC.append(try UC.complex());
+        var UAC = try UA.complex();
+
+        if (capexpr != null) {
+            const capv = cwp.evaluateExpression(capexpr.?, rvec.row(i).vector()); for (0..U.rows) |j| {
+                UAC.ptr(j, j).* = UAC.at(j, j).add(std.math.Complex(T).init(0, capv));
+            }
+        }
+
+        try V.append(try U.complex()); try VA.append(UAC); try VC.append(try UC.complex());
     }
 
     return .{V, VA, VC};

@@ -198,10 +198,6 @@ pub fn zheevd(J: *Matrix(std.math.Complex(f64)), C: *Matrix(std.math.Complex(f64
 
     dsyevd(&JR, &CR, AR);
 
-    // try AR.print(std.io.getStdOut().writer());
-    // try JR.print(std.io.getStdOut().writer());
-    // try CR.print(std.io.getStdOut().writer());
-
     for (0..J.rows) |i| J.ptr(i, i).*.re = JR.at(2 * i, 2 * i);
 
     for (0..C.rows) |i| for (0..C.cols) |j| {
