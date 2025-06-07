@@ -20,15 +20,15 @@ pub fn run(comptime T: type, opt: inp.SortOptions(T), print: bool, allocator: st
 
     else return error.InvalidSortingAlgorithm;
 
-    if (print and opt.print) {try std.io.getStdOut().writer().print("\nSORTED MATRIX\n", .{}); try A.print(std.io.getStdOut().writer());}
+    if (print and opt.print) {try std.io.getStdOut().writer().print("\n\nSORTED MATRIX\n", .{}); try A.print(std.io.getStdOut().writer());}
 
-    if (print) try std.io.getStdOut().writer().print("\nSORTING THE ARRAY OF {d} NUMBERS TOOK {}", .{A.data.len, std.fmt.fmtDuration(timer.read())});
+    if (print) try std.io.getStdOut().writer().print("\nSORTING THE ARRAY OF {d} NUMBERS TOOK {}\n", .{A.data.len, std.fmt.fmtDuration(timer.read())});
 
     timer = try std.time.Timer.start();
 
     if (opt.output != null) try A.write(opt.output.?);
 
-    if (print and opt.output != null) try std.io.getStdOut().writer().print("\nWRITING THE ARRAY OF {d} NUMBERS TOOK {}\n", .{A.data.len, std.fmt.fmtDuration(timer.read())});
+    if (print and opt.output != null) try std.io.getStdOut().writer().print("WRITING THE ARRAY OF {d} NUMBERS TOOK {}\n", .{A.data.len, std.fmt.fmtDuration(timer.read())});
 }
 
 // The bubble sort algorithm for matrices.

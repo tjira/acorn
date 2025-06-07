@@ -154,16 +154,30 @@ pub fn Matrix(comptime T: type) type {
 
 /// The main function for matrix manipulation.
 pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: std.mem.Allocator) !void {
-    if (opt.random != null) for (0..opt.random.?.outputs.len) |i| {
+    var A: ?Matrix(T) = null; var timer = try std.time.Timer.start();
 
-        if (print) try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRIX #{d:2}\n", .{i + 1});
+    if (opt.random != null) {
 
-        const A = try Matrix(T).init(opt.random.?.dims[0], opt.random.?.dims[1], allocator);
+        A = try Matrix(T).init(opt.random.?.dims[0], opt.random.?.dims[1], allocator);
 
-        if (std.mem.eql(u8, opt.random.?.distribution, "normal")) {A.randn(opt.random.?.parameters[0], opt.random.?.parameters[1], opt.random.?.seed);}
+        if (std.mem.eql(u8, opt.random.?.distribution, "normal")) {A.?.randn(opt.random.?.parameters[0], opt.random.?.parameters[1], opt.random.?.seed);}
 
-        else return error.UnknownDistribution; try A.write(opt.random.?.outputs[i]);
-    };
+        else return error.UnknownDistribution;
+
+        if (print and opt.print) {try std.io.getStdOut().writer().print("\nGENERATED MATRIX\n", .{}); try A.?.print(std.io.getStdOut().writer());}
+
+        if (print) try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRIX TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
+    }
+
+    timer = try std.time.Timer.start();
+
+    if (opt.output != null and A != null) {
+        try A.?.write(opt.output.?);
+    }
+
+    if (print and opt.output != null) try std.io.getStdOut().writer().print("SAVING THE OUTPUT MATRIX TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
+
+    if (A != null) A.?.deinit();
 }
 
 /// Add two matrices element-wise. The output matrix is stored in the matrix C.

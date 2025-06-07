@@ -170,11 +170,12 @@ pub fn MatrixOptions(comptime T: type) type {
     return struct {
         pub const Random = struct {
             dims: [2]usize,
-            outputs: []const []const u8,
             distribution: []const u8 = "normal",
             parameters: [2]T = .{0, 1},
             seed: usize = 1
         };
+
+        output: ?[]const u8 = null, print: bool = true,
 
         random: ?Random = null
     };

@@ -118,10 +118,10 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     ;
 
     const content_matsort =
-        \\  -c <column> Reference column.
-        \\  -i <matrix> Matrix to sort.
-        \\  -o <output> Output matrix.
-        \\  -p <print>  Boolean print flag.
+        \\  -c <column> Reference column. (default: ${{COLUMN}})
+        \\  -i <input>  Matrix to sort.
+        \\  -o <output> Output matrix. (default: ${{OUTPUT}})
+        \\  -p <print>  Boolean print flag. (default: ${{PRINT}})
         \\  -h          Display this help message and exit.
         \\EOF
         \\
@@ -201,29 +201,33 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     ;
 
     const content_randmat =
-        \\  -c <rows>         Number of cols.
-        \\  -d <distribution> Distribution.
-        \\  -o <output>       Output matrix.
-        \\  -r <rows>         Number of rows.
-        \\  -s <seed>         Random seed.
+        \\  -c <rows>         Number of cols. (default: ${{COLS}})
+        \\  -d <distribution> Distribution. (default: ${{DISTRIBUTION}})
+        \\  -o <output>       Output matrix. (default: ${{OUTPUT}})
+        \\  -p <print>        Boolean print flag. (default: ${{PRINT}})
+        \\  -r <rows>         Number of rows. (default: ${{ROWS}})
+        \\  -s <seed>         Random seed. (default: ${{SEED}})
         \\  -h                Display this help message and exit.
         \\EOF
         \\
-        \\}}; COLS=2; DISTRIBUTION="normal"; OUTPUT="matrix.mat"; ROWS=2; SEED=1;
+        \\}}; COLS=2; DISTRIBUTION="normal"; OUTPUT=null; PRINT=false; ROWS=2; SEED=1;
         \\
-        \\while getopts "c:d:o:r:s:h" OPT; do case "$OPT" in
-        \\  c ) COLS="$OPTARG" ;; d ) DISTRIBUTION="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; r ) ROWS="$OPTARG" ;; s ) SEED="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\while getopts "c:d:o:pr:s:h" OPT; do case "$OPT" in
+        \\  c ) COLS="$OPTARG" ;; d ) DISTRIBUTION="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; r ) ROWS="$OPTARG" ;; s ) SEED="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
         \\esac done
+        \\
+        \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
         \\
         \\echo '{{
         \\  "matrix" : {{
         \\    "random" : {{
-        \\      "outputs" : ["'"$OUTPUT"'"],
         \\      "distribution" : "'"$DISTRIBUTION"'",
         \\      "parameters" : [0, 1],
         \\      "seed" : '$SEED',
         \\      "dims" : ['$ROWS', '$COLS']
-        \\    }}
+        \\    }},
+        \\    "output" : '"$OUTPUT"',
+        \\    "print" : '$PRINT'
         \\  }}
         \\}}' > .input.json
     ;
