@@ -1,12 +1,11 @@
 //! Module for Configuration Interaction (CI) calculations.
 
-const std = @import("std");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const cas = @import("completeactivespace.zig");
 const edf = @import("energydiff.zig"         );
 const hfm = @import("hartreefock.zig"        );
 const inp = @import("input.zig"              );
-const lpk = @import("lapack.zig"             );
 const mat = @import("matrix.zig"             );
 const mth = @import("math.zig"               );
 const opm = @import("optimize.zig"           );
@@ -127,7 +126,7 @@ pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sys
         H.ptr(i, j).* = asfloat(T, sign) * try slater(T, A, so[0..diff * 2], H_MS, J_MS_A); H.ptr(j, i).* = H.at(i, j);
     };
 
-    lpk.dsyevd(&E, &C, H);
+    cwp.dsyevd(&E, &C, H);
 
     if (print) try std.io.getStdOut().writer().print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + system.nuclearRepulsion()});
 

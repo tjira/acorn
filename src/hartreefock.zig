@@ -1,16 +1,12 @@
 //! Module to perform the Hartree-Fock calculation.
 
-const std = @import("std");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
-const bls = @import("blas.zig"      );
 const edf = @import("energydiff.zig");
-const eig = @import("eigen.zig"     );
 const inp = @import("input.zig"     );
-const lbt = @import("libint.zig"    );
-const lpk = @import("lapack.zig"    );
 const mat = @import("matrix.zig"    );
 const mth = @import("math.zig"      );
 const opm = @import("optimize.zig"  );
@@ -29,7 +25,6 @@ const Tensor = @import("tensor.zig").Tensor;
 const Vector = @import("vector.zig").Vector;
 
 const asfloat = @import("helper.zig").asfloat;
-const uncr    = @import("helper.zig").uncr   ;
 
 /// Main function to run the Hartree-Fock calculation with the given options.
 pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
@@ -123,10 +118,10 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
     var V_A = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try Matrix(T).init(nbf_spatial, nbf_spatial,                                      allocator);
     var J_A = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf_spatial, nbf_spatial, nbf_spatial, nbf_spatial}, allocator);
 
-    if (opt.integral.overlap == null) lbt.overlap(S_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.kinetic == null) lbt.kinetic(T_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.nuclear == null) lbt.nuclear(V_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.coulomb == null) lbt.coulomb(J_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.overlap == null) cwp.overlapIntegrals(S_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.kinetic == null) cwp.kineticIntegrals(T_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.nuclear == null) cwp.nuclearIntegrals(V_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.coulomb == null) cwp.coulombIntegrals(J_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
 
     if (opt.generalized) {
         {var S_AS = try Matrix(T).init(nbf, nbf,                      allocator); tns.oneAO2AS(T, &S_AS, S_A); S_A.deinit(); S_A = S_AS;}
@@ -169,8 +164,8 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         timer = try std.time.Timer.start(); H_A.memcpy(F_A);
 
-        try eig.contract(&T1, D_A, J_A, &[_]i32{0, 0, 1, 1});
-        try eig.contract(&T2, D_A, J_A, &[_]i32{0, 0, 1, 3});
+        try cwp.contract(&T1, D_A, J_A, &[_]i32{0, 0, 1, 1});
+        try cwp.contract(&T2, D_A, J_A, &[_]i32{0, 0, 1, 3});
 
         if (!opt.generalized) mat.muls(T, &T2, T2, 0.5);
 
@@ -179,7 +174,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         if (opt.dsize != null and iter > 0) {
 
-            bls.dgemm(&T1, S_A, false, D_A, false); bls.dgemm(&T2, T1, false, F_A, true); bls.dgemm(&T1, F_A, false, D_A, false); bls.dgemm(&T3, T1, false, S_A, true); mat.sub(T, &ERR, T2, T3);
+            cwp.dgemm(&T1, S_A, false, D_A, false); cwp.dgemm(&T2, T1, false, F_A, true); cwp.dgemm(&T1, F_A, false, D_A, false); cwp.dgemm(&T3, T1, false, S_A, true); mat.sub(T, &ERR, T2, T3);
 
             F_A.memcpy(DIIS_F.items[iter % DIIS_F.items.len]);
             ERR.memcpy(DIIS_E.items[iter % DIIS_E.items.len]);
@@ -187,7 +182,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
             try diisExtrapolate(T, &F_A, &DIIS_F, &DIIS_E, iter, allocator);
         }
 
-        lpk.dsygvd(&E_M, &C_A, F_A, S_A, &T1); D_A.fill(0); EP = E; E = 0;
+        cwp.dsygvd(&E_M, &C_A, F_A, S_A, &T1); D_A.fill(0); EP = E; E = 0;
 
         const df: T = if(opt.generalized) 1 else 2; for (0..nbf) |i| for (0..nocc) |j| for (0..nbf) |k| {
             D_A.ptr(i, k).* += df * C_A.at(i, j) * C_A.at(k, j);
@@ -249,7 +244,7 @@ pub fn diisExtrapolate(comptime T: type, F_A: *Matrix(T), DIIS_F: *std.ArrayList
         };
     };
 
-    lpk.dgesv(&c, &ALU, &p, A, b); if (lpk.dgecon(ALU, lpk.dlange(A, '1')) < 1e-12) return else F_A.fill(0);
+    cwp.dgesv(&c, &ALU, &p, A, b); if (cwp.dgecon(ALU, cwp.dlange(A, '1')) < 1e-12) return else F_A.fill(0);
 
     for (0..size) |i| {
 

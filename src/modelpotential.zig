@@ -1,13 +1,11 @@
 //! Module to store the potential energy surfaces of the model Hamiltonians.
 
-const std = @import("std");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const cnt = @import("constant.zig");
 const inp = @import("input.zig"   );
-const lpk = @import("lapack.zig"  );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
-const ext = @import("exprtk.zig"  );
 
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
@@ -22,14 +20,14 @@ pub fn Potential(comptime T: type) type {
         /// Frees the memory allocated by the struct.
         pub fn deinit(self: Potential(T)) void {
             if (self.expr != null) {
-                for (self.expr.?) |*e| {ext.deinit(e.*);} self.allocator.?.free(self.expr.?);
+                for (self.expr.?) |*e| {cwp.deinitExpression(e.*);} self.allocator.?.free(self.expr.?);
             }
         }
 
         /// Potential evaluator.
         pub fn evaluate(self: Potential(T), U: *Matrix(T), r: Vector(T)) void {
             if (self.expr != null) {for (0..self.states) |i| for (0..self.states) |j| {
-                U.ptr(i, j).* = ext.evaluate(self.expr.?[i * self.states + j], r);
+                U.ptr(i, j).* = cwp.evaluateExpression(self.expr.?[i * self.states + j], r);
             };}
 
             else return self.eval_fn(U, r);
@@ -42,7 +40,7 @@ pub fn getPotential(comptime T: type, dims: u32, hamiltonian: []const []const []
     const expr = try allocator.alloc(*anyopaque, hamiltonian.len * hamiltonian.len);
 
     for (expr, 0..hamiltonian.len * hamiltonian.len) |*e, i| {
-        e.* = try ext.compile(hamiltonian[i / hamiltonian.len][i % hamiltonian.len], dims, allocator);
+        e.* = try cwp.compileExpression(hamiltonian[i / hamiltonian.len][i % hamiltonian.len], dims, allocator);
     }
 
     return .{.allocator = allocator, .dims = dims, .states = @as(u32, @intCast(hamiltonian.len)), .eval_fn = struct {
@@ -302,7 +300,7 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
         pot.?.evaluate(&U, r);
 
         if (opt.adiabatic) {
-            lpk.dsyevd(&UA, &UC, U); @memcpy(U.data, UA.data);
+            cwp.dsyevd(&UA, &UC, U); @memcpy(U.data, UA.data);
         }
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;

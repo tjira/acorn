@@ -1,11 +1,10 @@
 //! File to calculate properties from a quantum mechanical calculation
 
-const std = @import("std");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const AN2M = @import("constant.zig").AN2M;
 
 const cnt = @import("constant.zig");
-const lpk = @import("lapack.zig"  );
 const mth = @import("math.zig"    );
 
 const Matrix = @import("matrix.zig").Matrix;
@@ -29,7 +28,7 @@ pub fn freq(comptime T: type, system: System(T), H: Matrix(T), allocator: std.me
     var HMJ = try Matrix(T).init(HM.rows, HM.cols, allocator); defer HMJ.deinit();
     var HMC = try Matrix(T).init(HM.rows, HM.cols, allocator); defer HMC.deinit();
 
-    lpk.dsyevd(&HMJ, &HMC, HM);
+    cwp.dsyevd(&HMJ, &HMC, HM);
 
     const factor = 5e-3 / std.math.pi / cnt.c * std.math.sqrt(cnt.Eh / cnt.amu / cnt.a0 / cnt.a0);
 

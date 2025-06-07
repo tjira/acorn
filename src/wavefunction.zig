@@ -1,9 +1,7 @@
 //! Module for the wavefunction object.
 
-const std = @import("std");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
-const bls = @import("blas.zig"  );
-const ftw = @import("fftw.zig"  );
 const mat = @import("matrix.zig");
 
 const Matrix = @import("matrix.zig").Matrix;
@@ -79,7 +77,7 @@ pub fn Wavefunction(comptime T: type) type {
 /// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction W and stores the result in WA.
 pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T)))) void {
     for (0..W.npoint) |i| {
-        var rowa = WA.row(i).vector().matrix(); bls.zgemm(&rowa, VC.items[i], true, W.row(i).vector().matrix(), false);
+        var rowa = WA.row(i).vector().matrix(); cwp.zgemm(&rowa, VC.items[i], true, W.row(i).vector().matrix(), false);
     }
 }
 
@@ -95,7 +93,7 @@ pub fn density(comptime T: type, P: *Matrix(std.math.Complex(T)), W: Wavefunctio
 /// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction W and stores the result in WA.
 pub fn diabatize(comptime T: type, WD: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T)))) void {
     for (0..W.npoint) |i| {
-        var rowd = WD.row(i).vector().matrix(); bls.zgemm(&rowd, VC.items[i], false, W.row(i).vector().matrix(), false);
+        var rowd = WD.row(i).vector().matrix(); cwp.zgemm(&rowd, VC.items[i], false, W.row(i).vector().matrix(), false);
     }
 }
 
@@ -107,7 +105,7 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, T1: 
 
         for (0..W.npoint) |j| T1.ptr(j, 0).* = W.at(j, i);
 
-        ftw.fftwnd(T1.data, W.shape, -1);
+        cwp.fftwnd(T1.data, W.shape, -1);
 
         for (0..W.npoint) |j| {
             
@@ -118,7 +116,7 @@ pub fn ekin(comptime T: type, W: Wavefunction(T), kvec: Matrix(T), mass: T, T1: 
             T1.ptr(j, 0).* = T1.at(j, 0).mul(std.math.Complex(T).init(ksqsum, 0));
         }
 
-        ftw.fftwnd(T1.data, W.shape, 1);
+        cwp.fftwnd(T1.data, W.shape, 1);
 
         for (0..W.npoint) |j| Ekin += T1.at(j, 0).mul(W.at(j, i).conjugate()).re * W.dr;
     }
@@ -170,11 +168,11 @@ pub fn momentum(comptime T: type, p: *Vector(T), W: Wavefunction(T), kvec: Matri
 
             for (0..W.npoint) |j| T1.ptr(j, 0).* = W.at(j, i);
 
-            ftw.fftwnd(T1.data, W.shape, -1);
+            cwp.fftwnd(T1.data, W.shape, -1);
 
             for (0..W.npoint) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(std.math.Complex(T).init(kvec.at(j, k), 0));
 
-            ftw.fftwnd(T1.data, W.shape, 1);
+            cwp.fftwnd(T1.data, W.shape, 1);
 
             for (0..W.npoint) |j| p.ptr(k).* += T1.at(j, 0).mul(W.at(j, i).conjugate()).re * W.dr;
         }
@@ -202,7 +200,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
 
     for (0..W.nstate) |j| {
         for (0..W.npoint) |i| T1.data[i] = W.at(i, j);
-        ftw.fftwnd(T1.data, W.shape, -1);
+        cwp.fftwnd(T1.data, W.shape, -1);
         for (0..W.npoint) |i| W.ptr(i, j).* = T1.at(i, 0);
     }
 
@@ -216,7 +214,7 @@ pub fn propagate(comptime T: type, W: *Wavefunction(T), R: std.ArrayList(Matrix(
 
     for (0..W.nstate) |j| {
         for (0..W.npoint) |i| T1.data[i] = W.at(i, j);
-        ftw.fftwnd(T1.data, W.shape, 1);
+        cwp.fftwnd(T1.data, W.shape, 1);
         for (0..W.npoint) |i| W.ptr(i, j).* = T1.at(i, 0);
     }
 

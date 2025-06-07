@@ -1,14 +1,12 @@
 //! File for math functions.
 
-const std = @import("std");
-
-const gsl = @import("gsl.zig");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const asfloat = @import("helper.zig").asfloat;
 
 /// Boys function.
 pub fn boys(comptime T: type, a: T, x: T) T {
-    return gsl.hyp1f1(a + 0.5, a + 1.5, -x) / (2 * a + 1);
+    return cwp.hyp1f1(a + 0.5, a + 1.5, -x) / (2 * a + 1);
 }
 
 /// Calculate the combination number.

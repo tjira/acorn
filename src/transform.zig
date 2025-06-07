@@ -1,9 +1,6 @@
 //! Module for the integral transformation.
 
-const std = @import("std");
-
-const bls = @import("blas.zig" );
-const eig = @import("eigen.zig");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;
@@ -32,8 +29,8 @@ pub fn oneAO2AS(comptime T: type, A_AS: *Matrix(T), A_AO: Matrix(T)) void {
 pub fn oneAO2MO(comptime T: type, A_MO: *Matrix(T), A_AO: Matrix(T), C_MO: Matrix(T)) !void {
     var A_AO_T = try Matrix(T).init(A_AO.rows, A_AO.cols, A_AO.allocator); defer A_AO_T.deinit();
 
-    bls.dgemm(&A_AO_T, A_AO, false, C_MO,   false);
-    bls.dgemm(A_MO,    C_MO, true,  A_AO_T, false);
+    cwp.dgemm(&A_AO_T, A_AO, false, C_MO,   false);
+    cwp.dgemm(A_MO,    C_MO, true,  A_AO_T, false);
 }
 
 /// Transforms the one-electron integrals from the AO basis to the MS basis.
@@ -43,8 +40,8 @@ pub fn oneAO2MS(comptime T: type, A_MS: *Matrix(T), A_AO: Matrix(T), C_MO: Matri
 
     cfsAO2AS(T, &C_MS, C_MO); oneAO2AS(T, A_MS, A_AO);
 
-    bls.dgemm(&A_AS, A_MS.*, false, C_MS, false);
-    bls.dgemm(A_MS,  C_MS,   true,  A_AS, false);
+    cwp.dgemm(&A_AS, A_MS.*, false, C_MS, false);
+    cwp.dgemm(A_MS,  C_MS,   true,  A_AS, false);
 }
 
 /// Transforms the two-electron integrals from the AO basis to the AS basis.
@@ -63,10 +60,10 @@ pub fn twoAO2AS(comptime T: type, A_AS: *Tensor(T), A_AO: Tensor(T)) void {
 pub fn twoAO2MO(comptime T: type, A_MO: *Tensor(T), A_AO: Tensor(T), C_MO: Matrix(T)) !void {
     var A_AO_T = try Tensor(T).init(A_AO.shape, A_AO.allocator); defer A_AO_T.deinit();
 
-    try eig.contract(&A_AO_T, C_MO, A_AO,   &[_]i32{0, 0});
-    try eig.contract(A_MO,    C_MO, A_AO_T, &[_]i32{0, 1});
-    try eig.contract(&A_AO_T, C_MO, A_MO.*, &[_]i32{0, 2});
-    try eig.contract(A_MO,    C_MO, A_AO_T, &[_]i32{0, 3});
+    try cwp.contract(&A_AO_T, C_MO, A_AO,   &[_]i32{0, 0});
+    try cwp.contract(A_MO,    C_MO, A_AO_T, &[_]i32{0, 1});
+    try cwp.contract(&A_AO_T, C_MO, A_MO.*, &[_]i32{0, 2});
+    try cwp.contract(A_MO,    C_MO, A_AO_T, &[_]i32{0, 3});
 }
 
 /// Transforms the two-electron integrals from the AO basis to the MS basis.
@@ -76,8 +73,8 @@ pub fn twoAO2MS(comptime T: type, A_MS: *Tensor(T), A_AO: Tensor(T), C_MO: Matri
 
     cfsAO2AS(T, &C_MS, C_MO); twoAO2AS(T, A_MS, A_AO);
 
-    try eig.contract(&A_AS, C_MS, A_MS.*, &[_]i32{0, 0});
-    try eig.contract(A_MS,  C_MS, A_AS,   &[_]i32{0, 1});
-    try eig.contract(&A_AS, C_MS, A_MS.*, &[_]i32{0, 2});
-    try eig.contract(A_MS,  C_MS, A_AS,   &[_]i32{0, 3});
+    try cwp.contract(&A_AS, C_MS, A_MS.*, &[_]i32{0, 0});
+    try cwp.contract(A_MS,  C_MS, A_AS,   &[_]i32{0, 1});
+    try cwp.contract(&A_AS, C_MS, A_MS.*, &[_]i32{0, 2});
+    try cwp.contract(A_MS,  C_MS, A_AS,   &[_]i32{0, 3});
 }

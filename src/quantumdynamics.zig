@@ -1,11 +1,8 @@
 //! Module for quantum dynamics simulations.
 
-const std = @import("std");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
-const bls = @import("blas.zig"          );
-const ftw = @import("fftw.zig"          );
 const inp = @import("input.zig"         );
-const lpk = @import("lapack.zig"        );
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
 const out = @import("output.zig"        );
@@ -327,7 +324,7 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
         acft.ptr(i, 1).* = transform.at(i).re; acft.ptr(i, 2).* = transform.at(i).im;
     }
 
-    ftw.fftwnd(transform.data, &[_]u32{@intCast(transform.rows)}, -1);
+    cwp.fftwnd(transform.data, &[_]u32{@intCast(transform.rows)}, -1);
 
     for (0..spectrum.rows) |i| {
         spectrum.ptr(i, 0).* = frequency.at(i, 0); spectrum.ptr(i, 1).* = transform.at(i).magnitude();
@@ -348,11 +345,11 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 
             for (0..W.npoint) |j| T1.ptr(j, 0).* = W.at(j, i);
 
-            ftw.fftwnd(T1.data, W.shape, -1);
+            cwp.fftwnd(T1.data, W.shape, -1);
 
             for (0..W.npoint) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(std.math.Complex(T).init(0, kvec.at(j, k)));
 
-            ftw.fftwnd(T1.data, W.shape, 1);
+            cwp.fftwnd(T1.data, W.shape, 1);
 
             for (0..bohm_field.rows) |j| bohm_field.ptr(j).* += W.at(j, i).conjugate().mul(T1.at(j, 0)).im;
         }
@@ -399,7 +396,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), rvec: Matrix(T),
 
     for (0..rvec.rows) |i| {
 
-        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector()); lpk.dsyevd(&UA, &UC, U);
+        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector()); cwp.dsyevd(&UA, &UC, U);
 
         if (i > 0) for (0..UC.cols) |j| {
 
@@ -431,7 +428,7 @@ pub fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(std.math.Comp
             T1.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(std.math.Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        bls.zgemm(&T2, VC.items[i], false, T1, false); bls.zgemm(&T1, T2, false, VC.items[i], true); try R.append(try T1.clone());
+        cwp.zgemm(&T2, VC.items[i], false, T1, false); cwp.zgemm(&T1, T2, false, VC.items[i], true); try R.append(try T1.clone());
     }
 
     return R;

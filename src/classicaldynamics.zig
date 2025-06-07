@@ -1,11 +1,8 @@
 //! Module for classical dynamics simulations.
 
-const std = @import("std"); const Complex = std.math.Complex;
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
-const bls = @import("blas.zig"          );
-const eig = @import("eigen.zig"         );
 const inp = @import("input.zig"         );
-const lpk = @import("lapack.zig"        );
 const mat = @import("matrix.zig"        );
 const mpt = @import("modelpotential.zig");
 const mth = @import("math.zig"          );
@@ -131,15 +128,15 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var UCS = try Matrix(T).init(nstate, nstate, allocator); defer UCS.deinit(); UCS.fill(0);
         var TDC = try Matrix(T).init(nstate, nstate, allocator); defer TDC.deinit(); TDC.fill(0);
 
-        var P = try Vector(T         ).init(nstate, allocator); defer P.deinit();
-        var C = try Vector(Complex(T)).init(nstate, allocator); defer C.deinit();
-        var S = try Vector(T         ).init(3,      allocator); defer S.deinit();
+        var P = try Vector(T                  ).init(nstate, allocator); defer P.deinit();
+        var C = try Vector(std.math.Complex(T)).init(nstate, allocator); defer C.deinit();
+        var S = try Vector(T                  ).init(3,      allocator); defer S.deinit();
 
-        var I   = try Matrix(Complex(T)).init(nstate, nstate, allocator); defer   I.deinit();
-        var KC1 = try Vector(Complex(T)).init(C.rows,         allocator); defer KC1.deinit();
-        var KC2 = try Vector(Complex(T)).init(C.rows,         allocator); defer KC2.deinit();
-        var KC3 = try Vector(Complex(T)).init(C.rows,         allocator); defer KC3.deinit();
-        var KC4 = try Vector(Complex(T)).init(C.rows,         allocator); defer KC4.deinit();
+        var I   = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer   I.deinit();
+        var KC1 = try Vector(std.math.Complex(T)).init(C.rows,         allocator); defer KC1.deinit();
+        var KC2 = try Vector(std.math.Complex(T)).init(C.rows,         allocator); defer KC2.deinit();
+        var KC3 = try Vector(std.math.Complex(T)).init(C.rows,         allocator); defer KC3.deinit();
+        var KC4 = try Vector(std.math.Complex(T)).init(C.rows,         allocator); defer KC4.deinit();
 
         var SP = try Matrix(T).init(3, 3, allocator); defer SP.deinit();
         var SN = try Vector(T).init(3,    allocator); defer SN.deinit();
@@ -159,7 +156,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
             a.fill(0); p.memcpy(v); for (0..v.rows) |j| v.ptr(j).* /= opt.initial_conditions.mass[j];
 
-            if (fssh or lzsh) {C.fill(Complex(T).init(0, 0)); C.ptr(s).* = Complex(T).init(1, 0);}
+            if (fssh or lzsh) {C.fill(std.math.Complex(T).init(0, 0)); C.ptr(s).* = std.math.Complex(T).init(1, 0);}
             if (mash        ) {try initialBlochVector(T, &S, s, rand_bloc);                      }
 
             const Wcp: T = if (mash) 2 else 1; const Wpp: T = if (mash) 2 * @abs(S.at(2)) else 1;
@@ -295,7 +292,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
 /// Diagonalize the potential, assign it to the original potential and correct the sign.
 pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), i: usize) void {
-    lpk.dsyevd(UA, UC, U.*);
+    cwp.dsyevd(UA, UC, U.*);
 
     UA.memcpy(U.*); UC.memcpy(UC2[i % 2]);
 
@@ -329,11 +326,11 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
     r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*);
 
-    lpk.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
+    cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
 
     r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*);
 
-    lpk.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
+    cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
 
     r.ptr(c).* += opt.derivative_step;
 
@@ -404,55 +401,55 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
         break;
     };
 
-    eig.logm(TDC, UCS.*); mat.divs(T, TDC, TDC.*, time_step);
+    cwp.logm(TDC, UCS.*); mat.divs(T, TDC, TDC.*, time_step);
 }
 
 /// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.
-pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
+pub fn fewestSwitches(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).FewestSwitches, U: Matrix(T), TDC: Matrix(T), s: u32, time_step: T, Ekin: T, rand: std.Random, K1: @TypeOf(C), K2: @TypeOf(C), K3: @TypeOf(C), K4: @TypeOf(C)) !u32 {
     const iters = asfloat(T, opt.quantum_substep); const alpha = if (opt.decoherence_alpha == null) std.math.inf(T) else opt.decoherence_alpha.?; var ns = s; var rn: T = 0;
 
-    const Function = struct { fn get (K: *Vector(Complex(T)), FC: Vector(Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
+    const Function = struct { fn get (K: *Vector(std.math.Complex(T)), FC: Vector(std.math.Complex(T)), FU: Matrix(T), FTDC: Matrix(T)) void {
         for (0..FC.rows) |i| {
-            K.ptr(i).* = FC.at(i).mul(Complex(T).init(FU.at(i, i), 0)).mulbyi().neg();
+            K.ptr(i).* = FC.at(i).mul(std.math.Complex(T).init(FU.at(i, i), 0)).mulbyi().neg();
         }
 
         for (0..FC.rows) |i| for (0..FC.rows) |j| {
-            K.ptr(i).* = K.at(i).sub(FC.at(j).mul(Complex(T).init(FTDC.at(i, j), 0)));
+            K.ptr(i).* = K.at(i).sub(FC.at(j).mul(std.math.Complex(T).init(FTDC.at(i, j), 0)));
         };
     }};
 
     for (0..opt.quantum_substep) |_| {
 
-        K1.fill(Complex(T).init(0, 0)); K2.fill(Complex(T).init(0, 0)); K3.fill(Complex(T).init(0, 0)); K4.fill(Complex(T).init(0, 0)); P.fill(0);
+        K1.fill(std.math.Complex(T).init(0, 0)); K2.fill(std.math.Complex(T).init(0, 0)); K3.fill(std.math.Complex(T).init(0, 0)); K4.fill(std.math.Complex(T).init(0, 0)); P.fill(0);
 
         Function.get(K1, C.*, U, TDC);
 
         for (0..C.rows) |j| {
-            C.ptr(j).* = C.at(j).add(K1.at(j).mul(Complex(T).init(time_step / 2 / iters, 0)));
+            C.ptr(j).* = C.at(j).add(K1.at(j).mul(std.math.Complex(T).init(time_step / 2 / iters, 0)));
         }
 
         Function.get(K2, C.*, U, TDC);
 
         for (0..C.rows) |j| {
-            C.ptr(j).* = C.at(j).sub(K1.at(j).mul(Complex(T).init(time_step / 2 / iters, 0)));
-            C.ptr(j).* = C.at(j).add(K2.at(j).mul(Complex(T).init(time_step / 2 / iters, 0)));
+            C.ptr(j).* = C.at(j).sub(K1.at(j).mul(std.math.Complex(T).init(time_step / 2 / iters, 0)));
+            C.ptr(j).* = C.at(j).add(K2.at(j).mul(std.math.Complex(T).init(time_step / 2 / iters, 0)));
         }
 
         Function.get(K3, C.*, U, TDC);
 
         for (0..C.rows) |j| {
-            C.ptr(j).* = C.at(j).sub(K2.at(j).mul(Complex(T).init(time_step / 2 / iters, 0)));
-            C.ptr(j).* = C.at(j).add(K3.at(j).mul(Complex(T).init(time_step / 1 / iters, 0)));
+            C.ptr(j).* = C.at(j).sub(K2.at(j).mul(std.math.Complex(T).init(time_step / 2 / iters, 0)));
+            C.ptr(j).* = C.at(j).add(K3.at(j).mul(std.math.Complex(T).init(time_step / 1 / iters, 0)));
         }
 
         Function.get(K4, C.*, U, TDC);
 
         for (0..C.rows) |j| {
-            C.ptr(j).* = C.at(j).sub(K3.at(j).mul(Complex(T).init(time_step / iters, 0)));
+            C.ptr(j).* = C.at(j).sub(K3.at(j).mul(std.math.Complex(T).init(time_step / iters, 0)));
         }
 
         for (0..C.rows) |j| {
-            C.ptr(j).* = C.at(j).add(K1.at(j).add(K2.at(j).mul(Complex(T).init(2, 0))).add(K3.at(j).mul(Complex(T).init(2, 0))).add(K4.at(j)).mul(Complex(T).init(time_step / 6 / iters, 0)));
+            C.ptr(j).* = C.at(j).add(K1.at(j).add(K2.at(j).mul(std.math.Complex(T).init(2, 0))).add(K3.at(j).mul(std.math.Complex(T).init(2, 0))).add(K4.at(j)).mul(std.math.Complex(T).init(time_step / 6 / iters, 0)));
         }
 
         for (0..C.rows) |j| if (j != ns) {
@@ -470,13 +467,13 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), o
         };
 
         for (0..C.rows) |j| if (j != ns) {
-            C.ptr(j).* = C.at(j).mul(Complex(T).init(std.math.exp(-0.5 * @abs(U.at(j, j) - U.at(ns, ns)) * time_step / iters / (1 + alpha / Ekin)), 0));
+            C.ptr(j).* = C.at(j).mul(std.math.Complex(T).init(std.math.exp(-0.5 * @abs(U.at(j, j) - U.at(ns, ns)) * time_step / iters / (1 + alpha / Ekin)), 0));
         };
 
         var sumc: T = 0; for (0..C.rows) |j| if (j != ns) {sumc += C.at(j).magnitude() * C.at(j).magnitude();};
 
         if (C.at(ns).magnitude() > 0) {
-            C.ptr(ns).* = C.at(ns).mul(Complex(T).init(std.math.sqrt((1 - sumc) / C.at(ns).magnitude() / C.at(ns).magnitude()), 0));
+            C.ptr(ns).* = C.at(ns).mul(std.math.Complex(T).init(std.math.sqrt((1 - sumc) / C.at(ns).magnitude() / C.at(ns).magnitude()), 0));
         }
     }
 
@@ -511,7 +508,7 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
     var sn = s;
 
     const OmegaExp = struct { fn get (E: *Matrix(T), VV: T, TT: T) void {
-        const a = VV * VV + 4 * TT * TT; const b = Complex(T).init(0, std.math.sqrt(a));
+        const a = VV * VV + 4 * TT * TT; const b = std.math.Complex(T).init(0, std.math.sqrt(a));
         
         const sinhb = std.math.complex.sinh(b); const coshb = std.math.complex.cosh(b);
 
@@ -529,7 +526,7 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
     // TODO: Check the correctnes of the sign in front of TDC.
     OmegaExp.get(SP, (U.at(1, 1) - U.at(0, 0)) * time_step, -TDC.at(0, 1) * time_step);
 
-    const SM = S.matrix(); var SNM = SN.matrix(); bls.dgemm(&SNM, SP.*, false, SM, false);
+    const SM = S.matrix(); var SNM = SN.matrix(); cwp.dgemm(&SNM, SP.*, false, SM, false);
 
     if (S.at(2) * SN.at(2) < 0) sn = if (SN.at(2) < 0) 0 else 1;
 
@@ -539,7 +536,7 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
 }
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.
-pub fn landauZener(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), s: u32, time_step: T, rand: std.Random, I: *Matrix(Complex(T)), T1: *Vector(Complex(T))) !u32 {
+pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), s: u32, time_step: T, rand: std.Random, I: *Matrix(std.math.Complex(T)), T1: *Vector(std.math.Complex(T))) !u32 {
     var ns = s; var rn: T = 0; var maxddZ0: T = 0; P.fill(0);
 
     for (0..U3[0].rows) |i| if (i != s) {
@@ -588,23 +585,23 @@ pub fn landauZener(comptime T: type, C: *Vector(Complex(T)), P: *Vector(T), opt:
             I.ptr(0, 1).* = std.math.Complex(T).init(std.math.sqrt(    P.at(i)), 0);
             I.ptr(1, 0).* = I.at(0, 1).neg(); I.ptr(1, 1).* = I.at(0, 0);
 
-            const exp1 = std.math.complex.exp(Complex(T).init(0,  std.math.pi / 4.0));
-            const exp2 = std.math.complex.exp(Complex(T).init(0, -std.math.pi / 4.0));
+            const exp1 = std.math.complex.exp(std.math.Complex(T).init(0,  std.math.pi / 4.0));
+            const exp2 = std.math.complex.exp(std.math.Complex(T).init(0, -std.math.pi / 4.0));
 
             I.ptr(0, 1).* = I.at(0, 1).mul(exp1);
             I.ptr(1, 0).* = I.at(1, 0).mul(exp2);
 
-            var T1M = T1.matrix(); bls.zgemm(&T1M, I.*, true, C.matrix(), false); T1.memcpy(C.*);
+            var T1M = T1.matrix(); cwp.zgemm(&T1M, I.*, true, C.matrix(), false); T1.memcpy(C.*);
         }
 
-        else {std.mem.swap(Complex(T), C.ptr(i), C.ptr(ns));} ns = @intCast(i); break;
+        else {std.mem.swap(std.math.Complex(T), C.ptr(i), C.ptr(ns));} ns = @intCast(i); break;
     };
 
     return ns;
 }
 
 /// Function to print the results of a single iteration.
-pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(Complex(T)), S: Vector(T), mass: []const T, fssh: bool, mash: bool) !void {
+pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(std.math.Complex(T)), S: Vector(T), mass: []const T, fssh: bool, mash: bool) !void {
     try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, s});
 
     for (0..mth.min(r.rows, 3)) |k| {
