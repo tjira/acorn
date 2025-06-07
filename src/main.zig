@@ -1,8 +1,6 @@
 //! Main file of the program.
 
-const std = @import("std"); const builtin = @import("builtin"); const Complex = std.math.complex.Complex;
-
-const allocator = std.heap.page_allocator; const fsize = 2048;
+const std = @import("std"); const builtin = @import("builtin");
 
 pub const basis                     = @import("basis.zig"                   );
 pub const cwrapper                  = @import("cwrapper.zig"                );
@@ -36,21 +34,21 @@ pub const Tensor = @import("tensor.zig").Tensor;
 pub const Vector = @import("vector.zig").Vector;
 
 /// Parse the input JSON file and run the corresponding target.
-pub fn parse(filebuf: []const u8) !void {
+pub fn parse(filebuf: []const u8, allocator: std.mem.Allocator) !void {
     const inputjs = try std.json.parseFromSlice(std.json.Value, allocator, filebuf, .{}); defer inputjs.deinit();
 
     if (inputjs.value.object.contains("classical_dynamics")) {
 
         const obj = try std.json.parseFromValue(input.ClassicalDynamicsOptions(f64), allocator, inputjs.value.object.get("classical_dynamics").?, .{}); defer obj.deinit();
 
-        _ = try classical_dynamics.run(f64, obj.value, true, allocator);
+        const out = try classical_dynamics.run(f64, obj.value, true, allocator); defer out.deinit();
     }
 
     if (inputjs.value.object.contains("configuration_interaction")) {
 
         const obj = try std.json.parseFromValue(input.ConfigurationInteractionOptions(f64), allocator, inputjs.value.object.get("configuration_interaction").?, .{}); defer obj.deinit();
 
-        _ = try configuration_interaction.run(f64, obj.value, true, allocator);
+        const out = try configuration_interaction.run(f64, obj.value, true, allocator); defer out.deinit();
     }
 
     if (inputjs.value.object.contains("fibonacci")) {
@@ -64,7 +62,7 @@ pub fn parse(filebuf: []const u8) !void {
 
         const obj = try std.json.parseFromValue(input.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
 
-        _ = try hartree_fock.run(f64, obj.value, true, allocator);
+        const out = try hartree_fock.run(f64, obj.value, true, allocator); defer out.deinit();
     }
 
     if (inputjs.value.object.contains("matrix")) {
@@ -85,7 +83,7 @@ pub fn parse(filebuf: []const u8) !void {
 
         const obj = try std.json.parseFromValue(input.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
 
-        _ = try moller_plesset.run(f64, obj.value, true, allocator);
+        const out = try moller_plesset.run(f64, obj.value, true, allocator); defer out.deinit();
     }
 
     if (inputjs.value.object.contains("prime")) {
@@ -99,7 +97,7 @@ pub fn parse(filebuf: []const u8) !void {
 
         const obj = try std.json.parseFromValue(input.QuantumDynamicsOptions(f64), allocator, inputjs.value.object.get("quantum_dynamics").?, .{}); defer obj.deinit();
 
-        _ = try quantum_dynamics.run(f64, obj.value, true, allocator);
+        const out = try quantum_dynamics.run(f64, obj.value, true, allocator); out.deinit();
     }
 
     if (inputjs.value.object.contains("sort")) {
@@ -112,9 +110,17 @@ pub fn parse(filebuf: []const u8) !void {
 
 /// The main function of the program.
 pub fn main() !void {
-    var timer = try std.time.Timer.start(); var argv = try std.process.argsWithAllocator(allocator); defer argv.deinit(); var argc: usize = 0;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){}; const allocator = if (builtin.mode == .Debug) gpa.allocator() else std.heap.c_allocator;
+
+    defer {
+        if (gpa.deinit() == .leak) std.debug.panic("MEMORY LEAK DETECTED IN THE ALLOCATOR\n", .{});
+    }
+
+    const fsize = 8192; var argc: usize = 0; var timer = try std.time.Timer.start();
 
     try std.io.getStdOut().writer().print("ZIG VERSION: {}, THREADS: {s}\n", .{builtin.zig_version, if (std.posix.getenv("OMP_NUM_THREADS") == null) "UNDEFINED" else std.posix.getenv("OMP_NUM_THREADS").?});
+
+    var argv = try std.process.argsWithAllocator(allocator); defer argv.deinit();
 
     _ = argv.next(); while (argv.next()) |arg| {
 
@@ -122,14 +128,14 @@ pub fn main() !void {
 
         const filebuf = try std.fs.cwd().readFileAlloc(allocator, arg, fsize); defer allocator.free(filebuf);
 
-        try parse(filebuf); argc += 1;
+        try parse(filebuf, allocator); argc += 1;
     }
 
     default: {if (argc == 0) {
 
         const filebuf = std.fs.cwd().readFileAlloc(allocator, "input.json", fsize) catch break :default;
 
-        try parse(filebuf); allocator.free(filebuf); 
+        try parse(filebuf, allocator); allocator.free(filebuf); 
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});

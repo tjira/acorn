@@ -28,7 +28,7 @@ const asfloat = @import("helper.zig").asfloat;
 
 /// Main function to run the Hartree-Fock calculation with the given options.
 pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
-     var system = try sys.load(T, opt.system, opt.system_file, allocator); defer system.deinit();
+    var system = try sys.load(T, opt.system, opt.system_file, allocator); defer system.deinit();
 
     if (print) {
         try std.io.getStdOut().writer().print("\nSYSTEM:\n", .{}); try system.print(std.io.getStdOut().writer());

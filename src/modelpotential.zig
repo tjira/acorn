@@ -267,7 +267,9 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
     if (opt.hamiltonian.name == null and (opt.hamiltonian.dims == null and opt.hamiltonian.matrix == null)) return error.InvalidHamiltonian;
     if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
 
-    var pot = if (opt.hamiltonian.name != null) (try getPotentialMap(T, allocator)).get(opt.hamiltonian.name.?) else try getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
+    var potential_map = try getPotentialMap(T, allocator); defer potential_map.deinit();
+
+    var pot = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?) else try getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
 
     const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 

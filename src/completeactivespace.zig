@@ -57,5 +57,8 @@ pub fn generateAllSingletDeterminants(nbf: usize, nel: usize, allocator: std.mem
         D.ptr(i * dets_beta.items.len + j, k + nel / 2).* =  dets_beta.items[j][k];
     };
 
+    for (dets_alpha.items) |*e| allocator.free(e.*);
+    for (dets_beta.items ) |*e| allocator.free(e.*);
+
     return D;
 }
