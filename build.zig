@@ -76,6 +76,7 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", bindir, "/"});
 
     const file_fibonacci = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "fibonacci"}), .{.mode=0o755});
+    const file_matmul    = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matmul"   }), .{.mode=0o755});
     const file_matsort   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort"  }), .{.mode=0o755});
     const file_mersenne  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne" }), .{.mode=0o755});
     const file_prime     = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime"    }), .{.mode=0o755});
@@ -113,6 +114,32 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\    "count" : '"$COUNT"',
         \\    "log_interval" : '"$LOG_INTERVAL"',
         \\    "output" : '"$OUTPUT"'
+        \\  }}
+        \\}}' > .input.json
+    ;
+
+    const content_matmul =
+        \\  -l <left>   Left multiplicant.
+        \\  -o <output> Output matrix. (default: ${{OUTPUT}})
+        \\  -p <print>  Boolean print flag. (default: ${{PRINT}})
+        \\  -r <right>  Right multiplicant.
+        \\  -h          Display this help message and exit.
+        \\EOF
+        \\
+        \\}}; OUTPUT=null; PRINT=false;
+        \\
+        \\while getopts "l:o:pr:h" OPT; do case "$OPT" in
+        \\  l ) LEFT="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; r ) RIGHT="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\esac done
+        \\
+        \\[[ "$OUTPUT" != "null" ]] && OUTPUT="[\"$OUTPUT\"]"
+        \\
+        \\echo '{{
+        \\  "matrix" : {{
+        \\    "multiply" : {{}},
+        \\    "inputs" : ["'"$LEFT"'", "'"$RIGHT"'"],
+        \\    "outputs" : '"$OUTPUT"',
+        \\    "print" : '$PRINT'
         \\  }}
         \\}}' > .input.json
     ;
@@ -210,13 +237,13 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\  -h                Display this help message and exit.
         \\EOF
         \\
-        \\}}; COLS=2; DISTRIBUTION="normal"; OUTPUT=null; PRINT=false; ROWS=2; SEED=1;
+        \\}}; COLS=2; DISTRIBUTION="normal"; OUTPUT=null; PRINT=false; ROWS=2; SEED=1
         \\
         \\while getopts "c:d:o:pr:s:h" OPT; do case "$OPT" in
         \\  c ) COLS="$OPTARG" ;; d ) DISTRIBUTION="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; r ) ROWS="$OPTARG" ;; s ) SEED="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
         \\esac done
         \\
-        \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
+        \\[[ "$OUTPUT" != "null" ]] && OUTPUT="[\"$OUTPUT\"]"
         \\
         \\echo '{{
         \\  "matrix" : {{
@@ -226,13 +253,14 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\      "seed" : '$SEED',
         \\      "dims" : ['$ROWS', '$COLS']
         \\    }},
-        \\    "output" : '"$OUTPUT"',
+        \\    "outputs" : '"$OUTPUT"',
         \\    "print" : '$PRINT'
         \\  }}
         \\}}' > .input.json
     ;
 
     try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{}); file_fibonacci.close();
+    try file_matmul   .writer().print(header ++ "\n" ++ content_matmul    ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});    file_matmul.close();
     try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_matsort .close();
     try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_mersenne.close();
     try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});     file_prime.close();

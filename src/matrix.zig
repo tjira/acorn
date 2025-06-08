@@ -1,6 +1,6 @@
 //! This module provides a matrix class and functions to manipulate matrices.
 
-const std = @import("std"); const Complex = std.math.Complex;
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const inp = @import("input.zig" );
 const mth = @import("math.zig"  );
@@ -59,11 +59,11 @@ pub fn Matrix(comptime T: type) type {
         }
 
         /// Convert the matrix to a complex matrix. The function returns an error if the allocation of the new matrix fails.
-        pub fn complex(self: Matrix(T)) !Matrix(Complex(T)) {
-            var other = try Matrix(Complex(T)).init(self.rows, self.cols, self.allocator);
+        pub fn complex(self: Matrix(T)) !Matrix(std.math.Complex(T)) {
+            var other = try Matrix(std.math.Complex(T)).init(self.rows, self.cols, self.allocator);
 
             for (0..self.rows) |i| for (0..self.cols) |j| {
-                other.ptr(i, j).* = Complex(T).init(self.at(i, j), 0);
+                other.ptr(i, j).* = std.math.Complex(T).init(self.at(i, j), 0);
             };
 
             return other;
@@ -159,30 +159,56 @@ pub fn Matrix(comptime T: type) type {
 
 /// The main function for matrix manipulation.
 pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: std.mem.Allocator) !void {
-    var A: ?Matrix(T) = null; var timer = try std.time.Timer.start();
+    var A: ?Matrix(T) = null; var B: ?Matrix(T) = null; var C: ?Matrix(T) = null; var outputs = std.ArrayList(Matrix(T)).init(allocator); defer outputs.deinit();
+
+    var timer = try std.time.Timer.start();
 
     if (opt.random != null) {
+        for (0..opt.random.?.count) |i| {
 
-        A = try Matrix(T).init(opt.random.?.dims[0], opt.random.?.dims[1], allocator);
+            A = try Matrix(T).init(opt.random.?.dims[0], opt.random.?.dims[1], allocator);
 
-        if (std.mem.eql(u8, opt.random.?.distribution, "normal")) {A.?.randn(opt.random.?.parameters[0], opt.random.?.parameters[1], opt.random.?.seed);}
+            if (std.mem.eql(u8, opt.random.?.distribution, "normal")) {A.?.randn(opt.random.?.parameters[0], opt.random.?.parameters[1], opt.random.?.seed + i);}
 
-        else return error.UnknownDistribution;
+            else return error.UnknownDistribution;
 
-        if (print and opt.print) {try std.io.getStdOut().writer().print("\nGENERATED MATRIX\n", .{}); try A.?.print(std.io.getStdOut().writer());}
+            if (opt.outputs != null and opt.outputs.?.len > i) try outputs.append(try A.?.clone());
 
-        if (print) try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRIX TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
+            if (print and opt.print) {try std.io.getStdOut().writer().print("\nGENERATED MATRIX #{d:2}\n", .{i}); try A.?.print(std.io.getStdOut().writer());}
+        }
+
+        if (print) try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRICES TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
+    }
+
+    if (opt.multiply != null and opt.inputs != null and opt.inputs.?.len > 0) {
+
+        A = try read(T, opt.inputs.?[opt.inputs.?.len - 1], allocator);
+
+        for (0..opt.inputs.?.len - 1) |i| {
+
+            C = try Matrix(T).init(B.?.rows, A.?.cols, allocator); defer C.?.deinit();
+
+            B = try read(T, opt.inputs.?[opt.inputs.?.len - i - 2], allocator);
+
+            cwp.dgemm(&C.?, B.?, false, A.?, false); C.?.memcpy(A.?);
+        }
+
+        if (print and opt.print) {try std.io.getStdOut().writer().print("\nRESULT\n", .{}); try A.?.print(std.io.getStdOut().writer());}
+
+        if (opt.outputs != null) try outputs.append(try A.?.clone());
+
+        if (print) try std.io.getStdOut().writer().print("\nMULTIPLYING MATRICES TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
     }
 
     timer = try std.time.Timer.start();
 
-    if (opt.output != null and A != null) {
-        try A.?.write(opt.output.?);
+    for (outputs.items, 0..) |e, i| {
+        try e.write(opt.outputs.?[i]);
     }
 
-    if (print and opt.output != null) try std.io.getStdOut().writer().print("SAVING THE OUTPUT MATRIX TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
+    if (print and opt.outputs != null) try std.io.getStdOut().writer().print("SAVING THE OUTPUT MATRIX TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
 
-    if (A != null) A.?.deinit();
+    if (opt.outputs != null) {for (outputs.items) |*e| e.*.deinit();} if (A != null) {A.?.deinit();} if (B != null) {B.?.deinit();} if (C != null) {C.?.deinit();}
 }
 
 /// Add two matrices element-wise. The output matrix is stored in the matrix C.

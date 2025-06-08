@@ -168,16 +168,19 @@ pub fn HartreeFockOptions(comptime T: type) type {
 /// Option struct for the matrix manipulation target.
 pub fn MatrixOptions(comptime T: type) type {
     return struct {
+        pub const Multiply = struct {
+        };
         pub const Random = struct {
             dims: [2]usize,
             distribution: []const u8 = "normal",
             parameters: [2]T = .{0, 1},
-            seed: usize = 1
+            seed: usize = 1,
+            count: usize = 1,
         };
 
-        output: ?[]const u8 = null, print: bool = true,
+        inputs: ?[]const []const u8 = null, outputs: ?[]const []const u8 = null, print: bool = true,
 
-        random: ?Random = null
+        multiply: ?Multiply = null, random: ?Random = null
     };
 }
 
