@@ -166,7 +166,7 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
     if (opt.random != null) {
         for (0..opt.random.?.count) |i| {
 
-            A = try Matrix(T).init(opt.random.?.dims[0], opt.random.?.dims[1], allocator);
+            A = try Matrix(T).init(opt.random.?.dims[0], opt.random.?.dims[1], allocator); defer A.?.deinit();
 
             if (std.mem.eql(u8, opt.random.?.distribution, "normal")) {A.?.randn(opt.random.?.parameters[0], opt.random.?.parameters[1], opt.random.?.seed + i);}
 
@@ -177,18 +177,18 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
             if (print and opt.print) {try std.io.getStdOut().writer().print("\nGENERATED MATRIX #{d:2}\n", .{i}); try A.?.print(std.io.getStdOut().writer());}
         }
 
-        if (print) try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRICES TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
+        if (print) try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRICES: {s}\n", .{std.fmt.fmtDuration(timer.read())});
     }
 
     if (opt.multiply != null and opt.inputs != null and opt.inputs.?.len > 0) {
 
-        A = try read(T, opt.inputs.?[opt.inputs.?.len - 1], allocator);
+        A = try read(T, opt.inputs.?[opt.inputs.?.len - 1], allocator); defer A.?.deinit();
 
         for (0..opt.inputs.?.len - 1) |i| {
 
-            C = try Matrix(T).init(B.?.rows, A.?.cols, allocator); defer C.?.deinit();
+            B = try read(T, opt.inputs.?[opt.inputs.?.len - i - 2], allocator); defer B.?.deinit();
 
-            B = try read(T, opt.inputs.?[opt.inputs.?.len - i - 2], allocator);
+            C = try Matrix(T).init(B.?.rows, A.?.cols, allocator); defer C.?.deinit();
 
             cwp.dgemm(&C.?, B.?, false, A.?, false); C.?.memcpy(A.?);
         }
@@ -197,18 +197,16 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
 
         if (opt.outputs != null) try outputs.append(try A.?.clone());
 
-        if (print) try std.io.getStdOut().writer().print("\nMULTIPLYING MATRICES TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
+        if (print) try std.io.getStdOut().writer().print("\nCALCULATING MATRIX PRODUCT: {s}\n", .{std.fmt.fmtDuration(timer.read())});
     }
 
     timer = try std.time.Timer.start();
 
-    for (outputs.items, 0..) |e, i| {
-        try e.write(opt.outputs.?[i]);
-    }
+    for (outputs.items, 0..) |e, i| try e.write(opt.outputs.?[i]);
 
-    if (print and opt.outputs != null) try std.io.getStdOut().writer().print("SAVING THE OUTPUT MATRIX TOOK {s}\n", .{std.fmt.fmtDuration(timer.read())});
+    if (print and opt.outputs != null) try std.io.getStdOut().writer().print("SAVING THE OUTPUT MATRICES: {s}\n", .{std.fmt.fmtDuration(timer.read())});
 
-    if (opt.outputs != null) {for (outputs.items) |*e| e.*.deinit();} if (A != null) {A.?.deinit();} if (B != null) {B.?.deinit();} if (C != null) {C.?.deinit();}
+    if (opt.outputs != null) for (outputs.items) |*e| e.*.deinit();
 }
 
 /// Add two matrices element-wise. The output matrix is stored in the matrix C.
