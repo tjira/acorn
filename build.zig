@@ -119,17 +119,18 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     ;
 
     const content_matmul =
-        \\  -l <left>   Left multiplicant.
-        \\  -o <output> Output matrix. (default: ${{OUTPUT}})
-        \\  -p <print>  Boolean print flag. (default: ${{PRINT}})
-        \\  -r <right>  Right multiplicant.
-        \\  -h          Display this help message and exit.
+        \\  -l <left>    Left multiplicant.
+        \\  -o <output>  Output matrix. (default: ${{OUTPUT}})
+        \\  -p <print>   Boolean print flag. (default: ${{PRINT}})
+        \\  -n <nthread> Number of threads to use. (default: ${{N}})
+        \\  -r <right>   Right multiplicant.
+        \\  -h           Display this help message and exit.
         \\EOF
         \\
-        \\}}; OUTPUT=null; PRINT=false;
+        \\}}; N=1; OUTPUT=null; PRINT=false;
         \\
-        \\while getopts "l:o:pr:h" OPT; do case "$OPT" in
-        \\  l ) LEFT="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; r ) RIGHT="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\while getopts "l:n:o:pr:h" OPT; do case "$OPT" in
+        \\  l ) LEFT="$OPTARG" ;; n ) N="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; r ) RIGHT="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
         \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="[\"$OUTPUT\"]"
@@ -260,9 +261,10 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     ;
 
     try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{}); file_fibonacci.close();
-    try file_matmul   .writer().print(header ++ "\n" ++ content_matmul    ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});    file_matmul.close();
     try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_matsort .close();
     try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_mersenne.close();
     try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});     file_prime.close();
     try file_randmat  .writer().print(header ++ "\n" ++ content_randmat   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});   file_randmat.close();
+
+    try file_matmul   .writer().print(header ++ "\n" ++ content_matmul    ++ "\n\nexport OMP_NUM_THREADS=$N; acorn .input.json && clean", .{});    file_matmul.close();
 }
