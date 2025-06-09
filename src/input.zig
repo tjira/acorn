@@ -9,12 +9,13 @@ const Matrix = @import("matrix.zig").Matrix;
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         pub const InitialConditions = struct {
-            position_mean: []const T,
-            position_std:  []const T,
-            momentum_mean: []const T,
-            momentum_std:  []const T,
-            state:         []const T,
-            mass:          []const T
+            position_mean:          []const T,
+            position_std:           []const T,
+            momentum_mean:          []const T,
+            momentum_std:           []const T,
+            state:                  []const T,
+            mass:                   []const T,
+            constant_acceleration: ?[]const T = null
         };
         pub const FewestSwitches = struct {
             quantum_substep: u32 = 10,

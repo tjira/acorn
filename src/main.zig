@@ -110,7 +110,7 @@ pub fn parse(filebuf: []const u8, allocator: std.mem.Allocator) !void {
 
 /// The main function of the program.
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){}; const allocator = if (builtin.mode == .Debug) gpa.allocator() else std.heap.c_allocator;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){}; const allocator = gpa.allocator();
 
     defer {
         if (gpa.deinit() == .leak) std.debug.panic("MEMORY LEAK DETECTED IN THE ALLOCATOR\n", .{});

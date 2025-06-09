@@ -1,0 +1,10 @@
+{
+    "model_potential" : {
+        "adiabatic" : true,
+        "limits" : [-8, 8],
+        "points" : 2048,
+        "hamiltonian" : {
+            "name" : "tully1D_1"
+        }
+    }
+}

@@ -141,6 +141,16 @@ pub fn gamma(x: f64) f64 {
     return gsl_sf_gamma.gsl_sf_gamma(x);
 }
 
+/// AArgument of Complex Gamma function.
+pub fn gammaArg(z: std.math.Complex(f64)) f64 {
+    var ln  = gsl_sf_gamma.gsl_sf_result{};
+    var arg = gsl_sf_gamma.gsl_sf_result{};
+
+    _ = gsl_sf_gamma.gsl_sf_lngamma_complex_e(z.re, z.im, &ln, &arg);
+
+    return arg.val;
+}
+
 /// Regularized lower incomplete gamma function.
 pub fn gammainc(a: f64, x: f64) f64 {
     return gsl_sf_gamma.gsl_sf_gamma_inc_P(a, x);

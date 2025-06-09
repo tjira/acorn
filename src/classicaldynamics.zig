@@ -571,32 +571,43 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
         }
 
         else P.ptr(i).* = p; if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
+
     };
 
     if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
 
     for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
 
-    if (mth.sum(T, P.data) > 0) rn = rand.float(T);
+    if (mth.sum(T, P.data) > 0) {
 
-    if (mth.sum(T, P.data) > 0 and s == ns) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+        rn = rand.float(T);
 
         if (C.rows == 2) {
 
+            const i: usize = if (s == 0) 1 else 0;
+
             I.ptr(0, 0).* = std.math.Complex(T).init(std.math.sqrt(1 - P.at(i)), 0);
-            I.ptr(0, 1).* = std.math.Complex(T).init(std.math.sqrt(    P.at(i)), 0);
+            I.ptr(0, 1).* = std.math.Complex(T).init(0 - std.math.sqrt(P.at(i)), 0);
             I.ptr(1, 0).* = I.at(0, 1).neg(); I.ptr(1, 1).* = I.at(0, 0);
 
-            const exp1 = std.math.complex.exp(std.math.Complex(T).init(0,  std.math.pi / 4.0));
-            const exp2 = std.math.complex.exp(std.math.Complex(T).init(0, -std.math.pi / 4.0));
+            const v = (U3[0].at(s, s) - U3[1].at(s, s)) / time_step; const c = std.math.pow(T, 0.5 * (U3[0].at(1, 1) - U3[0].at(0, 0)), 2);
 
-            I.ptr(0, 1).* = I.at(0, 1).mul(exp1);
-            I.ptr(1, 0).* = I.at(1, 0).mul(exp2);
+            const delta: T = 0.25 * c / v;
 
-            var T1M = T1.matrix(); cwp.zgemm(&T1M, I.*, true, C.matrix(), false); T1.memcpy(C.*);
+            const phi: T = -0.25 * std.math.pi + delta * (std.math.log(T, delta, std.math.e) - 1) + cwp.gammaArg(std.math.Complex(T).init(1, -delta));
+
+            const exp1 = std.math.complex.exp(std.math.Complex(T).init(0, -phi));
+            const exp2 = std.math.complex.exp(std.math.Complex(T).init(0,  phi));
+
+            I.ptr(0, 0).* = I.at(0, 0).mul(exp1);
+            I.ptr(1, 1).* = I.at(1, 1).mul(exp2);
+
+            var T1M = T1.matrix(); cwp.zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);
         }
+    }
 
-        else {std.mem.swap(std.math.Complex(T), C.ptr(i), C.ptr(ns));} ns = @intCast(i); break;
+    if (mth.sum(T, P.data) > 0 and s == ns) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
+        if (C.rows != 2) {std.mem.swap(std.math.Complex(T), C.ptr(i), C.ptr(ns));} ns = @intCast(i); break;
     };
 
     return ns;
@@ -659,7 +670,7 @@ pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mp
 
         const F = try calculateForce(T, opt, pot, U, UA, UC, r, i, s); const ap = a.at(i);
 
-        a.ptr(i).* = F / opt.initial_conditions.mass[i];
+        a.ptr(i).* = if (opt.initial_conditions.constant_acceleration == null) F / opt.initial_conditions.mass[i] else opt.initial_conditions.constant_acceleration.?[i];
         v.ptr(i).* += 0.5 * (a.at(i) + ap) * opt.time_step;
     }
 }
