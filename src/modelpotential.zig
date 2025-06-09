@@ -15,19 +15,19 @@ const asfloat = @import("helper.zig").asfloat;
 /// Potential struct.
 pub fn Potential(comptime T: type) type {
     return struct {
-        dims: u32, states: u32, eval_fn: *const fn(U: *Matrix(T), r: Vector(T)) void, expr: ?[]*anyopaque = null, allocator: ?std.mem.Allocator = null,
+        dims: u32, states: u32, eval_fn: *const fn(U: *Matrix(T), r: Vector(T)) void, expr: ?[]cwp.Expression(T) = null, allocator: ?std.mem.Allocator = null,
 
         /// Frees the memory allocated by the struct.
         pub fn deinit(self: Potential(T)) void {
             if (self.expr != null) {
-                for (self.expr.?) |*e| {cwp.deinitExpression(e.*);} self.allocator.?.free(self.expr.?);
+                for (self.expr.?) |*e| {e.*.deinit();} self.allocator.?.free(self.expr.?);
             }
         }
 
         /// Potential evaluator.
         pub fn evaluate(self: Potential(T), U: *Matrix(T), r: Vector(T)) void {
             if (self.expr != null) {for (0..self.states) |i| for (0..self.states) |j| {
-                U.ptr(i, j).* = cwp.evaluateExpression(self.expr.?[i * self.states + j], r);
+                U.ptr(i, j).* = self.expr.?[i * self.states + j].evaluate(r);
             };}
 
             else return self.eval_fn(U, r);
@@ -37,10 +37,10 @@ pub fn Potential(comptime T: type) type {
 
 /// Function to get the potential struct from the provided hamiltonian.
 pub fn getPotential(comptime T: type, dims: u32, hamiltonian: []const []const []const u8, allocator: std.mem.Allocator) !?Potential(T) {
-    const expr = try allocator.alloc(*anyopaque, hamiltonian.len * hamiltonian.len);
+    const expr = try allocator.alloc(cwp.Expression(T), hamiltonian.len * hamiltonian.len);
 
     for (expr, 0..hamiltonian.len * hamiltonian.len) |*e, i| {
-        e.* = try cwp.compileExpression(hamiltonian[i / hamiltonian.len][i % hamiltonian.len], dims, allocator);
+        e.* = try cwp.Expression(T).init(hamiltonian[i / hamiltonian.len][i % hamiltonian.len], dims, allocator);
     }
 
     return .{.allocator = allocator, .dims = dims, .states = @as(u32, @intCast(hamiltonian.len)), .eval_fn = struct {

@@ -9,6 +9,17 @@ pub fn StridedArray(comptime T: type) type {
     return struct {
         data: []T, len: usize, stride: usize, zero: usize,
 
+        /// Return the absolute sum of the strided array.
+        pub fn absSum(self: StridedArray(T)) T {
+            var result: T = 0;
+
+            for (0..self.len) |i| {
+                result += @abs(self.at(i));
+            }
+
+            return result;
+        }
+
         /// Get the element at the specified index as a value.
         pub fn at(self: StridedArray(T), i: usize) T {
             return self.ptr(i).*;
@@ -26,6 +37,17 @@ pub fn StridedArray(comptime T: type) type {
         /// Return the element at the specified index as a mutable reference.
         pub fn ptr(self: StridedArray(T), i: usize) *T {
             return &self.data[self.zero + i * self.stride];
+        }
+
+        /// Return the sum of the strided array.
+        pub fn sum(self: StridedArray(T)) T {
+            var result: T = 0;
+
+            for (0..self.len) |i| {
+                result += self.at(i);
+            }
+
+            return result;
         }
     };
 }

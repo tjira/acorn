@@ -97,6 +97,22 @@ pub fn Matrix(comptime T: type) type {
             @memcpy(dest.data, self.data);
         }
 
+        /// Calculates the 1-norm of the matrix.
+        pub fn onorm(self: Matrix(T)) T {
+            var result: T = 0;
+
+            for (0..self.cols) |j| {
+
+                const colsum = self.column(j).absSum();
+
+                if (colsum > result) {
+                    result = colsum;
+                }
+            }
+
+            return result;
+        }
+
         /// Print the matrix to the given device.
         pub fn print(self: Matrix(T), device: anytype) !void {
             var buffered = std.io.bufferedWriter(device); var writer = buffered.writer();

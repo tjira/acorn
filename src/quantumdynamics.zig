@@ -407,7 +407,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8
     var VA = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
     var VC = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
 
-    const capexpr: ?*anyopaque = if (cap != null) try cwp.compileExpression(cap.?, rvec.rows, allocator) else null;
+    const capexpr: ?cwp.Expression(T) = if (cap != null) try cwp.Expression(T).init(cap.?, rvec.rows, allocator) else null;
 
     for (0..rvec.rows) |i| {
 
@@ -425,7 +425,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8
         var UAC = try UA.complex();
 
         if (capexpr != null) {
-            const capv = cwp.evaluateExpression(capexpr.?, rvec.row(i).vector()); for (0..U.rows) |j| {
+            const capv = capexpr.?.evaluate(rvec.row(i).vector()); for (0..U.rows) |j| {
                 UAC.ptr(j, j).* = UAC.at(j, j).add(std.math.Complex(T).init(0, capv));
             }
         }
@@ -433,7 +433,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8
         try V.append(try U.complex()); try VA.append(UAC); try VC.append(try UC.complex());
     }
 
-    if (capexpr != null) cwp.deinitExpression(capexpr.?);
+    if (capexpr != null) capexpr.?.deinit();
 
     return .{V, VA, VC};
 }

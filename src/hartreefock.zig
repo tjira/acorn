@@ -118,10 +118,10 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
     var V_A = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try Matrix(T).init(nbf_spatial, nbf_spatial,                                      allocator);
     var J_A = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf_spatial, nbf_spatial, nbf_spatial, nbf_spatial}, allocator);
 
-    if (opt.integral.overlap == null) cwp.overlapIntegrals(S_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.kinetic == null) cwp.kineticIntegrals(T_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.nuclear == null) cwp.nuclearIntegrals(V_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.coulomb == null) cwp.coulombIntegrals(J_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.overlap == null) cwp.Libint(T).overlap(S_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.kinetic == null) cwp.Libint(T).kinetic(T_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.nuclear == null) cwp.Libint(T).nuclear(V_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.coulomb == null) cwp.Libint(T).coulomb(J_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
 
     if (opt.generalized) {
         {var S_AS = try Matrix(T).init(nbf, nbf,                      allocator); tns.oneAO2AS(T, &S_AS, S_A); S_A.deinit(); S_A = S_AS;}
@@ -244,7 +244,7 @@ pub fn diisExtrapolate(comptime T: type, F_A: *Matrix(T), DIIS_F: *std.ArrayList
         };
     };
 
-    cwp.dgesv(&c, &ALU, &p, A, b); if (cwp.dgecon(ALU, cwp.dlange(A, '1')) < 1e-12) return else F_A.fill(0);
+    cwp.dgesv(&c, &ALU, &p, A, b); if (cwp.dgecon(ALU, A.onorm()) < 1e-12) return else F_A.fill(0);
 
     for (0..size) |i| {
 
