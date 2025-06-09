@@ -51,12 +51,14 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
     if (!opt.spectrum.flip) acft.column(0).linspace(0,                                          opt.time_step * asfloat(T, acft.rows     - 1));
 
     var wavefunction:       Matrix(T) = undefined; defer if (opt.write.wavefunction       != null                                 )       wavefunction.deinit();
+    var density:            Matrix(T) = undefined; defer if (opt.write.density            != null                                 )            density.deinit();
     var bohm_positions:     Matrix(T) = undefined; defer if (opt.write.bohm_position      != null and opt.bohmian_dynamics != null)     bohm_positions.deinit();
     var bohm_position_mean: Matrix(T) = undefined; defer if (opt.write.bohm_position_mean != null and opt.bohmian_dynamics != null) bohm_position_mean.deinit();
     var bohm_momenta:       Matrix(T) = undefined; defer if (opt.write.bohm_momentum      != null and opt.bohmian_dynamics != null)       bohm_momenta.deinit();
     var bohm_momentum_mean: Matrix(T) = undefined; defer if (opt.write.bohm_momentum_mean != null and opt.bohmian_dynamics != null) bohm_momentum_mean.deinit();
 
     if (opt.write.wavefunction != null                                         ) wavefunction       = try Matrix(T).init(rdim,               ndim + 2 * (opt.iterations + 1) * nstate,       allocator);
+    if (opt.write.density      != null                                         ) density            = try Matrix(T).init(rdim,               ndim + 1 * (opt.iterations + 1) * nstate,       allocator);
     if (opt.bohmian_dynamics   != null and opt.write.bohm_position      != null) bohm_positions     = try Matrix(T).init(1 + opt.iterations, 1 + ndim * opt.bohmian_dynamics.?.trajectories, allocator);
     if (opt.bohmian_dynamics   != null and opt.write.bohm_momentum      != null) bohm_momenta       = try Matrix(T).init(1 + opt.iterations, 1 + ndim * opt.bohmian_dynamics.?.trajectories, allocator);
     if (opt.bohmian_dynamics   != null and opt.write.bohm_position_mean != null) bohm_position_mean = try Matrix(T).init(1 + opt.iterations, 1 + ndim,                                       allocator);
@@ -113,6 +115,10 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
         if (opt.write.wavefunction != null) for (0..rdim) |i| for (0..ndim) |j| {
             wavefunction.ptr(i, j).* = rvec.at(i, j);
+        };
+
+        if (opt.write.density != null) for (0..rdim) |i| for (0..ndim) |j| {
+            density.ptr(i, j).* = rvec.at(i, j);
         };
 
         for (0..opt.mode[0] + opt.mode[1]) |i| {
@@ -188,6 +194,10 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                     wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 1).* = (if (opt.adiabatic) WA else W).data.at(k, l).im;
                 };
 
+                if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.density != null) for (0..rdim) |k| for (0..nstate) |l| {
+                    density.ptr(k, ndim + j * nstate + l).* = (if (opt.adiabatic) WA else W).data.at(k, l).magnitude();
+                };
+
                 if (opt.bohmian_dynamics != null) {
 
                     if (opt.write.bohm_position != null) bohm_position.memcpy(bohm_positions.row(j).vector().slice(1, bohm_positions.cols));
@@ -244,6 +254,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
     if (opt.write.total_energy                        ) |path| try         etot.write(path);
     if (opt.write.transformed_autocorrelation_function) |path| try         acft.write(path);
     if (opt.write.wavefunction                        ) |path| try wavefunction.write(path);
+    if (opt.write.density                             ) |path| try      density.write(path);
 
     if (opt.bohmian_dynamics != null) {if (opt.write.bohm_momentum     ) |path| try       bohm_momenta.write(path);}
     if (opt.bohmian_dynamics != null) {if (opt.write.bohm_momentum_mean) |path| try bohm_momentum_mean.write(path);}

@@ -590,7 +590,7 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
             I.ptr(0, 1).* = std.math.Complex(T).init(0 - std.math.sqrt(P.at(i)), 0);
             I.ptr(1, 0).* = I.at(0, 1).neg(); I.ptr(1, 1).* = I.at(0, 0);
 
-            const v = (U3[0].at(s, s) - U3[1].at(s, s)) / time_step; const c = std.math.pow(T, 0.5 * (U3[0].at(1, 1) - U3[0].at(0, 0)), 2);
+            const v = @abs((U3[0].at(s, s) - U3[1].at(s, s))) / time_step; const c = std.math.pow(T, 0.5 * (U3[0].at(1, 1) - U3[0].at(0, 0)), 2);
 
             const delta: T = 0.25 * c / v;
 
@@ -670,7 +670,7 @@ pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mp
 
         const F = try calculateForce(T, opt, pot, U, UA, UC, r, i, s); const ap = a.at(i);
 
-        a.ptr(i).* = if (opt.initial_conditions.constant_acceleration == null) F / opt.initial_conditions.mass[i] else opt.initial_conditions.constant_acceleration.?[i];
+        a.ptr(i).* = F / opt.initial_conditions.mass[i];
         v.ptr(i).* += 0.5 * (a.at(i) + ap) * opt.time_step;
     }
 }

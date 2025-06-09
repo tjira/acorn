@@ -14,8 +14,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             momentum_mean:          []const T,
             momentum_std:           []const T,
             state:                  []const T,
-            mass:                   []const T,
-            constant_acceleration: ?[]const T = null
+            mass:                   []const T
         };
         pub const FewestSwitches = struct {
             quantum_substep: u32 = 10,
@@ -279,6 +278,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             bohm_momentum_mean:                   ?[]const u8 = null,
             bohm_position:                        ?[]const u8 = null,
             bohm_position_mean:                   ?[]const u8 = null,
+            density:                              ?[]const u8 = null,
             kinetic_energy:                       ?[]const u8 = null,
             momentum:                             ?[]const u8 = null,
             population:                           ?[]const u8 = null,
