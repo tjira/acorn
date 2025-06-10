@@ -133,6 +133,8 @@ pub fn main() !void {
 
     default: {if (argc == 0) {
 
+        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{"input.json"});
+
         const filebuf = std.fs.cwd().readFileAlloc(allocator, "input.json", fsize) catch break :default;
 
         try parse(filebuf, allocator); allocator.free(filebuf); 
