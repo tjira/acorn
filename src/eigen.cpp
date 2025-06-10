@@ -1,17 +1,7 @@
 #define EIGEN_USE_THREADS
 
-#include <boost/preprocessor/seq/for_each.hpp>
-#include   <boost/preprocessor/tuple/elem.hpp>
-
 #include <unsupported/Eigen/MatrixFunctions>
 #include    <unsupported/Eigen/CXX11/Tensor>
-
-#define CONTRACT_CASES ((2,2,1))((2,4,1))((2,4,2))
-
-#define EMIT_CONTRACT_CASE(r, data, elem) \
-    if (rA == BOOST_PP_TUPLE_ELEM(3, 0, elem) && rB == BOOST_PP_TUPLE_ELEM(3, 1, elem) && npairs == BOOST_PP_TUPLE_ELEM(3, 2, elem)) { \
-        return contract<BOOST_PP_TUPLE_ELEM(3, 0, elem), BOOST_PP_TUPLE_ELEM(3, 1, elem), BOOST_PP_TUPLE_ELEM(3, 2, elem)>(C, dC, A, dA, B, dB, pairs); \
-    }
 
 template<int RA, int RB, int CS>
 void contract(double *C, const unsigned long *dC, double *A, const unsigned long *dA, double *B, const unsigned long *dB, const int *pairs) {
@@ -41,7 +31,11 @@ extern "C" {
     using namespace Eigen; typedef unsigned long ulong;
 
     void contract(double *C, const ulong *dC, ulong rC, double *A, const ulong *dA, ulong rA, double *B, const ulong *dB, ulong rB, const int *pairs, ulong npairs) {
-        BOOST_PP_SEQ_FOR_EACH(EMIT_CONTRACT_CASE, _, CONTRACT_CASES) throw std::invalid_argument("UNSUPPORTED CONTRACTION SIGNATURE");
+        if (rA == 2 && rB == 2 && npairs == 1) return contract<2, 2, 1>(C, dC, A, dA, B, dB, pairs);
+        if (rA == 2 && rB == 4 && npairs == 1) return contract<2, 4, 1>(C, dC, A, dA, B, dB, pairs);
+        if (rA == 2 && rB == 4 && npairs == 2) return contract<2, 4, 2>(C, dC, A, dA, B, dB, pairs);
+
+        throw std::invalid_argument("UNSUPPORTED CONTRACTION SIGNATURE");
     }
 
     void logm(double *B, double *A, const ulong n) {

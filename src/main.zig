@@ -124,18 +124,18 @@ pub fn main() !void {
 
     _ = argv.next(); while (argv.next()) |arg| {
 
-        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{arg});
-
         const filebuf = try std.fs.cwd().readFileAlloc(allocator, arg, fsize); defer allocator.free(filebuf);
+
+        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{arg});
 
         try parse(filebuf, allocator); argc += 1;
     }
 
     default: {if (argc == 0) {
 
-        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{"input.json"});
-
         const filebuf = std.fs.cwd().readFileAlloc(allocator, "input.json", fsize) catch break :default;
+
+        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{"input.json"});
 
         try parse(filebuf, allocator); allocator.free(filebuf); 
     }}

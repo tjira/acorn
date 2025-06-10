@@ -18,7 +18,9 @@ extern "C" {
 
         expr->symbols.add_constants(); expr->expression.register_symbol_table(expr->symbols);
 
-        parser.compile(string, expr->expression);
+        if (!parser.compile(string, expr->expression)) {
+            throw std::runtime_error("FAILED TO COMPILE EXPRESSION: " + std::string(parser.error().c_str()));
+        }
 
         return static_cast<void*>(expr);
     }

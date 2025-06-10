@@ -174,7 +174,12 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         if (opt.dsize != null and iter > 0) {
 
-            cwp.dgemm(&T1, S_A, false, D_A, false); cwp.dgemm(&T2, T1, false, F_A, true); cwp.dgemm(&T1, F_A, false, D_A, false); cwp.dgemm(&T3, T1, false, S_A, true); mat.sub(T, &ERR, T2, T3);
+            cwp.dgemm(&T1, S_A, false, D_A, false);
+            cwp.dgemm(&T2, T1,  false, F_A, true );
+            cwp.dgemm(&T1, F_A, false, D_A, false);
+            cwp.dgemm(&T3, T1,  false, S_A, true );
+
+            mat.sub(T, &ERR, T2, T3);
 
             F_A.memcpy(DIIS_F.items[iter % DIIS_F.items.len]);
             ERR.memcpy(DIIS_E.items[iter % DIIS_E.items.len]);
@@ -182,7 +187,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
             try diisExtrapolate(T, &F_A, &DIIS_F, &DIIS_E, iter, allocator);
         }
 
-        cwp.dsygvd(&E_M, &C_A, F_A, S_A, &T1); D_A.fill(0); EP = E; E = 0;
+        try cwp.dsygvd(&E_M, &C_A, F_A, S_A, &T1); D_A.fill(0); EP = E; E = 0;
 
         const df: T = if(opt.generalized) 1 else 2; for (0..nbf) |i| for (0..nocc) |j| for (0..nbf) |k| {
             D_A.ptr(i, k).* += df * C_A.at(i, j) * C_A.at(k, j);
@@ -244,7 +249,9 @@ pub fn diisExtrapolate(comptime T: type, F_A: *Matrix(T), DIIS_F: *std.ArrayList
         };
     };
 
-    cwp.dgesv(&c, &ALU, &p, A, b); if (cwp.dgecon(ALU, A.onorm()) < 1e-12) return else F_A.fill(0);
+    try cwp.dgesv(&c, &ALU, &p, A, b);
+
+    if (try cwp.dgecon(ALU, A.onorm()) < 1e-12) return else F_A.fill(0);
 
     for (0..size) |i| {
 

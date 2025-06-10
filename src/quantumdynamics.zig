@@ -17,20 +17,11 @@ const asfloat = @import("helper.zig").asfloat;
 
 /// The main function to run the quantum dynamics simulation.
 pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.QuantumDynamicsOutput(T) {
-    if (opt.hamiltonian.name == null and (opt.hamiltonian.dims == null and opt.hamiltonian.matrix == null)) return error.InvalidHamiltonian;
-    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
-
-    var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
+    try checkErrors(T, opt, allocator); var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
 
     var pot = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?) else try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
 
     const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim); defer pot.?.deinit();
-
-    if (pot == null                                   ) return error.UnknownPotential        ;
-    if (opt.initial_conditions.state > nstate - 1     ) return error.InvalidInitialState     ;
-    if (opt.initial_conditions.position.len != ndim   ) return error.InvalidInitialPosition  ;
-    if (opt.initial_conditions.momentum.len != ndim   ) return error.InvalidInitialMomentum  ;
-    if (opt.write.bloch_vector != null and nstate != 2) return error.CantCalculateBlochVector;
 
     var spectrum_points = std.math.pow(u32, 2, std.math.log2(opt.iterations + 1) + opt.spectrum.nearest_power_of_two); if (opt.spectrum.flip) spectrum_points *= 2;
 
@@ -274,6 +265,21 @@ pub fn assignOutput(comptime T: type, output: *out.QuantumDynamicsOutput(T), r: 
     output.Epot[i] = Epot;
 }
 
+pub fn checkErrors(comptime T: type, opt: inp.QuantumDynamicsOptions(T), allocator: std.mem.Allocator) !void {
+    if (opt.hamiltonian.name == null and (opt.hamiltonian.dims == null and opt.hamiltonian.matrix == null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+
+    var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
+
+    const nstate = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?).?.states else opt.hamiltonian.matrix.?.len;
+    const ndim   = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?).?.dims   else opt.hamiltonian.dims.?;
+
+    if (opt.initial_conditions.state > nstate - 1     ) return error.InvalidInitialState     ;
+    if (opt.initial_conditions.position.len != ndim   ) return error.InvalidInitialPosition  ;
+    if (opt.initial_conditions.momentum.len != ndim   ) return error.InvalidInitialMomentum  ;
+    if (opt.write.bloch_vector != null and nstate != 2) return error.CantCalculateBlochVector;
+}
+
 /// Initialize bohmian trajectories.
 pub fn initBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), rvec: Matrix(T), W: Wavefunction(T), seed: usize) void {
     var prng = std.Random.DefaultPrng.init(seed); const rand = prng.random(); const count = bohm_position.rows / @as(usize, @intCast(W.ndim));
@@ -411,7 +417,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8
 
     for (0..rvec.rows) |i| {
 
-        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector()); cwp.dsyevd(&UA, &UC, U);
+        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector()); try cwp.dsyevd(&UA, &UC, U);
 
         if (i > 0) for (0..UC.cols) |j| {
 

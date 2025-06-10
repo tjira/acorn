@@ -12,30 +12,15 @@ const vec = @import("vector.zig"        );
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
-const contains = @import("helper.zig").contains;
-const  asfloat = @import("helper.zig").asfloat ;
+const asfloat = @import("helper.zig").asfloat;
 
 /// Main function for running classical dynamics simulations.
 pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.ClassicalDynamicsOutput(T) {
-    if (opt.hamiltonian.name == null and (opt.hamiltonian.dims == null and opt.hamiltonian.matrix == null)) return error.InvalidHamiltonian;
-    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
-
-    var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
+    try checkErrors(T, opt, allocator); var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
 
     var pot = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?) else try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
 
     const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
-
-    if (pot == null                                        ) return error.UnknownPotential   ;
-    if (opt.initial_conditions.state.len         != nstate ) return error.InvalidInitialState;
-    if (opt.initial_conditions.position_mean.len != ndim   ) return error.InvalidMeanPosition;
-    if (opt.initial_conditions.position_std.len  != ndim   ) return error.InvalidStdPosition ;
-    if (opt.initial_conditions.momentum_mean.len != ndim   ) return error.InvalidMeanMomentum;
-    if (opt.initial_conditions.momentum_std.len  != ndim   ) return error.InvalidStdMomentum ;
-    if (opt.initial_conditions.mass.len          != ndim   ) return error.InvalidMass        ;
-    if (mth.sum(T, opt.initial_conditions.state) != 1      ) return error.InvalidStateSum    ;
-    if (opt.write.bloch_vector != null and nstate != 2     ) return error.SpinNotCalculable ;
-    if (opt.write.bloch_vector_mean != null and nstate != 2) return error.SpinNotCalculable ;
 
     var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator); output.pop.fill(0);
 
@@ -166,14 +151,14 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
             for (0..opt.iterations + 1) |j| {
 
-                S3[j % 3] = s; pot.?.evaluate(&U, r); adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
+                S3[j % 3] = s; pot.?.evaluate(&U, r); try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
 
                 U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
-                if (tdc_hst    and j > 1) derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
-                if (tdc_kappa  and j > 1) derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
-                if (tdc_lambda and j > 1) derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
-                if (tdc_npi    and j > 1) derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
+                if (tdc_hst    and j > 1)     derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
+                if (tdc_kappa  and j > 1)     derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
+                if (tdc_lambda and j > 1)     derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
+                if (tdc_npi    and j > 1) try derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
 
                 if (lzsh and j > 1) ns = try landauZener(T, &C, &P, opt.landau_zener.?, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, rand_jump, &I, &KC1);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
@@ -293,8 +278,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 }
 
 /// Diagonalize the potential, assign it to the original potential and correct the sign.
-pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), i: usize) void {
-    cwp.dsyevd(UA, UC, U.*);
+pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), i: usize) !void {
+    try cwp.dsyevd(UA, UC, U.*);
 
     UA.memcpy(U.*); UC.memcpy(UC2[i % 2]);
 
@@ -328,15 +313,36 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
     r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*);
 
-    cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
+    try cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
 
     r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*);
 
-    cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
+    try cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
 
     r.ptr(c).* += opt.derivative_step;
 
     return -0.5 * (Up - Um) / opt.derivative_step;
+}
+
+pub fn checkErrors(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), allocator: std.mem.Allocator) !void {
+    if (opt.hamiltonian.name == null and (opt.hamiltonian.dims == null and opt.hamiltonian.matrix == null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+
+    var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
+
+    const nstate = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?).?.states else opt.hamiltonian.matrix.?.len;
+    const ndim   = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?).?.dims   else opt.hamiltonian.dims.?;
+
+    if (opt.initial_conditions.state.len         != nstate ) return error.InvalidInitialState;
+    if (opt.initial_conditions.position_mean.len != ndim   ) return error.InvalidMeanPosition;
+    if (opt.initial_conditions.position_std.len  != ndim   ) return error.InvalidStdPosition ;
+    if (opt.initial_conditions.momentum_mean.len != ndim   ) return error.InvalidMeanMomentum;
+    if (opt.initial_conditions.momentum_std.len  != ndim   ) return error.InvalidStdMomentum ;
+    if (opt.initial_conditions.mass.len          != ndim   ) return error.InvalidMass        ;
+    if (mth.sum(T, opt.initial_conditions.state) != 1      ) return error.InvalidStateSum    ;
+    if (opt.write.bloch_vector != null and nstate != 2     ) return error.SpinNotCalculable  ;
+    if (opt.write.bloch_vector_mean != null and nstate != 2) return error.SpinNotCalculable  ;
+
 }
 
 /// Calculate the nonadiabatic coupling between two states according to Hammes--Schiffer and Tully.
@@ -383,7 +389,7 @@ pub fn derivativeCouplingLambda(comptime T: type, TDC: *Matrix(T), U3: []const M
 }
 
 /// Calculate the nonadiabatic coupling between two states using Norm Preserving Interpolation.
-pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2O: []Matrix(T), U: *Matrix(T), r: Vector(T), pot: mpt.Potential(T), time_step: T, iter: usize) void {
+pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2O: []Matrix(T), U: *Matrix(T), r: Vector(T), pot: mpt.Potential(T), time_step: T, iter: usize) !void {
     UCS.fill(0); const UC2 = &[_]Matrix(T){UC2O[iter % 2], UC2O[(iter - 1) % 2]};
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
@@ -392,7 +398,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 
     for (0..UCS.rows) |l| if (UCS.at(l, l) == 0) {
 
-        pot.evaluate(U, r); for (U.data) |*e| e.* += 1e-14; adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
+        pot.evaluate(U, r); for (U.data) |*e| e.* += 1e-14; try adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
 
         UCS.fill(0);
 
@@ -594,7 +600,7 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
 
             const delta: T = 0.25 * c / v;
 
-            const phi: T = -0.25 * std.math.pi + delta * (std.math.log(T, delta, std.math.e) - 1) + cwp.gammaArg(std.math.Complex(T).init(1, -delta));
+            const phi: T = -0.25 * std.math.pi + delta * (std.math.log(T, delta, std.math.e) - 1) + try cwp.gammaArg(std.math.Complex(T).init(1, -delta));
 
             const exp1 = std.math.complex.exp(std.math.Complex(T).init(0, -phi));
             const exp2 = std.math.complex.exp(std.math.Complex(T).init(0,  phi));

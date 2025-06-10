@@ -32,7 +32,9 @@ pub fn build(builder: *std.Build) !void {
         const external_include = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/include"});
         const external_lib     = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/lib"    });
 
-        main_executable.addIncludePath(.{.cwd_relative = "include"}); main_executable.addIncludePath(.{.cwd_relative = external_include}); main_executable.addLibraryPath(.{.cwd_relative = external_lib});
+        main_executable.addIncludePath(.{.cwd_relative = "include"       });
+        main_executable.addIncludePath(.{.cwd_relative = external_include});
+        main_executable.addLibraryPath(.{.cwd_relative = external_lib    });
 
         main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
         main_executable.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
@@ -104,7 +106,11 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\}}; COUNT=10; LOG_INTERVAL=1; OUTPUT=null
         \\
         \\while getopts "c:l:o:h" OPT; do case "$OPT" in
-        \\  c ) COUNT="$OPTARG" ;; l ) LOG_INTERVAL="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\  c ) COUNT="$OPTARG" ;;
+        \\  l ) LOG_INTERVAL="$OPTARG" ;;
+        \\  o ) OUTPUT="$OPTARG" ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
         \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
@@ -130,7 +136,13 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\}}; N=1; OUTPUT=null; PRINT=false;
         \\
         \\while getopts "l:n:o:pr:h" OPT; do case "$OPT" in
-        \\  l ) LEFT="$OPTARG" ;; n ) N="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; r ) RIGHT="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\  l ) LEFT="$OPTARG" ;;
+        \\  n ) N="$OPTARG" ;;
+        \\  o ) OUTPUT="$OPTARG" ;;
+        \\  p ) PRINT=true ;;
+        \\  r ) RIGHT="$OPTARG" ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
         \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="[\"$OUTPUT\"]"
@@ -156,7 +168,12 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\}}; COLUMN=0; OUTPUT=null; PRINT=false
         \\
         \\while getopts "c:i:o:ph" OPT; do case "$OPT" in
-        \\  c ) COLUMN="$OPTARG" ;; i ) MATRIX="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\  c ) COLUMN="$OPTARG" ;;
+        \\  i ) MATRIX="$OPTARG" ;;
+        \\  o ) OUTPUT="$OPTARG" ;;
+        \\  p ) PRINT=true ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
         \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
@@ -182,7 +199,11 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\}}; COUNT=10; OUTPUT=null; START=1
         \\
         \\while getopts "c:o:s:h" OPT; do case "$OPT" in
-        \\  c ) COUNT="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; s ) START="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\  c ) COUNT="$OPTARG" ;;
+        \\  o ) OUTPUT="$OPTARG" ;;
+        \\  s ) START="$OPTARG" ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
         \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
@@ -210,7 +231,12 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\}}; COUNT=10; LOG_INTERVAL=1; OUTPUT=null; START=1
         \\
         \\while getopts "c:l:o:s:h" OPT; do case "$OPT" in
-        \\  c ) COUNT="$OPTARG" ;; l ) LOG_INTERVAL="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; s ) START="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\  c ) COUNT="$OPTARG" ;;
+        \\  l ) LOG_INTERVAL="$OPTARG" ;;
+        \\  o ) OUTPUT="$OPTARG" ;;
+        \\  s ) START="$OPTARG" ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
         \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
@@ -241,7 +267,14 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\}}; COLS=2; DISTRIBUTION="normal"; OUTPUT=null; PRINT=false; ROWS=2; SEED=1
         \\
         \\while getopts "c:d:o:pr:s:h" OPT; do case "$OPT" in
-        \\  c ) COLS="$OPTARG" ;; d ) DISTRIBUTION="$OPTARG" ;; o ) OUTPUT="$OPTARG" ;; p ) PRINT=true ;; r ) ROWS="$OPTARG" ;; s ) SEED="$OPTARG" ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+        \\  c ) COLS="$OPTARG" ;;
+        \\  d ) DISTRIBUTION="$OPTARG" ;;
+        \\  o ) OUTPUT="$OPTARG" ;;
+        \\  p ) PRINT=true ;;
+        \\  r ) ROWS="$OPTARG" ;;
+        \\  s ) SEED="$OPTARG" ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
         \\esac done
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="[\"$OUTPUT\"]"
