@@ -99,10 +99,32 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
 
-        var VS = try rgridPotentials(T, pot.?, opt.hamiltonian.cap, rvec, 0, allocator); var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
+        var VS: [3]std.ArrayList(Matrix(std.math.Complex(T))) = undefined;
 
-        var R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              opt.mode[0] > 0, allocator); defer R.deinit();
-        var K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.mode[0] > 0, allocator); defer K.deinit();
+        var R = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rdim);
+        var K = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rdim);
+
+        for (0..3) |i| {
+
+            VS[i] = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rdim);
+
+            for (0..rdim) |_| {
+
+                try VS[i].append(try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
+
+                if (i == 0) {
+                    try R.append(try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
+                    try K.append(try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
+                }
+            }
+        }
+
+        var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
+
+        try rgridPotentials(T, &VS, pot.?, opt.hamiltonian.cap, rvec, 0, allocator);
+
+        try rgridPropagators(T, &R, VA, VC,         opt.time_step,                              opt.mode[0] > 0); defer R.deinit();
+        kgridPropagators(    T, &K, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.mode[0] > 0); defer K.deinit();
 
         if (opt.write.wavefunction != null) for (0..rdim) |i| for (0..ndim) |j| {
             wavefunction.ptr(i, j).* = rvec.at(i, j);
@@ -117,11 +139,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             if (print) try std.io.getStdOut().writer().print("\n{s} TIME DYNAMICS #{d}", .{if (i < opt.mode[0]) "IMAGINARY" else "REAL", if (i < opt.mode[0]) i + 1 else i - opt.mode[0] + 1});
 
             if (i == opt.mode[0]) {
-
-                for (R.items) |*e| {e.deinit();} for (K.items) |*e| {e.deinit();} R.deinit(); K.deinit();
-
-                R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              false, allocator);
-                K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, false, allocator);
+                try rgridPropagators(T, &R, VA, VC, opt.time_step, false);
             }
 
             if (i < opt.mode[0] or (opt.mode[0] == 0)) {
@@ -149,11 +167,9 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 if (pot.?.tdep and j > 0) {
 
-                    V.deinit(); VA.deinit(); VC.deinit(); for (R.items) |*e| {e.deinit();} R.deinit();
+                    try rgridPotentials(T, &VS, pot.?, opt.hamiltonian.cap, rvec, opt.time_step * asfloat(T, j), allocator);
 
-                    VS = try rgridPotentials(T, pot.?, opt.hamiltonian.cap, rvec, opt.time_step * asfloat(T, j), allocator); V = VS[0]; VA = VS[1]; VC = VS[2];
-
-                    R = try rgridPropagators(T, VA, VC, rvec, opt.time_step, opt.mode[0] > 0, allocator);
+                    try rgridPropagators(T, &R, VA, VC, opt.time_step, opt.mode[0] > 0);
                 }
 
                 if (j > 0) try wfn.propagate(T, &W, R, K, &T1);
@@ -309,24 +325,15 @@ pub fn initBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), rvec
 }
 
 /// Returns the propagators for the k-space grid.
-pub fn kgridPropagators(comptime T: type, nstate: usize, kvec: Matrix(T), time_step: T, mass: T, imaginary: bool, allocator: std.mem.Allocator) !std.ArrayList(Matrix(std.math.Complex(T))) {
+pub fn kgridPropagators(comptime T: type, K: *std.ArrayList(Matrix(std.math.Complex(T))), nstate: usize, kvec: Matrix(T), time_step: T, mass: T, imaginary: bool) void {
     const unit = std.math.Complex(T).init(if (imaginary) 1 else 0, if (imaginary) 0 else 1);
 
-    var K = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, kvec.rows);
+    for (0..kvec.rows) |i| for (0..nstate) |j| {
 
-    for (0..kvec.rows) |i| {
+        for(0..kvec.cols) |k| K.items[i].ptr(j, j).* = K.items[i].at(j, j).add(std.math.Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));
 
-        try K.append(try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
-
-        for (0..nstate) |j| {
-
-            for(0..kvec.cols) |k| K.items[i].ptr(j, j).* = K.items[i].at(j, j).add(std.math.Complex(T).init(kvec.at(i, k) * kvec.at(i, k), 0));
-
-            K.items[i].ptr(j, j).* = std.math.complex.exp(K.items[i].at(j, j).mul(std.math.Complex(T).init(-0.5 * time_step / mass, 0)).mul(unit));
-        }
-    }
-
-    return K;
+        K.items[i].ptr(j, j).* = std.math.complex.exp(K.items[i].at(j, j).mul(std.math.Complex(T).init(-0.5 * time_step / mass, 0)).mul(unit));
+    };
 }
 
 /// Function to transform the autocorrelation function to a spectrum.
@@ -410,17 +417,13 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 }
 
 /// Returns the potential matrices for each point in the space.
-pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8, rvec: Matrix(T), t: T, allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(std.math.Complex(T))) {
+pub fn rgridPotentials(comptime T: type, VS: *[3]std.ArrayList(Matrix(std.math.Complex(T))), pot: mpt.Potential(T), cap: ?[]const u8, rvec: Matrix(T), t: T, allocator: std.mem.Allocator) !void {
     const nstate = pot.states;
 
     var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();
     var UA  = try Matrix(T).init(nstate, nstate, allocator); defer  UA.deinit();
     var UC  = try Matrix(T).init(nstate, nstate, allocator); defer  UC.deinit();
     var UCP = try Matrix(T).init(nstate, nstate, allocator); defer UCP.deinit();
-
-    var V  = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
-    var VA = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
-    var VC = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
 
     const capexpr: ?cwp.Expression(T) = if (cap != null) try cwp.Expression(T).init(cap.?, rvec.rows, allocator) else null;
 
@@ -445,33 +448,29 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8
             }
         }
 
-        try V.append(try U.complex()); try VA.append(UAC); try VC.append(try UC.complex());
+        UAC.memcpy(VS[1].items[i]);
+
+        for (0..nstate) |j| for (0..nstate) |k| {
+            VS[0].items[i].ptr(j, k).* = std.math.Complex(T).init(U .at(j, k), 0);
+            VS[2].items[i].ptr(j, k).* = std.math.Complex(T).init(UC.at(j, k), 0);
+        };
     }
 
     if (capexpr != null) capexpr.?.deinit();
-
-    return .{V, VA, VC};
 }
 
 /// Returns the propagators for the r-space grid.
-pub fn rgridPropagators(comptime T: type, VA: std.ArrayList(Matrix(std.math.Complex(T))), VC: @TypeOf(VA), rvec: Matrix(T), time_step: T, imaginary: bool, allocator: std.mem.Allocator) !@TypeOf(VA) {
-    const unit = std.math.Complex(T).init(if (imaginary) 1 else 0, if (imaginary) 0 else 1);
+pub fn rgridPropagators(comptime T: type, R: *std.ArrayList(Matrix(std.math.Complex(T))), VA: std.meta.Child(@TypeOf(R)), VC: @TypeOf(VA), time_step: T, imaginary: bool) !void {
+    const unit = std.math.Complex(T).init(if (imaginary) 1 else 0, if (imaginary) 0 else 1); var T1 = try R.items[0].clone();
 
-    var T1 = try Matrix(std.math.Complex(T)).init(VA.items[0].rows, VA.items[0].rows, allocator); defer T1.deinit();
-    var T2 = try Matrix(std.math.Complex(T)).init(VA.items[0].rows, VA.items[0].rows, allocator); defer T2.deinit();
+    for (0..R.items.len) |i| {
 
-    var R = try std.ArrayList(Matrix(std.math.Complex(T))).initCapacity(allocator, rvec.rows);
-
-    for (0..rvec.rows) |i| {
-
-        T1.fill(std.math.Complex(T).init(0, 0)); for (0..T1.rows) |j| {
-            T1.ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(std.math.Complex(T).init(-0.5 * time_step, 0)).mul(unit));
+        R.items[i].fill(std.math.Complex(T).init(0, 0)); for (0..R.items[i].rows) |j| {
+            R.items[i].ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(std.math.Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        cwp.zgemm(&T2, VC.items[i], false, T1, false); cwp.zgemm(&T1, T2, false, VC.items[i], true); try R.append(try T1.clone());
+        cwp.zgemm(&T1, VC.items[i], false, R.items[i], false); cwp.zgemm(&R.items[i], T1, false, VC.items[i], true);
     }
-
-    return R;
 }
 
 /// Prints the iteration information.
