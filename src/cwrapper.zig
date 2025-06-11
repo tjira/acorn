@@ -31,8 +31,8 @@ pub fn Expression(comptime T: type) type {
         }
 
         /// Evaluate the compiled expression at the specified point.
-        pub fn evaluate(self: Expression(T), vars: Vector(T)) T {
-            return exprtk.evaluate(self.expression, vars.data.ptr);
+        pub fn evaluate(self: Expression(T), vars: Vector(T), time: T) T {
+            return exprtk.evaluate(self.expression, vars.data.ptr, time);
         }
     };
 }

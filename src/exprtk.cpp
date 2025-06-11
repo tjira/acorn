@@ -4,6 +4,7 @@ struct Expression {
     exprtk::expression<double>   expression;
     exprtk::symbol_table<double>    symbols;
     std::vector<double>                vars;
+    double                             time;
 };
 
 extern "C" {
@@ -16,6 +17,8 @@ extern "C" {
             expr->symbols.add_variable("r" + std::to_string(i), expr->vars.at(i - 1));
         }
 
+        expr->symbols.add_variable("t", expr->time);
+
         expr->symbols.add_constants(); expr->expression.register_symbol_table(expr->symbols);
 
         if (!parser.compile(string, expr->expression)) {
@@ -25,12 +28,14 @@ extern "C" {
         return static_cast<void*>(expr);
     }
 
-    double evaluate(void* exprv, double* vars) {
+    double evaluate(void* exprv, double* vars, double time) {
         Expression* expr = static_cast<Expression*>(exprv);
 
         for (size_t i = 1; i <= expr->vars.size(); i++) {
             expr->symbols.get_variable("r" + std::to_string(i))->ref() = vars[i - 1];
         }
+
+        expr->symbols.get_variable("t")->ref() = time;
 
         return expr->expression.value();
     }

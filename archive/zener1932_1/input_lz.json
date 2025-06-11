@@ -1,15 +1,15 @@
 {
     "classical_dynamics" : {
         "derivative_step" : 0.001,
-        "iterations" : 400,
+        "iterations" : 2000,
         "seed" : 1,
         "time_step" : 0.01,
         "trajectories" : 10000,
         "hamiltonian" : {
             "dims" : 1,
             "matrix" : [
-                ["3*r1", "2"    ],
-                ["2",    "-3*r1"]
+                ["10*(t-10)", "2"          ],
+                ["2",          "-10*(t-10)"]
             ]
         },
         "initial_conditions" : {
@@ -26,7 +26,6 @@
         },
         "write" : {
             "bloch_vector_mean" : "BLOCH_VECTOR_MEAN_LZSH.mat",
-            "coefficient_mean" : "COEFFICIENT_MEAN_LZSH.mat",
             "population_mean" : "POPULATION_MEAN_LZSH.mat"
         },
         "landau_zener" : {}

@@ -16,3 +16,4 @@
 - [x] Resolve the correct weighing in MASH algorithm.
 - [x] Should I weigh also the other observables like energy in MASH algorithm?
 - [ ] Check the suspicious sign in front of TDC during formation of MASH propagation matrix.
+- [ ] The propagators in QD do not have to be reallocated every time, they can be just rewritten when using time-dependent Hamiltonian.

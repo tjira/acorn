@@ -99,7 +99,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
         mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
 
-        const VS = try rgridPotentials(T, pot.?, opt.hamiltonian.cap, rvec, allocator); var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
+        var VS = try rgridPotentials(T, pot.?, opt.hamiltonian.cap, rvec, 0, allocator); var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
 
         var R = try rgridPropagators(T, VA, VC,   rvec, opt.time_step,                              opt.mode[0] > 0, allocator); defer R.deinit();
         var K = try kgridPropagators(T, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.mode[0] > 0, allocator); defer K.deinit();
@@ -145,6 +145,15 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 if (j > 0 and opt.bohmian_dynamics != null) {
                     try propagateBohmianTrajectories(T, &bohm_position, &bohm_momentum, &bohm_field, W, rvec, kvec, opt.time_step, opt.initial_conditions.mass, &T1);
+                }
+
+                if (pot.?.tdep and j > 0) {
+
+                    V.deinit(); VA.deinit(); VC.deinit(); for (R.items) |*e| {e.deinit();} R.deinit();
+
+                    VS = try rgridPotentials(T, pot.?, opt.hamiltonian.cap, rvec, opt.time_step * asfloat(T, j), allocator); V = VS[0]; VA = VS[1]; VC = VS[2];
+
+                    R = try rgridPropagators(T, VA, VC, rvec, opt.time_step, opt.mode[0] > 0, allocator);
                 }
 
                 if (j > 0) try wfn.propagate(T, &W, R, K, &T1);
@@ -401,7 +410,7 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 }
 
 /// Returns the potential matrices for each point in the space.
-pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8, rvec: Matrix(T), allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(std.math.Complex(T))) {
+pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8, rvec: Matrix(T), t: T, allocator: std.mem.Allocator) ![3]std.ArrayList(Matrix(std.math.Complex(T))) {
     const nstate = pot.states;
 
     var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();
@@ -417,7 +426,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8
 
     for (0..rvec.rows) |i| {
 
-        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector()); try cwp.dsyevd(&UA, &UC, U);
+        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector(), t); try cwp.dsyevd(&UA, &UC, U);
 
         if (i > 0) for (0..UC.cols) |j| {
 
@@ -431,7 +440,7 @@ pub fn rgridPotentials(comptime T: type, pot: mpt.Potential(T), cap: ?[]const u8
         var UAC = try UA.complex();
 
         if (capexpr != null) {
-            const capv = capexpr.?.evaluate(rvec.row(i).vector()); for (0..U.rows) |j| {
+            const capv = capexpr.?.evaluate(rvec.row(i).vector(), t); for (0..U.rows) |j| {
                 UAC.ptr(j, j).* = UAC.at(j, j).add(std.math.Complex(T).init(0, capv));
             }
         }

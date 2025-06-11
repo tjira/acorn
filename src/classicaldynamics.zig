@@ -151,7 +151,9 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
             for (0..opt.iterations + 1) |j| {
 
-                S3[j % 3] = s; pot.?.evaluate(&U, r); try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
+                const time = opt.time_step * asfloat(T, j);
+
+                S3[j % 3] = s; pot.?.evaluate(&U, r, time); try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
 
                 U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
@@ -212,7 +214,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 r.memcpy(rp); p.memcpy(pp); v.memcpy(vp); a.memcpy(ap);
 
-                try propagate(T, opt, pot.?, &r, &v, &a, &U, &UA, &UC, s);
+                try propagate(T, opt, pot.?, &r, &v, &a, &U, &UA, &UC, time, s);
             }
         }
     }
@@ -310,12 +312,12 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
-pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), c: usize, s: u32) !T {
-    r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*);
+pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32) !T {
+    r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*, t);
 
     try cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
 
-    r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*);
+    r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*, t);
 
     try cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
 
@@ -398,7 +400,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 
     for (0..UCS.rows) |l| if (UCS.at(l, l) == 0) {
 
-        pot.evaluate(U, r); for (U.data) |*e| e.* += 1e-14; try adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
+        pot.evaluate(U, r, time_step * asfloat(T, iter)); for (U.data) |*e| e.* += 1e-14; try adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
 
         UCS.fill(0);
 
@@ -669,12 +671,12 @@ pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
 }
 
 /// Function to propagate the classical coordinates in time on an "s" state.
-pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), s: u32) !void {
+pub fn propagate(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), t: T, s: u32) !void {
     for (0..r.rows) |i| {
 
         r.ptr(i).* += (v.at(i) + 0.5 * a.at(i) * opt.time_step) * opt.time_step;
 
-        const F = try calculateForce(T, opt, pot, U, UA, UC, r, i, s); const ap = a.at(i);
+        const F = try calculateForce(T, opt, pot, U, UA, UC, r, t, i, s); const ap = a.at(i);
 
         a.ptr(i).* = F / opt.initial_conditions.mass[i];
         v.ptr(i).* += 0.5 * (a.at(i) + ap) * opt.time_step;

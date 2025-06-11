@@ -1,7 +1,7 @@
 {
     "quantum_dynamics" : {
         "adiabatic" : true,
-        "iterations" : 400,
+        "iterations" : 2000,
         "mode" : [0, 1],
         "time_step" : 0.01,
         "grid" : {
@@ -11,8 +11,8 @@
         "hamiltonian" : {
             "dims" : 1,
             "matrix" : [
-                ["3*r1", "2"    ],
-                ["2",    "-3*r1"]
+                ["10*(t-10)", "2"          ],
+                ["2",          "-10*(t-10)"]
             ]
         },
         "initial_conditions" : {
