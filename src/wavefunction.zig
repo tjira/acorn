@@ -152,7 +152,7 @@ pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const 
 
         var exp: T = 0;
 
-        for (0..W.ndim) |k| exp += (rvec.at(i, k) - r[k]) * p[k];
+        for (0..W.ndim) |k| exp += rvec.at(i, k) * p[k];
 
         W.ptr(i, j).* = W.at(i, j).mul(std.math.complex.exp(std.math.Complex(T).init(0, exp)));
     };
