@@ -13,7 +13,7 @@ for TARGET in "${TARGETS[@]}"; do
 
     tar -xf zig.tar.xz && mv zig-x86_64-linux*/lib zig-x86_64-linux*/zig zig-bin && tar -xf zls.tar.xz -C zig-bin && rm -rf zig-x86_64-linux* *.tar.xz
 
-    echo "zig cc --target=$TARGET-gnu \"\$@\"" > zigcc  && chmod +x zigcc && echo "zig c++ --target=$TARGET-gnu \"\$@\"" > zigcpp && chmod +x zigcpp
+    echo "zig cc --target=$TARGET-gnu \"\$@\"" > zigcc && chmod +x zigcc && echo "zig c++ --target=$TARGET-gnu \"\$@\"" > zigcpp && chmod +x zigcpp
 
     wget -q -O boost.tar.gz    https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-b2-nodocs.tar.gz
     wget -q -O eigen.tar.gz    https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
@@ -37,8 +37,8 @@ for TARGET in "${TARGETS[@]}"; do
 
     cd boost    && ./bootstrap.sh --prefix="$PWD/install" --with-libraries="atomic" && ./b2 install && rm -rf install/lib && cd ..
 
-    cd fftw     && ./configure CC="$PWD/../zigcc" --disable-fortran --prefix="$PWD/install" && cd ..
-    cd gsl      && ./configure CC="$PWD/../zigcc" --disable-shared  --prefix="$PWD/install" && cd ..
+    cd fftw     && ./configure CC="$PWD/../zigcc" --disable-fortran --host="x86_64-linux-gnu" --prefix="$PWD/install" && cd ..
+    cd gsl      && ./configure CC="$PWD/../zigcc" --disable-shared  --host="x86_64-linux-gnu" --prefix="$PWD/install" && cd ..
 
     cd fftw     && make                                                                                                   -j $CORES             && make                                   install && cd ..
     cd gsl      && make                                                                                                   -j $CORES             && make                                   install && cd ..
