@@ -18,16 +18,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Biber and LaTeX
-        run: sudo apt update && sudo apt install -y biber texlive-latex-recommended texlive-latex-extra
+        run: sudo apt update && sudo apt install -y biber texlive-latex-recommended texlive-latex-extra texlive-luatex
 
       - name: Install Pandoc
         run: wget https://github.com/jgm/pandoc/releases/download/3.4/pandoc-3.4-1-amd64.deb -O pandoc.deb && sudo dpkg -i pandoc.deb
 
-      - name: Download and Compile Dependencies
-        run: ./script/library.sh
-
       - name: Compile Document
         run: ./script/docstopdf.sh
+
+      - name: Download and Compile Dependencies
+        run: ./script/library.sh
 
       - name: Compile the Code Documentation
         run: ./zig-bin/zig build-obj -Iinclude -Iexternal-x86_64-linux/include -lc -femit-docs=docs/code src/main.zig
