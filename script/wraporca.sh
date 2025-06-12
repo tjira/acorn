@@ -6,7 +6,7 @@ Usage: $(basename $0) [options]
 
 Options:
   -s <system>       System file. (default: ${COUNT})
-  -b <basis>        Basis set used to specify the atomic orbitals. (default: ${LOG_INTERVAL})
+  -b <basis>        Basis set used to specify the atomic orbitals. (default: ${BASIS})
   -c <charge>       Charge of the system. (default: ${OUTPUT})
   -p <multiplicity> Spin multiplicity of the system. (default: ${START})
   -m <method>       Method to perform. (default: ${START})

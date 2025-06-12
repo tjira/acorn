@@ -21,14 +21,14 @@
             "position" : [3],
             "state" : 1,
             "adiabatic" : true,
-            "gamma" : 1
+            "gamma" : 2
         },
         "log_intervals" : {
             "iteration" : 1
         },
         "write" : {
-            "bloch_vector" : "BLOCH_VECTOR_EXACT.mat",
-            "population" : "POPULATION_EXACT.mat"
+            "bloch_vector" : "BLOCH_VECTOR_SAC_EXACT.mat",
+            "population" : "POPULATION_SAC_EXACT.mat"
         }
     }
 }
