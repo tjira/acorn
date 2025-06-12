@@ -325,7 +325,7 @@ This simulation is fast and should complete approximately in a second. You can v
 
 <details>
 
-<summary><b>Surface Hopping Dynamics</b></summary>
+<summary><b>Mixed Quantum-Classical Dynamics</b></summary>
 
 - [Surface Hopping Dynamics](#surface-hopping-dynamics)
 
