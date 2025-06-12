@@ -561,7 +561,7 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
 
         const g = Z0; const v = std.math.sqrt(Z0 * ddZ0); const delta: T = 0.25 * std.math.pow(T, g, 2) / v;
 
-        const p = std.math.exp(-2 * std.math.pi * delta);
+        var p = std.math.exp(-2 * std.math.pi * delta); if (std.math.isNan(p)) p = 0;
 
         if (opt.mode != null) {
 
@@ -580,33 +580,16 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
             else return error.UnknownLandauZenerMode;
         }
 
-        else P.ptr(i).* = p; if (std.math.isNan(P.at(i))) P.ptr(i).* = 0;
+        else P.ptr(i).* = p; 
 
-    };
+        if (C.rows == 2 and p > 0) {
 
-    if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
+            I.ptr(0, 0).* = std.math.Complex(T).init(std.math.sqrt(1 - p), 0);
+            I.ptr(0, 1).* = std.math.Complex(T).init(0 - std.math.sqrt(p), 0);
 
-    for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
-
-    if (mth.sum(T, P.data) > 0) {
-
-        rn = rand.float(T);
-
-        if (C.rows == 2) {
-
-            const i: usize = if (s == 0) 1 else 0;
-
-            const Z0 = @abs(U3[0].at(1, 1) - U3[0].at(0, 0)); const Z1 = @abs(U3[1].at(1, 1) - U3[1].at(0, 0)); const Z2 = @abs(U3[2].at(1, 1) - U3[2].at(0, 0));
-
-            const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
-
-            I.ptr(0, 0).* = std.math.Complex(T).init(std.math.sqrt(1 - P.at(i)), 0);
-            I.ptr(0, 1).* = std.math.Complex(T).init(0 - std.math.sqrt(P.at(i)), 0);
             I.ptr(1, 0).* = I.at(0, 1).neg(); I.ptr(1, 1).* = I.at(0, 0);
 
-            const g = Z0; const v = std.math.sqrt(Z0 * ddZ0); const delta: T = 0.25 * std.math.pow(T, g, 2) / v;
-
-            const phi: T = -0.25 * std.math.pi + delta * (std.math.log(T, delta, std.math.e) - 1) + try cwp.gammaArg(std.math.Complex(T).init(1, -delta));
+            const phi: T = -0.25 * std.math.pi + delta * (std.math.log(T, std.math.e, delta) - 1) + try cwp.gammaArg(std.math.Complex(T).init(1, -delta));
 
             const exp1 = std.math.complex.exp(std.math.Complex(T).init(0, -phi));
             const exp2 = std.math.complex.exp(std.math.Complex(T).init(0,  phi));
@@ -616,7 +599,13 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
 
             var T1M = T1.matrix(); cwp.zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);
         }
-    }
+    };
+
+    if (mth.sum(T, P.data) > 1) for (0..P.rows) |i| {P.ptr(i).* /= mth.sum(T, P.data);};
+
+    for (1..P.rows) |i| P.ptr(i).* += P.at(i - 1);
+
+    if (mth.sum(T, P.data) > 0) rn = rand.float(T);
 
     if (mth.sum(T, P.data) > 0 and s == ns) for (0..P.rows) |i| if (rn > (if (i > 0) P.at(i - 1) else 0) and rn < P.at(i)) {
         if (C.rows != 2) {std.mem.swap(std.math.Complex(T), C.ptr(i), C.ptr(ns));} ns = @intCast(i); break;
