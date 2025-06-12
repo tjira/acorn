@@ -559,7 +559,9 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
 
         if (dZ0 * dZ1 > 0 or (dZ0 * dZ1 < 0 and ddZ0 < 0) or @abs(ddZ0) < 1e-14) continue;
 
-        const p = std.math.exp(-0.5 * std.math.pi * std.math.sqrt(std.math.pow(T, Z0, 3) / ddZ0));
+        const g = Z0; const v = std.math.sqrt(Z0 * ddZ0); const delta: T = 0.25 * std.math.pow(T, g, 2) / v;
+
+        const p = std.math.exp(-2 * std.math.pi * delta);
 
         if (opt.mode != null) {
 
@@ -594,13 +596,15 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
 
             const i: usize = if (s == 0) 1 else 0;
 
+            const Z0 = @abs(U3[0].at(1, 1) - U3[0].at(0, 0)); const Z1 = @abs(U3[1].at(1, 1) - U3[1].at(0, 0)); const Z2 = @abs(U3[2].at(1, 1) - U3[2].at(0, 0));
+
+            const ddZ0 = (Z0 - 2 * Z1 + Z2) / time_step / time_step;
+
             I.ptr(0, 0).* = std.math.Complex(T).init(std.math.sqrt(1 - P.at(i)), 0);
             I.ptr(0, 1).* = std.math.Complex(T).init(0 - std.math.sqrt(P.at(i)), 0);
             I.ptr(1, 0).* = I.at(0, 1).neg(); I.ptr(1, 1).* = I.at(0, 0);
 
-            const v = @abs((U3[0].at(s, s) - U3[1].at(s, s))) / time_step; const c = std.math.pow(T, 0.5 * (U3[0].at(1, 1) - U3[0].at(0, 0)), 2);
-
-            const delta: T = 0.25 * c / v;
+            const g = Z0; const v = std.math.sqrt(Z0 * ddZ0); const delta: T = 0.25 * std.math.pow(T, g, 2) / v;
 
             const phi: T = -0.25 * std.math.pi + delta * (std.math.log(T, delta, std.math.e) - 1) + try cwp.gammaArg(std.math.Complex(T).init(1, -delta));
 
