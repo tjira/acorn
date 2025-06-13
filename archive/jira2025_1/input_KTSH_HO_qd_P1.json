@@ -1,0 +1,48 @@
+{
+    "quantum_dynamics": {
+        "log_intervals": {
+            "iteration": 200
+        },
+        "grid": {
+            "limits": [
+                -24,
+                24
+            ],
+            "points": 8192
+        },
+        "hamiltonian": {
+            "dims": 1,
+            "matrix": [
+                [
+                    "0.0025 * (r1 + 1)^2",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0.0025 * (r1 - 1)^2"
+                ]
+            ]
+        },
+        "initial_conditions": {
+            "position": [
+                -7
+            ],
+            "momentum": [
+                0
+            ],
+            "gamma": 2,
+            "state": 1,
+            "mass": 2000
+        },
+        "write": {
+            "population": "KTSH_HO_POPULATION_P1_EXACT.mat"
+        },
+        "adiabatic": true,
+        "iterations": 800,
+        "mode": [
+            0,
+            1
+        ],
+        "time_step": 10
+    }
+}

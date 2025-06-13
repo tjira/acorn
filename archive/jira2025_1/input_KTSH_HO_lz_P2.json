@@ -1,0 +1,58 @@
+{
+    "classical_dynamics": {
+        "log_intervals": {
+            "iteration": 20000,
+            "trajectory": 1000
+        },
+        "hamiltonian": {
+            "dims": 1,
+            "matrix": [
+                [
+                    "0.0025 * r1^2",
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0.01 + 0.0025 * (r1 - 2)^2",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0",
+                    "0.02 + 0.0025 * r1^2"
+                ]
+            ]
+        },
+        "initial_conditions": {
+            "position_mean": [
+                -7
+            ],
+            "position_std": [
+                0.5
+            ],
+            "momentum_mean": [
+                0
+            ],
+            "momentum_std": [
+                1.0
+            ],
+            "state": [
+                0,
+                0,
+                1
+            ],
+            "mass": [
+                2000
+            ]
+        },
+        "write": {
+            "population_mean": "KTSH_HO_POPULATION_MEAN_P2_LZSH.mat"
+        },
+        "iterations": 8000,
+        "time_step": 1.0,
+        "trajectories": 10000,
+        "seed": 6,
+        "landau_zener": {}
+    }
+}

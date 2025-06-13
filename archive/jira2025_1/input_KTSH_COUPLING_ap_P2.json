@@ -1,0 +1,24 @@
+{
+    "model_potential": {
+        "adiabatic": true,
+        "limits": [
+            -16,
+            16
+        ],
+        "output": "KTSH_COUPLING_POTENTIAL_ADIABATIC_P2.mat",
+        "points": 8192,
+        "hamiltonian": {
+            "dims": 1,
+            "matrix": [
+                [
+                    "sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))",
+                    "0.0005 / (200 * r1^2 + 1)"
+                ],
+                [
+                    "0.0005 / (200 * r1^2 + 1)",
+                    "-sgn(r1) * 0.01 * (1 - exp(-(1.6 * sgn(r1) * r1)))"
+                ]
+            ]
+        }
+    }
+}

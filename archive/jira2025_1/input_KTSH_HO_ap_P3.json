@@ -1,0 +1,31 @@
+{
+    "model_potential": {
+        "adiabatic": true,
+        "limits": [
+            -10,
+            10
+        ],
+        "output": "KTSH_HO_POTENTIAL_ADIABATIC_P3.mat",
+        "points": 8192,
+        "hamiltonian": {
+            "dims": 1,
+            "matrix": [
+                [
+                    "0.0025 * r1^2",
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0.05 + 0.0025 * (r1 - 2)^2",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0",
+                    "0.1 + 0.0025 * r1^2"
+                ]
+            ]
+        }
+    }
+}
