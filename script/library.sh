@@ -23,8 +23,6 @@ for TARGET in "${TARGETS[@]}"; do
     wget -q -O llvm.tar.gz     https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-20.1.4.tar.gz
     wget -q -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
 
-    git clone https://github.com/ilyak/libxm && cd libxm && make CC="$PWD/../zigcc" LDFLAGS="-O3" -j $CORES src/libxm.a && cd ..
-
     tar -xzf boost.tar.gz    && rm    boost.tar.gz
     tar -xzf eigen.tar.gz    && rm    eigen.tar.gz
     tar -xzf fftw.tar.gz     && rm     fftw.tar.gz
@@ -45,6 +43,8 @@ for TARGET in "${TARGETS[@]}"; do
     cd fftw     && make                                                                                                   -j $CORES             && make                                   install && cd ..
     cd gsl      && make                                                                                                   -j $CORES             && make                                   install && cd ..
     cd openblas && make CC="$PWD/../zigcc" DYNAMIC_ARCH=1 HOSTCC=gcc NO_SHARED=1 NOFORTRAN=1 NUM_THREADS=128 USE_OPENMP=1 -j $CORES libs shared && make NO_SHARED=1 PREFIX="$PWD/install" install && cd ..
+
+    git clone https://github.com/ilyak/libxm && cd libxm && make CC="$PWD/../zigcc" LDFLAGS="-O3" -j $CORES src/libxm.a && cd ..
 
     cd eigen && mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX="$PWD/../install" .. && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ../install && mv include/eigen3/* include && rm -rf include/eigen3 && cd ../..
 
