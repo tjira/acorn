@@ -2,7 +2,7 @@
 
 CORES=$(nproc --all); TARGETS=("x86_64-linux")
 
-export C_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:$PWD/llvm/install/include"; export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$PWD/zig-bin:$PATH"
+export C_INCLUDE_PATH="$C_INCLUDE_PATH:$PWD/llvm/install/include"; export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PWD/eigen/install"; export PATH="$PWD/zig-bin:$PATH"
 
 for TARGET in "${TARGETS[@]}"; do
 
@@ -22,6 +22,8 @@ for TARGET in "${TARGETS[@]}"; do
     wget -q -O libint.tar.gz   https://github.com/evaleev/libint/releases/download/v2.10.2/libint-2.10.2.tgz
     wget -q -O llvm.tar.gz     https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-20.1.4.tar.gz
     wget -q -O openblas.tar.gz https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
+
+    git clone https://github.com/ilyak/libxm && cd libxm && make CC="$PWD/../zigcc" LDFLAGS="-O3" -j $CORES src/libxm.a && cd ..
 
     tar -xzf boost.tar.gz    && rm    boost.tar.gz
     tar -xzf eigen.tar.gz    && rm    eigen.tar.gz
@@ -49,6 +51,8 @@ for TARGET in "${TARGETS[@]}"; do
     cd libint && cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER="$PWD/../zigcpp" -DCMAKE_INSTALL_PREFIX="$PWD/install" . && cmake --build . --parallel $CORES --verbose && cmake --install . && cd ..
 
     rm -rf external-$TARGET && mkdir external-$TARGET && cp -r boost/install/* eigen/install/* fftw/install/* gsl/install/* libint/install/* llvm/install/* openblas/install/* external-$TARGET
+
+    cp libxm/src/*.a external-$TARGET/lib && cp libxm/src/*.h external-$TARGET/include
 
     cd external-$TARGET && rm -rf bin share lib/*archer* lib/*cblas* lib/*la lib/cmake lib/pkgconfig && cd ..
 
