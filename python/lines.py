@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
+# general imports
 import argparse as ap, matplotlib.animation as anm, matplotlib.pyplot as plt, matplotlib.ticker as tck, numpy as np
+
+# additional imports
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
 # set rcParams
 plt.rcParams.update({
@@ -28,14 +32,18 @@ parser.add_argument("--dpi", type=int, default=256, help="The DPI of the plot.")
 parser.add_argument("--figsize", type=float, nargs=2, default=[6, 8], help="The dimensions of the plot in inches.")
 parser.add_argument("--fontsize_label", type=int, nargs="+", help="The font size for the x and y axis labels.")
 parser.add_argument("--fontsize_title", type=int, nargs="+", help="The font size for the title of each subplot.")
+parser.add_argument("--fontsize_legend", type=int, nargs="+", help="The font size for the legend of each subplot.")
+parser.add_argument("--fontsize_tick", type=int, nargs="+", help="The font size for the ticks of each subplot.")
 parser.add_argument("--fps", type=int, default=30, help="Frames per second for the animation.")
 parser.add_argument("--title", type=str, nargs="+", help="The title of each subplot.")
 parser.add_argument("--xlabel", type=str, nargs="+", help="The an x-axis labels for each subplot.")
 parser.add_argument("--xlim", type=float, nargs="+", help="The x-axis limits for each subplot.")
+parser.add_argument("--legpos", type=float, nargs="+", help="The bbox position of the legend boxes.")
 parser.add_argument("--xticklabelon", type=int, nargs="+", help="Whether to show the x-axis tick labels for each subplot.")
 parser.add_argument("--ylabel", type=str, nargs="+", help="The an y-axis label for each subplot.")
 parser.add_argument("--ylim", type=float, nargs="+", help="The y-axis limits for each subplot.")
 parser.add_argument("--yticklabelon", type=int, nargs="+", help="Whether to show the y-axis tick labels for each subplot.")
+parser.add_argument("--zoominset", type=str, nargs="+", help="Zoomed inset axes specification")
 
 # additional file arguments
 parser.add_argument("--alphas", nargs="+", help="Alpha values for the plotted lines.")
@@ -137,8 +145,17 @@ for i, ax in enumerate(axes.values()):
     # enable minor ticks
     ax.xaxis.set_minor_locator(tck.AutoMinorLocator()); ax.yaxis.set_minor_locator(tck.AutoMinorLocator()); ax.tick_params(which="both", direction="in", top=True, right=True)
 
+    # set the tick label font size
+    ax.tick_params(axis="both", which="major", labelsize=args.fontsize_tick[i] if args.fontsize_tick and len(args.fontsize_tick) > i else 12)
+
+    # extract the fontsize of the legend
+    fontsize_legend = args.fontsize_legend[i] if args.fontsize_legend and len(args.fontsize_legend) > i else 10
+
+    # extract the legend anchor
+    anchor_legend = (args.legpos[2 * i], args.legpos[2 * i + 1]) if args.legpos and len(args.legpos) > 2 * i and not np.isnan(args.legpos[2 * i]) and not np.isnan(args.legpos[2 * i + 1]) else None
+
     # add the legend
-    if any([line.get_label()[0] != "_" for line in ax.lines]): ax.legend(frameon=False, prop={"size": 8})
+    if any([line.get_label()[0] != "_" for line in ax.lines]): ax.legend(prop={"size": fontsize_legend}, bbox_to_anchor=anchor_legend, loc="upper left")
 
     # set the title
     if args.title and len(args.title) > i: ax.set_title(args.title[i], fontsize=args.fontsize_title[i] if args.fontsize_title and len(args.fontsize_title) > i else 16)
@@ -154,6 +171,25 @@ for i, ax in enumerate(axes.values()):
     # enable or disable the x-axis and y-axis tick labels
     if args.xticklabelon and len(args.xticklabelon) > i: ax.xaxis.set_tick_params(labelbottom=args.xticklabelon[i])
     if args.yticklabelon and len(args.yticklabelon) > i: ax.yaxis.set_tick_params(labelleft  =args.yticklabelon[i])
+
+    # add the inset axes if specified
+    if args.zoominset and len(args.zoominset) > i and args.zoominset[i]:
+
+        # parse the inset arguments and create the inset axes
+        zoom = list(map(float, args.zoominset[i].split(","))); axins = ax.inset_axes(zoom[:4])
+
+        # plot the same thing in the inset axes
+        for line in ax.lines:
+            axins.plot(line.get_xdata(), line.get_ydata(), color=line.get_color(), linestyle=line.get_linestyle(), linewidth=line.get_linewidth() * 0.9, marker=line.get_marker())
+
+        # disable the x and y axis tick labels in the inset axes
+        axins.xaxis.set_visible(False); axins.yaxis.set_visible(False)
+
+        # set the x and y limits of the inset axes
+        axins.set_xlim(zoom[4], zoom[5]); axins.set_ylim(zoom[6], zoom[7])
+
+        # mark the inset axes in the main axes
+        mark_inset(ax, axins, loc1=zoom[8], loc2=zoom[9], ec="0.4", zorder=1000)
 
 # set the layout
 fig.tight_layout()
