@@ -155,6 +155,21 @@ pub fn Matrix(comptime T: type) type {
             };
         }
 
+        /// Symmetrize the matrix as A = (A + A^T) / 2.
+        pub fn symmetrize(self: Matrix(T)) !void {
+            if (self.rows != self.cols) return error.NotSquareMatrixCannotSymmetrize;
+
+            for (0..self.rows) |i| {
+                for (i + 1..self.cols) |j| {
+
+                    const val = (self.at(i, j) + self.at(j, i)) / 2;
+
+                    self.ptr(i, j).* = val;
+                    self.ptr(j, i).* = val;
+                }
+            }
+        }
+
         /// Returns the matrix in the form of a vector. No memory is allocated.
         pub fn vector(self: Matrix(T)) Vector(T) {
             return Vector(T){

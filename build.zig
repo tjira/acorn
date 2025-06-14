@@ -6,7 +6,8 @@ const targets: []const std.Target.Query = &.{
 };
 
 pub fn build(builder: *std.Build) !void {
-    const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode") orelse false;
+    const benchmark = builder.option(bool, "BENCHMARK", "Build the benchmarks"              ) orelse false;
+    const debug     = builder.option(bool, "DEBUG",     "Build everything in the debug mode") orelse false;
 
     for (targets) |target| {
 
@@ -43,11 +44,17 @@ pub fn build(builder: *std.Build) !void {
         main_executable.linkLibC(); main_executable.linkLibCpp();
         test_executable.linkLibC(); test_executable.linkLibCpp();
 
-        main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
-        main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static});
-        main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
-        main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
-        main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static}); test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
+        main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
+
+        test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
+        test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static});
+        test_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
+        test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
+        test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
 
         test_executable.root_module.addImport("acorn", main_executable.root_module);
 
@@ -61,9 +68,38 @@ pub fn build(builder: *std.Build) !void {
             builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
             builder.step("test", "Run unit tests"             ).dependOn(&builder.addRunArtifact(test_executable).step);
         }
+
+        if (benchmark) {
+            try benchmarkExecutable(builder, main_executable, target, debug);
+        }
     }
 
     var script_step = builder.step("script", "Generate executable scripts"); script_step.makeFn = script; script_step.dependOn(builder.getInstallStep());
+}
+
+pub fn benchmarkExecutable(builder: *std.Build, main_executable: *std.Build.Step.Compile, target: std.Target.Query, debug: bool) !void {
+    const benchmarks = &[_][]const u8{
+        "dsyevd"
+    };
+
+    for (benchmarks) |benchmark| {
+
+        const benchmark_executable = builder.addExecutable(.{
+            .name = benchmark,
+            .optimize = if (debug) .Debug else .ReleaseFast,
+            .root_source_file = builder.path(try std.mem.concat(builder.allocator, u8, &[_][]const u8{"benchmark/", benchmark, ".zig"})),
+            .strip = !debug,
+            .target = builder.resolveTargetQuery(target)
+        });
+
+        benchmark_executable.root_module.addImport("acorn", main_executable.root_module);
+
+        const benchmark_install = builder.addInstallArtifact(benchmark_executable, .{
+            .dest_dir = .{.override = .{.custom = try std.mem.concat(builder.allocator, u8, &[_][]const u8{try target.zigTriple(builder.allocator), "/benchmark"})}}
+        });
+
+        builder.getInstallStep().dependOn(&benchmark_install.step);
+    }
 }
 
 pub fn script(self: *std.Build.Step, options: std.Build.Step.MakeOptions) !void {

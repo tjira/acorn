@@ -110,6 +110,10 @@ pub fn parse(filebuf: []const u8, allocator: std.mem.Allocator) !void {
 
 /// The main function of the program.
 pub fn main() !void {
+    if (std.posix.getenv("OMP_NUM_THREADS") == null) {
+        return error.UndefinedNumberOfThreads;
+    }
+
     var gpa = std.heap.GeneralPurposeAllocator(.{}){}; const allocator = gpa.allocator();
 
     defer {
@@ -118,7 +122,7 @@ pub fn main() !void {
 
     const fsize = 8192; var argc: usize = 0; var timer = try std.time.Timer.start();
 
-    try std.io.getStdOut().writer().print("ZIG VERSION: {}, THREADS: {s}\n", .{builtin.zig_version, if (std.posix.getenv("OMP_NUM_THREADS") == null) "UNDEFINED" else std.posix.getenv("OMP_NUM_THREADS").?});
+    try std.io.getStdOut().writer().print("ZIG VERSION: {}, THREADS: {s}\n", .{builtin.zig_version, std.posix.getenv("OMP_NUM_THREADS").?});
 
     var argv = try std.process.argsWithAllocator(allocator); defer argv.deinit();
 

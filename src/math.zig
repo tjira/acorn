@@ -53,6 +53,19 @@ pub fn max(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a > b) a else b;
 }
 
+/// Calculates the mean of an array.
+pub fn mean(comptime T: type, v: []const T) !T {
+    if (v.len == 0) return error.InvalidInputForMean;
+
+    var result: T = 0;
+
+    for (v) |value| {
+        result += value;
+    }
+
+    return result / asfloat(T, v.len);
+}
+
 /// Return the minimum of two numbers
 pub fn min(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
     return if (a < b) a else b;
@@ -70,6 +83,20 @@ pub fn prod(comptime T: type, v: []const T) T {
 /// Sign of a number.
 pub fn sgn(a: anytype) @TypeOf(a) {
     return if (a < 0) -1 else 1;
+}
+
+/// Calculates the standard deviation of an array.
+pub fn stddev(comptime T: type, v: []const T) !T {
+
+    if (v.len < 2) return error.InvalidInputForStddev;
+
+    const mean_value = try mean(T, v); var sum_squared_diff: T = 0;
+
+    for (v) |value| {
+        sum_squared_diff += value * value + mean_value * mean_value - 2 * value * mean_value;
+    }
+
+    return std.math.sqrt(sum_squared_diff / asfloat(T, v.len - 1));
 }
 
 /// Calculate the sum of an array.
