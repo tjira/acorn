@@ -56,7 +56,7 @@ for TARGET in "${TARGETS[@]}"; do
 
     cd external-$TARGET && rm -rf bin share lib/*archer* lib/*cblas* lib/*la lib/cmake lib/pkgconfig && cd ..
 
-    rm -rf boost eigen fftw gsl libint llvm openblas zigcc zigcpp
+    rm -rf boost eigen fftw gsl libint libxm llvm openblas zigcc zigcpp
 
     wget -q -O external-$TARGET/include/exprtk.hpp https://raw.githubusercontent.com/ArashPartow/exprtk/refs/heads/master/exprtk.hpp
 
