@@ -79,7 +79,7 @@ pub fn build(builder: *std.Build) !void {
 
 pub fn benchmarkExecutable(builder: *std.Build, main_executable: *std.Build.Step.Compile, target: std.Target.Query, debug: bool) !void {
     const benchmarks = &[_][]const u8{
-        "dsyevd"
+        "dgemm", "dsyevd"
     };
 
     for (benchmarks) |benchmark| {

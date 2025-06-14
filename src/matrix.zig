@@ -145,6 +145,15 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
+        /// Fill the matrix with uniformly distributed random numbers.
+        pub fn randu(self: Matrix(T), low: T, high: T, seed: usize) void {
+            var rng = std.Random.DefaultPrng.init(seed); const random = rng.random();
+
+            for (0..self.data.len) |i| {
+                self.data[i] = low + (high - low) * random.float(T);
+            }
+        }
+
         /// Returns a reference to the row at the given index. The row is returned as a new matrix. No memory is allocated.
         pub fn row(self: Matrix(T), i: usize) Matrix(T) {
             return Matrix(T){

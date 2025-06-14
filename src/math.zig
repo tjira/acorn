@@ -87,7 +87,6 @@ pub fn sgn(a: anytype) @TypeOf(a) {
 
 /// Calculates the standard deviation of an array.
 pub fn stddev(comptime T: type, v: []const T) !T {
-
     if (v.len < 2) return error.InvalidInputForStddev;
 
     const mean_value = try mean(T, v); var sum_squared_diff: T = 0;
