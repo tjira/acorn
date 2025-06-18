@@ -84,6 +84,18 @@ pub fn dgecon(ALU: Matrix(f64), onorm: f64) !f64 {
     return if (info == 0) rcond else error.ErrorInConditionNumberCalculation;
 }
 
+/// Calculate the Schur decomposition of matrix A. The JR and JI will contain real and imaginary parts of calculated eigenvalues.
+pub fn dgees(T: *Matrix(f64), Q: *Matrix(f64), A: Matrix(f64), JR: *Matrix(f64), JI: *Matrix(f64)) !void {
+    const n: i32 = @intCast(A.rows); var sdim: i32 = undefined; A.memcpy(T.*);
+
+    const info = lapacke.LAPACKE_dgees(lapacke.LAPACK_ROW_MAJOR, 'V', 'N', null, n, &T.data[0], n, &sdim, &JR.data[0], &JI.data[0], &Q.data[0], n);
+
+    for (0..JR.rows) |i| std.mem.swap(f64, JR.ptr(i, i), JR.ptr(0, i));
+    for (0..JI.rows) |i| std.mem.swap(f64, JI.ptr(i, i), JI.ptr(0, i));
+
+    if (info != 0) return error.ErrorInRealSchurDecomposition;
+}
+
 /// Calculate the matrix-matrix product C = A * B and store the result in C. The AT and BT flags control whether the matrices A and B are transposed or not.
 pub fn dgemm(C: *Matrix(f64), A: Matrix(f64), AT: bool, B: Matrix(f64), BT: bool) void {
     const m: i32 = @intCast(C.rows); const n: i32 = @intCast(C.cols); const k: i32 = @intCast(A.cols);

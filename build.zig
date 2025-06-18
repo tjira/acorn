@@ -42,19 +42,12 @@ pub fn build(builder: *std.Build) !void {
         main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
 
         main_executable.linkLibC(); main_executable.linkLibCpp();
-        test_executable.linkLibC(); test_executable.linkLibCpp();
 
         main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
-
-        test_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
-        test_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static});
-        test_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
-        test_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
-        test_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
 
         test_executable.root_module.addImport("acorn", main_executable.root_module);
 
@@ -79,7 +72,7 @@ pub fn build(builder: *std.Build) !void {
 
 pub fn benchmarkExecutable(builder: *std.Build, main_executable: *std.Build.Step.Compile, target: std.Target.Query, debug: bool) !void {
     const benchmarks = &[_][]const u8{
-        "dgemm", "dsyevd"
+        "dgees", "dgemm", "dsyevd"
     };
 
     for (benchmarks) |benchmark| {
