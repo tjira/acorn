@@ -18,7 +18,7 @@ const Args = struct {
     }
 
     pub fn function(self: *Args) !void {
-        acorn.cwrapper.dgemm(&self.C, self.A, false, self.B, false);
+        acorn.cwrapper.Blas(f64).dgemm(&self.C, self.A, false, self.B, false);
     }
 
     pub fn print(self: Args) !void {

@@ -43,8 +43,6 @@ pub fn build(builder: *std.Build) !void {
 
         main_executable.linkLibC(); main_executable.linkLibCpp();
 
-        main_executable.linkSystemLibrary2("fftw3",    .{.preferred_link_mode = .static});
-        main_executable.linkSystemLibrary2("gsl",      .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});

@@ -38,9 +38,9 @@ extern "C" {
         throw std::invalid_argument("UNSUPPORTED CONTRACTION SIGNATURE");
     }
 
-    void logm(double *B, double *A, const ulong n) {
-        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> AT(A, n, n);
-        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> BT(B, n, n);
+    void logm(double *B, double *A, const ulong dim) {
+        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> AT(A, dim, dim);
+        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> BT(B, dim, dim);
 
         BT = AT.log();
     }

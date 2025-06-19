@@ -281,7 +281,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
 /// Diagonalize the potential, assign it to the original potential and correct the sign.
 pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), i: usize) !void {
-    try cwp.dsyevd(UA, UC, U.*);
+    try cwp.Lapack(T).dsyevd(UA, UC, U.*);
 
     UA.memcpy(U.*); UC.memcpy(UC2[i % 2]);
 
@@ -315,11 +315,11 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32) !T {
     r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*, t);
 
-    try cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
+    try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
 
     r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*, t);
 
-    try cwp.dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
+    try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
 
     r.ptr(c).* += opt.derivative_step;
 
@@ -536,7 +536,7 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
     // TODO: Check the correctnes of the sign in front of TDC.
     OmegaExp.get(SP, (U.at(1, 1) - U.at(0, 0)) * time_step, -TDC.at(0, 1) * time_step);
 
-    const SM = S.matrix(); var SNM = SN.matrix(); cwp.dgemm(&SNM, SP.*, false, SM, false);
+    const SM = S.matrix(); var SNM = SN.matrix(); cwp.Blas(T).dgemm(&SNM, SP.*, false, SM, false);
 
     if (S.at(2) * SN.at(2) < 0) sn = if (SN.at(2) < 0) 0 else 1;
 
@@ -589,7 +589,7 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
 
             I.ptr(1, 0).* = I.at(0, 1).neg(); I.ptr(1, 1).* = I.at(0, 0);
 
-            const phi: T = -0.25 * std.math.pi + delta * (std.math.log(T, std.math.e, delta) - 1) + try cwp.gammaArg(std.math.Complex(T).init(1, -delta));
+            const phi: T = -0.25 * std.math.pi + delta * (std.math.log(T, std.math.e, delta) - 1) + std.math.complex.arg(mth.gamma(T, std.math.Complex(T).init(1, -delta)));
 
             const exp1 = std.math.complex.exp(std.math.Complex(T).init(0, -phi));
             const exp2 = std.math.complex.exp(std.math.Complex(T).init(0,  phi));
@@ -597,7 +597,7 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
             I.ptr(0, 0).* = I.at(0, 0).mul(exp1);
             I.ptr(1, 1).* = I.at(1, 1).mul(exp2);
 
-            var T1M = T1.matrix(); cwp.zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);
+            var T1M = T1.matrix(); cwp.Blas(T).zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);
         }
     };
 

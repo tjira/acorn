@@ -3,13 +3,14 @@
 const std = @import("std"); const builtin = @import("builtin");
 
 pub const basis                     = @import("basis.zig"                   );
-pub const cwrapper                  = @import("cwrapper.zig"                );
 pub const classical_dynamics        = @import("classicaldynamics.zig"       );
 pub const complete_active_space     = @import("completeactivespace.zig"     );
 pub const configuration_interaction = @import("configurationinteraction.zig");
 pub const constant                  = @import("constant.zig"                );
+pub const cwrapper                  = @import("cwrapper.zig"                );
 pub const energy_diff               = @import("energydiff.zig"              );
 pub const fibonacci                 = @import("fibonacci.zig"               );
+pub const fouriertransform          = @import("fouriertransform.zig"        );
 pub const hartree_fock              = @import("hartreefock.zig"             );
 pub const helper                    = @import("helper.zig"                  );
 pub const input                     = @import("input.zig"                   );
@@ -145,4 +146,24 @@ pub fn main() !void {
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+
+    // var A = try Tensor(std.math.Complex(f64)).init(&[_]usize{2, 2, 2}, allocator); defer A.deinit();
+    //
+    // A.data[0] = std.math.Complex(f64).init(1, 0);
+    // A.data[1] = std.math.Complex(f64).init(2, 0);
+    // A.data[2] = std.math.Complex(f64).init(3, 0);
+    // A.data[3] = std.math.Complex(f64).init(4, 0);
+    // A.data[4] = std.math.Complex(f64).init(5, 0);
+    // A.data[5] = std.math.Complex(f64).init(6, 0);
+    // A.data[6] = std.math.Complex(f64).init(7, 0);
+    // A.data[7] = std.math.Complex(f64).init(8, 0);
+    //
+    // std.debug.print("{any}\n", .{A.data});
+    // try ftr.fftn(f64, A.data, A.shape, -1);
+    // std.debug.print("{any}\n", .{A.data});
+    // try ftr.fftn(f64, A.data, A.shape,  1);
+    // std.debug.print("{any}\n", .{A.data});
+
+    // std.debug.print("GAMMARG(1+I) = {d:.6}\n", .{try cwrapper.gammaArg(std.math.Complex(f64).init(0.4, 1))});
+    // std.debug.print("GAMMARG(1+I) = {any}\n", .{std.math.complex.arg(math.gamma(f64, std.math.Complex(f64).init(0.4, 1)))});
 }

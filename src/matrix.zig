@@ -230,7 +230,7 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
 
             C = try Matrix(T).init(B.?.rows, A.?.cols, allocator); defer C.?.deinit();
 
-            cwp.dgemm(&C.?, B.?, false, A.?, false); C.?.memcpy(A.?);
+            cwp.Blas(T).dgemm(&C.?, B.?, false, A.?, false); C.?.memcpy(A.?);
         }
 
         if (print and opt.print) {try std.io.getStdOut().writer().print("\nRESULT\n", .{}); try A.?.print(std.io.getStdOut().writer());}

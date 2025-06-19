@@ -20,7 +20,7 @@ const Args = struct {
     }
 
     pub fn function(self: *Args) !void {
-        try acorn.cwrapper.dgees(&self.AT, &self.AQ, self.A, &self.AJR, &self.AJI);
+        try acorn.cwrapper.Lapack(f64).dgees(&self.AT, &self.AQ, self.A, &self.AJR, &self.AJI);
     }
 
     pub fn print(self: Args) !void {

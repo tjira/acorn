@@ -7,6 +7,17 @@ pub fn asfloat(comptime T: type, a: anytype) T {
     return @as(T, @floatFromInt(a));
 }
 
+/// Reverse the bits of a number.
+pub fn bitrev(value: anytype, count: u6) @TypeOf(value) {
+    var result: @TypeOf(value) = 0; var i: u6 = 0;
+
+    while (i < count) : (i += 1) {
+        result |= ((value >> @intCast(i)) & 1) << @intCast(count - 1 - i);
+    }
+
+    return result;
+}
+
 /// Check if a vector contains a value.
 pub fn contains(comptime T: type, v: []const T, value: T) bool {
     for (v) |element| {if (element == value) return true;} return false;

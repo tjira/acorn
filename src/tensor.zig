@@ -91,6 +91,15 @@ pub fn Tensor(comptime T: type) type {
             return &self.data[index];
         }
 
+        /// Fill the tensor with random values from a normal distribution with the specified mean and standard deviation.
+        pub fn randn(self: *Tensor(T), mean: T, stdev: T, seed: u64) void {
+            var rng = std.Random.DefaultPrng.init(seed); const random = rng.random();
+
+            for (0..self.data.len) |i| {
+                self.data[i] = mean + stdev * random.floatNorm(T);
+            }
+        }
+
         /// Write the tensor to a file.
         pub fn write(self: Tensor(T), path: []const u8) !void {
             const file = try std.fs.cwd().createFile(path, .{}); defer file.close();

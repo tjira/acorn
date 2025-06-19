@@ -126,7 +126,7 @@ pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sys
         H.ptr(i, j).* = asfloat(T, sign) * try slater(T, A, so[0..diff * 2], H_MS, J_MS_A); H.ptr(j, i).* = H.at(i, j);
     };
 
-    try cwp.dsyevd(&E, &C, H);
+    try cwp.Lapack(T).dsyevd(&E, &C, H);
 
     if (print) try std.io.getStdOut().writer().print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + system.nuclearRepulsion()});
 

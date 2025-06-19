@@ -1,16 +1,11 @@
 //! File for math functions.
 
-const std = @import("std"); const cwp = @import("cwrapper.zig");
+const std = @import("std");
 
 const asfloat = @import("helper.zig").asfloat;
 
-/// Boys function.
-pub fn boys(comptime T: type, a: T, x: T) T {
-    return cwp.hyp1f1(a + 0.5, a + 1.5, -x) / (2 * a + 1);
-}
-
 /// Calculate the combination number.
-pub fn comb(n: anytype, k: @TypeOf(n)) @TypeOf(n) {
+pub fn comb(n: anytype, k: @TypeOf(n)) @TypeOf(n, k) {
     var nck: @TypeOf(n) = 1;
 
     for (k + 1..n + 1) |i| nck *= i;
@@ -43,13 +38,42 @@ pub fn combinations(comptime T: type, array: []const T, n: usize, allocator: std
     try Backtrack.get(&result, array, n, &current, 0, allocator); return result;
 }
 
+/// Gamma function using the Lanczos approximation.
+pub fn gamma(comptime T: type, x: std.math.Complex(T)) std.math.Complex(T) {
+    const g: T = 7; const p = [9]T{
+           0.999999999999809930e+0,
+          676.52036812188510000e+0,
+        -1259.13921672240280000e+0,
+          771.32342877765313000e+0,
+         -176.61502916214059000e+0,
+           12.50734327868690500e+0,
+           -0.13857109526572012e+0,
+            9.98436957801957160e-6,
+            1.50563273514931160e-7
+    };
+
+    if (x.re < 0.5) {
+        return std.math.Complex(T).init(std.math.pi, 0).div(gamma(T, std.math.Complex(T).init(1, 0).sub(x)).mul(std.math.complex.sin(x.mul(std.math.Complex(T).init(std.math.pi, 0)))));
+    }
+
+    var a = std.math.Complex(T).init(p[0], 0);
+
+    for (1..g + 2) |i| a = a.add(std.math.Complex(T).init(p[i], 0).div(x.add(std.math.Complex(T).init(asfloat(T, i) - 1, 0))));
+
+    const t = x.add(std.math.Complex(T).init(g - 0.5, 0));
+
+    const b = std.math.Complex(T).init(std.math.sqrt(2 * std.math.pi), 0);
+
+    return a.mul(b).mul(std.math.complex.pow(t, x.sub(std.math.Complex(T).init(0.5, 0)))).mul(std.math.complex.exp(t.neg()));
+}
+
 /// Return the Heaviside function
 pub fn h(x: anytype) @TypeOf(x) {
     return if (x >= 0) 1.0 else 0;
 }
 
 /// Return the maximum of two numbers
-pub fn max(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
+pub fn max(a: anytype, b: @TypeOf(a)) @TypeOf(a, b) {
     return if (a > b) a else b;
 }
 
@@ -67,7 +91,7 @@ pub fn mean(comptime T: type, v: []const T) !T {
 }
 
 /// Return the minimum of two numbers
-pub fn min(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
+pub fn min(a: anytype, b: @TypeOf(a)) @TypeOf(a, b) {
     return if (a < b) a else b;
 }
 

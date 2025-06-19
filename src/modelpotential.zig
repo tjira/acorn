@@ -306,7 +306,7 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
         pot.?.evaluate(&U, r, 0);
 
         if (opt.adiabatic) {
-            try cwp.dsyevd(&UA, &UC, U); @memcpy(U.data, UA.data);
+            try cwp.Lapack(T).dsyevd(&UA, &UC, U); @memcpy(U.data, UA.data);
         }
 
         for (U.data, 0..) |e, j| V.ptr(i, j).* = e;

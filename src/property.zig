@@ -28,7 +28,7 @@ pub fn freq(comptime T: type, system: System(T), H: Matrix(T), allocator: std.me
     var HMJ = try Matrix(T).init(HM.rows, HM.cols, allocator); defer HMJ.deinit();
     var HMC = try Matrix(T).init(HM.rows, HM.cols, allocator); defer HMC.deinit();
 
-    try cwp.dsyevd(&HMJ, &HMC, HM);
+    try cwp.Lapack(T).dsyevd(&HMJ, &HMC, HM);
 
     const factor = 5e-3 / std.math.pi / cnt.c * std.math.sqrt(cnt.Eh / cnt.amu / cnt.a0 / cnt.a0);
 

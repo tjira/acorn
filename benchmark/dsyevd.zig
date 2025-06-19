@@ -18,7 +18,7 @@ const Args = struct {
     }
 
     pub fn function(self: *Args) !void {
-        try acorn.cwrapper.dsyevd(&self.AJ, &self.AC, self.A);
+        try acorn.cwrapper.Lapack(f64).dsyevd(&self.AJ, &self.AC, self.A);
     }
 
     pub fn print(self: Args) !void {

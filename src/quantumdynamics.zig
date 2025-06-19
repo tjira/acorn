@@ -2,12 +2,13 @@
 
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
-const inp = @import("input.zig"         );
-const mat = @import("matrix.zig"        );
-const mpt = @import("modelpotential.zig");
-const out = @import("output.zig"        );
-const vec = @import("vector.zig"        );
-const wfn = @import("wavefunction.zig"  );
+const ftr = @import("fouriertransform.zig");
+const inp = @import("input.zig"           );
+const mat = @import("matrix.zig"          );
+const mpt = @import("modelpotential.zig"  );
+const out = @import("output.zig"          );
+const vec = @import("vector.zig"          );
+const wfn = @import("wavefunction.zig"    );
 
 const Matrix       = @import("matrix.zig"      ).Matrix      ;
 const Vector       = @import("vector.zig"      ).Vector      ;
@@ -21,9 +22,9 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
     var pot = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?) else try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
 
-    const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(u32, opt.grid.points, ndim); defer pot.?.deinit();
+    const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(usize, opt.grid.points, ndim); defer pot.?.deinit();
 
-    var spectrum_points = std.math.pow(u32, 2, std.math.log2(opt.iterations + 1) + opt.spectrum.nearest_power_of_two); if (opt.spectrum.flip) spectrum_points *= 2;
+    var spectrum_points = std.math.pow(usize, 2, std.math.log2(opt.iterations + 1) + opt.spectrum.nearest_power_of_two); if (opt.spectrum.flip) spectrum_points *= 2;
 
     var output = try out.QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
@@ -359,7 +360,7 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
         acft.ptr(i, 1).* = transform.at(i).re; acft.ptr(i, 2).* = transform.at(i).im;
     }
 
-    cwp.fftwnd(transform.data, &[_]u32{@intCast(transform.rows)}, -1);
+    try ftr.fftn(f64, transform.data, &[_]usize{@intCast(transform.rows)}, -1);
 
     for (0..spectrum.rows) |i| {
         spectrum.ptr(i, 0).* = frequency.at(i, 0); spectrum.ptr(i, 1).* = transform.at(i).magnitude();
@@ -380,11 +381,11 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 
             for (0..W.npoint) |j| T1.ptr(j, 0).* = W.at(j, i);
 
-            cwp.fftwnd(T1.data, W.shape, -1);
+            try ftr.fftn(f64, T1.data, W.shape, -1);
 
             for (0..W.npoint) |j| T1.ptr(j, 0).* = T1.at(j, 0).mul(std.math.Complex(T).init(0, kvec.at(j, k)));
 
-            cwp.fftwnd(T1.data, W.shape, 1);
+            try ftr.fftn(f64, T1.data, W.shape, 1);
 
             for (0..bohm_field.rows) |j| bohm_field.ptr(j).* += W.at(j, i).conjugate().mul(T1.at(j, 0)).im;
         }
@@ -429,7 +430,7 @@ pub fn rgridPotentials(comptime T: type, VS: *[3]std.ArrayList(Matrix(std.math.C
 
     for (0..rvec.rows) |i| {
 
-        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector(), t); try cwp.dsyevd(&UA, &UC, U);
+        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector(), t); try cwp.Lapack(T).dsyevd(&UA, &UC, U);
 
         if (i > 0) for (0..UC.cols) |j| {
 
@@ -469,12 +470,12 @@ pub fn rgridPropagators(comptime T: type, R: *std.ArrayList(Matrix(std.math.Comp
             R.items[i].ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(std.math.Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        cwp.zgemm(&T1, VC.items[i], false, R.items[i], false); cwp.zgemm(&R.items[i], T1, false, VC.items[i], true);
+        cwp.Blas(T).zgemm(&T1, VC.items[i], false, R.items[i], false); cwp.Blas(T).zgemm(&R.items[i], T1, false, VC.items[i], true);
     }
 }
 
 /// Prints the iteration information.
-pub fn printIteration(comptime T: type, i: u32, Ekin: T, Epot: T, r: Vector(T), p: Vector(T), P: Matrix(std.math.Complex(T)), acfi: std.math.Complex(T)) !void {
+pub fn printIteration(comptime T: type, i: usize, Ekin: T, Epot: T, r: Vector(T), p: Vector(T), P: Matrix(std.math.Complex(T)), acfi: std.math.Complex(T)) !void {
         try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6} {d:6.3}{s}{d:5.3}i [", .{i, Ekin, Epot, Ekin + Epot, acfi.re, if (acfi.im < 0) "-" else "+", @abs(acfi.im)});
 
         for (0..r.rows) |j| {
