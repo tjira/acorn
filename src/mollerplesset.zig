@@ -81,7 +81,7 @@ pub fn mpPost(comptime T: type, opt: inp.MollerPlessetOptions(T), system: System
     var F_MS   = try Matrix(T).init(nbf, nbf,                      allocator); defer   F_MS.deinit();
     var J_MS_A = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_MS_A.deinit();
 
-    try transform(T, &F_MS, &J_MS_A, hf.F_A, hf.J_A, hf.C_A);
+    try transform(T, &F_MS, &J_MS_A, hf.F_A, hf.J_A, hf.C_A, allocator);
 
     var E: T = 0;
 
@@ -118,9 +118,9 @@ pub fn mp2(comptime T: type, F_MS: Matrix(T), J_MS_A: Tensor(T), nocc: usize) T 
 }
 
 /// Function to perform all integrals transformations used in the Moller-Plesset calculations.
-pub fn transform(comptime T: type, F_MS: *Matrix(T), J_MS_A: *Tensor(T), F_A: Matrix(T), J_A: Tensor(T), C_A: Matrix(T)) !void {
-    if (F_A.rows != F_MS.rows) {try tns.oneAO2MS(T, F_MS,   F_A, C_A);} else {try tns.oneAO2MO(T, F_MS,   F_A, C_A);}
-    if (F_A.rows != F_MS.rows) {try tns.twoAO2MS(T, J_MS_A, J_A, C_A);} else {try tns.twoAO2MO(T, J_MS_A, J_A, C_A);}
+pub fn transform(comptime T: type, F_MS: *Matrix(T), J_MS_A: *Tensor(T), F_A: Matrix(T), J_A: Tensor(T), C_A: Matrix(T), allocator: std.mem.Allocator) !void {
+    if (F_A.rows != F_MS.rows) {try tns.oneAO2MS(T, F_MS,   F_A, C_A           );} else {try tns.oneAO2MO(T, F_MS,   F_A, C_A           );}
+    if (F_A.rows != F_MS.rows) {try tns.twoAO2MS(T, J_MS_A, J_A, C_A, allocator);} else {try tns.twoAO2MO(T, J_MS_A, J_A, C_A, allocator);}
 
     for (0..J_MS_A.shape[0]) |i| for (0..J_MS_A.shape[1]) |j| for (0..J_MS_A.shape[2]) |k| for (0..J_MS_A.shape[3]) |l| {
         J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS_A.at(&[_]usize{i, j, k, l}) - J_MS_A.at(&[_]usize{i, l, k, j});

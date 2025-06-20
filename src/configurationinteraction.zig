@@ -195,8 +195,8 @@ fn slater(comptime T: type, A: Vector(usize), so: []const usize, H_MS: Matrix(T)
 fn transform(comptime T: type, H_MS: *Matrix(T), J_MS_A: *Tensor(T), T_A: Matrix(T), V_A: Matrix(T), J_A: Tensor(T), C_A: Matrix(T), allocator: std.mem.Allocator) !void {
     var H_A = try Matrix(T).init(T_A.rows, T_A.cols, allocator); defer H_A.deinit(); mat.add(T, &H_A, T_A, V_A);
 
-    if (T_A.rows != H_MS.rows) {try tns.oneAO2MS(T, H_MS,   H_A, C_A);} else {try tns.oneAO2MO(T, H_MS,   H_A, C_A);}
-    if (T_A.rows != H_MS.rows) {try tns.twoAO2MS(T, J_MS_A, J_A, C_A);} else {try tns.twoAO2MO(T, J_MS_A, J_A, C_A);}
+    if (T_A.rows != H_MS.rows) {try tns.oneAO2MS(T, H_MS,   H_A, C_A           );} else {try tns.oneAO2MO(T, H_MS,   H_A, C_A           );}
+    if (T_A.rows != H_MS.rows) {try tns.twoAO2MS(T, J_MS_A, J_A, C_A, allocator);} else {try tns.twoAO2MO(T, J_MS_A, J_A, C_A, allocator);}
 
     for (0..J_MS_A.shape[0]) |i| for (0..J_MS_A.shape[1]) |j| for (0..J_MS_A.shape[2]) |k| for (0..J_MS_A.shape[3]) |l| {
         J_MS_A.ptr(&[_]usize{i, k, j, l}).* = J_MS_A.at(&[_]usize{i, j, k, l}) - J_MS_A.at(&[_]usize{i, l, k, j});

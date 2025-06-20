@@ -1,10 +1,12 @@
 //! This module provides a tensor class and functions to manipulate tensors.
 
-const std = @import("std");
+const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const mth = @import("math.zig");
 
 const Matrix = @import("matrix.zig").Matrix;
+
+const contains = @import("helper.zig").contains;
 
 /// Tensor class.
 pub fn Tensor(comptime T: type) type {
@@ -53,6 +55,15 @@ pub fn Tensor(comptime T: type) type {
         /// Fill the tensor with the specified value.
         pub fn fill(self: *Tensor(T), value: T) void {
             @memset(self.data, value);
+        }
+
+        pub fn matrix(self: Tensor(T), separator_index: usize) Matrix(T) {
+            return Matrix(T){
+                .data = self.data,
+                .rows = mth.prod(usize, self.shape[0..separator_index]),
+                .cols = mth.prod(usize, self.shape[separator_index.. ]),
+                .allocator = self.allocator
+            };
         }
 
         /// Print the matrix to the given device.
@@ -109,6 +120,54 @@ pub fn add(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
         C.data[i] = A.data[i].add(B.data[i]);
     };
 }
+
+/// Contract two tensors using the TTGT scheme.
+pub fn contract(comptime T: type, C: anytype, A: anytype, Ai: []const usize, B: anytype, Bi: []const usize, allocator: std.mem.Allocator) !void {
+    var a_shape = if (comptime std.meta.fieldIndex(@TypeOf(A  ), "shape") != null) A.shape else [2]usize{A.rows, A.cols};
+    var b_shape = if (comptime std.meta.fieldIndex(@TypeOf(B  ), "shape") != null) B.shape else [2]usize{B.rows, B.cols};
+    var c_shape = if (comptime std.meta.fieldIndex(@TypeOf(C.*), "shape") != null) C.shape else [2]usize{C.rows, C.cols};
+
+    var a_stride = if (comptime std.meta.fieldIndex(@TypeOf(A  ), "shape") != null) A.stride else [2]usize{A.cols, 1};
+    var b_stride = if (comptime std.meta.fieldIndex(@TypeOf(B  ), "shape") != null) B.stride else [2]usize{B.cols, 1};
+    var c_stride = if (comptime std.meta.fieldIndex(@TypeOf(C.*), "shape") != null) C.stride else [2]usize{C.cols, 1};
+
+    const A_TEN = if (comptime std.meta.fieldIndex(@TypeOf(A  ), "shape") != null) A   else Tensor(T){.data = A.data, .shape = &a_shape[0..].*, .stride = &a_stride[0..].*, .allocator = allocator};
+    const B_TEN = if (comptime std.meta.fieldIndex(@TypeOf(B  ), "shape") != null) B   else Tensor(T){.data = B.data, .shape = &b_shape[0..].*, .stride = &b_stride[0..].*, .allocator = allocator};
+    const C_TEN = if (comptime std.meta.fieldIndex(@TypeOf(C.*), "shape") != null) C.* else Tensor(T){.data = C.data, .shape = &c_shape[0..].*, .stride = &c_stride[0..].*, .allocator = allocator};
+
+    var a_axes = std.ArrayList(usize).init(allocator); defer a_axes.deinit();
+    var b_axes = std.ArrayList(usize).init(allocator); defer b_axes.deinit();
+
+    for (0..A_TEN.shape.len) |i| if (!contains(usize, Ai, i)) {
+        try a_axes.append(i);
+    };
+
+    for (Ai) |i| try a_axes.append(i);
+    for (Bi) |i| try b_axes.append(i);
+
+    for (0..B_TEN.shape.len) |i| if (!contains(usize, Bi, i)) {
+        try b_axes.append(i);
+    };
+
+    const AT_shape = try allocator.alloc(usize, A_TEN.shape.len); defer allocator.free(AT_shape);
+    const BT_shape = try allocator.alloc(usize, B_TEN.shape.len); defer allocator.free(BT_shape);
+
+    for (0..A_TEN.shape.len) |i| AT_shape[i] = A_TEN.shape[a_axes.items[i]];
+    for (0..B_TEN.shape.len) |i| BT_shape[i] = B_TEN.shape[b_axes.items[i]];
+
+    var AT = try Tensor(T).init(AT_shape, allocator); defer AT.deinit();
+    var BT = try Tensor(T).init(BT_shape, allocator); defer BT.deinit();
+
+    try transpose(T, &AT, A_TEN, a_axes.items);
+    try transpose(T, &BT, B_TEN, b_axes.items);
+
+    const ATM = AT.matrix(a_axes.items.len - Ai.len); const BTM = BT.matrix(Bi.len);
+
+    var CM = C_TEN.matrix(0); CM.rows = ATM.rows; CM.cols = BTM.cols;
+
+    cwp.Blas(T).dgemm(&CM, ATM, false, BTM, false);
+}
+
 
 /// Multiply two tensors element-wise. The result is stored in the tensor C.
 pub fn mul(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {

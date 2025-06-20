@@ -164,8 +164,14 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         timer = try std.time.Timer.start(); H_A.memcpy(F_A);
 
-        try cwp.contract(&T1, D_A, J_A, &[_]i32{0, 0, 1, 1});
-        try cwp.contract(&T2, D_A, J_A, &[_]i32{0, 0, 1, 3});
+        // const D_A_T = try D_A.tensor(); defer D_A_T.deinit();
+        // var   T1_T  = try  T1.tensor(); defer  T1_T.deinit();
+        // var   T2_T  = try  T2.tensor(); defer  T2_T.deinit();
+
+        // try cwp.contract(&T1, D_A, J_A, &[_]i32{0, 0, 1, 1});
+        // try cwp.contract(&T2, D_A, J_A, &[_]i32{0, 0, 1, 3});
+        try ten.contract(T, &T1, D_A, &[_]usize{0, 1}, J_A, &[_]usize{0, 1}, allocator);
+        try ten.contract(T, &T2, D_A, &[_]usize{0, 1}, J_A, &[_]usize{0, 3}, allocator);
 
         if (!opt.generalized) mat.muls(T, &T2, T2, 0.5);
 

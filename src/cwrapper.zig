@@ -1,10 +1,10 @@
 //! Wrappers for the C/C++ libraries.
 
-const cblas        = @cImport(@cInclude("cblas.h"           ));
-const eigen        = @cImport(@cInclude("eigen.h"           ));
-const exprtk       = @cImport(@cInclude("exprtk.h"          ));
-const lapacke      = @cImport(@cInclude("lapacke.h"         ));
-const libint       = @cImport(@cInclude("libint.h"          ));
+const cblas        = @cImport(@cInclude("cblas.h"  ));
+const eigen        = @cImport(@cInclude("eigen.h"  ));
+const exprtk       = @cImport(@cInclude("exprtk.h" ));
+const lapacke      = @cImport(@cInclude("lapacke.h"));
+const libint       = @cImport(@cInclude("libint.h" ));
 
 const std = @import("std");
 
@@ -24,7 +24,10 @@ pub fn Blas(comptime T: type) type {
             const at: c_uint = if (AT) cblas.CblasTrans else cblas.CblasNoTrans;
             const bt: c_uint = if (BT) cblas.CblasTrans else cblas.CblasNoTrans;
 
-            cblas.cblas_dgemm(cblas.CblasRowMajor, at, bt, m, n, k, 1.0, &A.data[0], m, &B.data[0], n, 0.0, &C.data[0], n);
+            const LDA = if (!AT) k else m;
+            const LDB = if (!BT) n else k;
+
+            cblas.cblas_dgemm(cblas.CblasRowMajor, at, bt, m, n, k, 1.0, &A.data[0], LDA, &B.data[0], LDB, 0.0, &C.data[0], n);
         }
 
         /// Calculate the matrix-matrix product C = A * B and store the result in C. The AH and BH flags control whether the matrices A and B are Hermitian transposed or not.
@@ -34,7 +37,21 @@ pub fn Blas(comptime T: type) type {
             const ah: c_uint = if (AH) cblas.CblasConjTrans else cblas.CblasNoTrans;
             const bh: c_uint = if (BH) cblas.CblasConjTrans else cblas.CblasNoTrans;
 
-            cblas.cblas_zgemm(cblas.CblasRowMajor, ah, bh, m, n, k, &std.math.Complex(T).init(1.0, 0.0), &A.data[0], m, &B.data[0], n, &std.math.Complex(T).init(0.0, 0.0), &C.data[0], n);
+            const LDA = if (!AH) k else m;
+            const LDB = if (!BH) n else k;
+
+            cblas.cblas_zgemm(cblas.CblasRowMajor, ah, bh, m, n, k, &std.math.Complex(T).init(1.0, 0.0), &A.data[0], LDA, &B.data[0], LDB, &std.math.Complex(T).init(0.0, 0.0), &C.data[0], n);
+        }
+    };
+}
+
+/// Eigen struct.
+pub fn Eigen(comptime T: type) type {
+    return struct {
+
+        /// Logarithm of a matrix.
+        pub fn logm(B: *Matrix(T), A: Matrix(T)) void {
+            eigen.logm(&B.data[0], &A.data[0], A.rows);
         }
     };
 }
@@ -143,21 +160,4 @@ pub fn Libint(comptime T: type) type {
             libint.overlap(&ints[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
         }
     };
-}
-
-pub fn contract(C: anytype, A: anytype, B: anytype, pairs: []const i32) !void {
-    var dC: []const usize = undefined; var rC: usize = undefined;
-    var dA: []const usize = undefined; var rA: usize = undefined;
-    var dB: []const usize = undefined; var rB: usize = undefined;
-
-    if (comptime std.meta.fieldIndex(@TypeOf(C.*), "shape") != null) {dC = C.shape; rC = C.shape.len;} else {dC = &[_]usize{C.rows, C.cols}; rC = 2;}
-    if (comptime std.meta.fieldIndex(@TypeOf(A  ), "shape") != null) {dA = A.shape; rA = A.shape.len;} else {dA = &[_]usize{A.rows, A.cols}; rA = 2;}
-    if (comptime std.meta.fieldIndex(@TypeOf(B  ), "shape") != null) {dB = B.shape; rB = B.shape.len;} else {dB = &[_]usize{B.rows, B.cols}; rB = 2;}
-
-    return eigen.contract(&C.data[0], &dC[0], rC, &A.data[0], &dA[0], rA, &B.data[0], &dB[0], rB, &pairs[0], pairs.len / 2);
-}
-
-/// Logarithm of a matrix.
-pub fn logm(B: *Matrix(f64), A: Matrix(f64)) void {
-    eigen.logm(&B.data[0], &A.data[0], A.rows);
 }

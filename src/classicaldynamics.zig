@@ -411,7 +411,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
         break;
     };
 
-    cwp.logm(TDC, UCS.*); mat.divs(T, TDC, TDC.*, time_step);
+    cwp.Eigen(T).logm(TDC, UCS.*); mat.divs(T, TDC, TDC.*, time_step);
 }
 
 /// Function to propagate the wavefunction coefficients used in the FSSH method. The function returns the new state, if a switch occurs.
