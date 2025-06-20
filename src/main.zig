@@ -146,24 +146,4 @@ pub fn main() !void {
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
-
-    // var A = try Tensor(std.math.Complex(f64)).init(&[_]usize{2, 2, 2}, allocator); defer A.deinit();
-    //
-    // A.data[0] = std.math.Complex(f64).init(1, 0);
-    // A.data[1] = std.math.Complex(f64).init(2, 0);
-    // A.data[2] = std.math.Complex(f64).init(3, 0);
-    // A.data[3] = std.math.Complex(f64).init(4, 0);
-    // A.data[4] = std.math.Complex(f64).init(5, 0);
-    // A.data[5] = std.math.Complex(f64).init(6, 0);
-    // A.data[6] = std.math.Complex(f64).init(7, 0);
-    // A.data[7] = std.math.Complex(f64).init(8, 0);
-    //
-    // std.debug.print("{any}\n", .{A.data});
-    // try ftr.fftn(f64, A.data, A.shape, -1);
-    // std.debug.print("{any}\n", .{A.data});
-    // try ftr.fftn(f64, A.data, A.shape,  1);
-    // std.debug.print("{any}\n", .{A.data});
-
-    // std.debug.print("GAMMARG(1+I) = {d:.6}\n", .{try cwrapper.gammaArg(std.math.Complex(f64).init(0.4, 1))});
-    // std.debug.print("GAMMARG(1+I) = {any}\n", .{std.math.complex.arg(math.gamma(f64, std.math.Complex(f64).init(0.4, 1)))});
 }

@@ -55,16 +55,6 @@ pub fn Tensor(comptime T: type) type {
             @memset(self.data, value);
         }
 
-        /// Returns the tensor as a matrix. No memory is allocated. Currently only works for 4D tensors.
-        pub fn matrix(self: Tensor(T)) Matrix(T) {
-            return Matrix(T){
-                .data = self.data,
-                .rows = self.shape[0] * self.shape[1],
-                .cols = self.shape[2] * self.shape[3],
-                .allocator = self.allocator
-            };
-        }
-
         /// Print the matrix to the given device.
         pub fn print(self: Tensor(T), device: anytype) !void {
             var buffered = std.io.bufferedWriter(device); var writer = buffered.writer();
@@ -186,13 +176,30 @@ pub fn sub(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
 }
 
 /// Transpose a tensor. The result is stored in the tensor B. The axes argument specifies the permutation of the axes. Currently only works for 4D tensors.
-pub fn transpose(comptime T: type, B: *Tensor(T), A: Tensor(T), axes: []const usize) void {
-    if (axes.len == 4) for (0..A.shape[0]) |i| for (0..A.shape[1]) |j| for (0..A.shape[2]) |k| for (0..A.shape[3]) |l| {
+pub fn transpose(comptime T: type, B: *Tensor(T), A: Tensor(T), axes: []const usize) !void {
+    if (axes.len == 4) {
+        for (0..A.shape[0]) |i| for (0..A.shape[1]) |j| for (0..A.shape[2]) |k| for (0..A.shape[3]) |l| {
 
-        const source = [_]usize{i, j, k, l}; var destination: [4]usize = undefined;
+            const source = [4]usize{i, j, k, l}; var destination: [4]usize = undefined;
 
-        for (0..axes.len) |m| destination[m] = source[axes[m]];
+            for (0..axes.len) |m| destination[m] = source[axes[m]];
 
-        B.ptr(&destination).* = A.at(&source);
-    }; 
+            B.ptr(&destination).* = A.at(&source);
+        };
+    }
+
+    else if (axes.len == 2) {
+        for (0..A.shape[0]) |i| for (0..A.shape[1]) |j| {
+
+            const source = [2]usize{i, j}; var destination: [2]usize = undefined;
+
+            for (0..axes.len) |m| destination[m] = source[axes[m]];
+
+            B.ptr(&destination).* = A.at(&source);
+        };
+    }
+
+    else {
+        return error.TensorTransposeNotImplemented;
+    }
 }
