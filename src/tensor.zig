@@ -101,6 +101,56 @@ pub fn Tensor(comptime T: type) type {
             }
         }
 
+        /// Swaps the axes of the tensor. The axes must have the same length.
+        pub fn swapax(self: *Tensor(T), a: usize, b: usize) !void {
+            if (a >= self.shape.len or b >= self.shape.len) return error.InvalidAxisIndex;
+            if (self.shape[a] != self.shape[b]            ) return error.InvalidAxisShape;
+
+            if (a == b) return;
+
+            for (self.data, 0..) |*e, i| {
+
+                var rem = i; var ia: usize = 0; var ib: usize = 0; const stop = if (a > b) a else b;
+
+                for (0..stop + 1) |k| {
+
+                    const index = rem / self.stride[k];
+
+                    if (k == a) {ia = index;} else if (k == b) ib = index;
+
+                    rem %= self.stride[k];
+                }
+
+                if (ia < ib) {
+                    std.mem.swap(T, e, &self.data[i + (ib - ia) * self.stride[a] + (ia - ib) * self.stride[b]]);
+                }
+            }
+        }
+
+        /// Transpose a tensor in-place.
+        pub fn transpose(self: *Tensor(T), axes: []const usize, allocator: std.mem.Allocator) !void {
+            if (std.math.pow(usize, self.shape[0], self.shape.len) != mth.prod(usize, self.shape)) return error.InvalidTensorShapeForTransposition;
+
+            var visited = try allocator.alloc(bool, self.shape.len); defer allocator.free(visited); @memset(visited, false);
+
+            for (0..visited.len) |i| if (!visited[i]) {
+
+                var cycle = std.ArrayList(usize).init(allocator); defer cycle.deinit();
+
+                var j: usize = i; while (!visited[j]) : (j = axes[j]) {
+                    try cycle.append(j); visited[j] = true;
+                }
+
+                if (cycle.items.len == 1) continue;
+
+                var start = cycle.items[0];
+
+                for (1..cycle.items.len) |k| {
+                    try self.swapax(start, cycle.items[k]); start = cycle.items[k];
+                }
+            };
+        }
+
         /// Write the tensor to a file.
         pub fn write(self: Tensor(T), path: []const u8) !void {
             const file = try std.fs.cwd().createFile(path, .{}); defer file.close();
@@ -153,25 +203,24 @@ pub fn contract(comptime T: type, C: anytype, A: anytype, Ai: []const usize, B: 
         try b_axes.append(i);
     };
 
-    const AT_shape = try allocator.alloc(usize, A_TEN.shape.len); defer allocator.free(AT_shape);
-    const BT_shape = try allocator.alloc(usize, B_TEN.shape.len); defer allocator.free(BT_shape);
+    var a_axes_inv = try allocator.alloc(usize, a_axes.items.len); defer allocator.free(a_axes_inv);
+    var b_axes_inv = try allocator.alloc(usize, b_axes.items.len); defer allocator.free(b_axes_inv);
 
-    for (0..A_TEN.shape.len) |i| AT_shape[i] = A_TEN.shape[a_axes.items[i]];
-    for (0..B_TEN.shape.len) |i| BT_shape[i] = B_TEN.shape[b_axes.items[i]];
+    for (a_axes.items, 0..) |e, i| a_axes_inv[e] = i;
+    for (b_axes.items, 0..) |e, i| b_axes_inv[e] = i;
 
-    var AT = try Tensor(T).init(AT_shape, allocator); defer AT.deinit();
-    var BT = try Tensor(T).init(BT_shape, allocator); defer BT.deinit();
+    try @constCast(&A_TEN).transpose(a_axes.items, allocator);
+    try @constCast(&B_TEN).transpose(b_axes.items, allocator);
 
-    try transpose(T, &AT, A_TEN, a_axes.items);
-    try transpose(T, &BT, B_TEN, b_axes.items);
-
-    const ATM = AT.matrix(a_axes.items.len - Ai.len); const BTM = BT.matrix(Bi.len);
+    const ATM = A_TEN.matrix(a_axes.items.len - Ai.len); const BTM = B_TEN.matrix(Bi.len);
 
     var CM = C_TEN.matrix(0); CM.rows = ATM.rows; CM.cols = BTM.cols;
 
     try cwp.Blas(T).dgemm(&CM, ATM, false, BTM, false);
-}
 
+    try @constCast(&A_TEN).transpose(a_axes_inv, allocator);
+    try @constCast(&B_TEN).transpose(b_axes_inv, allocator);
+}
 
 /// Multiply two tensors element-wise. The result is stored in the tensor C.
 pub fn mul(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
@@ -239,34 +288,24 @@ pub fn sub(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
 }
 
 /// Transpose a tensor. The result is stored in the tensor B. The axes argument specifies the permutation of the axes. Currently only works for 4D tensors.
-pub fn transpose(comptime T: type, B: *Tensor(T), A: Tensor(T), axes: []const usize) !void {
-    if (axes.len == 4) {
-        for (0..A.shape[0]) |i| for (0..A.shape[1]) |j| for (0..A.shape[2]) |k| for (0..A.shape[3]) |l| {
+pub fn transpose(comptime T: type, B: *Tensor(T), A: Tensor(T), axes: []const usize, allocator: std.mem.Allocator) !void {
+    if (axes.len != A.shape.len) return error.InvalidAxesLength;
 
-            const source = [4]usize{i, j, k, l}; var destination: [4]usize = undefined;
+    var src_idx = try A.allocator.alloc(usize, A.shape.len); defer allocator.free(src_idx);
+    var dst_idx = try A.allocator.alloc(usize, B.shape.len); defer allocator.free(dst_idx);
 
-            for (0..axes.len) |m| {
-                destination[m] = source[axes[m]];
-            }
+    for (A.data, 0..) |e, i| {
 
-            B.ptr(&destination).* = A.at(&source);
-        };
-    }
+        var rem = i;
 
-    else if (axes.len == 2) {
-        for (0..A.shape[0]) |i| for (0..A.shape[1]) |j| {
+        for (0..A.shape.len) |k| {
+            src_idx[k] = rem / A.stride[k]; rem %= A.stride[k];
+        }
 
-            const source = [2]usize{i, j}; var destination: [2]usize = undefined;
+        for (0..B.shape.len) |k| {
+            dst_idx[k] = src_idx[axes[k]];
+        }
 
-            for (0..axes.len) |m| {
-                destination[m] = source[axes[m]];
-            }
-
-            B.ptr(&destination).* = A.at(&source);
-        };
-    }
-
-    else {
-        return error.TensorTransposeNotImplemented;
+        B.ptr(dst_idx).* = e;
     }
 }
