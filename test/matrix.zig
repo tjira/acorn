@@ -1,4 +1,4 @@
-const std = @import("std");
+const std = @import("std"); const cwp = @import("acorn").cwrapper; 
 
 const helper = @import("acorn").helper;
 const matrix = @import("acorn").matrix;
@@ -170,6 +170,30 @@ test "matrix_complex" {
     for (0..N.rows) |i| for (0..N.cols) |j| {try std.testing.expect(N.at(i, j) == NN.at(i, j).re and NN.at(i, j).im == 0);};
     for (0..O.rows) |i| for (0..O.cols) |j| {try std.testing.expect(O.at(i, j) == OO.at(i, j).re and OO.at(i, j).im == 0);};
     for (0..P.rows) |i| for (0..P.cols) |j| {try std.testing.expect(P.at(i, j) == PP.at(i, j).re and PP.at(i, j).im == 0);};
+}
+
+test "matrix_dgemm" {
+    const A = try matrix.Matrix(f64).init(2, 2, allocator); defer A.deinit(); A.linspace(1, 4);
+    const B = try matrix.Matrix(f64).init(2, 1, allocator); defer B.deinit(); B.linspace(5, 6);
+    const C = try matrix.Matrix(f64).init(1, 2, allocator); defer C.deinit(); C.linspace(7, 8);
+
+    const ABR = try matrix.Matrix(f64).init(2, 1, allocator); defer ABR.deinit();
+    const CBR = try matrix.Matrix(f64).init(1, 1, allocator); defer CBR.deinit();
+    const CAR = try matrix.Matrix(f64).init(1, 2, allocator); defer CAR.deinit();
+
+    ABR.ptr(0, 0).* = 17; ABR.ptr(1, 0).* = 39; CBR.ptr(0, 0).* = 83; CAR.ptr(0, 0).* = 31; CAR.ptr(0, 1).* = 46;
+
+    var AB = try matrix.Matrix(f64).init(2, 1, allocator); defer AB.deinit();
+    var CB = try matrix.Matrix(f64).init(1, 1, allocator); defer CB.deinit();
+    var CA = try matrix.Matrix(f64).init(1, 2, allocator); defer CA.deinit();
+
+    try cwp.Blas(f64).dgemm(&AB, A, false, B, false);
+    try cwp.Blas(f64).dgemm(&CB, C, false, B, false);
+    try cwp.Blas(f64).dgemm(&CA, C, false, A, false);
+
+    try std.testing.expect(AB.eq(ABR));
+    try std.testing.expect(CB.eq(CBR));
+    try std.testing.expect(CA.eq(CAR));
 }
 
 test "matrix_fill" {

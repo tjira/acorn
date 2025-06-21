@@ -123,17 +123,21 @@ pub fn add(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
 
 /// Contract two tensors using the TTGT scheme.
 pub fn contract(comptime T: type, C: anytype, A: anytype, Ai: []const usize, B: anytype, Bi: []const usize, allocator: std.mem.Allocator) !void {
-    var a_shape = if (comptime std.meta.fieldIndex(@TypeOf(A  ), "shape") != null) A.shape else [2]usize{A.rows, A.cols};
-    var b_shape = if (comptime std.meta.fieldIndex(@TypeOf(B  ), "shape") != null) B.shape else [2]usize{B.rows, B.cols};
-    var c_shape = if (comptime std.meta.fieldIndex(@TypeOf(C.*), "shape") != null) C.shape else [2]usize{C.rows, C.cols};
+    const aisten = std.meta.fieldIndex(@TypeOf(A  ), "shape") != null;
+    const bisten = std.meta.fieldIndex(@TypeOf(B  ), "shape") != null;
+    const cisten = std.meta.fieldIndex(@TypeOf(C.*), "shape") != null;
 
-    var a_stride = if (comptime std.meta.fieldIndex(@TypeOf(A  ), "shape") != null) A.stride else [2]usize{A.cols, 1};
-    var b_stride = if (comptime std.meta.fieldIndex(@TypeOf(B  ), "shape") != null) B.stride else [2]usize{B.cols, 1};
-    var c_stride = if (comptime std.meta.fieldIndex(@TypeOf(C.*), "shape") != null) C.stride else [2]usize{C.cols, 1};
+    var a_shape = if (comptime aisten) A.shape else [2]usize{A.rows, A.cols};
+    var b_shape = if (comptime bisten) B.shape else [2]usize{B.rows, B.cols};
+    var c_shape = if (comptime cisten) C.shape else [2]usize{C.rows, C.cols};
 
-    const A_TEN = if (comptime std.meta.fieldIndex(@TypeOf(A  ), "shape") != null) A   else Tensor(T){.data = A.data, .shape = &a_shape[0..].*, .stride = &a_stride[0..].*, .allocator = allocator};
-    const B_TEN = if (comptime std.meta.fieldIndex(@TypeOf(B  ), "shape") != null) B   else Tensor(T){.data = B.data, .shape = &b_shape[0..].*, .stride = &b_stride[0..].*, .allocator = allocator};
-    const C_TEN = if (comptime std.meta.fieldIndex(@TypeOf(C.*), "shape") != null) C.* else Tensor(T){.data = C.data, .shape = &c_shape[0..].*, .stride = &c_stride[0..].*, .allocator = allocator};
+    var a_stride = if (comptime aisten) A.stride else [2]usize{A.cols, 1};
+    var b_stride = if (comptime bisten) B.stride else [2]usize{B.cols, 1};
+    var c_stride = if (comptime cisten) C.stride else [2]usize{C.cols, 1};
+
+    const A_TEN = if (comptime aisten) A   else Tensor(T){.data = A.data, .shape = &a_shape[0..].*, .stride = &a_stride[0..].*, .allocator = allocator};
+    const B_TEN = if (comptime bisten) B   else Tensor(T){.data = B.data, .shape = &b_shape[0..].*, .stride = &b_stride[0..].*, .allocator = allocator};
+    const C_TEN = if (comptime cisten) C.* else Tensor(T){.data = C.data, .shape = &c_shape[0..].*, .stride = &c_stride[0..].*, .allocator = allocator};
 
     var a_axes = std.ArrayList(usize).init(allocator); defer a_axes.deinit();
     var b_axes = std.ArrayList(usize).init(allocator); defer b_axes.deinit();
@@ -165,7 +169,7 @@ pub fn contract(comptime T: type, C: anytype, A: anytype, Ai: []const usize, B: 
 
     var CM = C_TEN.matrix(0); CM.rows = ATM.rows; CM.cols = BTM.cols;
 
-    cwp.Blas(T).dgemm(&CM, ATM, false, BTM, false);
+    try cwp.Blas(T).dgemm(&CM, ATM, false, BTM, false);
 }
 
 
@@ -241,7 +245,9 @@ pub fn transpose(comptime T: type, B: *Tensor(T), A: Tensor(T), axes: []const us
 
             const source = [4]usize{i, j, k, l}; var destination: [4]usize = undefined;
 
-            for (0..axes.len) |m| destination[m] = source[axes[m]];
+            for (0..axes.len) |m| {
+                destination[m] = source[axes[m]];
+            }
 
             B.ptr(&destination).* = A.at(&source);
         };
@@ -252,7 +258,9 @@ pub fn transpose(comptime T: type, B: *Tensor(T), A: Tensor(T), axes: []const us
 
             const source = [2]usize{i, j}; var destination: [2]usize = undefined;
 
-            for (0..axes.len) |m| destination[m] = source[axes[m]];
+            for (0..axes.len) |m| {
+                destination[m] = source[axes[m]];
+            }
 
             B.ptr(&destination).* = A.at(&source);
         };

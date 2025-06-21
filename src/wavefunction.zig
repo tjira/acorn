@@ -76,9 +76,9 @@ pub fn Wavefunction(comptime T: type) type {
 }
 
 /// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction W and stores the result in WA.
-pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T)))) void {
+pub fn adiabatize(comptime T: type, WA: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T)))) !void {
     for (0..W.npoint) |i| {
-        var rowa = WA.row(i).vector().matrix(); cwp.Blas(T).zgemm(&rowa, VC.items[i], true, W.row(i).vector().matrix(), false);
+        var rowa = WA.row(i).vector().matrix(); try cwp.Blas(T).zgemm(&rowa, VC.items[i], true, W.row(i).vector().matrix(), false);
     }
 }
 
@@ -92,9 +92,9 @@ pub fn density(comptime T: type, P: *Matrix(std.math.Complex(T)), W: Wavefunctio
 }
 
 /// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction W and stores the result in WA.
-pub fn diabatize(comptime T: type, WD: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T)))) void {
+pub fn diabatize(comptime T: type, WD: *Wavefunction(T), W: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T)))) !void {
     for (0..W.npoint) |i| {
-        var rowd = WD.row(i).vector().matrix(); cwp.Blas(T).zgemm(&rowd, VC.items[i], false, W.row(i).vector().matrix(), false);
+        var rowd = WD.row(i).vector().matrix(); try cwp.Blas(T).zgemm(&rowd, VC.items[i], false, W.row(i).vector().matrix(), false);
     }
 }
 

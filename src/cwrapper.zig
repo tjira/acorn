@@ -1,10 +1,10 @@
 //! Wrappers for the C/C++ libraries.
 
-const cblas        = @cImport(@cInclude("cblas.h"  ));
-const eigen        = @cImport(@cInclude("eigen.h"  ));
-const exprtk       = @cImport(@cInclude("exprtk.h" ));
-const lapacke      = @cImport(@cInclude("lapacke.h"));
-const libint       = @cImport(@cInclude("libint.h" ));
+const cblas   = @cImport(@cInclude("cblas.h"  ));
+const eigen   = @cImport(@cInclude("eigen.h"  ));
+const exprtk  = @cImport(@cInclude("exprtk.h" ));
+const lapacke = @cImport(@cInclude("lapacke.h"));
+const libint  = @cImport(@cInclude("libint.h" ));
 
 const std = @import("std");
 
@@ -18,7 +18,9 @@ pub fn Blas(comptime T: type) type {
     return struct {
 
         /// Calculate the matrix-matrix product C = A * B and store the result in C. The AT and BT flags control whether the matrices A and B are transposed or not.
-        pub fn dgemm(C: *Matrix(T), A: Matrix(T), AT: bool, B: Matrix(T), BT: bool) void {
+        pub fn dgemm(C: *Matrix(T), A: Matrix(T), AT: bool, B: Matrix(T), BT: bool) !void {
+            if (C.rows != A.rows or C.cols != B.cols or A.cols != B.rows) return error.ErrorInMatrixDimensions;
+
             const m: i32 = @intCast(C.rows); const n: i32 = @intCast(C.cols); const k: i32 = @intCast(A.cols);
 
             const at: c_uint = if (AT) cblas.CblasTrans else cblas.CblasNoTrans;
@@ -31,7 +33,9 @@ pub fn Blas(comptime T: type) type {
         }
 
         /// Calculate the matrix-matrix product C = A * B and store the result in C. The AH and BH flags control whether the matrices A and B are Hermitian transposed or not.
-        pub fn zgemm(C: *Matrix(std.math.Complex(T)), A: Matrix(std.math.Complex(T)), AH: bool, B: Matrix(std.math.Complex(T)), BH: bool) void {
+        pub fn zgemm(C: *Matrix(std.math.Complex(T)), A: Matrix(std.math.Complex(T)), AH: bool, B: Matrix(std.math.Complex(T)), BH: bool) !void {
+            if (C.rows != A.rows or C.cols != B.cols or A.cols != B.rows) return error.ErrorInMatrixDimensions;
+
             const m: i32 = @intCast(C.rows); const n: i32 = @intCast(C.cols); const k: i32 = @intCast(A.cols);
 
             const ah: c_uint = if (AH) cblas.CblasConjTrans else cblas.CblasNoTrans;

@@ -147,7 +147,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); W.normalize();
 
-                if (opt.initial_conditions.adiabatic) {wfn.diabatize(T, &WA, W, VC); WA.memcpy(W);}
+                if (opt.initial_conditions.adiabatic) {try wfn.diabatize(T, &WA, W, VC); WA.memcpy(W);}
             }
 
             if (opt.bohmian_dynamics != null) initBohmianTrajectories(T, &bohm_position, rvec, W, opt.bohmian_dynamics.?.seed);
@@ -177,7 +177,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 if (i < opt.mode[0]) orthogonalize(T, &W, WOPT, i);
 
-                if (opt.adiabatic) wfn.adiabatize(T, &WA, W, VC);
+                if (opt.adiabatic) try wfn.adiabatize(T, &WA, W, VC);
 
                 const Ekin = try wfn.ekin(T, W, kvec, opt.initial_conditions.mass, &T1); const Epot: T = wfn.epot(T, W, V);
 
@@ -470,7 +470,7 @@ pub fn rgridPropagators(comptime T: type, R: *std.ArrayList(Matrix(std.math.Comp
             R.items[i].ptr(j, j).* = std.math.complex.exp(VA.items[i].at(j, j).mul(std.math.Complex(T).init(-0.5 * time_step, 0)).mul(unit));
         }
 
-        cwp.Blas(T).zgemm(&T1, VC.items[i], false, R.items[i], false); cwp.Blas(T).zgemm(&R.items[i], T1, false, VC.items[i], true);
+        try cwp.Blas(T).zgemm(&T1, VC.items[i], false, R.items[i], false); try cwp.Blas(T).zgemm(&R.items[i], T1, false, VC.items[i], true);
     }
 }
 

@@ -536,7 +536,7 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
     // TODO: Check the correctnes of the sign in front of TDC.
     OmegaExp.get(SP, (U.at(1, 1) - U.at(0, 0)) * time_step, -TDC.at(0, 1) * time_step);
 
-    const SM = S.matrix(); var SNM = SN.matrix(); cwp.Blas(T).dgemm(&SNM, SP.*, false, SM, false);
+    const SM = S.matrix(); var SNM = SN.matrix(); try cwp.Blas(T).dgemm(&SNM, SP.*, false, SM, false);
 
     if (S.at(2) * SN.at(2) < 0) sn = if (SN.at(2) < 0) 0 else 1;
 
@@ -597,7 +597,7 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
             I.ptr(0, 0).* = I.at(0, 0).mul(exp1);
             I.ptr(1, 1).* = I.at(1, 1).mul(exp2);
 
-            var T1M = T1.matrix(); cwp.Blas(T).zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);
+            var T1M = T1.matrix(); try cwp.Blas(T).zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);
         }
     };
 

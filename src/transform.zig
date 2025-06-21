@@ -31,8 +31,8 @@ pub fn oneAO2AS(comptime T: type, A_AS: *Matrix(T), A_AO: Matrix(T)) void {
 pub fn oneAO2MO(comptime T: type, A_MO: *Matrix(T), A_AO: Matrix(T), C_MO: Matrix(T)) !void {
     var A_AO_T = try Matrix(T).init(A_AO.rows, A_AO.cols, A_AO.allocator); defer A_AO_T.deinit();
 
-    cwp.Blas(T).dgemm(&A_AO_T, A_AO, false, C_MO,   false);
-    cwp.Blas(T).dgemm(A_MO,    C_MO, true,  A_AO_T, false);
+    try cwp.Blas(T).dgemm(&A_AO_T, A_AO, false, C_MO,   false);
+    try cwp.Blas(T).dgemm(A_MO,    C_MO, true,  A_AO_T, false);
 }
 
 /// Transforms the one-electron integrals from the AO basis to the MS basis.
@@ -42,8 +42,8 @@ pub fn oneAO2MS(comptime T: type, A_MS: *Matrix(T), A_AO: Matrix(T), C_MO: Matri
 
     cfsAO2AS(T, &C_MS, C_MO); oneAO2AS(T, A_MS, A_AO);
 
-    cwp.Blas(T).dgemm(&A_AS, A_MS.*, false, C_MS, false);
-    cwp.Blas(T).dgemm(A_MS,  C_MS,   true,  A_AS, false);
+    try cwp.Blas(T).dgemm(&A_AS, A_MS.*, false, C_MS, false);
+    try cwp.Blas(T).dgemm(A_MS,  C_MS,   true,  A_AS, false);
 }
 
 /// Transforms the two-electron integrals from the AO basis to the AS basis.

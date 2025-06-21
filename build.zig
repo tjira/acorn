@@ -70,7 +70,7 @@ pub fn build(builder: *std.Build) !void {
 
 pub fn benchmarkExecutable(builder: *std.Build, main_executable: *std.Build.Step.Compile, target: std.Target.Query, debug: bool) !void {
     const benchmarks = &[_][]const u8{
-        "dgees", "dgemm", "dsyevd"
+        "contract", "dgees", "dgemm", "dsyevd"
     };
 
     for (benchmarks) |benchmark| {

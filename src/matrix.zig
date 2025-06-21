@@ -69,6 +69,17 @@ pub fn Matrix(comptime T: type) type {
             return other;
         }
 
+        /// Check if two matrices are equal. The function returns true if the matrices are equal, false otherwise.
+        pub fn eq(self: Matrix(T), other: Matrix(T)) bool {
+            if (self.rows != other.rows or self.cols != other.cols) return false;
+
+            for (0..self.data.len) |i| {
+                if (self.data[i] != other.data[i]) return false;
+            }
+
+            return true;
+        }
+
         /// Fill the matrix with a given value.
         pub fn fill(self: Matrix(T), value: T) void {
             @memset(self.data, value);
@@ -208,16 +219,24 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
 
             A = try Matrix(T).init(opt.random.?.dims[0], opt.random.?.dims[1], allocator); defer A.?.deinit();
 
-            if (std.mem.eql(u8, opt.random.?.distribution, "normal")) {A.?.randn(opt.random.?.parameters[0], opt.random.?.parameters[1], opt.random.?.seed + i);}
+            if (std.mem.eql(u8, opt.random.?.distribution, "normal")) {
+                A.?.randn(opt.random.?.parameters[0], opt.random.?.parameters[1], opt.random.?.seed + i);
+            }
 
             else return error.UnknownDistribution;
 
-            if (opt.outputs != null and opt.outputs.?.len > i) try outputs.append(try A.?.clone());
+            if (opt.outputs != null and opt.outputs.?.len > i) {
+                try outputs.append(try A.?.clone());
+            }
 
-            if (print and opt.print) {try std.io.getStdOut().writer().print("\nGENERATED MATRIX #{d:2}\n", .{i}); try A.?.print(std.io.getStdOut().writer());}
+            if (print and opt.print) {
+                try std.io.getStdOut().writer().print("\nGENERATED MATRIX #{d:2}\n", .{i}); try A.?.print(std.io.getStdOut().writer());
+            }
         }
 
-        if (print) try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRICES: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+        if (print) {
+            try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRICES: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+        }
     }
 
     if (opt.multiply != null and opt.inputs != null and opt.inputs.?.len > 0) {
@@ -230,23 +249,35 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
 
             C = try Matrix(T).init(B.?.rows, A.?.cols, allocator); defer C.?.deinit();
 
-            cwp.Blas(T).dgemm(&C.?, B.?, false, A.?, false); C.?.memcpy(A.?);
+            try cwp.Blas(T).dgemm(&C.?, B.?, false, A.?, false); C.?.memcpy(A.?);
         }
 
-        if (print and opt.print) {try std.io.getStdOut().writer().print("\nRESULT\n", .{}); try A.?.print(std.io.getStdOut().writer());}
+        if (print and opt.print) {
+            try std.io.getStdOut().writer().print("\nRESULT\n", .{}); try A.?.print(std.io.getStdOut().writer());
+        }
 
-        if (opt.outputs != null) try outputs.append(try A.?.clone());
+        if (opt.outputs != null) {
+            try outputs.append(try A.?.clone());
+        }
 
-        if (print) try std.io.getStdOut().writer().print("\nCALCULATING MATRIX PRODUCT: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+        if (print) {
+            try std.io.getStdOut().writer().print("\nCALCULATING MATRIX PRODUCT: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+        }
     }
 
     timer = try std.time.Timer.start();
 
-    for (outputs.items, 0..) |e, i| try e.write(opt.outputs.?[i]);
+    for (outputs.items, 0..) |e, i| {
+        try e.write(opt.outputs.?[i]);
+    }
 
-    if (print and opt.outputs != null) try std.io.getStdOut().writer().print("SAVING THE OUTPUT MATRICES: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+    if (print and opt.outputs != null) {
+        try std.io.getStdOut().writer().print("SAVING THE OUTPUT MATRICES: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+    }
 
-    if (opt.outputs != null) for (outputs.items) |*e| e.*.deinit();
+    if (opt.outputs != null) for (outputs.items) |*e| {
+        e.*.deinit();
+    };
 }
 
 /// Add two matrices element-wise. The output matrix is stored in the matrix C.
@@ -334,7 +365,9 @@ pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !M
 
         var slice: []u8 = bytes[0..0];
 
-        while (slice.len == 0) slice = try reader.readUntilDelimiter(bytes[0..], if ((i + 1) % cols == 0) '\n' else ' ');
+        while (slice.len == 0) {
+            slice = try reader.readUntilDelimiter(bytes[0..], if ((i + 1) % cols == 0) '\n' else ' ');
+        }
 
         var j: u32 = 0; while (slice[j] == ' ') : (j += 1) {}
 

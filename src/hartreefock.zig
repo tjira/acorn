@@ -180,10 +180,10 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         if (opt.dsize != null and iter > 0) {
 
-            cwp.Blas(T).dgemm(&T1, S_A, false, D_A, false);
-            cwp.Blas(T).dgemm(&T2, T1,  false, F_A, true );
-            cwp.Blas(T).dgemm(&T1, F_A, false, D_A, false);
-            cwp.Blas(T).dgemm(&T3, T1,  false, S_A, true );
+            try cwp.Blas(T).dgemm(&T1, S_A, false, D_A, false);
+            try cwp.Blas(T).dgemm(&T2, T1,  false, F_A, true );
+            try cwp.Blas(T).dgemm(&T1, F_A, false, D_A, false);
+            try cwp.Blas(T).dgemm(&T3, T1,  false, S_A, true );
 
             mat.sub(T, &ERR, T2, T3);
 
