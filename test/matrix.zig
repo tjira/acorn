@@ -360,6 +360,11 @@ test "matrix_io" {
     for (0..N.rows) |i| for (0..N.cols) |j| {try std.testing.expect(@abs(N.at(i, j) - NN.at(i, j)) < 1e-12);};
     for (0..O.rows) |i| for (0..O.cols) |j| {try std.testing.expect(@abs(O.at(i, j) - OO.at(i, j)) < 1e-12);};
     for (0..P.rows) |i| for (0..P.cols) |j| {try std.testing.expect(@abs(P.at(i, j) - PP.at(i, j)) < 1e-12);};
+
+    try std.fs.cwd().deleteFile("A.mat"); try std.fs.cwd().deleteFile("B.mat"); try std.fs.cwd().deleteFile("C.mat"); try std.fs.cwd().deleteFile("D.mat");
+    try std.fs.cwd().deleteFile("E.mat"); try std.fs.cwd().deleteFile("F.mat"); try std.fs.cwd().deleteFile("G.mat"); try std.fs.cwd().deleteFile("H.mat");
+    try std.fs.cwd().deleteFile("I.mat"); try std.fs.cwd().deleteFile("J.mat"); try std.fs.cwd().deleteFile("K.mat"); try std.fs.cwd().deleteFile("L.mat");
+    try std.fs.cwd().deleteFile("M.mat"); try std.fs.cwd().deleteFile("N.mat"); try std.fs.cwd().deleteFile("O.mat"); try std.fs.cwd().deleteFile("P.mat");
 }
 
 test "matrix_linspace" {
