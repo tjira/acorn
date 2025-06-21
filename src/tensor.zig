@@ -106,25 +106,36 @@ pub fn Tensor(comptime T: type) type {
             if (a >= self.shape.len or b >= self.shape.len) return error.InvalidAxisIndex;
             if (self.shape[a] != self.shape[b]            ) return error.InvalidAxisShape;
 
+            if (self.shape.len > 4) return error.InvalidTensorShapeForAxisSwap;
+
             if (a == b) return;
 
-            for (self.data, 0..) |*e, i| {
+            if (self.shape.len == 2) for (0..self.shape[0]) |i| for (0..self.shape[1]) |j| {
 
-                var rem = i; var ia: usize = 0; var ib: usize = 0; const stop = if (a > b) a else b;
+                var iswap = [2]usize{i, j}; std.mem.swap(usize, &iswap[a], &iswap[b]);
 
-                for (0..stop + 1) |k| {
+                if (iswap[a] >= iswap[b]) continue;
 
-                    const index = rem / self.stride[k];
+                std.mem.swap(T, self.ptr(&iswap), self.ptr(&[_]usize{i, j}));
+            };
 
-                    if (k == a) {ia = index;} else if (k == b) ib = index;
+            if (self.shape.len == 3) for (0..self.shape[0]) |i| for (0..self.shape[1]) |j| for (0..self.shape[2]) |k| {
 
-                    rem %= self.stride[k];
-                }
+                var iswap = [3]usize{i, j, k}; std.mem.swap(usize, &iswap[a], &iswap[b]);
 
-                if (ia < ib) {
-                    std.mem.swap(T, e, &self.data[i + (ib - ia) * self.stride[a] + (ia - ib) * self.stride[b]]);
-                }
-            }
+                if (iswap[a] >= iswap[b]) continue;
+
+                std.mem.swap(T, self.ptr(&iswap), self.ptr(&[_]usize{i, j, k}));
+            };
+
+            if (self.shape.len == 4) for (0..self.shape[0]) |i| for (0..self.shape[1]) |j| for (0..self.shape[2]) |k| for (0..self.shape[3]) |l| {
+
+                var iswap = [4]usize{i, j, k, l}; std.mem.swap(usize, &iswap[a], &iswap[b]);
+
+                if (iswap[a] >= iswap[b]) continue;
+
+                std.mem.swap(T, self.ptr(&iswap), self.ptr(&[_]usize{i, j, k, l}));
+            };
         }
 
         /// Transpose a tensor in-place.
@@ -137,7 +148,7 @@ pub fn Tensor(comptime T: type) type {
 
                 var cycle = std.ArrayList(usize).init(allocator); defer cycle.deinit();
 
-                var j: usize = i; while (!visited[j]) : (j = axes[j]) {
+                var j = i; while (!visited[j]) : (j = axes[j]) {
                     try cycle.append(j); visited[j] = true;
                 }
 
@@ -285,27 +296,4 @@ pub fn sub(comptime T: type, C: *Tensor(T), A: Tensor(T), B: Tensor(T)) void {
     if (@typeInfo(T) == .Struct) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].sub(B.data[i]);
     };
-}
-
-/// Transpose a tensor. The result is stored in the tensor B. The axes argument specifies the permutation of the axes. Currently only works for 4D tensors.
-pub fn transpose(comptime T: type, B: *Tensor(T), A: Tensor(T), axes: []const usize, allocator: std.mem.Allocator) !void {
-    if (axes.len != A.shape.len) return error.InvalidAxesLength;
-
-    var src_idx = try A.allocator.alloc(usize, A.shape.len); defer allocator.free(src_idx);
-    var dst_idx = try A.allocator.alloc(usize, B.shape.len); defer allocator.free(dst_idx);
-
-    for (A.data, 0..) |e, i| {
-
-        var rem = i;
-
-        for (0..A.shape.len) |k| {
-            src_idx[k] = rem / A.stride[k]; rem %= A.stride[k];
-        }
-
-        for (0..B.shape.len) |k| {
-            dst_idx[k] = src_idx[axes[k]];
-        }
-
-        B.ptr(dst_idx).* = e;
-    }
 }

@@ -146,14 +146,4 @@ pub fn main() !void {
     }}
 
     try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
-
-    // const N = 150;
-    //
-    // var A = try Tensor(f64).init(&[_]usize{N, N, N, N}, allocator); defer  A.deinit();
-    //
-    // timer = try std.time.Timer.start();
-    //
-    // try A.transpose(&[_]usize{0, 2, 1, 3}, allocator);
-    //
-    // try std.io.getStdOut().writer().print("\nTRANSPOSE TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
 }
