@@ -76,11 +76,13 @@ pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System
     }
 
     if (opt.write.coefficient != null) try hf.C_A.write(opt.write.coefficient.?);
-    if (opt.write.coulomb     != null) try hf.J_A.write(opt.write.coulomb.?    );
     if (opt.write.density     != null) try hf.D_A.write(opt.write.density.?    );
     if (opt.write.kinetic     != null) try hf.T_A.write(opt.write.kinetic.?    );
     if (opt.write.nuclear     != null) try hf.V_A.write(opt.write.nuclear.?    );
     if (opt.write.overlap     != null) try hf.S_A.write(opt.write.overlap.?    );
+    if (opt.write.fock        != null) try hf.F_A.write(opt.write.fock.?       );
+
+    if (opt.write.coulomb != null and hf.J_A != null) try hf.J_A.?.write(opt.write.coulomb.?);
 
     if (opt.gradient != null and opt.write.gradient != null) try hf.G.?.write(opt.write.gradient.?);
     if (opt.hessian  != null and opt.write.hessian  != null) try hf.H.?.write(opt.write.hessian.? );
@@ -101,7 +103,9 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         nbf = if (opt.generalized) 2 * nbf else nbf; npgs = if (opt.generalized) 2 * npgs else npgs;
 
-        mem = 8 * @as(f64, @floatFromInt(((if (opt.dsize != null) opt.dsize.? else 0) + 12) * nbf * nbf + nbf * nbf * nbf * nbf));
+        const nmat = (if (opt.dsize != null) opt.dsize.? else 0) + 12; const nten: usize = if (opt.direct) 0 else 1;
+
+        mem = 8 * @as(f64, @floatFromInt(nmat * nbf * nbf + nten * nbf * nbf * nbf * nbf));
     }
 
     if (print) try std.io.getStdOut().writer().print("\n# NUMBER OF ELECTRONS: {d}\n", .{system.getElectrons()});
@@ -113,21 +117,30 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
     var timer = try std.time.Timer.start(); const nbf_spatial = if (opt.generalized) nbf / 2 else nbf;
 
-    var S_A = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?,    allocator) else try Matrix(T).init(nbf_spatial, nbf_spatial,                                      allocator);
-    var T_A = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?,    allocator) else try Matrix(T).init(nbf_spatial, nbf_spatial,                                      allocator);
-    var V_A = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?,    allocator) else try Matrix(T).init(nbf_spatial, nbf_spatial,                                      allocator);
-    var J_A = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf_spatial, nbf_spatial, nbf_spatial, nbf_spatial}, allocator);
+    var S_A = if (opt.integral.overlap != null) try mat.read(T, opt.integral.overlap.?, allocator) else try Matrix(T).init(nbf_spatial, nbf_spatial, allocator);
+    var T_A = if (opt.integral.kinetic != null) try mat.read(T, opt.integral.kinetic.?, allocator) else try Matrix(T).init(nbf_spatial, nbf_spatial, allocator);
+    var V_A = if (opt.integral.nuclear != null) try mat.read(T, opt.integral.nuclear.?, allocator) else try Matrix(T).init(nbf_spatial, nbf_spatial, allocator);
 
-    if (opt.integral.overlap == null) cwp.Libint(T).overlap(S_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.kinetic == null) cwp.Libint(T).kinetic(T_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.nuclear == null) cwp.Libint(T).nuclear(V_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
-    if (opt.integral.coulomb == null) cwp.Libint(T).coulomb(J_A.data, system, try Basis(f64).array(system, opt.integral.basis.?, std.heap.page_allocator));
+    if (opt.integral.overlap == null) cwp.Libint(T).overlap(&S_A, system, basis);
+    if (opt.integral.kinetic == null) cwp.Libint(T).kinetic(&T_A, system, basis);
+    if (opt.integral.nuclear == null) cwp.Libint(T).nuclear(&V_A, system, basis);
+
+    var J_A: ?Tensor(T) = null;
+
+    if (!opt.direct) {
+
+        J_A = if (opt.integral.coulomb != null) try ten.read(T, opt.integral.coulomb.?, 4, allocator) else try Tensor(T).init(&[_]usize{nbf_spatial, nbf_spatial, nbf_spatial, nbf_spatial}, allocator);
+
+        if (opt.integral.coulomb == null) cwp.Libint(T).coulomb(&J_A.?, system, basis);
+    }
 
     if (opt.generalized) {
-        {var S_AS = try Matrix(T).init(nbf, nbf,                      allocator); tns.oneAO2AS(T, &S_AS, S_A); S_A.deinit(); S_A = S_AS;}
-        {var T_AS = try Matrix(T).init(nbf, nbf,                      allocator); tns.oneAO2AS(T, &T_AS, T_A); T_A.deinit(); T_A = T_AS;}
-        {var V_AS = try Matrix(T).init(nbf, nbf,                      allocator); tns.oneAO2AS(T, &V_AS, V_A); V_A.deinit(); V_A = V_AS;}
-        {var J_AS = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); tns.twoAO2AS(T, &J_AS, J_A); J_A.deinit(); J_A = J_AS;}
+
+        {var S_AS = try Matrix(T).init(nbf, nbf, allocator); tns.oneAO2AS(T, &S_AS, S_A); S_A.deinit(); S_A = S_AS;}
+        {var T_AS = try Matrix(T).init(nbf, nbf, allocator); tns.oneAO2AS(T, &T_AS, T_A); T_A.deinit(); T_A = T_AS;}
+        {var V_AS = try Matrix(T).init(nbf, nbf, allocator); tns.oneAO2AS(T, &V_AS, V_A); V_A.deinit(); V_A = V_AS;}
+
+        if (!opt.direct) {var J_AS = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); tns.twoAO2AS(T, &J_AS, J_A.?); J_A.?.deinit(); J_A = J_AS;}
     }
 
     const nocc: usize = if (opt.generalized) system.getElectrons() else system.getElectrons() / 2;
@@ -164,13 +177,20 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         timer = try std.time.Timer.start(); H_A.memcpy(F_A);
 
-        try ten.contract(T, &T1, D_A, &[_]usize{0, 1}, J_A, &[_]usize{0, 1}, allocator);
-        try ten.contract(T, &T2, D_A, &[_]usize{0, 1}, J_A, &[_]usize{0, 3}, allocator);
+        if (opt.direct) {
+            cwp.Libint(T).fock(&F_A, system, basis, D_A);
+        }
 
-        if (!opt.generalized) mat.muls(T, &T2, T2, 0.5);
+        else {
 
-        mat.add(T, &F_A, F_A, T1);
-        mat.sub(T, &F_A, F_A, T2);
+            try ten.contract(T, &T1, D_A, &[_]usize{0, 1}, J_A.?, &[_]usize{0, 1}, allocator);
+            try ten.contract(T, &T2, D_A, &[_]usize{0, 1}, J_A.?, &[_]usize{0, 3}, allocator);
+
+            if (!opt.generalized) mat.muls(T, &T2, T2, 0.5);
+
+            mat.add(T, &F_A, F_A, T1);
+            mat.sub(T, &F_A, F_A, T2);
+        }
 
         if (opt.dsize != null and iter > 0) {
 
@@ -223,6 +243,8 @@ pub fn checkErrors(comptime T: type, opt: inp.HartreeFockOptions(T)) !void {
     if (!opt.generalized and @rem(@abs(opt.system.charge), 2) == 1) return error.UseGeneralizedHartreeFockForOddCharge;
 
     if (opt.dsize != null and opt.dsize.? < 1) return error.InvalidDIISSize;
+
+    if (opt.direct and opt.generalized) return error.CantUseDirectSCFWithGeneralizedHartreeFock;
 }
 
 /// Extrapolate the DIIS error to obtain a new Fock matrix.

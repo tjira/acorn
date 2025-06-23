@@ -146,6 +146,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
         pub const Write = struct {
             coefficient: ?[]const u8 = null,
             density:     ?[]const u8 = null,
+            fock:        ?[]const u8 = null,
             nuclear:     ?[]const u8 = null,
             kinetic:     ?[]const u8 = null,
             coulomb:     ?[]const u8 = null,
@@ -160,6 +161,7 @@ pub fn HartreeFockOptions(comptime T: type) type {
         dsize: ?u32 = 5,
         generalized: bool = false,
         mulliken: bool = true,
+        direct: bool = false,
 
         integral: Integral = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null, print: Print = .{}, system: System = .{}, write: Write = .{}
     };

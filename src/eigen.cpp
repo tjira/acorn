@@ -5,9 +5,9 @@ extern "C" {
     using namespace Eigen; typedef unsigned long ulong;
 
     void logm(double *B, double *A, const ulong dim) {
-        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> AT(A, dim, dim);
-        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> BT(B, dim, dim);
+        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> AM(A, dim, dim);
+        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> BM(B, dim, dim);
 
-        BT = AT.log();
+        BM = AM.log();
     }
 }
