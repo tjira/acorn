@@ -26,7 +26,7 @@ extern "C" {
     using namespace libint2; typedef unsigned long ulong;
 
     void oneelec(double *I, libint2::Engine &engine, const std::vector<Shell> &shells) {
-        int nbf = 0; std::vector<size_t> sh2bf; std::vector<Engine> engines(std::max(1, std::atoi(std::getenv("OMP_NUM_THREADS"))), engine);
+        int nbf = 0; std::vector<size_t> sh2bf; std::vector<Engine> engines(std::getenv("OMP_NUM_THREADS") ? std::max(1, std::atoi(std::getenv("OMP_NUM_THREADS"))) : 1, engine);
 
         for (int i = 0, j = 0; j < shells.size(); i += shells[j].size(), j++) sh2bf.push_back(i);
 
@@ -47,7 +47,7 @@ extern "C" {
     }
 
     void twoelec(double *I, libint2::Engine &engine, const std::vector<Shell> &shells) {
-        int nbf = 0; std::vector<size_t> sh2bf; std::vector<Engine> engines(std::max(1, std::atoi(std::getenv("OMP_NUM_THREADS"))), engine);
+        int nbf = 0; std::vector<size_t> sh2bf; std::vector<Engine> engines(std::getenv("OMP_NUM_THREADS") ? std::max(1, std::atoi(std::getenv("OMP_NUM_THREADS"))) : 1, engine);
 
         for (int i = 0, j = 0; j < shells.size(); i += shells[j].size(), j++) sh2bf.push_back(i);
 
@@ -81,7 +81,7 @@ extern "C" {
     }
 
     void twoelec2fock(double *F, libint2::Engine &engine, const std::vector<Shell> &shells, const double *D) {
-        int nbf = 0; std::vector<size_t> sh2bf; std::vector<Engine> engines(std::max(1, std::atoi(std::getenv("OMP_NUM_THREADS"))), engine);
+        int nbf = 0; std::vector<size_t> sh2bf; std::vector<Engine> engines(std::getenv("OMP_NUM_THREADS") ? std::max(1, std::atoi(std::getenv("OMP_NUM_THREADS"))) : 1, engine);
 
         for (int i = 0, j = 0; j < shells.size(); i += shells[j].size(), j++) sh2bf.push_back(i);
 
