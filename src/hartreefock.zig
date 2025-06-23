@@ -178,7 +178,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
         timer = try std.time.Timer.start(); H_A.memcpy(F_A);
 
         if (opt.direct) {
-            cwp.Libint(T).fock(&F_A, system, basis, D_A);
+            cwp.Libint(T).fock(&F_A, system, basis, D_A, opt.generalized);
         }
 
         else {
@@ -191,6 +191,8 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
             mat.add(T, &F_A, F_A, T1);
             mat.sub(T, &F_A, F_A, T2);
         }
+
+        // try F_A.print(std.io.getStdOut().writer());
 
         if (opt.dsize != null and iter > 0) {
 
@@ -243,8 +245,6 @@ pub fn checkErrors(comptime T: type, opt: inp.HartreeFockOptions(T)) !void {
     if (!opt.generalized and @rem(@abs(opt.system.charge), 2) == 1) return error.UseGeneralizedHartreeFockForOddCharge;
 
     if (opt.dsize != null and opt.dsize.? < 1) return error.InvalidDIISSize;
-
-    if (opt.direct and opt.generalized) return error.CantUseDirectSCFWithGeneralizedHartreeFock;
 }
 
 /// Extrapolate the DIIS error to obtain a new Fock matrix.

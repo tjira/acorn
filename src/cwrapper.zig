@@ -165,8 +165,8 @@ pub fn Libint(comptime T: type) type {
         }
 
         /// Calculate the Coulomb integrals and contract them with density.
-        pub fn fock(F: *Matrix(T), system: System(T), basis: std.ArrayList(T), D: Matrix(T)) void {
-            libint.fock(&F.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr, &D.data[0]);
+        pub fn fock(F: *Matrix(T), system: System(T), basis: std.ArrayList(T), D: Matrix(T), generalized: bool) void {
+            libint.fock(&F.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr, &D.data[0], generalized);
         }
     };
 }

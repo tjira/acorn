@@ -46,7 +46,7 @@ Acorn offers a comprehensive suite of tools for both time-independent and time-d
 ### Time-Independent Quantum Mechanics
 
 * **Hartree–Fock Methods**  
-  Includes both restricted (RHF) and generalized (GHF) Hartree–Fock, enhanced with DIIS convergence acceleration.
+  Includes both restricted (RHF) and generalized (GHF) Hartree–Fock, enhanced with DIIS convergence acceleration and an option for direct-SCF.
 
 * **Post-Hartree–Fock Methods**  
   Support for Møller–Plesset perturbation theory (MP2) and configuration interaction (CASCI) techniques.
