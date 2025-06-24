@@ -192,8 +192,6 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
             mat.sub(T, &F_A, F_A, T2);
         }
 
-        // try F_A.print(std.io.getStdOut().writer());
-
         if (opt.dsize != null and iter > 0) {
 
             try cwp.Blas(T).dgemm(&T1, S_A, false, D_A, false);
