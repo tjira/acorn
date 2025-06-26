@@ -65,12 +65,12 @@ void twoelec2fock(double *F, libint2::Engine &engine, const std::vector<libint2:
                                 }
                             }
                         } else {
-                            Fs.at(id).at(bf1 * nbf + bf2) += 0.500 * D[bf3 * nbf + bf4] * value * degeneracy;
-                            Fs.at(id).at(bf3 * nbf + bf4) += 0.500 * D[bf1 * nbf + bf2] * value * degeneracy;
-                            Fs.at(id).at(bf1 * nbf + bf3) -= 0.125 * D[bf2 * nbf + bf4] * value * degeneracy;
-                            Fs.at(id).at(bf2 * nbf + bf4) -= 0.125 * D[bf1 * nbf + bf3] * value * degeneracy;
-                            Fs.at(id).at(bf1 * nbf + bf4) -= 0.125 * D[bf2 * nbf + bf3] * value * degeneracy;
-                            Fs.at(id).at(bf2 * nbf + bf3) -= 0.125 * D[bf1 * nbf + bf4] * value * degeneracy;
+                            Fs.at(id).at(bf1 * nbf + bf2) += 1.00 * D[bf3 * nbf + bf4] * value * degeneracy;
+                            Fs.at(id).at(bf3 * nbf + bf4) += 1.00 * D[bf1 * nbf + bf2] * value * degeneracy;
+                            Fs.at(id).at(bf1 * nbf + bf3) -= 0.25 * D[bf2 * nbf + bf4] * value * degeneracy;
+                            Fs.at(id).at(bf2 * nbf + bf4) -= 0.25 * D[bf1 * nbf + bf3] * value * degeneracy;
+                            Fs.at(id).at(bf1 * nbf + bf4) -= 0.25 * D[bf2 * nbf + bf3] * value * degeneracy;
+                            Fs.at(id).at(bf2 * nbf + bf3) -= 0.25 * D[bf1 * nbf + bf4] * value * degeneracy;
                         }
                     }
                 }

@@ -16,10 +16,10 @@ pub fn mulliken(comptime T: type, system: System(T), basis: std.ArrayList(T), S_
 
     for (0..system.atoms.rows) |i| m.ptr(i).* = system.atoms.at(i);
 
-    const bf2atom = try system.getBasisMap(basis, allocator); defer bf2atom.deinit();
+    const bf2atom = try system.getBasisMap(basis, allocator); defer bf2atom.deinit(); const nbf = bf2atom.items.len;
 
-    for (0..S_AO.rows) |i| for (0..S_AO.cols) |j| {
-        m.ptr(bf2atom.items[i % bf2atom.items.len]).* -= D_AO.at(j, i) * S_AO.at(j, i);
+    for (0..nbf) |i| for (0..nbf) |j| {
+        m.ptr(bf2atom.items[i]).* -= D_AO.at(j, i) * S_AO.at(j, i) + D_AO.at((i + nbf) % D_AO.rows, (j + nbf) % D_AO.rows) * S_AO.at((i + nbf) % S_AO.rows, (j + nbf) % S_AO.rows);
     };
 
     return m;

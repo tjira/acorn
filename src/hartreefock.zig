@@ -186,7 +186,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
             try ten.contract(T, &T1, D_A, &[_]usize{0, 1}, J_A.?, &[_]usize{0, 1}, allocator);
             try ten.contract(T, &T2, D_A, &[_]usize{0, 1}, J_A.?, &[_]usize{0, 3}, allocator);
 
-            if (!opt.generalized) mat.muls(T, &T2, T2, 0.5);
+            if (!opt.generalized) mat.muls(T, &T1, T1, 2);
 
             mat.add(T, &F_A, F_A, T1);
             mat.sub(T, &F_A, F_A, T2);
@@ -209,12 +209,12 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
         try cwp.Lapack(T).dsygvd(&E_M, &C_A, F_A, S_A, &T1); D_A.fill(0); EP = E; E = 0;
 
-        const df: T = if(opt.generalized) 1 else 2; for (0..nbf) |i| for (0..nocc) |j| for (0..nbf) |k| {
-            D_A.ptr(i, k).* += df * C_A.at(i, j) * C_A.at(k, j);
+        for (0..nbf) |i| for (0..nocc) |j| for (0..nbf) |k| {
+            D_A.ptr(i, k).* += C_A.at(i, j) * C_A.at(k, j);
         };
 
-        for (0..nbf) |i| for (0..nbf) |j| {
-            E += 0.5 * D_A.at(i, j) * (H_A.at(i, j) + F_A.at(i, j));
+        const ef: T = if(opt.generalized) 0.5 else 1; for (0..nbf) |i| for (0..nbf) |j| {
+            E += ef * D_A.at(i, j) * (H_A.at(i, j) + F_A.at(i, j));
         };
 
         if (print) try std.io.getStdOut().writer().print("{d:4} {d:20.14} {e:9.3} {s}\n", .{iter + 1, E + VNN, @abs(EP - E), std.fmt.fmtDuration(timer.read())});
