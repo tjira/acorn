@@ -4,7 +4,7 @@
 ClearAll["Global`*"]
 
 
-points={0,-1,-2,-3,-4};order=2;
+points={0,-1,-2};order=2;
 
 
 A=Join[{ConstantArray[1,Length@points]},Table[points^k,{k,1,Length@points-1}]];A//MatrixForm
