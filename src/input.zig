@@ -5,6 +5,29 @@ const std = @import("std");
 const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
 
+/// The atomic integral options
+pub fn AtomicIntegralOptions(comptime T: type) type {
+    return struct {
+        pub const Print = struct {
+            overlap: bool = false,
+            kinetic: bool = false,
+            nuclear: bool = false,
+            coulomb: bool = false,
+        };
+        pub const Write = struct {
+            overlap: ?[]const u8 = null,
+            kinetic: ?[]const u8 = null,
+            nuclear: ?[]const u8 = null,
+            coulomb: ?[]const u8 = null,
+        };
+
+        system_file: ?[]const u8 = null,
+        basis:        []const u8,
+
+        print: Print = .{}, system: HartreeFockOptions(T).System = .{}, write: Write = .{}
+    };
+}
+
 /// The classical dynamics options
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {

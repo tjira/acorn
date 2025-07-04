@@ -1,0 +1,12 @@
+{
+    "atomic_integral" : {
+        "system_file" : "molecule.xyz",
+        "basis" : "sto-3g",
+        "write" : {
+            "overlap" : "S_AO.mat",
+            "kinetic" : "T_AO.mat",
+            "nuclear" : "V_AO.mat",
+            "coulomb" : "J_AO.mat"
+        }
+    }
+}

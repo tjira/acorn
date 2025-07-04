@@ -2,6 +2,7 @@
 
 const std = @import("std"); const builtin = @import("builtin");
 
+pub const atomic_integral           = @import("atomicintegral.zig"          );
 pub const basis                     = @import("basis.zig"                   );
 pub const classical_dynamics        = @import("classicaldynamics.zig"       );
 pub const complete_active_space     = @import("completeactivespace.zig"     );
@@ -37,6 +38,13 @@ pub const Vector = @import("vector.zig").Vector;
 /// Parse the input JSON file and run the corresponding target.
 pub fn parse(filebuf: []const u8, allocator: std.mem.Allocator) !void {
     const inputjs = try std.json.parseFromSlice(std.json.Value, allocator, filebuf, .{}); defer inputjs.deinit();
+
+    if (inputjs.value.object.contains("atomic_integral")) {
+
+        const obj = try std.json.parseFromValue(input.AtomicIntegralOptions(f64), allocator, inputjs.value.object.get("atomic_integral").?, .{}); defer obj.deinit();
+
+        _ = try atomic_integral.run(f64, obj.value, true, allocator);
+    }
 
     if (inputjs.value.object.contains("classical_dynamics")) {
 
