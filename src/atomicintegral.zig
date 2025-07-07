@@ -32,7 +32,7 @@ pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, all
 
     var timer = try std.time.Timer.start(); if (print) try std.io.getStdOut().writer().print("\n", .{});
 
-    if (opt.print.overlap or opt.write.overlap != null) {
+    {
 
         const mem = try memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
 
@@ -49,7 +49,7 @@ pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, all
 
     timer = try std.time.Timer.start();
 
-    if (opt.print.kinetic or opt.write.kinetic != null) {
+    {
 
         const mem = try memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
 
@@ -66,7 +66,7 @@ pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, all
 
     timer = try std.time.Timer.start();
 
-    if (opt.print.nuclear or opt.write.nuclear != null) {
+    {
 
         const mem = try memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
 
@@ -83,7 +83,7 @@ pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, all
 
     timer = try std.time.Timer.start();
 
-    if (opt.print.coulomb or opt.write.coulomb != null) {
+    {
 
         const mem = try memFormat(T, nbf * nbf * nbf * nbf, allocator); defer allocator.free(mem);
 

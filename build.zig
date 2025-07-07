@@ -105,6 +105,8 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", bindir, "/"});
 
     const file_fibonacci = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "fibonacci"}), .{.mode=0o755});
+    const file_hf        = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "hf"       }), .{.mode=0o755});
+    const file_integral  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "integral" }), .{.mode=0o755});
     const file_matmul    = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matmul"   }), .{.mode=0o755});
     const file_matsort   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "matsort"  }), .{.mode=0o755});
     const file_mersenne  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne" }), .{.mode=0o755});
@@ -147,6 +149,96 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
         \\    "count" : '"$COUNT"',
         \\    "log_interval" : '"$LOG_INTERVAL"',
         \\    "output" : '"$OUTPUT"'
+        \\  }}
+        \\}}' > .input.json
+    ;
+
+    const content_hf =
+        \\  -b <basis>       Atomic orbital basis. (default: ${{BASIS}})
+        \\  -c <charge>      Charge of the system. (default: ${{CHARGE}})
+        \\  -d <direct>      Boolean direct flag. (default: ${{DIRECT}})
+        \\  -e <export>      Boolean export flag. (default: ${{EXPORT}})
+        \\  -g <generalized> Boolean generalized flag. (default: ${{GENERALIZED}})
+        \\  -i <input>       Input system file in .xyz format. (default: ${{SYSTEM}})
+        \\  -n <nthread>     Number of threads to use. (default: ${{N}})
+        \\  -h               Display this help message and exit.
+        \\EOF
+        \\
+        \\}}; N=1; BASIS="sto-3g"; CHARGE=0; DIRECT=false; EXPORT=false; GENERALIZED=false; INPUT="molecule.xyz";
+        \\
+        \\while getopts "b:c:degi:n:h" OPT; do case "$OPT" in
+        \\  b ) BASIS="$OPTARG" ;;
+        \\  c ) CHARGE="$OPTARG" ;;
+        \\  d ) DIRECT=true ;;
+        \\  e ) EXPORT=true ;;
+        \\  g ) GENERALIZED=true ;;
+        \\  i ) INPUT="$OPTARG" ;;
+        \\  n ) N="$OPTARG" ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
+        \\esac done
+        \\
+        \\[[ "$EXPORT" == true ]] && D_AO="\"S_AO.mat\"" || D_AO="null"
+        \\[[ "$EXPORT" == true ]] && C_AO="\"T_AO.mat\"" || C_AO="null"
+        \\[[ "$EXPORT" == true ]] && F_AO="\"V_AO.mat\"" || F_AO="null"
+        \\
+        \\echo '{{
+        \\  "hartree_fock" : {{
+        \\      "system_file" : "'"$INPUT"'",
+        \\      "system" : {{
+        \\          "charge" : 0
+        \\      }},
+        \\      "integral" : {{
+        \\          "basis" : "'"$BASIS"'"
+        \\      }},
+        \\      "write" : {{
+        \\          "coefficient" : '"$C_AO"',
+        \\          "density" : '"$D_AO"',
+        \\          "fock" : '"$F_AO"'
+        \\      }},
+        \\      "threshold" : 1e-8,
+        \\      "maxiter" : 1000,
+        \\      "dsize" : 5,
+        \\      "generalized" : '$GENERALIZED',
+        \\      "direct" : '$DIRECT'
+        \\  }}
+        \\}}' > .input.json
+    ;
+
+    const content_integral =
+        \\  -b <basis>   Atomic orbital basis. (default: ${{BASIS}})
+        \\  -e <export>  Boolean export flag. (default: ${{EXPORT}})
+        \\  -i <input>   Input system file in .xyz format. (default: ${{SYSTEM}})
+        \\  -n <nthread> Number of threads to use. (default: ${{N}})
+        \\  -h           Display this help message and exit.
+        \\EOF
+        \\
+        \\}}; N=1; BASIS="sto-3g"; EXPORT=false; INPUT="molecule.xyz";
+        \\
+        \\while getopts "b:ei:n:h" OPT; do case "$OPT" in
+        \\  b ) BASIS="$OPTARG" ;;
+        \\  e ) EXPORT=true ;;
+        \\  i ) INPUT="$OPTARG" ;;
+        \\  n ) N="$OPTARG" ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
+        \\esac done
+        \\
+        \\[[ "$EXPORT" == true ]] && S_AO="\"S_AO.mat\"" || S_AO="null"
+        \\[[ "$EXPORT" == true ]] && T_AO="\"T_AO.mat\"" || T_AO="null"
+        \\[[ "$EXPORT" == true ]] && V_AO="\"V_AO.mat\"" || V_AO="null"
+        \\[[ "$EXPORT" == true ]] && J_AO="\"J_AO.mat\"" || J_AO="null"
+        \\
+        \\echo '{{
+        \\  "atomic_integral" : {{
+        \\      "system_file" : "'"$INPUT"'",
+        \\      "basis" : "'"$BASIS"'",
+        \\      "write" : {{
+        \\          "overlap" : '"$S_AO"',
+        \\          "kinetic" : '"$T_AO"',
+        \\          "nuclear" : '"$V_AO"',
+        \\          "coulomb" : '"$J_AO"'
+        \\      }}
         \\  }}
         \\}}' > .input.json
     ;
@@ -326,5 +418,7 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});     file_prime.close();
     try file_randmat  .writer().print(header ++ "\n" ++ content_randmat   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});   file_randmat.close();
 
-    try file_matmul   .writer().print(header ++ "\n" ++ content_matmul    ++ "\n\nexport OMP_NUM_THREADS=$N; acorn .input.json && clean", .{});    file_matmul.close();
+    try file_hf      .writer().print(header ++ "\n" ++ content_hf       ++ "\n\nexport OMP_NUM_THREADS=$N; acorn .input.json && clean", .{}); file_hf      .close();
+    try file_integral.writer().print(header ++ "\n" ++ content_integral ++ "\n\nexport OMP_NUM_THREADS=$N; acorn .input.json && clean", .{}); file_integral.close();
+    try file_matmul  .writer().print(header ++ "\n" ++ content_matmul   ++ "\n\nexport OMP_NUM_THREADS=$N; acorn .input.json && clean", .{}); file_matmul  .close();
 }
