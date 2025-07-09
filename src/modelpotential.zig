@@ -16,12 +16,18 @@ const contains = @import("helper.zig").contains;
 /// Potential struct.
 pub fn Potential(comptime T: type) type {
     return struct {
-        dims: u32, states: u32, tdep: bool, eval_fn: *const fn(U: *Matrix(T), r: Vector(T), t: T) void, expr: ?[]cwp.Expression(T) = null, allocator: ?std.mem.Allocator = null,
+        dims: u32, states: u32, tdep: bool, eval_fn: *const fn(U: *Matrix(T), r: Vector(T), t: T) void, expr: ?[]cwp.Expression(T) = null, U: ?Matrix(T) = null,
+
+        allocator: ?std.mem.Allocator = null,
 
         /// Frees the memory allocated by the struct.
         pub fn deinit(self: Potential(T)) void {
             if (self.expr != null) {
                 for (self.expr.?) |*e| {e.*.deinit();} self.allocator.?.free(self.expr.?);
+            }
+
+            if (self.U != null) {
+                self.U.?.deinit();
             }
         }
 
@@ -30,6 +36,57 @@ pub fn Potential(comptime T: type) type {
             if (self.expr != null) {for (0..self.states) |i| for (0..self.states) |j| {
                 U.ptr(i, j).* = self.expr.?[i * self.states + j].evaluate(r, t);
             };}
+
+            else if (self.U != null) {for (1..self.U.?.rows) |i| {
+
+                if (r.at(0) < self.U.?.at(0, 0)) {
+
+                    const x0 = self.U.?.at(0, 0);
+                    const x1 = self.U.?.at(1, 0);
+
+                    for (0..self.states) |j| for (0..self.states) |k| {
+
+                        const y0 = self.U.?.at(0, j * self.states + k + 1);
+                        const y1 = self.U.?.at(1, j * self.states + k + 1);
+
+                        U.ptr(j, k).* = y0 + (y1 - y0) * (r.at(0) - x0) / (x1 - x0);
+                    };
+
+                    break;
+                }
+
+                else if (r.at(0) >= self.U.?.at(i - 1, 0) and r.at(0) < self.U.?.at(i, 0)) {
+
+                    const x0 = self.U.?.at(i - 1, 0);
+                    const x1 = self.U.?.at(i,     0);
+
+                    for (0..self.states) |j| for (0..self.states) |k| {
+
+                        const y0 = self.U.?.at(i - 1, j * self.states + k + 1);
+                        const y1 = self.U.?.at(i,     j * self.states + k + 1);
+
+                        U.ptr(j, k).* = y0 + (y1 - y0) * (r.at(0) - x0) / (x1 - x0);
+                    };
+
+                    break;
+                }
+
+                else if (r.at(0) >= self.U.?.at(self.U.?.rows - 1, 0)) {
+
+                    const x0 = self.U.?.at(self.U.?.rows - 2, 0);
+                    const x1 = self.U.?.at(self.U.?.rows - 1, 0);
+
+                    for (0..self.states) |j| for (0..self.states) |k| {
+
+                        const y0 = self.U.?.at(self.U.?.rows - 2, j * self.states + k + 1);
+                        const y1 = self.U.?.at(self.U.?.rows - 1, j * self.states + k + 1);
+
+                        U.ptr(j, k).* = y0 + (y1 - y0) * (r.at(0) - x0) / (x1 - x0);
+                    };
+
+                    break;
+                }
+            }}
 
             else return self.eval_fn(U, r, t);
         }
@@ -52,21 +109,32 @@ pub fn getPotential(comptime T: type, dims: u32, hamiltonian: []const []const []
     };
 }
 
+/// Function to read the potential from file.
+pub fn readPotential(comptime T: type, dims: u32, path: []const u8, allocator: std.mem.Allocator) !?Potential(T) {
+    if (dims != 1) return error.ReadingMultidimensionalPotentialNotSupported;
+
+    const V = try mat.read(T, path, allocator);
+
+    return .{.allocator = allocator, .dims = dims, .states = @as(u32, @intCast(std.math.sqrt(V.cols - 1))), .tdep = false, .eval_fn = struct {
+        fn get (U: *Matrix(T), r: Vector(T), t: T) void {_ = U; _ = r; _ = t;}}.get, .expr = null, .U = V
+    };
+}
+
 /// Function to get the potential energy surface map.
 pub fn getPotentialMap(comptime T: type, allocator: std.mem.Allocator) !std.StringHashMap(Potential(T)) {
     var map = std.StringHashMap(Potential(T)).init(allocator);
 
-    try map.put("harmonic1D_1",            Potential(T){.dims = 1,  .states = 1, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {      harmonic1D_1(T, U, r); _ = t;}}.get});
-    try map.put("harmonic2D_1",            Potential(T){.dims = 2,  .states = 1, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {      harmonic2D_1(T, U, r); _ = t;}}.get});
-    try map.put("harmonic3D_1",            Potential(T){.dims = 3,  .states = 1, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {      harmonic3D_1(T, U, r); _ = t;}}.get});
-    try map.put("harmonic4D_1",            Potential(T){.dims = 4,  .states = 1, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {      harmonic4D_1(T, U, r); _ = t;}}.get});
-    try map.put("tully1D_1",               Potential(T){.dims = 1,  .states = 2, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {         tully1D_1(T, U, r); _ = t;}}.get});
-    try map.put("tully1D_2",               Potential(T){.dims = 1,  .states = 2, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {         tully1D_2(T, U, r); _ = t;}}.get});
-    try map.put("tully1D_3",               Potential(T){.dims = 1,  .states = 2, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {         tully1D_3(T, U, r); _ = t;}}.get});
-    try map.put("uracil8D_1",              Potential(T){.dims = 8,  .states = 4, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {        uracil8D_1(T, U, r); _ = t;}}.get});
-    try map.put("uracil12D_1",             Potential(T){.dims = 12, .states = 4, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {       uracil12D_1(T, U, r); _ = t;}}.get});
-    try map.put("uracilDimless8D_1",       Potential(T){.dims = 8,  .states = 4, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void { uracilDimless8D_1(T, U, r); _ = t;}}.get});
-    try map.put("uracilDimless12D_1",      Potential(T){.dims = 12, .states = 4, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {uracilDimless12D_1(T, U, r); _ = t;}}.get});
+    try map.put("harmonic1D_1",       Potential(T){.dims = 1,  .states = 1, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {      harmonic1D_1(T, U, r); _ = t;}}.get});
+    try map.put("harmonic2D_1",       Potential(T){.dims = 2,  .states = 1, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {      harmonic2D_1(T, U, r); _ = t;}}.get});
+    try map.put("harmonic3D_1",       Potential(T){.dims = 3,  .states = 1, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {      harmonic3D_1(T, U, r); _ = t;}}.get});
+    try map.put("harmonic4D_1",       Potential(T){.dims = 4,  .states = 1, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {      harmonic4D_1(T, U, r); _ = t;}}.get});
+    try map.put("tully1D_1",          Potential(T){.dims = 1,  .states = 2, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {         tully1D_1(T, U, r); _ = t;}}.get});
+    try map.put("tully1D_2",          Potential(T){.dims = 1,  .states = 2, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {         tully1D_2(T, U, r); _ = t;}}.get});
+    try map.put("tully1D_3",          Potential(T){.dims = 1,  .states = 2, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {         tully1D_3(T, U, r); _ = t;}}.get});
+    try map.put("uracil8D_1",         Potential(T){.dims = 8,  .states = 4, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {        uracil8D_1(T, U, r); _ = t;}}.get});
+    try map.put("uracil12D_1",        Potential(T){.dims = 12, .states = 4, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {       uracil12D_1(T, U, r); _ = t;}}.get});
+    try map.put("uracilDimless8D_1",  Potential(T){.dims = 8,  .states = 4, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void { uracilDimless8D_1(T, U, r); _ = t;}}.get});
+    try map.put("uracilDimless12D_1", Potential(T){.dims = 12, .states = 4, .tdep = false, .eval_fn = struct { fn get (U: *Matrix(T), r: Vector(T), t: T) void {uracilDimless12D_1(T, U, r); _ = t;}}.get});
 
     return map;
 }
@@ -268,12 +336,20 @@ pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) voi
 
 /// Write the potential energy surfaces to a file.
 pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std.mem.Allocator) !void {
-    if (opt.hamiltonian.name == null and (opt.hamiltonian.dims == null and opt.hamiltonian.matrix == null)) return error.InvalidHamiltonian;
-    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.name == null and  opt.hamiltonian.file == null and opt.hamiltonian.matrix == null) return error.InvalidHamiltonian;
 
-    var potential_map = try getPotentialMap(T, allocator); defer potential_map.deinit();
+    if (opt.hamiltonian.name   != null and (opt.hamiltonian.file != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.file   != null and (opt.hamiltonian.name != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.matrix != null and (opt.hamiltonian.file != null or  opt.hamiltonian.name   != null)) return error.InvalidHamiltonian;
 
-    var pot = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?) else try getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
+    if (opt.hamiltonian.matrix != null and opt.hamiltonian.dims == null) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.file   != null and opt.hamiltonian.dims == null) return error.InvalidHamiltonian;
+
+    var potential_map = try getPotentialMap(T, allocator); defer potential_map.deinit(); var pot: ?Potential(T) = null;
+
+    if (opt.hamiltonian.name   != null) pot =                                        potential_map.get(opt.hamiltonian.name.?);
+    if (opt.hamiltonian.file   != null) pot = try readPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.file.?,  allocator);
+    if (opt.hamiltonian.matrix != null) pot = try getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
 
     const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 

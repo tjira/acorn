@@ -18,7 +18,11 @@ const asfloat = @import("helper.zig").asfloat;
 pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.ClassicalDynamicsOutput(T) {
     try checkErrors(T, opt, allocator); var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
 
-    var pot = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?) else try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
+    var pot: ?mpt.Potential(T) = null;
+
+    if (opt.hamiltonian.name   != null) pot =                                            potential_map.get(opt.hamiltonian.name.?);
+    if (opt.hamiltonian.file   != null) pot = try mpt.readPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.file.?,  allocator);
+    if (opt.hamiltonian.matrix != null) pot = try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?, allocator);
 
     const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 
@@ -327,8 +331,14 @@ pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), po
 }
 
 pub fn checkErrors(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), allocator: std.mem.Allocator) !void {
-    if (opt.hamiltonian.name == null and (opt.hamiltonian.dims == null and opt.hamiltonian.matrix == null)) return error.InvalidHamiltonian;
-    if (opt.hamiltonian.name != null and (opt.hamiltonian.dims != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.name == null and  opt.hamiltonian.file == null and opt.hamiltonian.matrix == null) return error.InvalidHamiltonian;
+
+    if (opt.hamiltonian.name   != null and (opt.hamiltonian.file != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.file   != null and (opt.hamiltonian.name != null or  opt.hamiltonian.matrix != null)) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.matrix != null and (opt.hamiltonian.file != null or  opt.hamiltonian.name   != null)) return error.InvalidHamiltonian;
+
+    if (opt.hamiltonian.matrix != null and opt.hamiltonian.dims == null) return error.InvalidHamiltonian;
+    if (opt.hamiltonian.file   != null and opt.hamiltonian.dims == null) return error.InvalidHamiltonian;
 
     var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
 

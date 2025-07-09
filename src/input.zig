@@ -44,7 +44,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             decoherence_alpha: ?T = null
         };
         pub const Hamiltonian = struct {
-            dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null
+            dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null, file: ?[]const u8 = null
         };
         pub const LandauZener = struct {
             mode: ?[]const u8 = "maxdiff"
@@ -213,7 +213,7 @@ pub fn MatrixOptions(comptime T: type) type {
 pub fn ModelPotentialOptions(comptime T: type) type {
     return struct {
         pub const Hamiltonian = struct {
-            dims: ?u32 = null, states: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null
+            dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null, file: ?[]const u8 = null
         };
         pub const ValuePair = struct {
             index: u32 = 0, value: T = 0
@@ -283,7 +283,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             limits: []const T, points: u32
         };
         pub const Hamiltonian = struct {
-            dims: ?u32 = null, states: ?u32 = null, matrix: ?[]const []const []const u8 = null, cap: ?[]const u8 = null, name: ?[]const u8 = null
+            dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, cap: ?[]const u8 = null, name: ?[]const u8 = null, file: ?[]const u8 = null
         };
         pub const InitialConditions = struct {
             position: []const T, momentum: []const T, gamma: T = 2, state: u32, mass: T, adiabatic: bool = false

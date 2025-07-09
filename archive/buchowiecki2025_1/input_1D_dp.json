@@ -1,0 +1,12 @@
+{
+    "model_potential" : {
+        "adiabatic" : false,
+        "limits" : [0.001, 24],
+        "points" : 2048,
+        "hamiltonian" : {
+            "dims" : 1,
+            "file" : "U.dat"
+        },
+        "output" : "POTENTIAL_DIA.mat"
+    }
+}

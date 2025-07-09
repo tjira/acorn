@@ -19,3 +19,4 @@
 - [x] The propagators in QD do not have to be reallocated every time, they can be just rewritten when using time-dependent Hamiltonian.
 - [ ] Landau-Zener scattering matrix doesnt work for multiple crossings.
 - [x] The Landau-Zener scattering matrix needs derivative of the diabatic enegy gap, not the adiabatic.
+- [ ] The hamiltonian specification from file is kind of junk and it doesn't support higher dimensions.
