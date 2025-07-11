@@ -114,7 +114,7 @@ pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
     const file_randmat   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "randmat"  }), .{.mode=0o755});
 
     const header =
-        \\#!/usr/bin/bash
+        \\#!/bin/bash
         \\
         \\clean() {{ rm -f .input.json; }}; trap clean SIGINT
         \\
