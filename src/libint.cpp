@@ -87,7 +87,6 @@ void twoelec2fock(double *F, libint2::Engine &engine, const std::vector<libint2:
     }
 }
 
-#include <omp.h>
 extern "C" {
     using namespace libint2; typedef unsigned long ulong;
 

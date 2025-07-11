@@ -323,6 +323,7 @@ if args.ccd or args.ccsd:
 
         # print the CCSD energy
         print("   CCSD ENERGY: {:.8f}".format(E_HF + E_CCSD + VNN))
+
 # CONFIGURATION INTERACTION ======================================================================================================
 if args.fci:
 

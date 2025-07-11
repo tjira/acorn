@@ -1,6 +1,5 @@
 #include <unsupported/Eigen/MatrixFunctions>
 
-#include <omp.h>
 extern "C" {
     using namespace Eigen; typedef unsigned long ulong;
 

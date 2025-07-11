@@ -17,22 +17,30 @@ EOF
 
 }; SYSTEM="molecule.xyz"; BASIS="sto-3g"; CHARGE=0; MULTIPLICITY=1; METHOD="hf"; FREQUENCY=0; GRADIENT=0
 
-while getopts "s:b:c:p:m:fgh" OPT; do case "$OPT" in
-  s ) SYSTEM="$OPTARG" ;; b ) BASIS="$OPTARG" ;; c ) CHARGE="$OPTARG" ;; p ) MULTIPLICITY="$OPTARG" ;; m ) METHOD="$OPTARG" ;; f ) FREQUENCY=1 ;; g ) GRADIENT=1 ;; h ) usage && exit 0 ;; \? ) usage && exit 1 ;;
+while getopts "b:c:p:m:fgs:h" OPT; do case "$OPT" in
+  b ) BASIS="$OPTARG" ;;
+  c ) CHARGE="$OPTARG" ;;
+  f ) FREQUENCY=1 ;;
+  g ) GRADIENT=1 ;;
+  m ) METHOD="$OPTARG" ;;
+  p ) MULTIPLICITY="$OPTARG" ;;
+  s ) SYSTEM="$OPTARG" ;;
+  h ) usage && exit 0 ;;
+  \? ) usage && exit 1 ;;
 esac done
 
-mkdir -p .orca; METHOD=${METHOD^^}; OPTIONS=""
+mkdir -p .orca; METHOD=${METHOD^^}; NATOM=$(awk 'END {print NR - 2}' $SYSTEM)
 
 if [[ $METHOD == "FCI" ]]; then
     METHOD=""; OPTIONS="%CASSCF DOFCI TRUE; END"
 fi
 
 if [[ $FREQUENCY -eq 1 ]]; then
-    FREQUENCY="NUMFREQ"; OPTIONS="%FREQ PROJECTTR FALSE; END"; else FREQUENCY=""
+    FREQUENCY="FREQ"; OPTIONS="%FREQ PROJECTTR FALSE; END"; else FREQUENCY=""
 fi
 
 if [[ $GRADIENT -eq 1 ]]; then
-    GRADIENT="ENGRAD NUMGRAD"; else GRADIENT=""
+    GRADIENT="ENGRAD"; else GRADIENT=""
 fi
 
 cat << EOT > .orca/orca.inp
@@ -45,4 +53,10 @@ EOT
 
 sed -i 's/   /  /g ; s/  / /g' .orca/orca.inp
 
-cd .orca && orca orca.inp; cd .. && rm -rf .orca
+cd .orca && orca orca.inp ; cd ..
+
+if [[ -f .orca/orca.engrad ]]; then
+    awk -v NATOM=$NATOM 'BEGIN {print 3*NATOM+1} NR==8 || (NR>11 && NR<=3*NATOM+11) {printf "%20.14f\n", $1}' .orca/orca.engrad > ENGRAD.mat
+fi
+
+rm -rf .orca
