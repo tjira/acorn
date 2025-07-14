@@ -13,7 +13,7 @@ cat << EOF > input_1D.json
         },
         "hamiltonian" : {
             "dims" : 1,
-            "file" : "U.dat"
+            "file" : "U_1D.dat"
         },
         "initial_conditions" : {
             "mass" : 1,
@@ -51,11 +51,11 @@ for I in $(seq 0.035 0.001 1); do
 
         sed -i 's/"momentum" : \[0\]/"momentum" : \[-'"$(echo "sqrt(2*$M*$I)" | bc -l)"'\]/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"population" : "POPULATION.mat"/"population" : "POPULATION_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"population" : "POPULATION.mat"/"population" : "POPULATION_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"position" : "POSITION.mat"/"position" : "POSITION_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"position" : "POSITION.mat"/"position" : "POSITION_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"density" : "DENSITY.mat"/"density" : "DENSITY_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"density" : "DENSITY.mat"/"density" : "DENSITY_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
     done
 done
 
@@ -74,11 +74,11 @@ for I in $(seq 1.05 0.05 10); do
 
         sed -i 's/"momentum" : \[0\]/"momentum" : \[-'"$(echo "sqrt(2*$M*$I)" | bc -l)"'\]/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"population" : "POPULATION.mat"/"population" : "POPULATION_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"population" : "POPULATION.mat"/"population" : "POPULATION_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"position" : "POSITION.mat"/"position" : "POSITION_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"position" : "POSITION.mat"/"position" : "POSITION_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"density" : "DENSITY.mat"/"density" : "DENSITY_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"density" : "DENSITY.mat"/"density" : "DENSITY_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
     done
 done
 
@@ -97,11 +97,11 @@ for I in $(seq 11 1 100); do
 
         sed -i 's/"momentum" : \[0\]/"momentum" : \[-'"$(echo "sqrt(2*$M*$I)" | bc -l)"'\]/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"population" : "POPULATION.mat"/"population" : "POPULATION_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"population" : "POPULATION.mat"/"population" : "POPULATION_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"position" : "POSITION.mat"/"position" : "POSITION_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"position" : "POSITION.mat"/"position" : "POSITION_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
 
-        sed -i 's/"density" : "DENSITY.mat"/"density" : "DENSITY_'"$A"'_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
+        sed -i 's/"density" : "DENSITY.mat"/"density" : "DENSITY_'"$A"'_1D_E='"$I"'.mat"/' "input_1D_${A}_E=$I.json"
     done
 done
 

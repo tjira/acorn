@@ -5,8 +5,8 @@
         "points" : 2048,
         "hamiltonian" : {
             "dims" : 1,
-            "file" : "U.dat"
+            "file" : "U_1D.dat"
         },
-        "output" : "POTENTIAL_ADIA.mat"
+        "output" : "POTENTIAL_ADIA_1D.mat"
     }
 }
