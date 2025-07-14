@@ -440,7 +440,7 @@ pub fn rgridPotentials(comptime T: type, VS: *[3]std.ArrayList(Matrix(std.math.C
 
     for (0..rvec.rows) |i| {
 
-        UC.memcpy(UCP); pot.evaluate(&U, rvec.row(i).vector(), t); try cwp.Lapack(T).dsyevd(&UA, &UC, U);
+        UC.memcpy(UCP); try pot.evaluate(&U, rvec.row(i).vector(), t); try cwp.Lapack(T).dsyevd(&UA, &UC, U);
 
         if (i > 0) for (0..UC.cols) |j| {
 

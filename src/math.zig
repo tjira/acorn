@@ -2,6 +2,9 @@
 
 const std = @import("std");
 
+const Matrix = @import("matrix.zig").Matrix;
+const Vector = @import("vector.zig").Vector;
+
 const asfloat = @import("helper.zig").asfloat;
 
 /// Calculate the combination number.
@@ -65,6 +68,52 @@ pub fn gamma(comptime T: type, x: std.math.Complex(T)) std.math.Complex(T) {
     const b = std.math.Complex(T).init(std.math.sqrt(2 * std.math.pi), 0);
 
     return a.mul(b).mul(std.math.complex.pow(t, x.sub(std.math.Complex(T).init(0.5, 0)))).mul(std.math.complex.exp(t.neg()));
+}
+
+/// Function to get a function value of a point in a grid using linear interpolation for 1D data.
+pub fn interp1d(comptime T: type, G: Matrix(T), column: usize, r: Vector(T)) !T {
+    if (r.at(0) < G.at(0, 0) or r.at(0) > G.at(G.rows - 1, 0)) {
+        return error.InterpolationOutOfBounds;
+    }
+
+    var i: usize = 1;
+
+    while (r.at(0) > G.at(i, 0)) i += 1;
+
+    const x0 = G.at(i - 1, 0);
+    const x1 = G.at(i,     0);
+
+    const y0 = G.at(i - 1, column);
+    const y1 = G.at(i,     column);
+
+    return y0 + (y1 - y0) * (r.at(0) - x0) / (x1 - x0);
+}
+
+/// Function to get a function value of a point in a grid using linear interpolation for 2D data.
+pub fn interp2d(comptime T: type, G: Matrix(T), column: usize, r: Vector(T)) !T {
+    if (r.at(0) < G.at(0, 0) or r.at(0) > G.at(G.rows - 1, 0) or r.at(1) < G.at(0, 1) or r.at(1) > G.at(G.rows - 1, 1)) {
+        return error.InterpolationOutOfBounds;
+    }
+
+    var i: usize = 1; var j: usize = 1; const size: usize = std.math.sqrt(G.rows);
+
+    while (r.at(0) > G.at(i, 1)) i += 1;
+    while (r.at(1) > G.at(j, 1)) j += 1;
+
+    const x0 = G.at(i - 1, 1);
+    const x1 = G.at(i,     1);
+    const y0 = G.at(j - 1, 1);
+    const y1 = G.at(j,     1);
+
+    const z00 = G.at((i - 1) * size + j - 1, column);
+    const z01 = G.at((i - 1) * size + j,     column);
+    const z10 = G.at(i       * size + j - 1, column);
+    const z11 = G.at(i       * size + j,     column);
+
+    const zx0 = (x1 - r.at(0)) / (x1 - x0) * z00 + (r.at(0) - x0) / (x1 - x0) * z10;
+    const zx1 = (x1 - r.at(0)) / (x1 - x0) * z01 + (r.at(0) - x0) / (x1 - x0) * z11;
+
+    return (y1 - r.at(1)) / (y1 - y0) * zx0 + (r.at(1) - y0) / (y1 - y0) * zx1;
 }
 
 /// Return the Heaviside function

@@ -157,7 +157,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 const time = opt.time_step * asfloat(T, j);
 
-                S3[j % 3] = s; pot.?.evaluate(&U, r, time); try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
+                S3[j % 3] = s; try pot.?.evaluate(&U, r, time); try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
 
                 U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * opt.initial_conditions.mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s);
 
@@ -317,11 +317,11 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
 pub fn calculateForce(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), pot: mpt.Potential(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32) !T {
-    r.ptr(c).* += 1 * opt.derivative_step; pot.evaluate(U, r.*, t);
+    r.ptr(c).* += 1 * opt.derivative_step; try pot.evaluate(U, r.*, t);
 
     try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
 
-    r.ptr(c).* -= 2 * opt.derivative_step; pot.evaluate(U, r.*, t);
+    r.ptr(c).* -= 2 * opt.derivative_step; try pot.evaluate(U, r.*, t);
 
     try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
 
@@ -410,7 +410,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 
     for (0..UCS.rows) |l| if (UCS.at(l, l) == 0) {
 
-        pot.evaluate(U, r, time_step * asfloat(T, iter)); for (U.data) |*e| e.* += 1e-14; try adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
+        try pot.evaluate(U, r, time_step * asfloat(T, iter)); for (U.data) |*e| e.* += 1e-14; try adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
 
         UCS.fill(0);
 

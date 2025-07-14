@@ -32,61 +32,16 @@ pub fn Potential(comptime T: type) type {
         }
 
         /// Potential evaluator.
-        pub fn evaluate(self: Potential(T), U: *Matrix(T), r: Vector(T), t: T) void {
+        pub fn evaluate(self: Potential(T), U: *Matrix(T), r: Vector(T), t: T) !void {
             if (self.expr != null) {for (0..self.states) |i| for (0..self.states) |j| {
                 U.ptr(i, j).* = self.expr.?[i * self.states + j].evaluate(r, t);
             };}
 
-            else if (self.U != null) {for (1..self.U.?.rows) |i| {
-
-                if (r.at(0) < self.U.?.at(0, 0)) {
-
-                    const x0 = self.U.?.at(0, 0);
-                    const x1 = self.U.?.at(1, 0);
-
-                    for (0..self.states) |j| for (0..self.states) |k| {
-
-                        const y0 = self.U.?.at(0, j * self.states + k + 1);
-                        const y1 = self.U.?.at(1, j * self.states + k + 1);
-
-                        U.ptr(j, k).* = y0 + (y1 - y0) * (r.at(0) - x0) / (x1 - x0);
-                    };
-
-                    break;
-                }
-
-                else if (r.at(0) >= self.U.?.at(i - 1, 0) and r.at(0) < self.U.?.at(i, 0)) {
-
-                    const x0 = self.U.?.at(i - 1, 0);
-                    const x1 = self.U.?.at(i,     0);
-
-                    for (0..self.states) |j| for (0..self.states) |k| {
-
-                        const y0 = self.U.?.at(i - 1, j * self.states + k + 1);
-                        const y1 = self.U.?.at(i,     j * self.states + k + 1);
-
-                        U.ptr(j, k).* = y0 + (y1 - y0) * (r.at(0) - x0) / (x1 - x0);
-                    };
-
-                    break;
-                }
-
-                else if (r.at(0) >= self.U.?.at(self.U.?.rows - 1, 0)) {
-
-                    const x0 = self.U.?.at(self.U.?.rows - 2, 0);
-                    const x1 = self.U.?.at(self.U.?.rows - 1, 0);
-
-                    for (0..self.states) |j| for (0..self.states) |k| {
-
-                        const y0 = self.U.?.at(self.U.?.rows - 2, j * self.states + k + 1);
-                        const y1 = self.U.?.at(self.U.?.rows - 1, j * self.states + k + 1);
-
-                        U.ptr(j, k).* = y0 + (y1 - y0) * (r.at(0) - x0) / (x1 - x0);
-                    };
-
-                    break;
-                }
-            }}
+            else if (self.U != null) {for (0..self.states) |i| for (i..self.states) |j| {
+                if      (self.dims == 1) {U.ptr(i, j).* = try mth.interp1d(T, self.U.?, i * self.states + j + self.dims, r); U.ptr(j, i).* = U.at(i, j);}
+                else if (self.dims == 2) {U.ptr(i, j).* = try mth.interp2d(T, self.U.?, i * self.states + j + self.dims, r); U.ptr(j, i).* = U.at(i, j);}
+                else return error.UnsupportedDimensionForInterpolationInPotentialEvaluator;
+            };}
 
             else return self.eval_fn(U, r, t);
         }
@@ -111,8 +66,6 @@ pub fn getPotential(comptime T: type, dims: u32, hamiltonian: []const []const []
 
 /// Function to read the potential from file.
 pub fn readPotential(comptime T: type, dims: u32, path: []const u8, allocator: std.mem.Allocator) !?Potential(T) {
-    if (dims != 1) return error.ReadingMultidimensionalPotentialNotSupported;
-
     const V = try mat.read(T, path, allocator);
 
     return .{.allocator = allocator, .dims = dims, .states = @as(u32, @intCast(std.math.sqrt(V.cols - 1))), .tdep = false, .eval_fn = struct {
@@ -379,7 +332,7 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
             }
         }
 
-        pot.?.evaluate(&U, r, 0);
+        try pot.?.evaluate(&U, r, 0);
 
         if (opt.adiabatic) {
             try cwp.Lapack(T).dsyevd(&UA, &UC, U); @memcpy(U.data, UA.data);
