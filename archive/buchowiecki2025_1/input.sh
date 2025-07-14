@@ -8,7 +8,7 @@ cat << EOF > input_1D.json
         "mode" : [0, 1],
         "time_step" : 1,
         "grid" : {
-            "limits" : [0.001, 32],
+            "limits" : [0.00001, 32],
             "points" : 2
         },
         "hamiltonian" : {
