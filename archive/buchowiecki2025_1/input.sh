@@ -71,7 +71,7 @@ cat << EOF > input_2D.json
         },
         "hamiltonian" : {
             "dims" : 2,
-            "file" : "U_2D.dat"
+            "file" : "U_2D.mat"
         },
         "initial_conditions" : {
             "mass" : 1,
