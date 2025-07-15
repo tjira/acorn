@@ -28,6 +28,11 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
     const ndim = pot.?.dims; const nstate = pot.?.states; const rdim = std.math.pow(usize, opt.grid.points, ndim); defer pot.?.deinit();
 
+    if (opt.initial_conditions.state > nstate - 1     ) return error.InvalidInitialState     ;
+    if (opt.initial_conditions.position.len != ndim   ) return error.InvalidInitialPosition  ;
+    if (opt.initial_conditions.momentum.len != ndim   ) return error.InvalidInitialMomentum  ;
+    if (opt.write.bloch_vector != null and nstate != 2) return error.CantCalculateBlochVector;
+
     var spectrum_points = std.math.pow(usize, 2, std.math.log2(opt.iterations + 1) + opt.spectrum.nearest_power_of_two); if (opt.spectrum.flip) spectrum_points *= 2;
 
     var output = try out.QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
@@ -307,13 +312,7 @@ pub fn checkErrors(comptime T: type, opt: inp.QuantumDynamicsOptions(T), allocat
 
     var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
 
-    const nstate = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?).?.states else opt.hamiltonian.matrix.?.len;
-    const ndim   = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?).?.dims   else opt.hamiltonian.dims.?;
-
-    if (opt.initial_conditions.state > nstate - 1     ) return error.InvalidInitialState     ;
-    if (opt.initial_conditions.position.len != ndim   ) return error.InvalidInitialPosition  ;
-    if (opt.initial_conditions.momentum.len != ndim   ) return error.InvalidInitialMomentum  ;
-    if (opt.write.bloch_vector != null and nstate != 2) return error.CantCalculateBlochVector;
+    if (opt.hamiltonian.name != null and !potential_map.contains(opt.hamiltonian.name.?)) return error.InvalidHamiltonianName;
 }
 
 /// Initialize bohmian trajectories.
@@ -451,7 +450,7 @@ pub fn rgridPotentials(comptime T: type, VS: *[3]std.ArrayList(Matrix(std.math.C
             if (overlap < 0) for (0..UC.rows) |k| {UC.ptr(k, j).* *= -1;};
         };
 
-        var UAC = try UA.complex();
+        var UAC = try UA.complex(); defer UAC.deinit();
 
         if (capexpr != null) {
             const capv = capexpr.?.evaluate(rvec.row(i).vector(), t); for (0..U.rows) |j| {
@@ -472,7 +471,7 @@ pub fn rgridPotentials(comptime T: type, VS: *[3]std.ArrayList(Matrix(std.math.C
 
 /// Returns the propagators for the r-space grid.
 pub fn rgridPropagators(comptime T: type, R: *std.ArrayList(Matrix(std.math.Complex(T))), VA: std.meta.Child(@TypeOf(R)), VC: @TypeOf(VA), time_step: T, imaginary: bool) !void {
-    const unit = std.math.Complex(T).init(if (imaginary) 1 else 0, if (imaginary) 0 else 1); var T1 = try R.items[0].clone();
+    const unit = std.math.Complex(T).init(if (imaginary) 1 else 0, if (imaginary) 0 else 1); var T1 = try R.items[0].clone(); defer T1.deinit();
 
     for (0..R.items.len) |i| {
 

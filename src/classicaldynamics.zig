@@ -26,6 +26,16 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
     const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
 
+    if (opt.initial_conditions.state.len         != nstate ) return error.InvalidInitialState;
+    if (opt.initial_conditions.position_mean.len != ndim   ) return error.InvalidMeanPosition;
+    if (opt.initial_conditions.position_std.len  != ndim   ) return error.InvalidStdPosition ;
+    if (opt.initial_conditions.momentum_mean.len != ndim   ) return error.InvalidMeanMomentum;
+    if (opt.initial_conditions.momentum_std.len  != ndim   ) return error.InvalidStdMomentum ;
+    if (opt.initial_conditions.mass.len          != ndim   ) return error.InvalidMass        ;
+    if (mth.sum(T, opt.initial_conditions.state) != 1      ) return error.InvalidStateSum    ;
+    if (opt.write.bloch_vector != null and nstate != 2     ) return error.SpinNotCalculable  ;
+    if (opt.write.bloch_vector_mean != null and nstate != 2) return error.SpinNotCalculable  ;
+
     var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator); output.pop.fill(0);
 
     var prng_jump = std.Random.DefaultPrng.init(opt.seed); const rand_jump = prng_jump.random();
@@ -342,19 +352,7 @@ pub fn checkErrors(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), alloc
 
     var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
 
-    const nstate = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?).?.states else opt.hamiltonian.matrix.?.len;
-    const ndim   = if (opt.hamiltonian.name != null) potential_map.get(opt.hamiltonian.name.?).?.dims   else opt.hamiltonian.dims.?;
-
-    if (opt.initial_conditions.state.len         != nstate ) return error.InvalidInitialState;
-    if (opt.initial_conditions.position_mean.len != ndim   ) return error.InvalidMeanPosition;
-    if (opt.initial_conditions.position_std.len  != ndim   ) return error.InvalidStdPosition ;
-    if (opt.initial_conditions.momentum_mean.len != ndim   ) return error.InvalidMeanMomentum;
-    if (opt.initial_conditions.momentum_std.len  != ndim   ) return error.InvalidStdMomentum ;
-    if (opt.initial_conditions.mass.len          != ndim   ) return error.InvalidMass        ;
-    if (mth.sum(T, opt.initial_conditions.state) != 1      ) return error.InvalidStateSum    ;
-    if (opt.write.bloch_vector != null and nstate != 2     ) return error.SpinNotCalculable  ;
-    if (opt.write.bloch_vector_mean != null and nstate != 2) return error.SpinNotCalculable  ;
-
+    if (opt.hamiltonian.name != null and !potential_map.contains(opt.hamiltonian.name.?)) return error.InvalidHamiltonianName;
 }
 
 /// Calculate the nonadiabatic coupling between two states according to Hammes--Schiffer and Tully.
