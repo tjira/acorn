@@ -94,7 +94,7 @@ EOF
 
 MASS=(1713.8065339025395 3209.8064174768374 4523.60441242962); ATOM=("H" "D" "T")
 
-for I in $(seq 0.035 0.001 1); do
+for I in $(seq 0.035 0.005 1); do
     for J in "${!MASS[@]}"; do
 
         M=${MASS[$J]}; A=${ATOM[$J]}; cp input_1D.json "input_1D_${A}_E=$I.json"
