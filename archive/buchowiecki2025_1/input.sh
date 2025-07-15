@@ -117,7 +117,7 @@ for I in $(seq 0.035 0.005 1); do
     done
 done
 
-for I in $(seq 1.05 0.05 10); do
+for I in $(seq 1.1 0.1 10); do
     for J in "${!MASS[@]}"; do
 
         M=${MASS[$J]}; A=${ATOM[$J]}; cp input_1D.json "input_1D_${A}_E=$I.json"
@@ -140,7 +140,7 @@ for I in $(seq 1.05 0.05 10); do
     done
 done
 
-for I in $(seq 11 1 100); do
+for I in $(seq 12 2 100); do
     for J in "${!MASS[@]}"; do
 
         M=${MASS[$J]}; A=${ATOM[$J]}; cp input_1D.json "input_1D_${A}_E=$I.json"
