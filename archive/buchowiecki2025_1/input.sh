@@ -66,7 +66,7 @@ cat << EOF > input_2D.json
         "mode" : [0, 1],
         "time_step" : 5,
         "grid" : {
-            "limits" : [[-18, 18], [-18, 18]],
+            "limits" : [[-10, 18], [-10, 10]],
             "points" : 2
         },
         "hamiltonian" : {
@@ -85,8 +85,7 @@ cat << EOF > input_2D.json
             "iteration" : 100
         },
         "write" : {
-            "population" : "POPULATION.mat",
-            "position" : "POSITION.mat"
+            "population" : "POPULATION.mat"
         }
     }
 }
@@ -186,7 +185,30 @@ for I in $(seq 11 1 100); do
     done
 done
 
-for I in $(seq 0.035 0.05 1); do
+for I in $(seq 0.035 0.005 0.1); do
+    for J in "${!MASS[@]}"; do
+
+        M=${MASS[$J]}; A=${ATOM[$J]}; cp input_2D.json "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"mass" : 1/"mass" : '"$M"'/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"iterations" : 1/"iterations" : 1000/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"time_step" : 1/"time_step" : 5/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"points" : 2/"points" : 1024/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"momentum" : \[0, 0\]/"momentum" : \[-'"$(echo "sqrt(2*$M*$I)" | bc -l)"', 0\]/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"population" : "POPULATION.mat"/"population" : "POPULATION_'"$A"'_2D_E='"$I"'.mat"/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"position" : "POSITION.mat"/"position" : "POSITION_'"$A"'_2D_E='"$I"'.mat"/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"density" : "DENSITY.mat"/"density" : "DENSITY_'"$A"'_2D_E='"$I"'.mat"/' "input_2D_${A}_E=$I.json"
+    done
+done
+
+for I in $(seq 0.2 0.1 1); do
     for J in "${!MASS[@]}"; do
 
         M=${MASS[$J]}; A=${ATOM[$J]}; cp input_2D.json "input_2D_${A}_E=$I.json"
@@ -196,6 +218,29 @@ for I in $(seq 0.035 0.05 1); do
         sed -i 's/"iterations" : 1/"iterations" : 500/' "input_2D_${A}_E=$I.json"
 
         sed -i 's/"time_step" : 1/"time_step" : 5/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"points" : 2/"points" : 2048/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"momentum" : \[0, 0\]/"momentum" : \[-'"$(echo "sqrt(2*$M*$I)" | bc -l)"', 0\]/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"population" : "POPULATION.mat"/"population" : "POPULATION_'"$A"'_2D_E='"$I"'.mat"/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"position" : "POSITION.mat"/"position" : "POSITION_'"$A"'_2D_E='"$I"'.mat"/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"density" : "DENSITY.mat"/"density" : "DENSITY_'"$A"'_2D_E='"$I"'.mat"/' "input_2D_${A}_E=$I.json"
+    done
+done
+
+for I in $(seq 2 1 10); do
+    for J in "${!MASS[@]}"; do
+
+        M=${MASS[$J]}; A=${ATOM[$J]}; cp input_2D.json "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"mass" : 1/"mass" : '"$M"'/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"iterations" : 1/"iterations" : 500/' "input_2D_${A}_E=$I.json"
+
+        sed -i 's/"time_step" : 1/"time_step" : 2.5/' "input_2D_${A}_E=$I.json"
 
         sed -i 's/"points" : 2/"points" : 2048/' "input_2D_${A}_E=$I.json"
 
