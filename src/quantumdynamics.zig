@@ -74,7 +74,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         var r = try Vector(T).init(ndim, allocator); defer r.deinit(); r.fill(0);
         var p = try Vector(T).init(ndim, allocator); defer p.deinit(); p.fill(0);
 
-        const dr = std.math.pow(T, (opt.grid.limits[1] - opt.grid.limits[0]) / asfloat(T, opt.grid.points - 1), asfloat(T, ndim));
+        var dr: T = 1; for (0..ndim) |i| dr *= (opt.grid.limits[i][1] - opt.grid.limits[i][0]) / asfloat(T, opt.grid.points - 1);
 
         var W0 = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer W0.deinit();
         var W  = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer  W.deinit();
@@ -106,8 +106,8 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
         var P = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer P.deinit();
 
-        mpt.rgrid(T, &rvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
-        mpt.kgrid(T, &kvec, opt.grid.limits[0], opt.grid.limits[1], opt.grid.points);
+        mpt.rgrid(T, &rvec, opt.grid.limits, opt.grid.points);
+        mpt.kgrid(T, &kvec, opt.grid.limits, opt.grid.points);
 
         var VS: [3]std.ArrayList(Matrix(std.math.Complex(T))) = undefined;
 
@@ -351,7 +351,7 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
     var transform = try Vector(std.math.Complex(T)).init(spectrum.rows,    allocator); defer transform.deinit();
     var frequency = try Matrix(T                  ).init(spectrum.rows, 1, allocator); defer frequency.deinit();
 
-    mpt.kgrid(T, &frequency, 0, asfloat(T, spectrum.rows) * (acf.at(1, 0) - acf.at(0, 0)), @intCast(spectrum.rows));
+    mpt.kgrid(T, &frequency, &[_][]const T{&[_]T{0, asfloat(T, spectrum.rows) * (acf.at(1, 0) - acf.at(0, 0))}}, @intCast(spectrum.rows));
 
     for (0..acf.rows) |i| {
 

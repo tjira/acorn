@@ -204,7 +204,7 @@ This example demonstrates real-time quantum dynamics of a particle in a harmonic
         "mode" : [0, 1],
         "time_step" : 0.1,
         "grid" : {
-            "limits" : [-8, 8],
+            "limits" : [[-8, 8]],
             "points" : 512
         },
         "hamiltonian" : {
@@ -251,7 +251,7 @@ Acorn also supports higher dimensions. As an example you can simulate a 2D wavef
         "mode" : [0, 1],
         "time_step" : 0.1,
         "grid" : {
-            "limits" : [-8, 8],
+            "limits" : [[-8, 8], [-8, 8]],
             "points" : 256
         },
         "hamiltonian" : {
@@ -290,7 +290,7 @@ This example illustrates real-time quantum dynamics on the first Tully potential
         "mode" : [0, 1],
         "time_step" : 10,
         "grid" : {
-            "limits" : [-16, 32],
+            "limits" : [[-16, 32]],
             "points" : 2048
         },
         "hamiltonian" : {

@@ -3,6 +3,7 @@
 const std = @import("std");
 
 const asfloat = @import("helper.zig").asfloat;
+const istruct = @import("helper.zig").istruct;
 
 /// Strided array class.
 pub fn StridedArray(comptime T: type) type {
@@ -25,6 +26,13 @@ pub fn StridedArray(comptime T: type) type {
             return self.ptr(i).*;
         }
 
+        /// Fill the strided array elements with a constant value.
+        pub fn fill(self: StridedArray(T), value: T) void {
+            for (0..self.len) |i| {
+                self.ptr(i).* = value;
+            }
+        }
+
         /// Fill the strided array elements with liearly spaced values. Start and end are inclusive.
         pub fn linspace(self: StridedArray(T), start: T, end: T) void {
             self.ptr(0).* = start;
@@ -32,6 +40,17 @@ pub fn StridedArray(comptime T: type) type {
             for (1..self.len) |i| {
                 self.ptr(i).* = start + asfloat(T, i) * (end - start) / asfloat(T, self.len - 1);
             }
+        }
+
+        /// Multiply the strided array elements with a constant value.
+        pub fn mul(self: StridedArray(T), value: T) void {
+            if (comptime !istruct(T)) for (0..self.len) |i| {
+                self.ptr(i).* = value;
+            };
+
+            if (comptime istruct(T)) for (0..self.len) |i| {
+                self.ptr(i).* = self.at(i).mul(value);
+            };
         }
 
         /// Return the element at the specified index as a mutable reference.

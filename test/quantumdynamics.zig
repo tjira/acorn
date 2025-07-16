@@ -11,7 +11,7 @@ const allocator = std.testing.allocator;
 test "quantum_dynamics_imaginary_adiabatic-1d" {
     const opt_harmonic1D_1 = input.QuantumDynamicsOptions(f64){
         .grid = .{
-            .limits = &[_]f64{-8, 8}, .points = 64
+            .limits = &[_][]const f64{&[_]f64{-8, 8}}, .points = 64
         },
         .hamiltonian = .{
             .name = "harmonic1D_1"
@@ -65,7 +65,7 @@ test "quantum_dynamics_imaginary_adiabatic-1d" {
 test "quantum_dynamics_real_adiabatic-1d" {
     const opt_harmonic1D_1 = input.QuantumDynamicsOptions(f64){
         .grid = .{
-            .limits = &[_]f64{-8, 8}, .points = 64
+            .limits = &[_][]const f64{&[_]f64{-8, 8}}, .points = 64
         },
         .hamiltonian = .{
             .name = "harmonic1D_1"
@@ -90,7 +90,7 @@ test "quantum_dynamics_real_adiabatic-1d" {
 test "quantum_dynamics_real_nonadiabatic-1d/2s" {
     const opt_tully1D_1 = input.QuantumDynamicsOptions(f64){
         .grid = .{
-            .limits = &[_]f64{-16, 32}, .points = 2048
+            .limits = &[_][]const f64{&[_]f64{-16, 32}}, .points = 2048
         },
         .hamiltonian = .{
             .name = "tully1D_1"

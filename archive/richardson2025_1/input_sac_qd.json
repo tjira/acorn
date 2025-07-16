@@ -5,7 +5,7 @@
         "mode" : [0, 1],
         "time_step" : 0.02,
         "grid" : {
-            "limits" : [-16, 16],
+            "limits" : [[-16, 16]],
             "points" : 8192
         },
         "hamiltonian" : {

@@ -220,7 +220,7 @@ pub fn ModelPotentialOptions(comptime T: type) type {
         };
 
         adiabatic: bool,
-        limits: []const T,
+        limits: []const []const T,
         output: []const u8 = "POTENTIAL.mat",
         points: u32,
 
@@ -280,7 +280,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             seed: usize = 1,
         };
         pub const Grid = struct {
-            limits: []const T, points: u32
+            limits: []const []const T, points: u32
         };
         pub const Hamiltonian = struct {
             dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, cap: ?[]const u8 = null, name: ?[]const u8 = null, file: ?[]const u8 = null

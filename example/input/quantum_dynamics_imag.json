@@ -5,7 +5,7 @@
         "mode" : [1, 0],
         "time_step" : 0.1,
         "grid" : {
-            "limits" : [-8, 8],
+            "limits" : [[-8, 8]],
             "points" : 32
         },
         "hamiltonian" : {
@@ -22,15 +22,16 @@
             "iteration" : 100
         },
         "write" : {
-            "autocorrelation_function" : "ACF.mat",
+            "autocorrelation_function" : "ACF_EXACT.mat",
+            "density" : "DENSITY_EXACT.mat",
             "kinetic_energy" : "KINETIC_ENERGY_EXACT.mat",
             "momentum" : "MOMENTUM_EXACT.mat",
             "population" : "POPULATION_EXACT.mat",
             "position" : "POSITION_EXACT.mat",
             "potential_energy" : "POTENTIAL_ENERGY_EXACT.mat",
-            "spectrum" : "SPECTRUM.mat",
+            "spectrum" : "SPECTRUM_EXACT.mat",
             "total_energy" : "TOTAL_ENERGY_EXACT.mat",
-            "wavefunction" : "WAVEFUNCTION.mat"
+            "wavefunction" : "WAVEFUNCTION_EXACT.mat"
         }
     }
 }

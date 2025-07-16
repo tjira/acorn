@@ -2,8 +2,10 @@
     "model_potential": {
         "adiabatic": true,
         "limits": [
-            -16,
-            16
+            [
+                -16,
+                16
+            ]
         ],
         "output": "KTSH_COUPLING_POTENTIAL_ADIABATIC_P1.mat",
         "points": 8192,

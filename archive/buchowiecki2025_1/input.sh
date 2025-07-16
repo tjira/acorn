@@ -32,7 +32,7 @@ cat << EOF > input_1D.json
         "mode" : [0, 1],
         "time_step" : 1,
         "grid" : {
-            "limits" : [0.001, 32],
+            "limits" : [[0.001, 32]],
             "points" : 2
         },
         "hamiltonian" : {
@@ -66,7 +66,7 @@ cat << EOF > input_2D.json
         "mode" : [0, 1],
         "time_step" : 5,
         "grid" : {
-            "limits" : [-18, 18],
+            "limits" : [[-18, 18], [-18, 18]],
             "points" : 2
         },
         "hamiltonian" : {

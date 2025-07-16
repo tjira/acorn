@@ -1,7 +1,7 @@
 {
     "model_potential" : {
         "adiabatic" : true,
-        "limits" : [0, 20],
+        "limits" : [[0, 20]],
         "points" : 2048,
         "hamiltonian" : {
             "dims" : 1,

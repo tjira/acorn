@@ -2,8 +2,10 @@
     "model_potential": {
         "adiabatic": true,
         "limits": [
-            -10,
-            10
+            [
+                -10,
+                10
+            ]
         ],
         "output": "KTSH_HO_POTENTIAL_ADIABATIC_P4.mat",
         "points": 8192,

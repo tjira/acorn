@@ -268,22 +268,24 @@ pub fn uracilDimless12D_1(comptime T: type, U: *Matrix(T), r: Vector(T)) void {
 }
 
 /// Generate a grid in the k-space. The result is stored in the matrix k. Both the start and end values are included.
-pub fn kgrid(comptime T: type, k: *Matrix(T), start: T, end: T, points: u32) void {
-    k.fill(2 * std.math.pi / asfloat(T, points) / (end - start) * asfloat(T, points - 1));
+pub fn kgrid(comptime T: type, k: *Matrix(T), limits: []const []const T, points: u32) void {
+    for (0..k.rows) |i| {
 
-    for (0..k.rows / points) |i| for (0..points) |j| {
-        k.ptr(i * points + j, k.cols - 1).* *= asfloat(T, j) - asfloat(T, if (j < points / 2) 0 else points);
-    };
+        var index: usize = i;
 
-    for (0..k.rows) |i| for (0..k.cols) |j| {
-        k.ptr(i, j).* = k.at(i / std.math.pow(usize, points, k.cols - j - 1), k.cols - 1);
-    };
+        for (0..k.cols) |j| {
+
+            const d = k.cols - j - 1; const ii = index % points; const shift = if (ii < points / 2) ii else ii - points; index /= points;
+
+            k.ptr(i, d).* = 2 * std.math.pi * asfloat(T, shift) / asfloat(T, points) / (limits[d][1] - limits[d][0]) * asfloat(T, points - 1);
+        }
+    }
 }
 
 /// Generate a grid in the r-space. The result is stored in the matrix r. Both the start and end values are included.
-pub fn rgrid(comptime T: type, r: *Matrix(T), start: T, end: T, points: u32) void {
+pub fn rgrid(comptime T: type, r: *Matrix(T), limits: []const []const T, points: u32) void {
     for (0..r.rows) |i| for (0..r.cols) |j| {
-        r.ptr(i, j).* = start + asfloat(T, i / std.math.pow(usize, points, r.cols - j - 1) % points) * (end - start) / asfloat(T, points - 1);
+        r.ptr(i, j).* = limits[j][0] + asfloat(T, i / std.math.pow(usize, points, r.cols - j - 1) % points) * (limits[j][1] - limits[j][0]) / asfloat(T, points - 1);
     };
 }
 
@@ -315,7 +317,7 @@ pub fn write(comptime T: type, opt: inp.ModelPotentialOptions(T), allocator: std
     var R = try Matrix(T).init(std.math.pow(u32, opt.points, ndim - @as(u32, @intCast(opt.constant.len))), ndim - opt.constant.len, allocator); defer R.deinit();
     var V = try Matrix(T).init(std.math.pow(u32, opt.points, ndim - @as(u32, @intCast(opt.constant.len))), nstate * nstate,         allocator); defer V.deinit();
 
-    rgrid(T, &R, opt.limits[0], opt.limits[1], opt.points); var r = try Vector(T).init(ndim, allocator); defer r.deinit(); 
+    rgrid(T, &R, opt.limits, opt.points); var r = try Vector(T).init(ndim, allocator); defer r.deinit(); 
 
     for (0..R.rows) |i| {
 
