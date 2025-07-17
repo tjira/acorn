@@ -1,0 +1,30 @@
+{
+    "quantum_dynamics" : {
+        "adiabatic" : true,
+        "iterations" : 4000,
+        "mode" : [0, 1],
+        "time_step" : 1,
+        "grid" : {
+            "limits" : [[0.001, 32]],
+            "points" : 4096
+        },
+        "hamiltonian" : {
+            "dims" : 1,
+            "file" : "archive/buchowiecki2025_1/U_1D.dat"
+        },
+        "initial_conditions" : {
+            "mass" : 1713.8065339025395,
+            "momentum" : [-10.95292003865534321011],
+            "position" : [15],
+            "state" : 0,
+            "gamma" : 2,
+            "adiabatic" : true
+        },
+        "log_intervals" : {
+            "iteration" : 500
+        },
+        "write" : {
+            "population" : "POPULATION_QD_1D.mat"
+        }
+    }
+}

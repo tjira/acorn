@@ -17,7 +17,7 @@ parser.add_argument("-a", "--animate", type=int, help="Animate the plot.")
 # add the plotting arguments
 parser.add_argument("--colormap", type=str, default="viridis", help="The colormap to use for the plot.")
 parser.add_argument("--dpi", type=int, default=96, help="The DPI of the plot.")
-parser.add_argument("--figsize", type=int, nargs=2, default=[4, 4], help="The dimensions of the plot in inches.")
+parser.add_argument("--figsize", type=float, nargs=2, default=[4, 4], help="The dimensions of the plot in inches.")
 parser.add_argument("--fps", type=int, default=30, help="Frames per second for the animation.")
 parser.add_argument("--title", type=str, nargs="+", help="The title of the plot.")
 parser.add_argument("--transform", type=str, default="sum", help="The transform function used when multiple columns are plotted.")
