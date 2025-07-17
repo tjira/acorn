@@ -6,7 +6,7 @@
         "trajectories" : 10000,
         "hamiltonian" : {
             "dims" : 2,
-            "file" : "archive/buchowiecki2025_1/U_2D.mat"
+            "file" : "../U_2D.mat"
         },
         "initial_conditions" : {
             "mass" : [1713.8065339025395, 1713.8065339025395],

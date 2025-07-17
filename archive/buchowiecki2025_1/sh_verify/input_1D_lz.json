@@ -6,7 +6,7 @@
         "trajectories" : 100,
         "hamiltonian" : {
             "dims" : 1,
-            "file" : "archive/buchowiecki2025_1/U_1D.dat"
+            "file" : "../U_1D.dat"
         },
         "initial_conditions" : {
             "mass" : [1713.8065339025395],

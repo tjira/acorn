@@ -157,6 +157,19 @@ pub fn guess(comptime T: type, W: *Wavefunction(T), rvec: Matrix(T), r: []const 
 
         W.ptr(i, j).* = W.at(i, j).mul(std.math.complex.exp(std.math.Complex(T).init(0, exp)));
     };
+
+    // const sigma = std.math.sqrt(0.5 / gamma); const kappa = 1000 / (2 * mass * sigma * sigma);
+    //
+    // for (0..W.npoint) |i| for (0..W.nstate) |j| {
+    //
+    //     var exp: T = 0;
+    //
+    //     std.debug.print("{d:10.14}\n", .{kappa});
+    //
+    //     exp -= kappa * (rvec.at(i, 0) - r[0]) * (rvec.at(i, 0) - r[0]);
+    //
+    //     W.ptr(i, j).* = W.at(i, j).mul(std.math.complex.exp(std.math.Complex(T).init(0, exp)));
+    // };
 }
 
 /// Calculate the momentum of the wavefunction W. This function needs the grid in the k-space kvec.
