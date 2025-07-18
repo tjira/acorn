@@ -42,6 +42,13 @@ pub fn Wavefunction(comptime T: type) type {
             return self.data.at(i, j);
         }
 
+        /// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction in-place.
+        pub fn diabatize(self: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T))), T1: *Vector(std.math.Complex(T))) !void {
+            for (0..self.npoint) |i| {
+                var rowd = T1.matrix(); try cwp.Blas(T).zgemm(&rowd, VC.items[i], false, self.row(i).vector().matrix(), false); rowd.memcpy(self.row(i));
+            }
+        }
+
         /// Copy the self data to the destination wavefunction.
         pub fn memcpy(self: Wavefunction(T), dest: Wavefunction(T)) void {
             self.data.memcpy(dest.data);
@@ -89,6 +96,20 @@ pub fn density(comptime T: type, P: *Matrix(std.math.Complex(T)), W: Wavefunctio
     for (0..W.nstate) |i| for (0..W.nstate) |j| for (0..W.npoint) |k| {
         P.ptr(i, j).* = P.at(i, j).add(W.at(k, i).mul(W.at(k, j).conjugate()).mul(std.math.Complex(T).init(W.dr, 0)));
     };
+}
+
+/// Calculate the density matrix of the wavefunction U^H.W and store the result in P.
+pub fn densityTransformed(comptime T: type, P: *Matrix(std.math.Complex(T)), W: Wavefunction(T), VC: std.ArrayList(Matrix(std.math.Complex(T))), T1: *Vector(std.math.Complex(T))) !void {
+    P.fill(std.math.Complex(T).init(0, 0));
+
+    for (0..W.npoint) |k| {
+
+        var rowa = T1.matrix(); try cwp.Blas(T).zgemm(&rowa, VC.items[k], true, W.row(k).vector().matrix(), false);
+
+        for (0..W.nstate) |i| for (0..W.nstate) |j| {
+            P.ptr(i, j).* = P.at(i, j).add(rowa.at(i, 0).mul(rowa.at(j, 0).conjugate()).mul(std.math.Complex(T).init(W.dr, 0)));
+        };
+    }
 }
 
 /// Given the transformation matrices for each point in the grid VC, this function adiabatizes the wavefunction W and stores the result in WA.

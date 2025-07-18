@@ -3,7 +3,7 @@
         "iterations" : 4000,
         "seed" : 1,
         "time_step" : 1,
-        "trajectories" : 100,
+        "trajectories" : 10000,
         "hamiltonian" : {
             "dims" : 1,
             "file" : "../U_1D.dat"
@@ -17,8 +17,8 @@
             "state" : [1, 0]
         },
         "log_intervals" : {
-            "iteration" : 1000,
-            "trajectory" : 1
+            "iteration" : 500,
+            "trajectory" : 100
         },
         "write" : {
             "population_mean" : "POPULATION_LZ_1D.mat"

@@ -275,7 +275,7 @@ pub fn kgrid(comptime T: type, k: *Matrix(T), limits: []const []const T, points:
 
         for (0..k.cols) |j| {
 
-            const d = k.cols - j - 1; const ii = index % points; const shift = if (ii < points / 2) ii else ii - points; index /= points;
+            const d = k.cols - j - 1; const ii: i32 = @as(i32, @intCast(index % points)); const shift = if (ii < points / 2) ii else ii - @as(i32, @intCast(points)); index /= points;
 
             k.ptr(i, d).* = 2 * std.math.pi * asfloat(T, shift) / asfloat(T, points) / (limits[d][1] - limits[d][0]) * asfloat(T, points - 1);
         }

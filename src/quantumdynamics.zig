@@ -76,9 +76,10 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
         var dr: T = 1; for (0..ndim) |i| dr *= (opt.grid.limits[i][1] - opt.grid.limits[i][0]) / asfloat(T, opt.grid.points - 1);
 
-        var W0 = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer W0.deinit();
-        var W  = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer  W.deinit();
-        var WA = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer WA.deinit();
+        var W0: ?Wavefunction(T) = null; var WA: ?Wavefunction(T) = null; var W = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer W.deinit();
+
+        if (opt.write.autocorrelation_function != null or opt.write.spectrum != null       ) W0 = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator);
+        if (opt.adiabatic and (opt.write.density != null or opt.write.wavefunction != null)) WA = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator);
 
         var bohm_field:    Vector(T) = undefined; defer if (opt.bohmian_dynamics != null)    bohm_field.deinit();
         var bohm_position: Vector(T) = undefined; defer if (opt.bohmian_dynamics != null) bohm_position.deinit();
@@ -156,14 +157,16 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 wfn.guess(T, &W, rvec, opt.initial_conditions.position, opt.initial_conditions.momentum, opt.initial_conditions.gamma, opt.initial_conditions.state); W.normalize();
 
-                if (opt.initial_conditions.adiabatic) {try wfn.diabatize(T, &WA, W, VC); WA.memcpy(W);}
+                if (opt.initial_conditions.adiabatic) {
+                    var T2 = Vector(std.math.Complex(T)){.data = T1.data[0..nstate], .rows = nstate, .allocator = allocator}; try W.diabatize(VC, &T2);
+                }
             }
 
             if (opt.bohmian_dynamics != null) initBohmianTrajectories(T, &bohm_position, rvec, W, opt.bohmian_dynamics.?.seed);
 
-            W.memcpy(W0);
+            if (opt.write.autocorrelation_function != null or opt.write.spectrum != null) W.memcpy(W0.?);
 
-            if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12} {s:13}", .{"ITER", "EKIN", "EPOT", "ETOT",  "ACF"});
+            if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
 
             if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });}
             if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"MOMENTUM"  });}
@@ -186,13 +189,15 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 if (i < opt.mode[0]) orthogonalize(T, &W, WOPT, i);
 
-                if (opt.adiabatic) try wfn.adiabatize(T, &WA, W, VC);
+                if (opt.adiabatic and (opt.write.density != null or opt.write.wavefunction != null)) try wfn.adiabatize(T, &WA.?, W, VC);
 
                 const Ekin = try wfn.ekin(T, W, kvec, opt.initial_conditions.mass, &T1); const Epot: T = wfn.epot(T, W, V);
 
-                wfn.density(T, &P, if (opt.adiabatic) WA else W); wfn.position(T, &r, W, rvec); try wfn.momentum(T, &p, W, kvec, &T1);
+                if (opt.adiabatic) {
+                    var T2 = Vector(std.math.Complex(T)){.data = T1.data[0..nstate], .rows = nstate, .allocator = allocator}; try wfn.densityTransformed(T, &P, W, VC, &T2);
+                }
 
-                const acfi = W0.overlap(W);
+                wfn.position(T, &r, W, rvec); try wfn.momentum(T, &p, W, kvec, &T1); if (!opt.adiabatic) wfn.density(T, &P, W);
 
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.population       != null) for (0..nstate) |k| {pop.ptr(j, 1 + k).* = P.at(k, k).re;};
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.position         != null) for (0..ndim) |k| {position.ptr(j, 1 + k).* = r.at(k);}   ;
@@ -212,16 +217,16 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                 }
 
                 if (i == opt.mode[0] + opt.mode[1] - 1 and (opt.write.autocorrelation_function != null or opt.write.spectrum != null)) {
-                    acf.ptr(j, 1 + 0).* = acfi.re; acf.ptr(j, 1 + 1).* = acfi.im;
+                    const acfi = W0.?.overlap(W); acf.ptr(j, 1 + 0).* = acfi.re; acf.ptr(j, 1 + 1).* = acfi.im;
                 }
 
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.wavefunction != null) for (0..rdim) |k| for (0..nstate) |l| {
-                    wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 0).* = (if (opt.adiabatic) WA else W).data.at(k, l).re;
-                    wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 1).* = (if (opt.adiabatic) WA else W).data.at(k, l).im;
+                    wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 0).* = (if (opt.adiabatic) WA.? else W).data.at(k, l).re;
+                    wavefunction.ptr(k, ndim + 2 * j * nstate + 2 * l + 1).* = (if (opt.adiabatic) WA.? else W).data.at(k, l).im;
                 };
 
                 if (i == opt.mode[0] + opt.mode[1] - 1 and opt.write.density != null) for (0..rdim) |k| for (0..nstate) |l| {
-                    density.ptr(k, ndim + j * nstate + l).* = (if (opt.adiabatic) WA else W).data.at(k, l).magnitude();
+                    density.ptr(k, ndim + j * nstate + l).* = (if (opt.adiabatic) WA.? else W).data.at(k, l).magnitude();
                 };
 
                 if (opt.bohmian_dynamics != null) {
@@ -239,7 +244,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                     };
                 }
 
-                if (print and (j % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(j), Ekin, Epot, r, p, P, acfi);
+                if (print and (j % opt.log_intervals.iteration == 0)) try printIteration(T, @intCast(j), Ekin, Epot, r, p, P);
 
                 if (j == opt.iterations) assignOutput(T, &output, r, p, P, Ekin, Epot, i);
 
@@ -259,12 +264,15 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
             try std.io.getStdOut().writer().print("{s}FINAL ENERGY OF PROPAGATION #{d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i + 1, output.Ekin[i] + output.Epot[i]});
         };
 
-        for (R.items   ) |*e| e.deinit();
-        for (K.items   ) |*e| e.deinit();
-        for (V.items   ) |*e| e.deinit();
-        for (VA.items  ) |*e| e.deinit();
-        for (VC.items  ) |*e| e.deinit();
-        for (WOPT      ) |*e| e.deinit();
+        if (W0 != null) W0.?.deinit();
+        if (WA != null) WA.?.deinit();
+
+        for (R.items ) |*e| e.deinit();
+        for (K.items ) |*e| e.deinit();
+        for (V.items ) |*e| e.deinit();
+        for (VA.items) |*e| e.deinit();
+        for (VC.items) |*e| e.deinit();
+        for (WOPT    ) |*e| e.deinit();
     }
 
     if (opt.write.spectrum != null or opt.write.transformed_autocorrelation_function != null) try makeSpectrum(T, opt.spectrum, &acft, &spectrum, acf, allocator);
@@ -484,8 +492,8 @@ pub fn rgridPropagators(comptime T: type, R: *std.ArrayList(Matrix(std.math.Comp
 }
 
 /// Prints the iteration information.
-pub fn printIteration(comptime T: type, i: usize, Ekin: T, Epot: T, r: Vector(T), p: Vector(T), P: Matrix(std.math.Complex(T)), acfi: std.math.Complex(T)) !void {
-        try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6} {d:6.3}{s}{d:5.3}i [", .{i, Ekin, Epot, Ekin + Epot, acfi.re, if (acfi.im < 0) "-" else "+", @abs(acfi.im)});
+pub fn printIteration(comptime T: type, i: usize, Ekin: T, Epot: T, r: Vector(T), p: Vector(T), P: Matrix(std.math.Complex(T))) !void {
+        try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6} [", .{i, Ekin, Epot, Ekin + Epot});
 
         for (0..r.rows) |j| {
             try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", r.at(j)});
