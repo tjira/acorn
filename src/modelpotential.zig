@@ -6,17 +6,23 @@ const cnt = @import("constant.zig");
 const inp = @import("input.zig"   );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
+const sys = @import("system.zig"  );
 
 const Matrix = @import("matrix.zig").Matrix;
+const System = @import("system.zig").System;
 const Vector = @import("vector.zig").Vector;
 
-const asfloat  = @import("helper.zig").asfloat ;
-const contains = @import("helper.zig").contains;
+const asfloat               = @import("helper.zig").asfloat              ;
+const call                  = @import("helper.zig").call                 ;
+const contains              = @import("helper.zig").contains             ;
+const writeVectorAsMolecule = @import("helper.zig").writeVectorAsMolecule;
 
 /// Potential struct.
 pub fn Potential(comptime T: type) type {
     return struct {
-        dims: u32, states: u32, tdep: bool, eval_fn: *const fn(U: *Matrix(T), r: Vector(T), t: T) void, expr: ?[]cwp.Expression(T) = null, U: ?Matrix(T) = null,
+        dims: u32, states: u32, tdep: bool,
+
+        eval_fn: *const fn(U: *Matrix(T), r: Vector(T), t: T) void, expr: ?[]cwp.Expression(T) = null, U: ?Matrix(T) = null, command: ?[]const []const u8 = null, atoms: ?Vector(T) = null,
 
         allocator: ?std.mem.Allocator = null,
 
@@ -28,6 +34,10 @@ pub fn Potential(comptime T: type) type {
 
             if (self.U != null) {
                 self.U.?.deinit();
+            }
+
+            if (self.atoms != null) {
+                self.atoms.?.deinit();
             }
         }
 
@@ -43,8 +53,43 @@ pub fn Potential(comptime T: type) type {
                 else return error.UnsupportedDimensionForInterpolationInPotentialEvaluator;
             };}
 
+            else if (self.command != null and self.atoms != null) {
+
+                try writeVectorAsMolecule(T, "geometry.xyz", r, self.atoms.?);
+
+                var full_command = std.ArrayList([]const u8).init(self.allocator.?); defer full_command.deinit();
+
+                try full_command.appendSlice(self.command.?); try full_command.append("-r"); try full_command.append("-k");
+
+                const state_string = try std.fmt.allocPrint(self.allocator.?, "{d}", .{self.states}); defer self.allocator.?.free(state_string);
+
+                try full_command.append(state_string); try full_command.append("-s"); try full_command.append("geometry.xyz");
+
+                var out = try call(full_command.items, self.allocator.?); defer {
+                    out.stdout.deinit(self.allocator.?);
+                    out.stderr.deinit(self.allocator.?);
+                }
+
+                if (out.term.Exited != 0) return error.ErrorInAbInitioProgram;
+
+                var E = try mat.read(T, "ENERGY.mat", self.allocator.?); defer E.deinit();
+
+                U.fill(0); for (0..self.states) |i| U.ptr(i, i).* = E.at(i, 0);
+
+                try std.fs.cwd().deleteFile("geometry.xyz");
+            }
+
             else return self.eval_fn(U, r, t);
         }
+    };
+}
+
+/// Function to read the potential from file.
+pub fn initAbinitio(comptime T: type, states: usize, command: []const []const u8, system: []const u8, allocator: std.mem.Allocator) !?Potential(T) {
+    const system_object = try sys.read(T, system, 0, allocator); defer system_object.deinit();
+
+    return .{.allocator = allocator, .dims = @as(u32, @intCast(3 * system_object.atoms.rows)), .states = @as(u32, @intCast(states)), .tdep = false, .eval_fn = struct {
+        fn get (U: *Matrix(T), r: Vector(T), t: T) void {_ = U; _ = r; _ = t;}}.get, .command = command, .atoms = try system_object.atoms.clone()
     };
 }
 
@@ -69,7 +114,7 @@ pub fn readPotential(comptime T: type, dims: u32, path: []const u8, allocator: s
     const V = try mat.read(T, path, allocator);
 
     return .{.allocator = allocator, .dims = dims, .states = @as(u32, @intCast(std.math.sqrt(V.cols - 1))), .tdep = false, .eval_fn = struct {
-        fn get (U: *Matrix(T), r: Vector(T), t: T) void {_ = U; _ = r; _ = t;}}.get, .expr = null, .U = V
+        fn get (U: *Matrix(T), r: Vector(T), t: T) void {_ = U; _ = r; _ = t;}}.get, .U = V
     };
 }
 

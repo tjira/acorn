@@ -32,19 +32,21 @@ pub fn AtomicIntegralOptions(comptime T: type) type {
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         pub const InitialConditions = struct {
-            position_mean:          []const T,
-            position_std:           []const T,
-            momentum_mean:          []const T,
-            momentum_std:           []const T,
-            state:                  []const T,
-            mass:                   []const T
+            position_file: ?[]const u8 = null,
+            position_mean: ?[]const T  = null,
+            position_std:  ?[]const T  = null,
+            velocity_file: ?[]const u8 = null,
+            momentum_mean: ?[]const T  = null,
+            momentum_std:  ?[]const T  = null,
+            mass:          ?[]const T  = null,
+            state:          []const T
         };
         pub const FewestSwitches = struct {
-            quantum_substep: u32 = 10,
+            quantum_substep: u32 = 100,
             decoherence_alpha: ?T = null
         };
         pub const Hamiltonian = struct {
-            dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null, file: ?[]const u8 = null
+            dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, name: ?[]const u8 = null, file: ?[]const u8 = null, abinitio: ?[]const []const u8 = null
         };
         pub const LandauZener = struct {
             mode: ?[]const u8 = "maxdiff"
@@ -74,6 +76,8 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             position_mean:                 ?[]const u8 = null,
             potential_energy:              ?[]const u8 = null,
             potential_energy_mean:         ?[]const u8 = null,
+            potential_matrix:              ?[]const u8 = null,
+            potential_matrix_mean:         ?[]const u8 = null,
             time_derivative_coupling:      ?[]const u8 = null,
             time_derivative_coupling_mean: ?[]const u8 = null,
             total_energy:                  ?[]const u8 = null,

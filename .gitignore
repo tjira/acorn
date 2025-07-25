@@ -30,3 +30,6 @@ run.sh.*
 archive/**/*.mat*
 archive/**/*.pdf*
 archive/**/*.png*
+
+**/.bage*
+**/.orca*

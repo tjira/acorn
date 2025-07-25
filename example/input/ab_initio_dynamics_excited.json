@@ -1,0 +1,23 @@
+{
+    "classical_dynamics" : {
+        "iterations" : 100,
+        "time_step" : 20,
+        "trajectories" : 1,
+        "hamiltonian" : {
+            "abinitio" : ["script/wrapbagel.sh", "-a", "3", "-b", "svp", "-c", "4", "-m", "casscf"]
+        },
+        "initial_conditions" : {
+            "position_file" : "molecule.xyz",
+            "state" : [0, 1]
+        },
+        "log_intervals" : {
+            "iteration" : 1,
+            "trajectory" : 100
+        },
+        "write" : {
+            "potential_matrix" : "POTMAT.mat"
+        },
+        "fewest_switches" : {},
+        "time_derivative_coupling" : "nacv"
+    }
+}

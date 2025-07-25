@@ -125,23 +125,23 @@ pub fn load(comptime T: type, opt: inp.HartreeFockOptions(T).System, file: ?[]co
 
 /// Read the system from the specified file.
 pub fn read(comptime T: type, path: []const u8, charge: i32, allocator: std.mem.Allocator) !System(T) {
-    const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [64]u8 = undefined;
+    const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [128]u8 = undefined;
 
     var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
     var stream   = std.io.fixedBufferStream(&buffer);  const writer =   stream.writer();
 
-    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
+    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 128);
 
     const natom = try std.fmt.parseInt(u32, uncr(stream.getWritten()), 10);
 
-    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
+    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 128);
 
     var coords = try Matrix(T).init(natom, 3, allocator); coords.fill(0);
     var atoms  = try Vector(T).init(natom,    allocator);  atoms.fill(0);
 
     for (0..natom) |i| {
 
-        stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 64);
+        stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 128);
 
         var it = std.mem.splitScalar(u8, uncr(stream.getWritten()), ' '); 
 

@@ -20,3 +20,7 @@
 - [ ] Landau-Zener scattering matrix doesnt work for multiple crossings.
 - [x] The Landau-Zener scattering matrix needs derivative of the diabatic enegy gap, not the adiabatic.
 - [ ] The hamiltonian specification from file is kind of junk and it doesn't support higher dimensions.
+- [x] Check the propagate function if the derivatives are calculated at the correct points.
+- [ ] Time derivative coupling using NACV in ab initio dynamics is problematic sinc the coefficient propagation is wrong due to big time step.
+- [ ] Implement ab inition dynamics with multiple initial conditions.
+- [ ] Implement Boltzmann sampling for the initial conditions in ab initio dynamics.
