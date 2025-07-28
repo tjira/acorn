@@ -55,8 +55,6 @@ awk -v NATOM=$NATOM 'BEGIN {print 1, 1} NR == 8 {printf "%20.14f\n", $1}' .orca/
 
 awk -v NATOM=$NATOM 'BEGIN {print 3 * NATOM, 1} NR > 11 && NR <= 3 * NATOM + 11 {printf "%20.14f\n", $1}' .orca/orca.engrad > GRADIENT.mat
 
-echo $SYSTEM
-
 if [[ $RETAIN -eq 1 ]]; then
     cat $SYSTEM >> $SYSTEM.all && cat .orca/orca.out >> orca.out.all
 else
