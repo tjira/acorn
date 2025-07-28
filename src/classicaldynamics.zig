@@ -25,11 +25,15 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
     if (abinitio) std.fs.cwd().deleteFile("geometry.xyz.all") catch {};
 
-    if (abinitio) std.fs.cwd().deleteFile("bagel.out.all"   ) catch {};
-    if (abinitio) std.fs.cwd().deleteFile("orca.out.all"    ) catch {};
+    if (abinitio) std.fs.cwd().deleteFile("ENERGY.mat"  ) catch {};
+    if (abinitio) std.fs.cwd().deleteFile("GRADIENT.mat") catch {};
+    if (abinitio) std.fs.cwd().deleteFile("NACV.mat"    ) catch {};
 
-    if (abinitio) std.fs.cwd().deleteDir (".bagel"          ) catch {};
-    if (abinitio) std.fs.cwd().deleteDir (".orca"           ) catch {};
+    if (abinitio) std.fs.cwd().deleteFile("bagel.out.all") catch {};
+    if (abinitio) std.fs.cwd().deleteFile("orca.out.all" ) catch {};
+
+    if (abinitio) std.fs.cwd().deleteTree(".bagel") catch {};
+    if (abinitio) std.fs.cwd().deleteTree(".orca" ) catch {};
 
     if (opt.hamiltonian.name     != null) pot =                                                                                                potential_map.get(opt.hamiltonian.name.?);
     if (opt.hamiltonian.file     != null) pot = try mpt.readPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.file.?,                                                      allocator);
@@ -144,11 +148,12 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var vp = try Vector(T).init(ndim, allocator); defer vp.deinit();
         var ap = try Vector(T).init(ndim, allocator); defer ap.deinit();
 
-        var U   = try Matrix(T).init(nstate, nstate, allocator); defer   U.deinit();   U.fill(0);
-        var UA  = try Matrix(T).init(nstate, nstate, allocator); defer  UA.deinit();  UA.fill(0);
-        var UC  = try Matrix(T).init(nstate, nstate, allocator); defer  UC.deinit();  UC.fill(0);
-        var UCS = try Matrix(T).init(nstate, nstate, allocator); defer UCS.deinit(); UCS.fill(0);
-        var TDC = try Matrix(T).init(nstate, nstate, allocator); defer TDC.deinit(); TDC.fill(0);
+        var U    = try Matrix(T).init(nstate,            nstate, allocator); defer    U.deinit();    U.fill(0);
+        var UA   = try Matrix(T).init(nstate,            nstate, allocator); defer   UA.deinit();   UA.fill(0);
+        var UC   = try Matrix(T).init(nstate,            nstate, allocator); defer   UC.deinit();   UC.fill(0);
+        var UCS  = try Matrix(T).init(nstate,            nstate, allocator); defer  UCS.deinit();  UCS.fill(0);
+        var TDC  = try Matrix(T).init(nstate,            nstate, allocator); defer  TDC.deinit();  TDC.fill(0);
+        var NACV = try Matrix(T).init(3 * ndim * nstate, 1,      allocator); defer NACV.deinit(); NACV.fill(0);
 
         var P = try Vector(T                  ).init(nstate, allocator); defer P.deinit();
         var C = try Vector(std.math.Complex(T)).init(nstate, allocator); defer C.deinit();
@@ -164,8 +169,9 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var SN = try Vector(T).init(3,    allocator); defer SN.deinit();
         var S0 = try Vector(T).init(3,    allocator); defer S0.deinit();
 
-        var U3  = [3]Matrix(T){try U.clone(), try U.clone(), try U.clone()}; defer  U3[0].deinit(); defer  U3[1].deinit(); defer U3[2].deinit();
-        var UC2 = [2]Matrix(T){try U.clone(), try U.clone()               }; defer UC2[0].deinit(); defer UC2[1].deinit()                      ;
+        var U3    = [3]Matrix(T){try U.clone(),    try U.clone(), try U.clone()   }; defer    U3[0].deinit(); defer    U3[1].deinit(); defer U3[2].deinit();
+        var UC2   = [2]Matrix(T){try U.clone(),    try U.clone()                  }; defer   UC2[0].deinit(); defer   UC2[1].deinit()                      ;
+        var NACV2 = [2]Matrix(T){try NACV.clone(), try NACV.clone()               }; defer NACV2[0].deinit(); defer NACV2[1].deinit()                      ;
 
         if (print) try printHeader(ndim, nstate, fssh, mash);
 
@@ -203,11 +209,15 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s); S3[j % 3] = s;
 
+                if (abinitio and tdc_nacv) {
+                    try readNacvFromFile(T, &NACV, "NACV.mat", allocator); NACV.memcpy(NACV2[j % 2]);
+                }
+
                 if (tdc_hst    and j > 1)     derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
                 if (tdc_kappa  and j > 1)     derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
                 if (tdc_lambda and j > 1)     derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
                 if (tdc_npi    and j > 1) try derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
-                if (tdc_nacv   and j > 1) try derivativeCouplingNacv(  T, &TDC, v, allocator                                                                               );
+                if (tdc_nacv   and j > 1)     derivativeCouplingNacv(  T, &TDC, &[_]Matrix(T){NACV2[j % 2], NACV2[(j - 1) % 2]}, v, 0                                      );
 
                 if (lzsh and j > 1) ns = try landauZener(T, &C, &P, opt.landau_zener.?, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, rand_jump, &I, &KC1);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
@@ -458,19 +468,27 @@ pub fn derivativeCouplingLambda(comptime T: type, TDC: *Matrix(T), U3: []const M
 }
 
 /// Calculate the time derivative coupling as a dot product between the velocity and the nonadiabatic coupling vector. Only available for ab initio potentials.
-pub fn derivativeCouplingNacv(comptime T: type, TDC: *Matrix(T), v: Vector(T), allocator: std.mem.Allocator) !void {
-    const NACV = try mat.read(T, "NACV.mat", allocator); defer NACV.deinit();
-
+pub fn derivativeCouplingNacv(comptime T: type, TDC: *Matrix(T), NACV2: []const Matrix(T), v: Vector(T), step: T) void {
     TDC.fill(0); var l: usize = 0;
 
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
 
         for (0..v.rows) |k| {
-            TDC.ptr(i, j).* += v.at(k) * NACV.at(l, 0); l += 1;
+
+            const NACV = NACV2[1].at(l, 0) + (NACV2[0].at(l, 0) - NACV2[1].at(l, 0)) * step;
+
+            TDC.ptr(i, j).* += v.at(k) * NACV; l += 1;
         }
 
         TDC.ptr(j, i).* = -TDC.at(i, j);
     };
+}
+
+/// Read the calculated NACV from a file.
+pub fn readNacvFromFile(comptime T: type, NACV: *Matrix(T), path: []const u8, allocator: std.mem.Allocator) !void {
+    const NACV_T = try mat.read(T, path, allocator); defer NACV_T.deinit();
+
+    NACV_T.memcpy(NACV.*);
 }
 
 /// Calculate the nonadiabatic coupling between two states using Norm Preserving Interpolation.
