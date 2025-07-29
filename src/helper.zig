@@ -108,3 +108,33 @@ pub fn writeVectorAsMolecule(comptime T: type, path: []const u8, r: Vector(T), a
 
     try buffered.flush();
 }
+
+/// Extract the i-th geometry from a .xyz file of geometries.
+pub fn extractGeometryFromMovie(output_path: []const u8, movie_path: []const u8, i: usize) !void {
+    const movie_file  = try std.fs.cwd().openFile(movie_path,    .{}); defer  movie_file.close();
+    const output_file = try std.fs.cwd().createFile(output_path, .{}); defer output_file.close();
+
+    var movie_buffered  = std.io.bufferedReader(movie_file.reader() ); var movie_reader  =  movie_buffered.reader();
+    var output_buffered = std.io.bufferedWriter(output_file.writer()); var output_writer = output_buffered.writer();
+
+    var line_buffer: [128]u8 = undefined; var line_buffer_stream = std.io.fixedBufferStream(&line_buffer); const line_buffer_writer = line_buffer_stream.writer();
+
+    try movie_reader.streamUntilDelimiter(line_buffer_writer, '\n', 128);
+
+    const natom = try std.fmt.parseInt(u32, uncr(line_buffer_stream.getWritten()), 10);
+
+    for (0..i * (natom + 2)) |_| {
+        try movie_reader.skipUntilDelimiterOrEof('\n');
+    }
+
+    try output_writer.print("{d}\n", .{natom});
+
+    for (0..natom + 1) |_| {
+
+        line_buffer_stream.reset(); try movie_reader.streamUntilDelimiter(line_buffer_writer, '\n', 128);
+
+        try output_writer.print("{s}\n", .{line_buffer_stream.getWritten()});
+    }
+
+    try output_buffered.flush();
+}

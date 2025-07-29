@@ -2,6 +2,7 @@
 
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
+const A2AU = @import("constant.zig").A2AU;
 const AN2M = @import("constant.zig").AN2M;
 
 const inp = @import("input.zig"         );
@@ -15,7 +16,8 @@ const vec = @import("vector.zig"        );
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
 
-const asfloat = @import("helper.zig").asfloat;
+const asfloat                  = @import("helper.zig").asfloat                 ;
+const extractGeometryFromMovie = @import("helper.zig").extractGeometryFromMovie;
 
 /// Main function for running classical dynamics simulations.
 pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.ClassicalDynamicsOutput(T) {
@@ -148,12 +150,12 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var vp = try Vector(T).init(ndim, allocator); defer vp.deinit();
         var ap = try Vector(T).init(ndim, allocator); defer ap.deinit();
 
-        var U    = try Matrix(T).init(nstate,            nstate, allocator); defer    U.deinit();    U.fill(0);
-        var UA   = try Matrix(T).init(nstate,            nstate, allocator); defer   UA.deinit();   UA.fill(0);
-        var UC   = try Matrix(T).init(nstate,            nstate, allocator); defer   UC.deinit();   UC.fill(0);
-        var UCS  = try Matrix(T).init(nstate,            nstate, allocator); defer  UCS.deinit();  UCS.fill(0);
-        var TDC  = try Matrix(T).init(nstate,            nstate, allocator); defer  TDC.deinit();  TDC.fill(0);
-        var NACV = try Matrix(T).init(3 * ndim * nstate, 1,      allocator); defer NACV.deinit(); NACV.fill(0);
+        var U    = try Matrix(T).init(nstate,                                nstate, allocator); defer    U.deinit();    U.fill(0);
+        var UA   = try Matrix(T).init(nstate,                                nstate, allocator); defer   UA.deinit();   UA.fill(0);
+        var UC   = try Matrix(T).init(nstate,                                nstate, allocator); defer   UC.deinit();   UC.fill(0);
+        var UCS  = try Matrix(T).init(nstate,                                nstate, allocator); defer  UCS.deinit();  UCS.fill(0);
+        var TDC  = try Matrix(T).init(nstate,                                nstate, allocator); defer  TDC.deinit();  TDC.fill(0);
+        var NACV = try Matrix(T).init(ndim * (nstate * nstate - nstate) / 2, 1,      allocator); defer NACV.deinit(); NACV.fill(0);
 
         var P = try Vector(T                  ).init(nstate, allocator); defer P.deinit();
         var C = try Vector(std.math.Complex(T)).init(nstate, allocator); defer C.deinit();
@@ -186,7 +188,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
             a.fill(0); if (!abinitio) {p.memcpy(v); for (0..v.rows) |j| v.ptr(j).* /= mass[j];}
 
-            if (abinitio) try initAbinitio(T, &r, &v, &p, &mass, opt.initial_conditions.position_file, opt.initial_conditions.velocity_file, allocator);
+            if (abinitio) try initAbinitio(T, &r, &v, &p, &mass, opt.initial_conditions.position_file, opt.initial_conditions.velocity_file, i, allocator);
 
             if (fssh or lzsh) {C.fill(std.math.Complex(T).init(0, 0)); C.ptr(s).* = std.math.Complex(T).init(1, 0);}
             if (mash        ) {try initialBlochVector(T, &S, s, rand_bloc);                                        }
@@ -205,7 +207,6 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 } else {
                     try propagate(T, pot.?, opt.time_step, opt.derivative_step, mass, &r, &v, &a, &U, &UA, &UC, &UC2, time, s, j, abinitio, allocator);
                 }
-
 
                 U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s); S3[j % 3] = s;
 
@@ -592,26 +593,37 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vec
 }
 
 // Transform the coordinate file into the initial position vector.
-pub fn initAbinitio(comptime T: type, r: *Vector(T), v: *Vector(T), p: *Vector(T), mass: *[]T, position_file: ?[]const u8, velocity_file: ?[]const u8, allocator: std.mem.Allocator) !void {
+pub fn initAbinitio(comptime T: type, r: *Vector(T), v: *Vector(T), p: *Vector(T), mass: *[]T, position_file: ?[]const u8, velocity_file: ?[]const u8, i: usize, allocator: std.mem.Allocator) !void {
+
     if (velocity_file == null) {v.fill(0); p.fill(0);}
 
     else {
 
-        const system = try sys.read(T, velocity_file.?, 0, allocator); defer system.deinit();
+        const velocity_geometry = try std.fmt.allocPrint(allocator, "velocity_{d}.xyz", .{i}); defer allocator.free(velocity_geometry);
+
+        try extractGeometryFromMovie(velocity_geometry, velocity_file.?, i);
+
+        const system = try sys.read(T, velocity_geometry, 0, allocator); defer system.deinit();
 
         @memcpy(v.data, system.coords.data);
+
+        for (v.data) |*e| e.* /= A2AU;
     }
 
-    const system = try sys.read(T, position_file.?, 0, allocator); defer system.deinit();
+    const position_geometry = try std.fmt.allocPrint(allocator, "geometry_{d}.xyz", .{i}); defer allocator.free(position_geometry);
+
+    try extractGeometryFromMovie(position_geometry, position_file.?, i);
+
+    const system = try sys.read(T, position_geometry, 0, allocator); defer system.deinit();
 
     @memcpy(r.data, system.coords.data);
 
-    for (0..system.atoms.rows) |i| for (0..3) |j| {
-        mass.*[3 * i + j] = AN2M[@as(usize, @intFromFloat(system.atoms.at(i))) - 1] * 1822.888486;
+    for (0..system.atoms.rows) |j| for (0..3) |k| {
+        mass.*[3 * j + k] = AN2M[@as(usize, @intFromFloat(system.atoms.at(j))) - 1] * 1822.888486;
     };
 
-    for (0..p.rows) |i| {
-        p.ptr(i).* = v.at(i) * mass.*[i];
+    for (0..p.rows) |j| {
+        p.ptr(j).* = v.at(j) * mass.*[j];
     }
 }
 
