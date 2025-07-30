@@ -26,11 +26,11 @@ A general solution of the Time-Dependent Schrödinger Equation can be written as
 
 $$
 \begin{equation}\label{eq:tdse_propagator}
-\ket{\Psi\left(t\right)}=\symrm{e}^{-\frac{\symrm{i}}{\hbar}\hat{\symbf{H}}t}\ket{\Psi\left(0\right)},
+\ket{\Psi\left(t\right)}=\symrm{e}^{-\frac{\symrm{i}}{\hbar}\hat{\symbf{H}}t}\ket{\Psi\left(0\right)}.
 \end{equation}
 $$
 
-The action of $$\symrm{e}^{-\frac{\symrm{i}}{\hbar}\hat{\symbf{H}}t}$$ on the initial wavefunction $$\ket{\Psi\left(0\right)}$$ propagates the state from time $$0$$ to time $$t$$, carrying all the information about the time evolution of the system. The propagator is straightforward to find if the Hamiltonian $$\hat{\symbf{H}}$$ does not depend on time. In this case, the formal solution to the Time-Dependent Schrödinger Equation can be written as This exponential operator contains the complete description of how the system evolves with time. In practical applications, however, evaluating $$\symrm{e}^{-\frac{\symrm{i}}{\hbar}\hat{\symbf{H}}t}$$ analytically is rarely straightforward for nontrivial Hamiltonians, which often necessitates numerical methods for an accurate treatment of quantum dynamics.
+The action of $$\symrm{e}^{-\frac{\symrm{i}}{\hbar}\hat{\symbf{H}}t}$$ on the initial wavefunction $$\ket{\Psi\left(0\right)}$$ propagates the state from time $$0$$ to time $$t$$, carrying all the information about the time evolution of the system. This exponential operator contains the complete description of how the system evolves with time. In practical applications, however, evaluating $$\symrm{e}^{-\frac{\symrm{i}}{\hbar}\hat{\symbf{H}}t}$$ analytically is rarely straightforward for nontrivial Hamiltonians, which often necessitates numerical methods for an accurate treatment of quantum dynamics.
 
 ### Space Discretization and the Diabatic Basis
 
