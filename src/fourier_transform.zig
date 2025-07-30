@@ -5,8 +5,8 @@ const std = @import("std");
 const mth = @import("math.zig"  );
 const vec = @import("vector.zig");
 
-const StridedArray = @import("stridedarray.zig").StridedArray;
-const Vector       = @import("vector.zig"      ).Vector      ;
+const StridedArray = @import("strided_array.zig").StridedArray;
+const Vector       = @import("vector.zig"       ).Vector      ;
 
 const asfloat = @import("helper.zig").asfloat;
 const bitrev  = @import("helper.zig").bitrev ;

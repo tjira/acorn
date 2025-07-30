@@ -24,3 +24,5 @@
 - [ ] Time derivative coupling using NACV in ab initio dynamics is problematic sinc the coefficient propagation is wrong due to big time step.
 - [ ] Implement ab inition dynamics with multiple initial conditions.
 - [ ] Implement Boltzmann sampling for the initial conditions in ab initio dynamics.
+- [ ] Implement parallelization for classical dynamics.
+- [ ] The AIMD code is currently unparallelizable due to file reading.

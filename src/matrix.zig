@@ -6,9 +6,9 @@ const inp = @import("input.zig" );
 const mth = @import("math.zig"  );
 const vec = @import("vector.zig");
 
-const StridedArray = @import("stridedarray.zig").StridedArray;
-const Tensor       = @import("tensor.zig"      ).Tensor      ;
-const Vector       = @import("vector.zig"      ).Vector      ;
+const StridedArray = @import("strided_array.zig").StridedArray;
+const Tensor       = @import("tensor.zig"       ).Tensor      ;
+const Vector       = @import("vector.zig"       ).Vector      ;
 
 const asfloat = @import("helper.zig").asfloat;
 const istruct = @import("helper.zig").istruct;

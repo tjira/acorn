@@ -5,15 +5,15 @@ const std = @import("std");
 const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
-const edf = @import("energydiff.zig" );
-const hfm = @import("hartreefock.zig");
-const inp = @import("input.zig"      );
-const opm = @import("optimize.zig"   );
-const out = @import("output.zig"     );
-const prp = @import("property.zig"   );
-const sys = @import("system.zig"     );
-const ten = @import("tensor.zig"     );
-const tns = @import("transform.zig"  );
+const edf = @import("energy_derivative.zig");
+const hfm = @import("hartree_fock.zig"     );
+const inp = @import("input.zig"            );
+const opm = @import("optimize.zig"         );
+const out = @import("output.zig"           );
+const prp = @import("property.zig"         );
+const sys = @import("system.zig"           );
+const ten = @import("tensor.zig"           );
+const tns = @import("transform.zig"        );
 
 const Matrix = @import("matrix.zig").Matrix;
 const System = @import("system.zig").System;

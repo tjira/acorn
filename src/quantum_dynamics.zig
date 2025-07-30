@@ -2,13 +2,13 @@
 
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
-const ftr = @import("fouriertransform.zig");
-const inp = @import("input.zig"           );
-const mat = @import("matrix.zig"          );
-const mpt = @import("modelpotential.zig"  );
-const out = @import("output.zig"          );
-const vec = @import("vector.zig"          );
-const wfn = @import("wavefunction.zig"    );
+const ftr = @import("fourier_transform.zig");
+const inp = @import("input.zig"            );
+const mat = @import("matrix.zig"           );
+const mpt = @import("potential.zig"        );
+const out = @import("output.zig"           );
+const vec = @import("vector.zig"           );
+const wfn = @import("wavefunction.zig"     );
 
 const Matrix       = @import("matrix.zig"      ).Matrix      ;
 const Vector       = @import("vector.zig"      ).Vector      ;

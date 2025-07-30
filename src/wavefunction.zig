@@ -2,8 +2,8 @@
 
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
-const ftr = @import("fouriertransform.zig");
-const mat = @import("matrix.zig"          );
+const ftr = @import("fourier_transform.zig");
+const mat = @import("matrix.zig"           );
 
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;

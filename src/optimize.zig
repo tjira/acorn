@@ -2,8 +2,8 @@
 
 const std = @import("std");
 
-const edf = @import("energydiff.zig");
-const mat = @import("matrix.zig"    );
+const edf = @import("energy_derivative.zig");
+const mat = @import("matrix.zig"           );
 
 const Matrix = @import("matrix.zig").Matrix;
 const System = @import("system.zig").System;

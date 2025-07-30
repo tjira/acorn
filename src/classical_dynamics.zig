@@ -5,13 +5,13 @@ const std = @import("std"); const cwp = @import("cwrapper.zig");
 const A2AU = @import("constant.zig").A2AU;
 const AN2M = @import("constant.zig").AN2M;
 
-const inp = @import("input.zig"         );
-const mat = @import("matrix.zig"        );
-const mpt = @import("modelpotential.zig");
-const mth = @import("math.zig"          );
-const out = @import("output.zig"        );
-const sys = @import("system.zig"        );
-const vec = @import("vector.zig"        );
+const inp = @import("input.zig"    );
+const mat = @import("matrix.zig"   );
+const mpt = @import("potential.zig");
+const mth = @import("math.zig"     );
+const out = @import("output.zig"   );
+const sys = @import("system.zig"   );
+const vec = @import("vector.zig"   );
 
 const Matrix = @import("matrix.zig").Matrix;
 const Vector = @import("vector.zig").Vector;
