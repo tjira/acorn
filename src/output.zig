@@ -20,7 +20,7 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
 
         /// Initialize the classical dynamics output.
         pub fn init(ndim: usize, nstate: usize, allocator: std.mem.Allocator) !ClassicalDynamicsOutput(T) {
-            return ClassicalDynamicsOutput(T){
+            const output = ClassicalDynamicsOutput(T){
                 .pop = try Vector(T).init(nstate, allocator),
 
                 .r = try Vector(T).init(ndim, allocator),
@@ -29,6 +29,10 @@ pub fn ClassicalDynamicsOutput(comptime T: type) type {
                 .Ekin = 0,
                 .Epot = 0
             };
+
+            output.pop.fill(0);
+
+            return output;
         }
 
         /// Free the memory allocated for the classical dynamics output.

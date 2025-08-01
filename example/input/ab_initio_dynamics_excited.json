@@ -17,7 +17,9 @@
         "write" : {
             "potential_matrix" : "POTMAT.mat"
         },
-        "fewest_switches" : {},
+        "fewest_switches" : {
+            "quantum_substep" : 1000
+        },
         "time_derivative_coupling" : "nacv"
     }
 }

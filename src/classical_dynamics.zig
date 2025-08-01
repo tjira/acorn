@@ -7,7 +7,7 @@ const AN2M = @import("constant.zig").AN2M;
 
 const inp = @import("input.zig"    );
 const mat = @import("matrix.zig"   );
-const mpt = @import("potential.zig");
+const pot = @import("potential.zig");
 const mth = @import("math.zig"     );
 const out = @import("output.zig"   );
 const sys = @import("system.zig"   );
@@ -21,58 +21,52 @@ const extractGeometryFromMovie = @import("helper.zig").extractGeometryFromMovie;
 
 /// Main function for running classical dynamics simulations.
 pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.ClassicalDynamicsOutput(T) {
-    try checkErrors(T, opt, allocator); var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
+    try checkErrors(T, opt, allocator);
 
-    var pot: ?mpt.Potential(T) = null; const abinitio = if (opt.hamiltonian.abinitio != null) true else false;
+    const abinitio = if (opt.hamiltonian.abinitio != null) true else false;
 
-    if (abinitio) std.fs.cwd().deleteFile("geometry.xyz.all") catch {};
+    var potential = try loadPotential(T, opt.hamiltonian, opt.initial_conditions, allocator); defer potential.deinit();
 
-    if (abinitio) std.fs.cwd().deleteFile("ENERGY.mat"  ) catch {};
-    if (abinitio) std.fs.cwd().deleteFile("GRADIENT.mat") catch {};
-    if (abinitio) std.fs.cwd().deleteFile("NACV.mat"    ) catch {};
+    var mass = try allocator.alloc(T, potential.dims); defer allocator.free(mass); if (!abinitio) @memcpy(mass, opt.initial_conditions.mass.?);
 
-    if (abinitio) std.fs.cwd().deleteFile("bagel.out.all") catch {};
-    if (abinitio) std.fs.cwd().deleteFile("orca.out.all" ) catch {};
+    if (opt.initial_conditions.position_mean != null and opt.initial_conditions.position_mean.?.len != potential.dims) return error.InvalidMeanPosition;
+    if (opt.initial_conditions.position_std  != null and opt.initial_conditions.position_std.?.len  != potential.dims) return error.InvalidStdPosition ;
+    if (opt.initial_conditions.momentum_mean != null and opt.initial_conditions.momentum_mean.?.len != potential.dims) return error.InvalidMeanMomentum;
+    if (opt.initial_conditions.momentum_std  != null and opt.initial_conditions.momentum_std.?.len  != potential.dims) return error.InvalidStdMomentum ;
+    if (opt.initial_conditions.mass          != null and opt.initial_conditions.mass.?.len          != potential.dims) return error.InvalidMass        ;
 
-    if (abinitio) std.fs.cwd().deleteTree(".bagel") catch {};
-    if (abinitio) std.fs.cwd().deleteTree(".orca" ) catch {};
+    if (opt.initial_conditions.state.len         != potential.states ) return error.InvalidInitialState;
+    if (mth.sum(T, opt.initial_conditions.state) != 1                ) return error.InvalidStateSum    ;
+    if (opt.write.bloch_vector != null and potential.states != 2     ) return error.SpinNotCalculable  ;
+    if (opt.write.bloch_vector_mean != null and potential.states != 2) return error.SpinNotCalculable  ;
 
-    if (opt.hamiltonian.name     != null) pot =                                                                                                potential_map.get(opt.hamiltonian.name.?);
-    if (opt.hamiltonian.file     != null) pot = try mpt.readPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.file.?,                                                      allocator);
-    if (opt.hamiltonian.matrix   != null) pot = try mpt.getPotential(T, opt.hamiltonian.dims.?, opt.hamiltonian.matrix.?,                                                     allocator);
-    if (opt.hamiltonian.abinitio != null) pot = try mpt.initAbinitio(T, opt.initial_conditions.state.len, opt.hamiltonian.abinitio.?, opt.initial_conditions.position_file.?, allocator);
-
-    const ndim = pot.?.dims; const nstate = pot.?.states; defer pot.?.deinit();
-
-    var mass = try allocator.alloc(T, ndim); defer allocator.free(mass); if (!abinitio) @memcpy(mass, opt.initial_conditions.mass.?);
-
-    if (opt.initial_conditions.position_mean != null and opt.initial_conditions.position_mean.?.len != ndim) return error.InvalidMeanPosition;
-    if (opt.initial_conditions.position_std  != null and opt.initial_conditions.position_std.?.len  != ndim) return error.InvalidStdPosition ;
-    if (opt.initial_conditions.momentum_mean != null and opt.initial_conditions.momentum_mean.?.len != ndim) return error.InvalidMeanMomentum ;
-    if (opt.initial_conditions.momentum_std  != null and opt.initial_conditions.momentum_std.?.len  != ndim) return error.InvalidStdMomentum ;
-    if (opt.initial_conditions.mass          != null and opt.initial_conditions.mass.?.len          != ndim) return error.InvalidMass        ;
-
-    if (opt.initial_conditions.state.len         != nstate ) return error.InvalidInitialState;
-    if (mth.sum(T, opt.initial_conditions.state) != 1      ) return error.InvalidStateSum    ;
-    if (opt.write.bloch_vector != null and nstate != 2     ) return error.SpinNotCalculable  ;
-    if (opt.write.bloch_vector_mean != null and nstate != 2) return error.SpinNotCalculable  ;
-
-    var output = try out.ClassicalDynamicsOutput(T).init(ndim, nstate, allocator); output.pop.fill(0);
+    var output = try out.ClassicalDynamicsOutput(T).init(potential.dims, potential.states, allocator);
 
     var prng_jump = std.Random.DefaultPrng.init(opt.seed); const rand_jump = prng_jump.random();
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
     var prng_bloc = std.Random.DefaultPrng.init(opt.seed); const rand_bloc = prng_bloc.random();
 
-    var bloch_mean    = try Matrix(T).init(opt.iterations + 1, 1 + 4,               allocator); defer    bloch_mean.deinit(); bloch_mean   .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var coef_mean     = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer     coef_mean.deinit(); coef_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var ekin_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     ekin_mean.deinit(); ekin_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var epot_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     epot_mean.deinit(); epot_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var etot_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1              , allocator); defer     etot_mean.deinit(); etot_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var momentum_mean = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer momentum_mean.deinit(); momentum_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var pop_mean      = try Matrix(T).init(opt.iterations + 1, 1 + nstate         , allocator); defer      pop_mean.deinit(); pop_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var position_mean = try Matrix(T).init(opt.iterations + 1, 1 + ndim           , allocator); defer position_mean.deinit(); position_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var potmat_mean   = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer   potmat_mean.deinit(); potmat_mean  .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var tdc_mean      = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate, allocator); defer      tdc_mean.deinit(); tdc_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var bloch_mean    = try Matrix(T).init(opt.iterations + 1, 1 + 4                                  , allocator); defer    bloch_mean.deinit();
+    var coef_mean     = try Matrix(T).init(opt.iterations + 1, 1 + potential.states                   , allocator); defer     coef_mean.deinit();
+    var ekin_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1                                  , allocator); defer     ekin_mean.deinit();
+    var epot_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1                                  , allocator); defer     epot_mean.deinit();
+    var etot_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1                                  , allocator); defer     etot_mean.deinit();
+    var momentum_mean = try Matrix(T).init(opt.iterations + 1, 1 + potential.dims                     , allocator); defer momentum_mean.deinit();
+    var pop_mean      = try Matrix(T).init(opt.iterations + 1, 1 + potential.states                   , allocator); defer      pop_mean.deinit();
+    var position_mean = try Matrix(T).init(opt.iterations + 1, 1 + potential.dims                     , allocator); defer position_mean.deinit();
+    var potmat_mean   = try Matrix(T).init(opt.iterations + 1, 1 + potential.states * potential.states, allocator); defer   potmat_mean.deinit();
+    var tdc_mean      = try Matrix(T).init(opt.iterations + 1, 1 + potential.states * potential.states, allocator); defer      tdc_mean.deinit();
+
+    bloch_mean   .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    coef_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    ekin_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    epot_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    etot_mean    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    momentum_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    pop_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    position_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    potmat_mean  .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    tdc_mean     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
     var bloch:    Matrix(T) = undefined;
     var coef:     Matrix(T) = undefined;
@@ -85,36 +79,27 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     var potmat:   Matrix(T) = undefined;
     var tdc:      Matrix(T) = undefined;
 
-    if (opt.write.coefficient != null) {
-        coef = try Matrix(T).init(opt.iterations + 1, 1 + nstate * opt.trajectories, allocator); coef.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.kinetic_energy != null) {
-        ekin = try Matrix(T).init(opt.iterations + 1, 1 + opt.trajectories, allocator); ekin.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.potential_energy != null) {
-        epot = try Matrix(T).init(opt.iterations + 1, 1 + opt.trajectories, allocator); epot.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.total_energy != null) {
-        etot = try Matrix(T).init(opt.iterations + 1, 1 + opt.trajectories, allocator); etot.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.momentum != null) {
-        momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim * opt.trajectories, allocator); momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.population != null) {
-        pop = try Matrix(T).init(opt.iterations + 1, 1 + nstate * opt.trajectories, allocator); pop.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.position != null) {
-        position = try Matrix(T).init(opt.iterations + 1, 1 + ndim * opt.trajectories, allocator); position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.bloch_vector != null) {
-        bloch = try Matrix(T).init(opt.iterations + 1, 1 + 4 * opt.trajectories, allocator); bloch.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.time_derivative_coupling != null) {
-        tdc = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate * opt.trajectories, allocator); tdc.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
-    if (opt.write.potential_matrix != null) {
-        potmat = try Matrix(T).init(opt.iterations + 1, 1 + nstate * nstate * opt.trajectories, allocator); potmat.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    }
+    if (opt.write.coefficient != null             ) coef     = try Matrix(T).init(opt.iterations + 1, 1 +                    potential.states * opt.trajectories, allocator);
+    if (opt.write.kinetic_energy != null          ) ekin     = try Matrix(T).init(opt.iterations + 1, 1 +                                       opt.trajectories, allocator);
+    if (opt.write.potential_energy != null        ) epot     = try Matrix(T).init(opt.iterations + 1, 1 +                                       opt.trajectories, allocator);
+    if (opt.write.total_energy != null            ) etot     = try Matrix(T).init(opt.iterations + 1, 1 +                                       opt.trajectories, allocator);
+    if (opt.write.momentum != null                ) momentum = try Matrix(T).init(opt.iterations + 1, 1 +                      potential.dims * opt.trajectories, allocator);
+    if (opt.write.population != null              ) pop      = try Matrix(T).init(opt.iterations + 1, 1 +                    potential.states * opt.trajectories, allocator);
+    if (opt.write.position != null                ) position = try Matrix(T).init(opt.iterations + 1, 1 +                      potential.dims * opt.trajectories, allocator);
+    if (opt.write.bloch_vector != null            ) bloch    = try Matrix(T).init(opt.iterations + 1, 1 +                                   4 * opt.trajectories, allocator);
+    if (opt.write.time_derivative_coupling != null) tdc      = try Matrix(T).init(opt.iterations + 1, 1 + potential.states * potential.states * opt.trajectories, allocator);
+    if (opt.write.potential_matrix != null        ) potmat   = try Matrix(T).init(opt.iterations + 1, 1 + potential.states * potential.states * opt.trajectories, allocator);
+
+    if (opt.write.coefficient              != null) coef    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.kinetic_energy           != null) ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.potential_energy         != null) epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.total_energy             != null) etot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.momentum                 != null) momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.population               != null) pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.position                 != null) position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.bloch_vector             != null) bloch   .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.time_derivative_coupling != null) tdc     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    if (opt.write.potential_matrix         != null) potmat  .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
 
     const fssh = opt.fewest_switches != null;
     const lzsh = opt.landau_zener    != null;
@@ -124,7 +109,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         return error.MultipleHoppingMechanisms;
     }
 
-    if (mash and nstate != 2) return error.IncompatibleSurfaceHoppingAlgorithm;
+    if (mash and potential.states != 2) return error.IncompatibleSurfaceHoppingAlgorithm;
 
     const tdc_hst    = if (opt.time_derivative_coupling != null) std.mem.eql(u8, opt.time_derivative_coupling.?, "hst"   ) else false;
     const tdc_kappa  = if (opt.time_derivative_coupling != null) std.mem.eql(u8, opt.time_derivative_coupling.?, "kappa" ) else false;
@@ -137,35 +122,35 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     }
 
     {
-        var T1 = try Matrix(T).init(nstate, nstate, allocator); defer T1.deinit();
-        var T2 = try Matrix(T).init(nstate, nstate, allocator); defer T2.deinit();
+        var T1 = try Matrix(T).init(potential.states, potential.states, allocator); defer T1.deinit();
+        var T2 = try Matrix(T).init(potential.states, potential.states, allocator); defer T2.deinit();
 
-        var r = try Vector(T).init(ndim, allocator); defer r.deinit();
-        var p = try Vector(T).init(ndim, allocator); defer p.deinit();
-        var v = try Vector(T).init(ndim, allocator); defer v.deinit();
-        var a = try Vector(T).init(ndim, allocator); defer a.deinit();
+        var r = try Vector(T).init(potential.dims, allocator); defer r.deinit();
+        var p = try Vector(T).init(potential.dims, allocator); defer p.deinit();
+        var v = try Vector(T).init(potential.dims, allocator); defer v.deinit();
+        var a = try Vector(T).init(potential.dims, allocator); defer a.deinit();
 
-        var rp = try Vector(T).init(ndim, allocator); defer rp.deinit();
-        var pp = try Vector(T).init(ndim, allocator); defer pp.deinit();
-        var vp = try Vector(T).init(ndim, allocator); defer vp.deinit();
-        var ap = try Vector(T).init(ndim, allocator); defer ap.deinit();
+        var rp = try Vector(T).init(potential.dims, allocator); defer rp.deinit();
+        var pp = try Vector(T).init(potential.dims, allocator); defer pp.deinit();
+        var vp = try Vector(T).init(potential.dims, allocator); defer vp.deinit();
+        var ap = try Vector(T).init(potential.dims, allocator); defer ap.deinit();
 
-        var U    = try Matrix(T).init(nstate,                                nstate, allocator); defer    U.deinit();    U.fill(0);
-        var UA   = try Matrix(T).init(nstate,                                nstate, allocator); defer   UA.deinit();   UA.fill(0);
-        var UC   = try Matrix(T).init(nstate,                                nstate, allocator); defer   UC.deinit();   UC.fill(0);
-        var UCS  = try Matrix(T).init(nstate,                                nstate, allocator); defer  UCS.deinit();  UCS.fill(0);
-        var TDC  = try Matrix(T).init(nstate,                                nstate, allocator); defer  TDC.deinit();  TDC.fill(0);
-        var NACV = try Matrix(T).init(ndim * (nstate * nstate - nstate) / 2, 1,      allocator); defer NACV.deinit(); NACV.fill(0);
+        var U    = try Matrix(T).init(potential.states,                                potential.states, allocator); defer    U.deinit();    U.fill(0);
+        var UA   = try Matrix(T).init(potential.states,                                potential.states, allocator); defer   UA.deinit();   UA.fill(0);
+        var UC   = try Matrix(T).init(potential.states,                                potential.states, allocator); defer   UC.deinit();   UC.fill(0);
+        var UCS  = try Matrix(T).init(potential.states,                                potential.states, allocator); defer  UCS.deinit();  UCS.fill(0);
+        var TDC  = try Matrix(T).init(potential.states,                                potential.states, allocator); defer  TDC.deinit();  TDC.fill(0);
+        var NACV = try Matrix(T).init(potential.dims * (potential.states * potential.states - potential.states) / 2, 1,      allocator); defer NACV.deinit(); NACV.fill(0);
 
-        var P = try Vector(T                  ).init(nstate, allocator); defer P.deinit();
-        var C = try Vector(std.math.Complex(T)).init(nstate, allocator); defer C.deinit();
+        var P = try Vector(T                  ).init(potential.states, allocator); defer P.deinit();
+        var C = try Vector(std.math.Complex(T)).init(potential.states, allocator); defer C.deinit();
         var S = try Vector(T                  ).init(3,      allocator); defer S.deinit();
 
-        var I   = try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator); defer   I.deinit();
-        var KC1 = try Vector(std.math.Complex(T)).init(C.rows,         allocator); defer KC1.deinit();
-        var KC2 = try Vector(std.math.Complex(T)).init(C.rows,         allocator); defer KC2.deinit();
-        var KC3 = try Vector(std.math.Complex(T)).init(C.rows,         allocator); defer KC3.deinit();
-        var KC4 = try Vector(std.math.Complex(T)).init(C.rows,         allocator); defer KC4.deinit();
+        var I   = try Matrix(std.math.Complex(T)).init(potential.states, potential.states, allocator); defer   I.deinit();
+        var KC1 = try Vector(std.math.Complex(T)).init(C.rows,                             allocator); defer KC1.deinit();
+        var KC2 = try Vector(std.math.Complex(T)).init(C.rows,                             allocator); defer KC2.deinit();
+        var KC3 = try Vector(std.math.Complex(T)).init(C.rows,                             allocator); defer KC3.deinit();
+        var KC4 = try Vector(std.math.Complex(T)).init(C.rows,                             allocator); defer KC4.deinit();
 
         var SP = try Matrix(T).init(3, 3, allocator); defer SP.deinit();
         var SN = try Vector(T).init(3,    allocator); defer SN.deinit();
@@ -175,18 +160,15 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var UC2   = [2]Matrix(T){try U.clone(),    try U.clone()                  }; defer   UC2[0].deinit(); defer   UC2[1].deinit()                      ;
         var NACV2 = [2]Matrix(T){try NACV.clone(), try NACV.clone()               }; defer NACV2[0].deinit(); defer NACV2[1].deinit()                      ;
 
-        if (print) try printHeader(ndim, nstate, fssh, mash);
+        if (print) try printHeader(potential.dims, potential.states, fssh, mash);
 
         for (0..opt.trajectories) |i| {
 
-            var s: u32 = undefined; for (0..nstate) |j| if (asfloat(T, i + 1) / asfloat(T, opt.trajectories) <= mth.sum(T, opt.initial_conditions.state[0..j + 1])) {s = @intCast(j); break;};
+            if (abinitio) removeAbinitioOutputFiles();
 
-            if (!abinitio) {
-                for (0..r.rows) |j| r.ptr(j).* = opt.initial_conditions.position_mean.?[j] + opt.initial_conditions.position_std.?[j] * rand_traj.floatNorm(T);
-                for (0..p.rows) |j| p.ptr(j).* = opt.initial_conditions.momentum_mean.?[j] + opt.initial_conditions.momentum_std.?[j] * rand_traj.floatNorm(T);
-            }
+            var s = extractInitialState(T, opt.initial_conditions, opt.trajectories, i);
 
-            a.fill(0); if (!abinitio) {p.memcpy(v); for (0..v.rows) |j| v.ptr(j).* /= mass[j];}
+            if (!abinitio) sampleInitialConditions(T, &r, &p, &v, &a, mass, opt.initial_conditions, rand_traj);
 
             if (abinitio) try initAbinitio(T, &r, &v, &p, &mass, opt.initial_conditions.position_file, opt.initial_conditions.velocity_file, i, allocator);
 
@@ -198,17 +180,17 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
             for (0..opt.iterations + 1) |j| {
 
-                const time = opt.time_step * asfloat(T, j);
-
-                r.memcpy(rp); p.memcpy(pp); v.memcpy(vp); a.memcpy(ap);
+                const time = opt.time_step * asfloat(T, j); r.memcpy(rp); p.memcpy(pp); v.memcpy(vp); a.memcpy(ap);
 
                 if (j == 0) {
-                    try pot.?.evaluate(&U, r, time); if (!abinitio) try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
+                    try potential.evaluate(&U, r, time); if (!abinitio) try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
                 } else {
-                    try propagate(T, pot.?, opt.time_step, opt.derivative_step, mass, &r, &v, &a, &U, &UA, &UC, &UC2, time, s, j, abinitio, allocator);
+                    try propagate(T, potential, opt.time_step, opt.derivative_step, mass, &r, &v, &a, &U, &UA, &UC, &UC2, time, s, j, abinitio, allocator);
                 }
 
-                U.memcpy(U3[j % 3]); Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s); S3[j % 3] = s;
+                U.memcpy(U3[j % 3]); S3[j % 3] = s;
+
+                Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s); 
 
                 if (abinitio and tdc_nacv) {
                     try readNacvFromFile(T, &NACV, "NACV.mat", allocator); NACV.memcpy(NACV2[j % 2]);
@@ -217,7 +199,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (tdc_hst    and j > 1)     derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
                 if (tdc_kappa  and j > 1)     derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
                 if (tdc_lambda and j > 1)     derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
-                if (tdc_npi    and j > 1) try derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, pot.?,                                                  opt.time_step, j);
+                if (tdc_npi    and j > 1) try derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, potential,                                              opt.time_step, j);
                 if (tdc_nacv   and j > 1)     derivativeCouplingNacv(  T, &TDC, &[_]Matrix(T){NACV2[j % 2], NACV2[(j - 1) % 2]}, v, 0                                      );
 
                 if (lzsh and j > 1) ns = try landauZener(T, &C, &P, opt.landau_zener.?, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, rand_jump, &I, &KC1);
@@ -230,13 +212,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 if (mash and opt.spin_mapping.?.resample != null) try resampleBlochVector(T, opt.spin_mapping.?.resample.?, &S, v, vp, s, rand_bloc);
 
-                if (fssh or lzsh) {
-
-                    S.ptr(0).* = 2 * (C.at(0).mul(C.at(1).conjugate())).re;
-                    S.ptr(1).* = 2 * (C.at(0).mul(C.at(1).conjugate())).im;
-
-                    S.ptr(2).* = C.at(1).magnitude() * C.at(1).magnitude() - C.at(0).magnitude() * C.at(0).magnitude();
-                }
+                if (fssh or lzsh) calculateBlocVectorFromCoefficients(T, &S, C);
 
                 if (opt.write.coefficient_mean              != null) for (0..C.rows) |k| {coef_mean.ptr(j, 1 + k).* += C.at(k).magnitude() * C.at(k).magnitude();};
                 if (opt.write.kinetic_energy_mean           != null) ekin_mean.ptr(j, 1 + 0).* += Wpp * Ekin                                                      ;
@@ -248,15 +224,15 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (opt.write.time_derivative_coupling_mean != null) for (0..TDC.rows * TDC.cols) |k| {tdc_mean.ptr(j, 1 + k).* += Wpp * TDC.data[k];}            ;
                 if (opt.write.total_energy_mean             != null) etot_mean.ptr(j, 1 + 0).* += Wpp * (Ekin + Epot)                                             ;
 
-                if (opt.write.coefficient              != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k + i * nstate).* = C.at(k).magnitude() * C.at(k).magnitude();};
-                if (opt.write.kinetic_energy           != null) ekin.ptr(j, 1 + i).* = Ekin                                                                         ;
-                if (opt.write.momentum                 != null) for (0..v.rows) |k| {momentum.ptr(j, 1 + k + i * ndim).* = v.at(k) * mass[k];}                      ;
-                if (opt.write.population               != null) pop.ptr(j, 1 + s + i * nstate).* = 1                                                                ;
-                if (opt.write.position                 != null) for (0..r.rows) |k| {position.ptr(j, 1 + k + i * ndim).* = r.at(k);}                                ;
-                if (opt.write.potential_energy         != null) epot.ptr(j, 1 + i).* = Epot                                                                         ;
-                if (opt.write.potential_matrix         != null) for (0..U.rows * U.cols) |k| {potmat.ptr(j, 1 + k + i * nstate * nstate).* = U.data[k];}            ;
-                if (opt.write.time_derivative_coupling != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k + i * nstate * nstate).* = TDC.data[k];}         ;
-                if (opt.write.total_energy             != null) etot.ptr(j, 1 + i).* = Ekin + Epot                                                                  ;
+                if (opt.write.coefficient              != null) for (0..C.rows) |k| {coef.ptr(j, 1 + k + i * potential.states).* = C.at(k).magnitude() * C.at(k).magnitude();} ;
+                if (opt.write.kinetic_energy           != null) ekin.ptr(j, 1 + i).* = Ekin                                                                                    ;
+                if (opt.write.momentum                 != null) for (0..v.rows) |k| {momentum.ptr(j, 1 + k + i * potential.dims).* = v.at(k) * mass[k];}                       ;
+                if (opt.write.population               != null) pop.ptr(j, 1 + s + i * potential.states).* = 1                                                                 ;
+                if (opt.write.position                 != null) for (0..r.rows) |k| {position.ptr(j, 1 + k + i * potential.dims).* = r.at(k);}                                 ;
+                if (opt.write.potential_energy         != null) epot.ptr(j, 1 + i).* = Epot                                                                                    ;
+                if (opt.write.potential_matrix         != null) for (0..U.rows * U.cols) |k| {potmat.ptr(j, 1 + k + i * potential.states * potential.states).* = U.data[k];}   ;
+                if (opt.write.time_derivative_coupling != null) for (0..TDC.rows * TDC.cols) |k| {tdc.ptr(j, 1 + k + i * potential.states * potential.states).* = TDC.data[k];};
+                if (opt.write.total_energy             != null) etot.ptr(j, 1 + i).* = Ekin + Epot                                                                             ;
 
                 if (opt.write.bloch_vector != null) {
                     bloch.ptr(j, 1 + i * 4 + 0).* = S.at(0); bloch.ptr(j, 1 + i * 4 + 1).* = S.at(1); bloch.ptr(j, 1 + i * 4 + 2).* = S.at(2);
@@ -301,7 +277,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     output.Ekin /= asfloat(T, opt.trajectories);
     output.Epot /= asfloat(T, opt.trajectories);
 
-    for (0..nstate) |i| {
+    for (0..potential.states) |i| {
         if (print) try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i, output.pop.at(i)});
     }
 
@@ -339,6 +315,49 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     return output;
 }
 
+/// Gets the initial state given the state distribution and the trajectory index.
+pub fn extractInitialState(comptime T: type, initial_conditions: inp.ClassicalDynamicsOptions(T).InitialConditions, ntraj: usize, i: usize) u32 {
+    var s: u32 = undefined;
+
+    for (0..initial_conditions.state.len) |j| {
+        if (asfloat(T, i + 1) / asfloat(T, ntraj) <= mth.sum(T, initial_conditions.state[0..j + 1])) {
+            s = @intCast(j); break;
+        }
+    }
+
+    return s;
+}
+
+/// Calculate the bloch vector if given the wavefunction coefficients.
+pub fn calculateBlocVectorFromCoefficients(comptime T: type, S: *Vector(T), C: Vector(std.math.Complex(T))) void {
+    S.ptr(0).* = 2 * (C.at(0).mul(C.at(1).conjugate())).re;
+    S.ptr(1).* = 2 * (C.at(0).mul(C.at(1).conjugate())).im;
+
+    S.ptr(2).* = C.at(1).magnitude() * C.at(1).magnitude() - C.at(0).magnitude() * C.at(0).magnitude();
+}
+
+/// Function to sample initial conditions.
+pub fn sampleInitialConditions(comptime T: type, r: *Vector(T), p: *Vector(T), v: *Vector(T), a: *Vector(T), mass: []const T, initial_conditions: inp.ClassicalDynamicsOptions(T).InitialConditions, rand: std.Random) void {
+    if (initial_conditions.position_mean != null) {for (0..r.rows) |i| r.ptr(i).* = initial_conditions.position_mean.?[i] + initial_conditions.position_std.?[i] * rand.floatNorm(T);}
+    if (initial_conditions.momentum_mean != null) {for (0..p.rows) |i| p.ptr(i).* = initial_conditions.momentum_mean.?[i] + initial_conditions.momentum_std.?[i] * rand.floatNorm(T);}
+
+    for (0..v.rows) |i| v.ptr(i).* = p.at(i) / mass[i];
+
+    a.fill(0);
+}
+
+/// Function to decides what kind of hamiltonian was provided and returns the potential struct.
+pub fn loadPotential(comptime T: type, hamiltonian: inp.ClassicalDynamicsOptions(T).Hamiltonian, initial_conditions: inp.ClassicalDynamicsOptions(T).InitialConditions, allocator: std.mem.Allocator) !pot.Potential(T) {
+    var potential_map = try pot.getPotentialMap(T, allocator); defer potential_map.deinit();
+    
+    if (hamiltonian.name     != null) return                                                                                      potential_map.get(hamiltonian.name.?).?;
+    if (hamiltonian.file     != null) return try pot.readPotential(T, hamiltonian.dims.?, hamiltonian.file.?,                                                  allocator);
+    if (hamiltonian.matrix   != null) return try pot.getPotential(T, hamiltonian.dims.?, hamiltonian.matrix.?,                                                 allocator);
+    if (hamiltonian.abinitio != null) return try pot.initAbinitio(T, initial_conditions.state.len, hamiltonian.abinitio.?, initial_conditions.position_file.?, allocator);
+
+    return error.InvalidHamiltonian;
+}
+
 /// Diagonalize the potential, assign it to the original potential and correct the sign.
 pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), i: usize) !void {
     try cwp.Lapack(T).dsyevd(UA, UC, U.*);
@@ -372,16 +391,16 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
-pub fn calculateForce(comptime T: type, pot: mpt.Potential(T), derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32, abinitio: bool, allocator: std.mem.Allocator) !T {
+pub fn calculateForce(comptime T: type, potential: pot.Potential(T), derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32, abinitio: bool, allocator: std.mem.Allocator) !T {
     if (abinitio) {
         const G = try mat.read(T, "GRADIENT.mat", allocator); defer G.deinit(); return -G.at(s * r.rows + c, 0);
     }
 
-    r.ptr(c).* += 1 * derivative_step; try pot.evaluate(U, r.*, t);
+    r.ptr(c).* += 1 * derivative_step; try potential.evaluate(U, r.*, t);
 
     try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Up = U.at(s, s);
 
-    r.ptr(c).* -= 2 * derivative_step; try pot.evaluate(U, r.*, t);
+    r.ptr(c).* -= 2 * derivative_step; try potential.evaluate(U, r.*, t);
 
     try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*); const Um = U.at(s, s);
 
@@ -420,7 +439,7 @@ pub fn checkErrors(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), alloc
     if (opt.hamiltonian.abinitio == null and opt.time_derivative_coupling != null and  std.mem.eql(u8, opt.time_derivative_coupling.?, "nacv")) return error.IncompatibleTimeDerivativeCoupling;
     if (opt.hamiltonian.abinitio != null and opt.time_derivative_coupling != null and !std.mem.eql(u8, opt.time_derivative_coupling.?, "nacv")) return error.IncompatibleTimeDerivativeCoupling;
 
-    var potential_map = try mpt.getPotentialMap(T, allocator); defer potential_map.deinit();
+    var potential_map = try pot.getPotentialMap(T, allocator); defer potential_map.deinit();
 
     if (opt.hamiltonian.name != null and !potential_map.contains(opt.hamiltonian.name.?)) return error.InvalidHamiltonianName;
 }
@@ -493,7 +512,7 @@ pub fn readNacvFromFile(comptime T: type, NACV: *Matrix(T), path: []const u8, al
 }
 
 /// Calculate the nonadiabatic coupling between two states using Norm Preserving Interpolation.
-pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2O: []Matrix(T), U: *Matrix(T), r: Vector(T), pot: mpt.Potential(T), time_step: T, iter: usize) !void {
+pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2O: []Matrix(T), U: *Matrix(T), r: Vector(T), potential: pot.Potential(T), time_step: T, iter: usize) !void {
     UCS.fill(0); const UC2 = &[_]Matrix(T){UC2O[iter % 2], UC2O[(iter - 1) % 2]};
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
@@ -502,7 +521,7 @@ pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T),
 
     for (0..UCS.rows) |l| if (UCS.at(l, l) == 0) {
 
-        try pot.evaluate(U, r, time_step * asfloat(T, iter)); for (U.data) |*e| e.* += 1e-14; try adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
+        try potential.evaluate(U, r, time_step * asfloat(T, iter)); for (U.data) |*e| e.* += 1e-14; try adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
 
         UCS.fill(0);
 
@@ -637,6 +656,21 @@ pub fn initialBlochVector(comptime T: type, S: *Vector(T), s: u32, rand: std.Ran
     S.ptr(0).* = sin_theta * std.math.cos(phi);
     S.ptr(1).* = sin_theta * std.math.sin(phi);
     S.ptr(2).* = cos_theta;
+}
+
+/// Removes the files generated by ab initio external programs.
+pub fn removeAbinitioOutputFiles() void {
+    std.fs.cwd().deleteFile("geometry.xyz.all") catch {};
+
+    std.fs.cwd().deleteFile("ENERGY.mat"  ) catch {};
+    std.fs.cwd().deleteFile("GRADIENT.mat") catch {};
+    std.fs.cwd().deleteFile("NACV.mat"    ) catch {};
+
+    std.fs.cwd().deleteFile("bagel.out.all") catch {};
+    std.fs.cwd().deleteFile("orca.out.all" ) catch {};
+
+    std.fs.cwd().deleteTree(".bagel") catch {};
+    std.fs.cwd().deleteTree(".orca" ) catch {};
 }
 
 /// Function to resample the Bloch sphere at apecified time points.
@@ -801,16 +835,16 @@ pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
 }
 
 /// Function to propagate the classical coordinates in time on an "s" state.
-pub fn propagate(comptime T: type, pot: mpt.Potential(T), time_step: T, derivative_step: T, mass: []const T, r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), t: T, s: u32, j: usize, abinitio: bool, allocator: std.mem.Allocator) !void {
+pub fn propagate(comptime T: type, potential: pot.Potential(T), time_step: T, derivative_step: T, mass: []const T, r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), t: T, s: u32, j: usize, abinitio: bool, allocator: std.mem.Allocator) !void {
     for (0..r.rows) |i| {
         r.ptr(i).* += (v.at(i) + 0.5 * a.at(i) * time_step) * time_step;
     }
 
-    try pot.evaluate(U, r.*, t); if (!abinitio) try adiabatizePotential(T, U, UA, UC, UC2, j);
+    try potential.evaluate(U, r.*, t); if (!abinitio) try adiabatizePotential(T, U, UA, UC, UC2, j);
 
     for (0..r.rows) |i| {
 
-        const F = try calculateForce(T, pot, derivative_step, U, UA, UC, r, t, i, s, abinitio, allocator);
+        const F = try calculateForce(T, potential, derivative_step, U, UA, UC, r, t, i, s, abinitio, allocator);
 
         const ap = a.at(i);
 

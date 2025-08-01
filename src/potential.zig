@@ -85,7 +85,7 @@ pub fn Potential(comptime T: type) type {
 }
 
 /// Function to read the potential from file.
-pub fn initAbinitio(comptime T: type, states: usize, command: []const []const u8, system: []const u8, allocator: std.mem.Allocator) !?Potential(T) {
+pub fn initAbinitio(comptime T: type, states: usize, command: []const []const u8, system: []const u8, allocator: std.mem.Allocator) !Potential(T) {
     const system_object = try sys.read(T, system, 0, allocator); defer system_object.deinit();
 
     return .{.allocator = allocator, .dims = @as(u32, @intCast(3 * system_object.atoms.rows)), .states = @as(u32, @intCast(states)), .tdep = false, .eval_fn = struct {
@@ -94,7 +94,7 @@ pub fn initAbinitio(comptime T: type, states: usize, command: []const []const u8
 }
 
 /// Function to get the potential struct from the provided hamiltonian.
-pub fn getPotential(comptime T: type, dims: u32, hamiltonian: []const []const []const u8, allocator: std.mem.Allocator) !?Potential(T) {
+pub fn getPotential(comptime T: type, dims: u32, hamiltonian: []const []const []const u8, allocator: std.mem.Allocator) !Potential(T) {
     const expr = try allocator.alloc(cwp.Expression(T), hamiltonian.len * hamiltonian.len); var tdep = false;
 
     for (expr, 0..hamiltonian.len * hamiltonian.len) |*e, i| {
@@ -110,7 +110,7 @@ pub fn getPotential(comptime T: type, dims: u32, hamiltonian: []const []const []
 }
 
 /// Function to read the potential from file.
-pub fn readPotential(comptime T: type, dims: u32, path: []const u8, allocator: std.mem.Allocator) !?Potential(T) {
+pub fn readPotential(comptime T: type, dims: u32, path: []const u8, allocator: std.mem.Allocator) !Potential(T) {
     const V = try mat.read(T, path, allocator);
 
     return .{.allocator = allocator, .dims = dims, .states = @as(u32, @intCast(std.math.sqrt(V.cols - 1))), .tdep = false, .eval_fn = struct {
