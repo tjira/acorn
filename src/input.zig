@@ -290,7 +290,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, cap: ?[]const u8 = null, name: ?[]const u8 = null, file: ?[]const u8 = null
         };
         pub const InitialConditions = struct {
-            position: []const T, momentum: []const T, gamma: T = 2, state: u32, mass: T, adiabatic: bool = false
+            position: []const T, momentum: []const T, gamma: T = 2, state: u32, mass: T, adiabatic: bool = false, excite: ?[]const usize = null
         };
         pub const LogIntervals = struct {
             iteration: u32 = 1

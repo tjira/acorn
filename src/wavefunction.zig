@@ -49,6 +49,16 @@ pub fn Wavefunction(comptime T: type) type {
             }
         }
 
+        /// Excite the wavefunction by swapping the columns corresponding to the given states.
+        pub fn excite(self: *Wavefunction(T), state1: usize, state2: usize) void {
+            if (state1 == state2) return;
+
+            for (0..self.npoint) |i| {
+                std.mem.swap(T, &self.ptr(i, state1).re, &self.ptr(i, state2).re);
+                std.mem.swap(T, &self.ptr(i, state1).im, &self.ptr(i, state2).im);
+            }
+        }
+
         /// Copy the self data to the destination wavefunction.
         pub fn memcpy(self: Wavefunction(T), dest: Wavefunction(T)) void {
             self.data.memcpy(dest.data);
