@@ -149,7 +149,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
             if (print) try std.io.getStdOut().writer().print("\n{s} TIME DYNAMICS #{d}", .{if (i < opt.mode[0]) "IMAGINARY" else "REAL", if (i < opt.mode[0]) i + 1 else i - opt.mode[0] + 1});
 
-            if (i == opt.mode[0]) {
+            if (opt.mode[0] > 0 and i == opt.mode[0]) {
                 try rgridPropagators(T, &R, VA, VC, opt.time_step, false); kgridPropagators(T, &K, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, false);
             }
 
