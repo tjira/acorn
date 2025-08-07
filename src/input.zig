@@ -66,6 +66,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             bloch_vector_mean:             ?[]const u8 = null,
             coefficient:                   ?[]const u8 = null,
             coefficient_mean:              ?[]const u8 = null,
+            hopping_geometries:            ?[]const u8 = null,
             kinetic_energy:                ?[]const u8 = null,
             kinetic_energy_mean:           ?[]const u8 = null,
             momentum:                      ?[]const u8 = null,

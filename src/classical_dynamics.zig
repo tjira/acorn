@@ -46,6 +46,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     var prng_traj = std.Random.DefaultPrng.init(opt.seed); const rand_traj = prng_traj.random();
     var prng_bloc = std.Random.DefaultPrng.init(opt.seed); const rand_bloc = prng_bloc.random();
 
+    var hopgeoms = std.ArrayList(Vector(T)).init(allocator); defer hopgeoms.deinit();
+
     var bloch_mean    = try Matrix(T).init(opt.iterations + 1, 1 + 4                                  , allocator); defer    bloch_mean.deinit();
     var coef_mean     = try Matrix(T).init(opt.iterations + 1, 1 + potential.states                   , allocator); defer     coef_mean.deinit();
     var ekin_mean     = try Matrix(T).init(opt.iterations + 1, 1 + 1                                  , allocator); defer     ekin_mean.deinit();
@@ -207,7 +209,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (mash and j > 1) ns = try spinMapping(T, &S, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
                 if (s != ns and Ekin >= U.at(ns, ns) - U.at(s, s)) {
-                    rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns;
+                    rescaleVelocity(T, &v, s, ns, U, Ekin); s = ns; if (opt.write.hopping_geometries != null) try hopgeoms.append(try r.clone());
                 }
 
                 if (mash and opt.spin_mapping.?.resample != null) try resampleBlochVector(T, opt.spin_mapping.?.resample.?, &S, v, vp, s, rand_bloc);
@@ -311,6 +313,17 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     if (opt.write.potential_matrix         != null)   potmat.deinit();
     if (opt.write.time_derivative_coupling != null)      tdc.deinit();
     if (opt.write.total_energy             != null)     etot.deinit();
+
+    if (opt.write.hopping_geometries) |path| {
+
+        const HG = try Matrix(T).init(hopgeoms.items.len, potential.dims, allocator); defer HG.deinit();
+
+        for (0..hopgeoms.items.len) |i| for (0..potential.dims) |j| {HG.ptr(i, j).* = hopgeoms.items[i].at(j);};
+
+        try HG.write(path);
+    }
+
+    for (hopgeoms.items) |*e| e.deinit();
 
     return output;
 }
