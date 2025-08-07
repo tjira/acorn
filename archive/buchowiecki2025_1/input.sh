@@ -64,7 +64,7 @@ cat << EOF > input_2D.json
         "adiabatic" : true,
         "iterations" : 1,
         "mode" : [0, 1],
-        "time_step" : 5,
+        "time_step" : 1,
         "grid" : {
             "limits" : [[-10, 18], [-10, 10]],
             "points" : 2
@@ -197,7 +197,9 @@ for B in 0; do
 
             sed -i 's/"time_step" : 1/"time_step" : 5/' "input_2D_${A}_b=${B}_E=$I.json"
 
-            sed -i 's/"points" : 2/"points" : 1024/' "input_2D_${A}_b=${B}_E=$I.json"
+            sed -i 's/"limits" : \[\[-10, 18\], \[-10, 10\]\]/"limits" : \[\[-12, 18\], \[-12, 12\]\]/' "input_2D_${A}_b=${B}_E=$I.json"
+
+            sed -i 's/"points" : 2/"points" : 2048/' "input_2D_${A}_b=${B}_E=$I.json"
 
             sed -i 's/"position" : \[15, 0\]/"position" : \[15, '"$B"'\]/' "input_2D_${A}_b=${B}_E=$I.json"
 
@@ -245,7 +247,7 @@ for B in 0; do
 
             sed -i 's/"iterations" : 1/"iterations" : 500/' "input_2D_${A}_b=${B}_E=$I.json"
 
-            sed -i 's/"time_step" : 1/"time_step" : 2.5/' "input_2D_${A}_b=${B}_E=$I.json"
+            sed -i 's/"time_step" : 1/"time_step" : 2/' "input_2D_${A}_b=${B}_E=$I.json"
 
             sed -i 's/"points" : 2/"points" : 4096/' "input_2D_${A}_b=${B}_E=$I.json"
 
@@ -270,7 +272,7 @@ for B in 0; do
 
             sed -i 's/"iterations" : 1/"iterations" : 500/' "input_2D_${A}_b=${B}_E=$I.json"
 
-            sed -i 's/"time_step" : 1/"time_step" : 1/' "input_2D_${A}_b=${B}_E=$I.json"
+            sed -i 's/"time_step" : 1/"time_step" : 0.5/' "input_2D_${A}_b=${B}_E=$I.json"
 
             sed -i 's/"points" : 2/"points" : 8192/' "input_2D_${A}_b=${B}_E=$I.json"
 
