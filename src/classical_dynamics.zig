@@ -404,6 +404,52 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
+pub fn calculateEnergyBias(comptime T: type, potential: pot.Potential(T), derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32, abinitio: bool, allocator: std.mem.Allocator) !T {
+    if (abinitio) {
+
+        const E = try mat.read(T, "ENERGY.mat", allocator); defer E.deinit();
+        const G = try mat.read(T, "GRADIENT.mat", allocator); defer G.deinit();
+
+        const F0 = -G.at(s * r.rows + c, 0);
+        const F1 = -G.at((s + 1) * r.rows + c, 0);
+
+        const E0 = E.at(s, 0);
+        const E1 = E.at(s + 1, 0);
+
+        return 10 * (E1 - E0) * (F1 - F0);
+    }
+
+    try potential.evaluate(U, r.*, t); try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*);
+
+    const E0 = U.at(s, s);
+    const E1 = U.at(s + 1, s + 1);
+
+    r.ptr(c).* += 1 * derivative_step; try potential.evaluate(U, r.*, t);
+
+    try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*);
+
+    const Up0 = U.at(s, s);
+    const Up1 = U.at(s + 1, s + 1);
+
+    r.ptr(c).* -= 2 * derivative_step; try potential.evaluate(U, r.*, t);
+
+    try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*);
+
+    const Um0 = U.at(s, s);
+    const Um1 = U.at(s + 1, s + 1);
+
+    r.ptr(c).* += derivative_step;
+
+    const F0 = -0.5 * (Up0 - Um0) / derivative_step;
+    const F1 = -0.5 * (Up1 - Um1) / derivative_step;
+
+    const res = 1000 * (E1 - E0) * (F1 - F0);
+
+    return res;
+    // return -0.5 * r.at(c);
+}
+
+/// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
 pub fn calculateForce(comptime T: type, potential: pot.Potential(T), derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32, abinitio: bool, allocator: std.mem.Allocator) !T {
     if (abinitio) {
         const G = try mat.read(T, "GRADIENT.mat", allocator); defer G.deinit(); return -G.at(s * r.rows + c, 0);
@@ -858,6 +904,8 @@ pub fn propagate(comptime T: type, potential: pot.Potential(T), time_step: T, de
     for (0..r.rows) |i| {
 
         const F = try calculateForce(T, potential, derivative_step, U, UA, UC, r, t, i, s, abinitio, allocator);
+
+        // F += try calculateEnergyBias(T, potential, derivative_step, U, UA, UC, r, t, i, s, abinitio, allocator);
 
         const ap = a.at(i);
 
