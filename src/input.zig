@@ -31,6 +31,15 @@ pub fn AtomicIntegralOptions(comptime T: type) type {
 /// The classical dynamics options
 pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
+        pub const Bias = struct {
+            pub const EnergyDifference = struct {
+                states: ?[2]usize = null,
+                difference: T = 0,
+                force_constant: T = 2
+            };
+
+            energy_difference: ?EnergyDifference = null,
+        };
         pub const InitialConditions = struct {
             position_file: ?[]const u8 = null,
             position_mean: ?[]const T  = null,
@@ -92,7 +101,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         time_step: T,
         trajectories: u32,
 
-        hamiltonian: Hamiltonian, fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
+        hamiltonian: Hamiltonian, bias: ?Bias = null, fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
 
         initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, write: Write = .{},
     };

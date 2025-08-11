@@ -187,7 +187,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (j == 0) {
                     try potential.evaluate(&U, r, time); if (!abinitio) try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
                 } else {
-                    try propagate(T, potential, opt.time_step, opt.derivative_step, mass, &r, &v, &a, &U, &UA, &UC, &UC2, time, s, j, abinitio, allocator);
+                    try propagate(T, potential, opt.bias, opt.time_step, opt.derivative_step, mass, &r, &v, &a, &U, &UA, &UC, &UC2, time, s, j, abinitio, allocator);
                 }
 
                 U.memcpy(U3[j % 3]); S3[j % 3] = s;
@@ -404,49 +404,51 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
-pub fn calculateEnergyBias(comptime T: type, potential: pot.Potential(T), derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32, abinitio: bool, allocator: std.mem.Allocator) !T {
+pub fn calculateEnergyBias(comptime T: type, potential: pot.Potential(T), bias: inp.ClassicalDynamicsOptions(T).Bias, derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, abinitio: bool, allocator: std.mem.Allocator) !T {
+    const s0 = bias.energy_difference.?.states.?[0];
+    const s1 = bias.energy_difference.?.states.?[1];
+
+    const dE = bias.energy_difference.?.difference;
+
     if (abinitio) {
 
-        const E = try mat.read(T, "ENERGY.mat", allocator); defer E.deinit();
+        const E = try mat.read(T, "ENERGY.mat",   allocator); defer E.deinit();
         const G = try mat.read(T, "GRADIENT.mat", allocator); defer G.deinit();
 
-        const F0 = -G.at(s * r.rows + c, 0);
-        const F1 = -G.at((s + 1) * r.rows + c, 0);
+        const F0 = -G.at(s0 * r.rows + c, 0);
+        const F1 = -G.at(s1 * r.rows + c, 0);
 
-        const E0 = E.at(s, 0);
-        const E1 = E.at(s + 1, 0);
+        const E0 = E.at(s0, 0);
+        const E1 = E.at(s1, 0);
 
-        return 10 * (E1 - E0) * (F1 - F0);
+        return bias.energy_difference.?.force_constant * (E1 - E0) * (F1 - F0);
     }
 
     try potential.evaluate(U, r.*, t); try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*);
 
-    const E0 = U.at(s, s);
-    const E1 = U.at(s + 1, s + 1);
+    const E0 = U.at(s0, s0);
+    const E1 = U.at(s1, s1);
 
     r.ptr(c).* += 1 * derivative_step; try potential.evaluate(U, r.*, t);
 
     try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*);
 
-    const Up0 = U.at(s, s);
-    const Up1 = U.at(s + 1, s + 1);
+    const Up0 = U.at(s0, s0);
+    const Up1 = U.at(s1, s1);
 
     r.ptr(c).* -= 2 * derivative_step; try potential.evaluate(U, r.*, t);
 
     try cwp.Lapack(T).dsyevd(UA, UC, U.*); UA.memcpy(U.*);
 
-    const Um0 = U.at(s, s);
-    const Um1 = U.at(s + 1, s + 1);
+    const Um0 = U.at(s0, s0);
+    const Um1 = U.at(s1, s1);
 
     r.ptr(c).* += derivative_step;
 
     const F0 = -0.5 * (Up0 - Um0) / derivative_step;
     const F1 = -0.5 * (Up1 - Um1) / derivative_step;
 
-    const res = 1000 * (E1 - E0) * (F1 - F0);
-
-    return res;
-    // return -0.5 * r.at(c);
+    return bias.energy_difference.?.force_constant * (E1 - E0 - dE) * (F1 - F0);
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
@@ -497,6 +499,16 @@ pub fn checkErrors(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), alloc
 
     if (opt.hamiltonian.abinitio == null and opt.time_derivative_coupling != null and  std.mem.eql(u8, opt.time_derivative_coupling.?, "nacv")) return error.IncompatibleTimeDerivativeCoupling;
     if (opt.hamiltonian.abinitio != null and opt.time_derivative_coupling != null and !std.mem.eql(u8, opt.time_derivative_coupling.?, "nacv")) return error.IncompatibleTimeDerivativeCoupling;
+
+    if (opt.bias != null) {
+        if (opt.bias.?.energy_difference != null) {
+
+            if (opt.bias.?.energy_difference.?.states != null) {
+                if (opt.bias.?.energy_difference.?.states.?.len != 2) return error.YouHaveToSpecifyTwoStatesForEnergyDifferenceBias;
+            } else return error.YouHaveToSpecifyStatesForEnergyDifferenceBias;
+
+        } else return error.YouHaveToSpecifyBiasMethod;
+    }
 
     var potential_map = try pot.getPotentialMap(T, allocator); defer potential_map.deinit();
 
@@ -894,7 +906,7 @@ pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
 }
 
 /// Function to propagate the classical coordinates in time on an "s" state.
-pub fn propagate(comptime T: type, potential: pot.Potential(T), time_step: T, derivative_step: T, mass: []const T, r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), t: T, s: u32, j: usize, abinitio: bool, allocator: std.mem.Allocator) !void {
+pub fn propagate(comptime T: type, potential: pot.Potential(T), bias: ?inp.ClassicalDynamicsOptions(T).Bias, time_step: T, derivative_step: T, mass: []const T, r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), t: T, s: u32, j: usize, abinitio: bool, allocator: std.mem.Allocator) !void {
     for (0..r.rows) |i| {
         r.ptr(i).* += (v.at(i) + 0.5 * a.at(i) * time_step) * time_step;
     }
@@ -903,9 +915,9 @@ pub fn propagate(comptime T: type, potential: pot.Potential(T), time_step: T, de
 
     for (0..r.rows) |i| {
 
-        const F = try calculateForce(T, potential, derivative_step, U, UA, UC, r, t, i, s, abinitio, allocator);
+        var F = try calculateForce(T, potential, derivative_step, U, UA, UC, r, t, i, s, abinitio, allocator);
 
-        // F += try calculateEnergyBias(T, potential, derivative_step, U, UA, UC, r, t, i, s, abinitio, allocator);
+        if (bias != null) F += try calculateEnergyBias(T, potential, bias.?, derivative_step, U, UA, UC, r, t, i, abinitio, allocator);
 
         const ap = a.at(i);
 
