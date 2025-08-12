@@ -15,11 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download and Compile Dependencies
-        run: ./script/library.sh
+      - name: Compile the Project
+        run: make
 
       - name: Run Tests
-        run: ./zig-bin/zig build --summary all test
+        run: make test
 
       - name: Upload Coverage Reports
         uses: codecov/codecov-action@v4.0.1

@@ -65,7 +65,11 @@ pub fn build(builder: *std.Build) !void {
         }
     }
 
-    var script_step = builder.step("script", "Generate executable scripts"); script_step.makeFn = script; script_step.dependOn(builder.getInstallStep());
+    std.fs.cwd().makeDir("zig-out") catch {};
+
+    for (targets) |target| if (target.os_tag == .linux) {
+        try linuxScripts(try target.zigTriple(std.heap.page_allocator), std.heap.page_allocator);
+    };
 }
 
 pub fn benchmarkExecutable(builder: *std.Build, main_executable: *std.Build.Step.Compile, target: std.Target.Query, debug: bool) !void {
@@ -93,16 +97,10 @@ pub fn benchmarkExecutable(builder: *std.Build, main_executable: *std.Build.Step
     }
 }
 
-pub fn script(self: *std.Build.Step, options: std.Build.Step.MakeOptions) !void {
-    _ = self; _ = options;
-
-    for (targets) |target| if (target.os_tag == .linux) {
-        try linuxScripts(std.heap.page_allocator, try target.zigTriple(std.heap.page_allocator));
-    };
-}
-
-pub fn linuxScripts(allocator: std.mem.Allocator, bindir: []const u8) !void {
+pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
     const path = try std.mem.concat(allocator, u8, &[_][]const u8{"zig-out/", bindir, "/"});
+
+    std.fs.cwd().makeDir(path) catch {};
 
     const file_fibonacci = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "fibonacci"}), .{.mode=0o755});
     const file_hf        = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "hf"       }), .{.mode=0o755});

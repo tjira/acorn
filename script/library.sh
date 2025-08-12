@@ -6,13 +6,6 @@ export C_INCLUDE_PATH="$C_INCLUDE_PATH:$PWD/llvm/install/include"; export CMAKE_
 
 for TARGET in "${TARGETS[@]}"; do
 
-    rm -rf zig-bin && mkdir zig-bin && ZIG_VERSION="0.14.1" && ZLS_VERSION="0.14.0"
-
-    wget -q -O zig.tar.xz https://ziglang.org/download/$ZIG_VERSION/zig-x86_64-linux-$ZIG_VERSION.tar.xz
-    wget -q -O zls.tar.xz https://github.com/zigtools/zls/releases/download/$ZLS_VERSION/zls-x86_64-linux.tar.xz
-
-    tar -xf zig.tar.xz && mv zig-x86_64-linux*/lib zig-x86_64-linux*/zig zig-bin && tar -xf zls.tar.xz -C zig-bin && rm -rf zig-x86_64-linux* *.tar.xz
-
     echo "zig cc --target=$TARGET-gnu \"\$@\"" > zigcc && chmod +x zigcc && echo "zig c++ --target=$TARGET-gnu \"\$@\"" > zigcpp && chmod +x zigcpp
 
     wget -q -O boost.tar.gz    https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-b2-nodocs.tar.gz

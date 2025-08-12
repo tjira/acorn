@@ -15,11 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download and Compile Dependencies
-        run: ./script/library.sh
-
-      - name: Build Acorn
-        run: ./zig-bin/zig build --summary all
+      - name: Compile the Project
+        run: make
 
       - name: Rename and Move Binaries
         run: |

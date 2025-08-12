@@ -23,11 +23,9 @@ const extractGeometryFromMovie = @import("helper.zig").extractGeometryFromMovie;
 pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.ClassicalDynamicsOutput(T) {
     try checkErrors(T, opt, allocator);
 
-    const abinitio = if (opt.hamiltonian.abinitio != null) true else false;
-
     var potential = try loadPotential(T, opt.hamiltonian, opt.initial_conditions, allocator); defer potential.deinit();
 
-    var mass = try allocator.alloc(T, potential.dims); defer allocator.free(mass); if (!abinitio) @memcpy(mass, opt.initial_conditions.mass.?);
+    var mass = try allocator.alloc(T, potential.dims); defer allocator.free(mass); if (potential.mode != .Abinitio) @memcpy(mass, opt.initial_conditions.mass.?);
 
     if (opt.initial_conditions.position_mean != null and opt.initial_conditions.position_mean.?.len != potential.dims) return error.InvalidMeanPosition;
     if (opt.initial_conditions.position_std  != null and opt.initial_conditions.position_std.?.len  != potential.dims) return error.InvalidStdPosition ;
@@ -124,9 +122,6 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
     }
 
     {
-        var T1 = try Matrix(T).init(potential.states, potential.states, allocator); defer T1.deinit();
-        var T2 = try Matrix(T).init(potential.states, potential.states, allocator); defer T2.deinit();
-
         var r = try Vector(T).init(potential.dims, allocator); defer r.deinit();
         var p = try Vector(T).init(potential.dims, allocator); defer p.deinit();
         var v = try Vector(T).init(potential.dims, allocator); defer v.deinit();
@@ -137,12 +132,12 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
         var vp = try Vector(T).init(potential.dims, allocator); defer vp.deinit();
         var ap = try Vector(T).init(potential.dims, allocator); defer ap.deinit();
 
-        var U    = try Matrix(T).init(potential.states,                                potential.states, allocator); defer    U.deinit();    U.fill(0);
-        var UA   = try Matrix(T).init(potential.states,                                potential.states, allocator); defer   UA.deinit();   UA.fill(0);
-        var UC   = try Matrix(T).init(potential.states,                                potential.states, allocator); defer   UC.deinit();   UC.fill(0);
-        var UCS  = try Matrix(T).init(potential.states,                                potential.states, allocator); defer  UCS.deinit();  UCS.fill(0);
-        var TDC  = try Matrix(T).init(potential.states,                                potential.states, allocator); defer  TDC.deinit();  TDC.fill(0);
-        var NACV = try Matrix(T).init(potential.dims * (potential.states * potential.states - potential.states) / 2, 1,      allocator); defer NACV.deinit(); NACV.fill(0);
+        var U    = try Matrix(T).init(potential.states, potential.states,                                               allocator); defer    U.deinit();    U.fill(0);
+        var UA   = try Matrix(T).init(potential.states, potential.states,                                               allocator); defer   UA.deinit();   UA.fill(0);
+        var UC   = try Matrix(T).init(potential.states, potential.states,                                               allocator); defer   UC.deinit();   UC.fill(0);
+        var UCS  = try Matrix(T).init(potential.states, potential.states,                                               allocator); defer  UCS.deinit();  UCS.fill(0);
+        var TDC  = try Matrix(T).init(potential.states, potential.states,                                               allocator); defer  TDC.deinit();  TDC.fill(0);
+        var NACV = try Matrix(T).init(potential.dims * (potential.states * potential.states - potential.states) / 2, 1, allocator); defer NACV.deinit(); NACV.fill(0);
 
         var P = try Vector(T                  ).init(potential.states, allocator); defer P.deinit();
         var C = try Vector(std.math.Complex(T)).init(potential.states, allocator); defer C.deinit();
@@ -166,13 +161,13 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
         for (0..opt.trajectories) |i| {
 
-            if (abinitio) removeAbinitioOutputFiles();
+            if (potential.mode == .Abinitio) removeAbinitioOutputFiles();
 
             var s = extractInitialState(T, opt.initial_conditions, opt.trajectories, i);
 
-            if (!abinitio) sampleInitialConditions(T, &r, &p, &v, &a, mass, opt.initial_conditions, rand_traj);
+            if (potential.mode != .Abinitio) sampleInitialConditions(T, &r, &p, &v, &a, mass, opt.initial_conditions, rand_traj);
 
-            if (abinitio) try initAbinitio(T, &r, &v, &p, &mass, opt.initial_conditions.position_file, opt.initial_conditions.velocity_file, i, allocator);
+            if (potential.mode == .Abinitio) try initAbinitio(T, &r, &v, &p, &mass, opt.initial_conditions.position_file, opt.initial_conditions.velocity_file, i, allocator);
 
             if (fssh or lzsh) {C.fill(std.math.Complex(T).init(0, 0)); C.ptr(s).* = std.math.Complex(T).init(1, 0);}
             if (mash        ) {try initialBlochVector(T, &S, s, rand_bloc);                                        }
@@ -185,26 +180,30 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 const time = opt.time_step * asfloat(T, j); r.memcpy(rp); p.memcpy(pp); v.memcpy(vp); a.memcpy(ap);
 
                 if (j == 0) {
-                    try potential.evaluate(&U, r, time); if (!abinitio) try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
+                    try potential.evaluate(&U, r, time); if (potential.mode != .Abinitio) try adiabatizePotential(T, &U, &UA, &UC, &UC2, j);
                 } else {
-                    try propagate(T, potential, opt.bias, opt.time_step, opt.derivative_step, mass, &r, &v, &a, &U, &UA, &UC, &UC2, time, s, j, abinitio, allocator);
+                    try propagate(T, potential, opt.bias, opt.time_step, opt.derivative_step, mass, &r, &v, &a, &U, &UA, &UC, &UC2, time, s, j, allocator);
                 }
 
                 U.memcpy(U3[j % 3]); S3[j % 3] = s;
 
                 Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s); 
 
-                if (abinitio and tdc_nacv) {
+                if (potential.mode == .Abinitio and tdc_nacv) {
                     try readNacvFromFile(T, &NACV, "NACV.mat", allocator); NACV.memcpy(NACV2[j % 2]);
                 }
 
-                if (tdc_hst    and j > 1)     derivativeCouplingHst(   T, &TDC, &UCS, &[_]Matrix(T){UC2[j % 2], UC2[(j - 1) % 2]},                         opt.time_step   );
-                if (tdc_kappa  and j > 1)     derivativeCouplingKappa( T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]},       opt.time_step   );
-                if (tdc_lambda and j > 1)     derivativeCouplingLambda(T, &TDC,       &[_]Matrix(T){U3[j % 3],  U3[(j - 1) % 3],   U3[(j - 2) % 3]}, v, a, opt.time_step   );
-                if (tdc_npi    and j > 1) try derivativeCouplingNpi(   T, &TDC, &UCS, &UC2, &U, r, potential,                                              opt.time_step, j);
-                if (tdc_nacv   and j > 1)     derivativeCouplingNacv(  T, &TDC, &[_]Matrix(T){NACV2[j % 2], NACV2[(j - 1) % 2]}, v, 0                                      );
+                const U3_sorted    = &[_]Matrix(T){   U3[j % 3],    U3[(j - 1) % 3], U3[(j - 2) % 3]};
+                const UC2_sorted   = &[_]Matrix(T){  UC2[j % 2],   UC2[(j - 1) % 2]                 };
+                const NACV2_sorted = &[_]Matrix(T){NACV2[j % 2], NACV2[(j - 1) % 2]                 };
 
-                if (lzsh and j > 1) ns = try landauZener(T, &C, &P, opt.landau_zener.?, &[_]Matrix(T){U3[j % 3], U3[(j - 1) % 3], U3[(j - 2) % 3]}, s, opt.time_step, rand_jump, &I, &KC1);
+                if (tdc_hst    and j > 1)     derivativeCouplingHst(   T, &TDC, &UCS, UC2_sorted,      opt.time_step);
+                if (tdc_kappa  and j > 1)     derivativeCouplingKappa( T, &TDC,       U3_sorted,       opt.time_step);
+                if (tdc_lambda and j > 1)     derivativeCouplingLambda(T, &TDC,       U3_sorted, v, a, opt.time_step);
+                if (tdc_npi    and j > 1) try derivativeCouplingNpi(   T, &TDC, &UCS, UC2_sorted,      opt.time_step);
+                if (tdc_nacv   and j > 1)     derivativeCouplingNacv(  T, &TDC, NACV2_sorted, v,                    );
+
+                if (lzsh and j > 1) ns = try landauZener(T, &C, &P, opt.landau_zener.?, U3_sorted, s, opt.time_step, rand_jump, &I, &KC1);
                 if (fssh and j > 1) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
                 if (mash and j > 1) ns = try spinMapping(T, &S, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
@@ -248,6 +247,12 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j % opt.log_intervals.iteration == 0 or S3[j % 3] != S3[(j - 1) % 3])) {
                     try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, C, S, mass, fssh, mash);
+                }
+
+                if (potential.mode == .Abinitio) {
+                    std.fs.cwd().deleteFile("ENERGY.mat"  ) catch {};
+                    std.fs.cwd().deleteFile("GRADIENT.mat") catch {};
+                    std.fs.cwd().deleteFile("NACV.mat"    ) catch {};
                 }
             }
         }
@@ -385,6 +390,13 @@ pub fn adiabatizePotential(comptime T: type, U: *Matrix(T), UA: *Matrix(T), UC: 
             overlap += UC2[i % 2].at(l, k) * UC2[(i - 1) % 2].at(l, k);
         }
 
+        if (overlap == 0) {
+            
+            for (U.data) |*e| e.* += 1e-14;
+
+            return adiabatizePotential(T, U, UA, UC, UC2, i);
+        }
+
         if (overlap < 0) for (0..UC.rows) |l| {
             UC2[i % 2].ptr(l, k).* *= -1;
         };
@@ -404,13 +416,13 @@ pub fn assignOutput(comptime T: type, output: *out.ClassicalDynamicsOutput(T), r
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
-pub fn calculateEnergyBias(comptime T: type, potential: pot.Potential(T), bias: inp.ClassicalDynamicsOptions(T).Bias, derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, abinitio: bool, allocator: std.mem.Allocator) !T {
+pub fn calculateEnergyBias(comptime T: type, potential: pot.Potential(T), bias: inp.ClassicalDynamicsOptions(T).Bias, derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, allocator: std.mem.Allocator) !T {
     const s0 = bias.energy_difference.?.states.?[0];
     const s1 = bias.energy_difference.?.states.?[1];
 
     const dE = bias.energy_difference.?.difference;
 
-    if (abinitio) {
+    if (potential.command != null) {
 
         const E = try mat.read(T, "ENERGY.mat",   allocator); defer E.deinit();
         const G = try mat.read(T, "GRADIENT.mat", allocator); defer G.deinit();
@@ -452,8 +464,8 @@ pub fn calculateEnergyBias(comptime T: type, potential: pot.Potential(T), bias: 
 }
 
 /// Calculate force acting on a specific coordinate "c" multiplied by mass as a negative derivative of the potential.
-pub fn calculateForce(comptime T: type, potential: pot.Potential(T), derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32, abinitio: bool, allocator: std.mem.Allocator) !T {
-    if (abinitio) {
+pub fn calculateForce(comptime T: type, potential: pot.Potential(T), derivative_step: T, U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), r: *Vector(T), t: T, c: usize, s: u32, allocator: std.mem.Allocator) !T {
+    if (potential.mode == .Abinitio) {
         const G = try mat.read(T, "GRADIENT.mat", allocator); defer G.deinit(); return -G.at(s * r.rows + c, 0);
     }
 
@@ -559,16 +571,13 @@ pub fn derivativeCouplingLambda(comptime T: type, TDC: *Matrix(T), U3: []const M
 }
 
 /// Calculate the time derivative coupling as a dot product between the velocity and the nonadiabatic coupling vector. Only available for ab initio potentials.
-pub fn derivativeCouplingNacv(comptime T: type, TDC: *Matrix(T), NACV2: []const Matrix(T), v: Vector(T), step: T) void {
+pub fn derivativeCouplingNacv(comptime T: type, TDC: *Matrix(T), NACV2: []const Matrix(T), v: Vector(T)) void {
     TDC.fill(0); var l: usize = 0;
 
     for (0..TDC.rows) |i| for (i + 1..TDC.cols) |j| {
 
         for (0..v.rows) |k| {
-
-            const NACV = NACV2[1].at(l, 0) + (NACV2[0].at(l, 0) - NACV2[1].at(l, 0)) * step;
-
-            TDC.ptr(i, j).* += v.at(k) * NACV; l += 1;
+            TDC.ptr(i, j).* += v.at(k) * NACV2[1].at(l, 0); l += 1;
         }
 
         TDC.ptr(j, i).* = -TDC.at(i, j);
@@ -583,24 +592,11 @@ pub fn readNacvFromFile(comptime T: type, NACV: *Matrix(T), path: []const u8, al
 }
 
 /// Calculate the nonadiabatic coupling between two states using Norm Preserving Interpolation.
-pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2O: []Matrix(T), U: *Matrix(T), r: Vector(T), potential: pot.Potential(T), time_step: T, iter: usize) !void {
-    UCS.fill(0); const UC2 = &[_]Matrix(T){UC2O[iter % 2], UC2O[(iter - 1) % 2]};
+pub fn derivativeCouplingNpi(comptime T: type, TDC: *Matrix(T), UCS: *Matrix(T), UC2: []const Matrix(T), time_step: T) !void {
+    UCS.fill(0);
 
     for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
         UCS.ptr(i, j).* += UC2[1].at(k, i) * UC2[0].at(k, j);
-    };
-
-    for (0..UCS.rows) |l| if (UCS.at(l, l) == 0) {
-
-        try potential.evaluate(U, r, time_step * asfloat(T, iter)); for (U.data) |*e| e.* += 1e-14; try adiabatizePotential(T, U, TDC, UCS, UC2O, iter);
-
-        UCS.fill(0);
-
-        for (0..UCS.rows) |i| for (0..UCS.cols) |j| for (0..UCS.rows) |k| {
-            UCS.ptr(i, j).* += UC2[1].at(k, i) * UC2[0].at(k, j);
-        };
-
-        break;
     };
 
     cwp.Eigen(T).logm(TDC, UCS.*); mat.divs(T, TDC, TDC.*, time_step);
@@ -697,6 +693,8 @@ pub fn initAbinitio(comptime T: type, r: *Vector(T), v: *Vector(T), p: *Vector(T
 
         @memcpy(v.data, system.coords.data);
 
+        try std.fs.cwd().deleteFile(velocity_geometry);
+
         for (v.data) |*e| e.* /= A2AU;
     }
 
@@ -707,6 +705,8 @@ pub fn initAbinitio(comptime T: type, r: *Vector(T), v: *Vector(T), p: *Vector(T
     const system = try sys.read(T, position_geometry, 0, allocator); defer system.deinit();
 
     @memcpy(r.data, system.coords.data);
+
+    try std.fs.cwd().deleteFile(position_geometry);
 
     for (0..system.atoms.rows) |j| for (0..3) |k| {
         mass.*[3 * j + k] = AN2M[@as(usize, @intFromFloat(system.atoms.at(j))) - 1] * 1822.888486;
@@ -906,18 +906,18 @@ pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
 }
 
 /// Function to propagate the classical coordinates in time on an "s" state.
-pub fn propagate(comptime T: type, potential: pot.Potential(T), bias: ?inp.ClassicalDynamicsOptions(T).Bias, time_step: T, derivative_step: T, mass: []const T, r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), t: T, s: u32, j: usize, abinitio: bool, allocator: std.mem.Allocator) !void {
+pub fn propagate(comptime T: type, potential: pot.Potential(T), bias: ?inp.ClassicalDynamicsOptions(T).Bias, time_step: T, derivative_step: T, mass: []const T, r: *Vector(T), v: *Vector(T), a: *Vector(T), U: *Matrix(T), UA: *Matrix(T), UC: *Matrix(T), UC2: []Matrix(T), t: T, s: u32, j: usize, allocator: std.mem.Allocator) !void {
     for (0..r.rows) |i| {
         r.ptr(i).* += (v.at(i) + 0.5 * a.at(i) * time_step) * time_step;
     }
 
-    try potential.evaluate(U, r.*, t); if (!abinitio) try adiabatizePotential(T, U, UA, UC, UC2, j);
+    try potential.evaluate(U, r.*, t); if (potential.mode != .Abinitio) try adiabatizePotential(T, U, UA, UC, UC2, j);
 
     for (0..r.rows) |i| {
 
-        var F = try calculateForce(T, potential, derivative_step, U, UA, UC, r, t, i, s, abinitio, allocator);
+        var F = try calculateForce(T, potential, derivative_step, U, UA, UC, r, t, i, s, allocator);
 
-        if (bias != null) F += try calculateEnergyBias(T, potential, bias.?, derivative_step, U, UA, UC, r, t, i, abinitio, allocator);
+        if (bias != null) F += try calculateEnergyBias(T, potential, bias.?, derivative_step, U, UA, UC, r, t, i, allocator);
 
         const ap = a.at(i);
 
