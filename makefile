@@ -10,24 +10,26 @@ all: acorn benchmark
 acorn: library
 > ./zig-bin/zig build
 
-benchmark: library
-> ./zig-bin/zig build -DBENCHMARK
-
-run: acorn
-> ./zig-bin/zig build run
-
 test: library
 > ./zig-bin/zig build test
 
 # DOCUMENTATION TARGETS ================================================================================================================================================================================
 
-serve: compiler
-> ./zig-bin/zig build-obj -Iinclude -Iexternal-x86_64-linux/include -lc -femit-docs=docs/code src/main.zig && rm main.o* && python -m http.server 8000 -d docs/code
+docs: library
+> ./zig-bin/zig build-obj -Iinclude -Iexternal-x86_64-linux/include -lc -femit-docs=code src/main.zig && rm *.o && cp -r education/python docs && ./script/docstopdf.sh && cd docs && bundler install
+
+serve: docs
+> cd docs && bundle exec jekyll serve
 
 # LIBRARY TARGETS ======================================================================================================================================================================================
 
 library: compiler
-> [ ! -d external-x86_64-linux ] && ./script/library.sh || true
+> [ ! -d external-x86_64-linux ] && wget -q -O boost.tar.gz    https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-b2-nodocs.tar.gz || true
+> [ ! -d external-x86_64-linux ] && wget -q -O eigen.tar.gz                              https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz || true
+> [ ! -d external-x86_64-linux ] && wget -q -O libint.tar.gz                    https://github.com/evaleev/libint/releases/download/v2.11.1/libint-2.11.1.tgz || true
+> [ ! -d external-x86_64-linux ] && wget -q -O llvm.tar.gz                       https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-20.1.8.tar.gz || true
+> [ ! -d external-x86_64-linux ] && wget -q -O openblas.tar.gz       https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.30/OpenBLAS-0.3.30.tar.gz || true
+> [ ! -d external-x86_64-linux ] && ./script/library.sh && rm *.tar.gz || true
 
 # COMPILER TARGETS =====================================================================================================================================================================================
 
