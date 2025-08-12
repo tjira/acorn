@@ -16,7 +16,7 @@ test: library
 # DOCUMENTATION TARGETS ================================================================================================================================================================================
 
 docs: library
-> ./zig-bin/zig build-obj -Iinclude -Iexternal-x86_64-linux/include -lc -femit-docs=code src/main.zig && rm *.o && cp -r education/python docs && ./script/docstopdf.sh && cd docs && bundler install
+> ./zig-bin/zig build-obj -Iinclude -Iexternal-x86_64-linux/include -lc -femit-docs=docs/code src/main.zig && rm *.o && cp -r education/python docs && ./script/docstopdf.sh && cd docs && bundler install
 
 serve: docs
 > cd docs && bundle exec jekyll serve
