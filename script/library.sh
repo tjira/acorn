@@ -12,6 +12,10 @@ CMAKE_GENERAL=(
     -DCMAKE_INSTALL_PREFIX="../install"
 )
 
+CMAKE_LIBINT=(
+    -DLIBINT_USE_BUNDLED_BOOST=True
+)
+
 CMAKE_OMP=(
     -DLIBOMP_ENABLE_SHARED=False
     -DLIBOMP_OMPD_SUPPORT=False
@@ -30,15 +34,15 @@ for TARGET in "${TARGETS[@]}"; do
     tar -xf      external-$TARGET/llvm.tar.xz && mv llvm*         llvm
     tar -xzf external-$TARGET/openblas.tar.gz && mv OpenBLAS* openblas
 
-    cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}" ../openmp && cmake_install && cd ../..
-    cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                   ..        && cmake_install && cd ../..
-    cd libint && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                   ..        && cmake_install && cd ../..
+    cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}"    ../openmp && cmake_install && cd ../..
+    cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                      ..        && cmake_install && cd ../..
+    cd libint && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_LIBINT[@]}" ..        && cmake_install && cd ../..
 
     cd openblas && make CC="$PWD/../zigcc" DYNAMIC_ARCH=1 HOSTCC=gcc NO_SHARED=1 NOFORTRAN=1 NUM_THREADS=128 USE_OPENMP=1 -j $CORES libs shared && make NO_SHARED=1 PREFIX="$PWD/install" install && cd ..
 
     cp -r libint/install/* llvm/install/* openblas/install/* external-$TARGET && cp -r eigen/install/include/eigen3/Eigen eigen/install/include/eigen3/unsupported external-$TARGET/include
 
-    tar -xzf libint/external/boost.tar.gz -C external-$TARGET/include && wget -q -O external-$TARGET/include/exprtk.hpp https://raw.githubusercontent.com/ArashPartow/exprtk/refs/heads/master/exprtk.hpp
+    wget -q -O external-$TARGET/include/exprtk.hpp https://raw.githubusercontent.com/ArashPartow/exprtk/refs/heads/master/exprtk.hpp
 
     rm -rf eigen libint llvm openblas zigcc zigcpp && cd external-$TARGET && rm -rf bin share lib/*archer* lib/*cblas* lib/*la lib/cmake lib/pkgconfig && cd ..
 
