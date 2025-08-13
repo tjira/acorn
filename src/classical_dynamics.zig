@@ -5,6 +5,7 @@ const std = @import("std"); const cwp = @import("cwrapper.zig");
 const A2AU = @import("constant.zig").A2AU;
 const AN2M = @import("constant.zig").AN2M;
 
+const cnt = @import("constant.zig" );
 const inp = @import("input.zig"    );
 const mat = @import("matrix.zig"   );
 const pot = @import("potential.zig");
@@ -175,6 +176,8 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
             const Wcp: T = if (mash) 2 else 1; const Wpp: T = if (mash) 2 * @abs(S.at(2)) else 1;
             S.memcpy(S0); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
+            var Tkin: T = 0; const f: T = asfloat(T, potential.dims);
+
             for (0..opt.iterations + 1) |j| {
 
                 const time = opt.time_step * asfloat(T, j); r.memcpy(rp); p.memcpy(pp); v.memcpy(vp); a.memcpy(ap);
@@ -187,7 +190,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
                 U.memcpy(U3[j % 3]); S3[j % 3] = s;
 
-                Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s); 
+                Ekin = 0; for (0..v.rows) |k| Ekin += 0.5 * mass[k] * v.at(k) * v.at(k); Epot = U.at(s, s); Tkin = 2 * Ekin / (cnt.kB / cnt.Eh * f);
 
                 if (potential.mode == .Abinitio and tdc_nacv) {
                     try readNacvFromFile(T, &NACV, "NACV.mat", allocator); NACV.memcpy(NACV2[j % 2]);
@@ -246,7 +249,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                 if (j == opt.iterations) assignOutput(T, &output, r, v, s, Ekin, Epot, mass);
 
                 if (print and (i == 0 or (i + 1) % opt.log_intervals.trajectory == 0) and (j % opt.log_intervals.iteration == 0 or S3[j % 3] != S3[(j - 1) % 3])) {
-                    try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, s, r, v, C, S, mass, fssh, mash);
+                    try printIteration(T, @intCast(i), @intCast(j), Ekin, Epot, Ekin + Epot, Tkin, s, r, v, C, S, mass, fssh, mash);
                 }
 
                 if (potential.mode == .Abinitio) {
@@ -857,8 +860,8 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
 }
 
 /// Function to print the results of a single iteration.
-pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(std.math.Complex(T)), S: Vector(T), mass: []const T, fssh: bool, mash: bool) !void {
-    try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, s});
+pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: T, Tkin: T, s: u32, r: Vector(T), v: Vector(T), C: Vector(std.math.Complex(T)), S: Vector(T), mass: []const T, fssh: bool, mash: bool) !void {
+    try std.io.getStdOut().writer().print("{d:6} {d:6} {d:12.6} {d:12.6} {d:12.6} {d:9.3} {d:5} [", .{i + 1, j, Ekin, Epot, Etot, Tkin, s});
 
     for (0..mth.min(r.rows, 3)) |k| {
         try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (k == 0) "" else ", ", r.at(k)});
@@ -889,7 +892,7 @@ pub fn printIteration(comptime T: type, i: u32, j: u32, Ekin: T, Epot: T, Etot: 
 
 /// Function to print the initial header.
 pub fn printHeader(ndim: usize, nstate: usize, fssh: bool, mash: bool) !void {
-    try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "STATE"});
+    try std.io.getStdOut().writer().print("\n{s:6} {s:6} {s:12} {s:12} {s:12} {s:9} {s:5}", .{"TRAJ", "ITER", "EKIN", "EPOT", "ETOT", "TEMP", "STATE"});
 
     if (ndim > 1) for (0..mth.min(ndim, 3) - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});};
 

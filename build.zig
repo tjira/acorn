@@ -17,7 +17,7 @@ pub fn build(builder: *std.Build) !void {
         const main_executable = builder.addExecutable(.{
             .name = "acorn",
             .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path("src/main.zig"),
+            .root_source_file = builder.path("src/acorn.zig"),
             .strip = !debug,
             .target = builder.resolveTargetQuery(target)
         });
@@ -25,7 +25,7 @@ pub fn build(builder: *std.Build) !void {
         const test_executable = builder.addTest(.{
             .name = "test",
             .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path("test/main.zig"),
+            .root_source_file = builder.path("test/acorn.zig"),
             .strip = !debug,
             .target = builder.resolveTargetQuery(target)
         });
@@ -56,8 +56,13 @@ pub fn build(builder: *std.Build) !void {
         if (!benchmark) builder.getInstallStep().dependOn(&main_install.step);
 
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag and target.abi == .musl) {
-            builder.step("run",  "Run the compiled executable").dependOn(&builder.addRunArtifact(main_executable).step);
-            builder.step("test", "Run unit tests"             ).dependOn(&builder.addRunArtifact(test_executable).step);
+
+            builder.step("run",  "Run the compiled executable"   ).dependOn(&builder.addRunArtifact(main_executable).step);
+            builder.step("test", "Run unit tests"                ).dependOn(&builder.addRunArtifact(test_executable).step);
+
+            const docs = builder.addInstallDirectory(.{.source_dir = main_executable.getEmittedDocs(), .install_dir = .{.custom = "../docs"}, .install_subdir = "code"});
+
+            builder.step("docs", "Install the code documentation").dependOn(&docs.step);
         }
 
         if (benchmark) {

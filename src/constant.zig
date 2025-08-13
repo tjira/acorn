@@ -9,10 +9,11 @@ pub const c   = 299792458.0;        // m/s
 pub const amu = 1.66053906892e-27;  // kg
 pub const e   = 1.602176634e-19;    // C
 pub const h   = 6.62607015e-34;     // J.s
+pub const kB  = 1.380649e-23;       // J/K
 
 pub const A2AU = 1e-10 / a0;         // Å to a.u. of length
 pub const AU2EV = Eh / e;            // a.u. of energy to eV
-pub const EV2RCM = 1e-2 * e / h / c; // eV of photon to its wavenumber in cm^-1
+pub const EV2RCM = 1e-2 * e / h / c; // eV of a photon to its wavenumber in cm^-1
 
 /// Atomic symbol to atomic number map.
 pub const SM2AN = std.StaticStringMap(u32).initComptime(.{

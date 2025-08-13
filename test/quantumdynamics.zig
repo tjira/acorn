@@ -3,8 +3,8 @@ const std = @import("std");
 const input            = @import("acorn").input;
 const quantum_dynamics = @import("acorn").quantum_dynamics;
 
-const expect = @import("main.zig").expect;
-const log    = @import("main.zig").log   ;
+const expect = @import("acorn.zig").expect;
+const log    = @import("acorn.zig").log   ;
 
 const allocator = std.testing.allocator;
 
