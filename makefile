@@ -8,15 +8,36 @@ LIBINT_VERSION   = 2.11.1
 LLVM_VERSION     = 20.1.8
 OPENBLAS_VERSION = 0.3.30
 
-all: acorn benchmark
+all: acorn
 
-# ACORN TARGETS ========================================================================================================================================================================================
+# ACORN BUILDING TARGETS ===============================================================================================================================================================================
 
 acorn: library
 > ./zig-bin/zig build
 
+full: library
+> ./zig-bin/zig build -DFULL
+
 test: library
 > ./zig-bin/zig build test
+
+# BENCHMARKING TARGETS =================================================================================================================================================================================
+
+.PHONY: benchmark
+
+benchmark: benchmark-contract benchmark-dgees benchmark-dgemm benchmark-dsyevd
+
+benchmark-contract: full
+> ./zig-out/x86_64-linux-musl/benchmark/contract 100
+
+benchmark-dgees: full
+> ./zig-out/x86_64-linux-musl/benchmark/dgees 1000
+
+benchmark-dgemm: full
+> ./zig-out/x86_64-linux-musl/benchmark/dgemm 3000
+
+benchmark-dsyevd: full
+> ./zig-out/x86_64-linux-musl/benchmark/dsyevd 2000
 
 # DOCUMENTATION TARGETS ================================================================================================================================================================================
 

@@ -6,8 +6,8 @@ const targets: []const std.Target.Query = &.{
 };
 
 pub fn build(builder: *std.Build) !void {
-    const benchmark = builder.option(bool, "BENCHMARK", "Build the benchmarks"              ) orelse false;
-    const debug     = builder.option(bool, "DEBUG",     "Build everything in the debug mode") orelse false;
+    const full  = builder.option(bool, "FULL",  "Full build with all complementary binaries") orelse false;
+    const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode"        ) orelse false;
 
     for (targets) |target| {
 
@@ -53,7 +53,7 @@ pub fn build(builder: *std.Build) !void {
             .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
         });
 
-        if (!benchmark) builder.getInstallStep().dependOn(&main_install.step);
+        builder.getInstallStep().dependOn(&main_install.step);
 
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag and target.abi == .musl) {
 
@@ -65,14 +65,14 @@ pub fn build(builder: *std.Build) !void {
             builder.step("docs", "Install the code documentation").dependOn(&docs.step);
         }
 
-        if (benchmark) {
+        if (full) {
             try benchmarkExecutable(builder, main_executable, target, debug);
         }
     }
 
     std.fs.cwd().makeDir("zig-out") catch {};
 
-    if (!benchmark) for (targets) |target| if (target.os_tag == .linux) {
+    for (targets) |target| if (target.os_tag == .linux) {
         try linuxScripts(try target.zigTriple(std.heap.page_allocator), std.heap.page_allocator);
     };
 }
