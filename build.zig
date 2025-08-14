@@ -37,6 +37,8 @@ pub fn build(builder: *std.Build) !void {
         main_executable.addIncludePath(.{.cwd_relative = external_include});
         main_executable.addLibraryPath(.{.cwd_relative = external_lib    });
 
+        main_executable.addIncludePath(.{.cwd_relative = try std.mem.concat(builder.allocator, u8, &[_][]const u8{external_include, "/eigen3"})});
+
         main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
         main_executable.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
         main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
