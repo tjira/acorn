@@ -62,9 +62,9 @@ linguist:
 library: external-x86_64-linux/.done
 
 external-x86_64-linux:
-> mkdir -p external-x86_64-linux
+> mkdir -p external-x86_64-linux/include external-x86_64-linux/lib
 
-external-x86_64-linux/.done: zig-bin/.done external-x86_64-linux/eigen.tar.gz external-x86_64-linux/libint.tar.gz external-x86_64-linux/llvm.tar.xz external-x86_64-linux/openblas.tar.gz
+external-x86_64-linux/.done: zig-bin/.done external-x86_64-linux/eigen.tar.gz external-x86_64-linux/libint.tar.gz external-x86_64-linux/llvm.tar.xz external-x86_64-linux/openblas.tar.gz external-x86_64-linux/include/exprtk.hpp
 > ./script/library.sh && touch $@
 
 external-x86_64-linux/eigen.tar.gz: | external-x86_64-linux
@@ -78,6 +78,10 @@ external-x86_64-linux/llvm.tar.xz: | external-x86_64-linux
 
 external-x86_64-linux/openblas.tar.gz: | external-x86_64-linux
 > wget -q -O $@ https://github.com/OpenMathLib/OpenBLAS/releases/download/v$(OPENBLAS_VERSION)/OpenBLAS-$(OPENBLAS_VERSION).tar.gz
+
+external-x86_64-linux/include/exprtk.hpp: | external-x86_64-linux
+> wget -q -O $@ https://raw.githubusercontent.com/ArashPartow/exprtk/refs/heads/master/exprtk.hpp
+
 
 # COMPILER TARGETS =====================================================================================================================================================================================
 

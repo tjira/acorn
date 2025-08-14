@@ -42,8 +42,6 @@ for TARGET in "${TARGETS[@]}"; do
 
     cp -r libint/install/* llvm/install/* openblas/install/* external-$TARGET && cp -r eigen/install/include/eigen3/Eigen eigen/install/include/eigen3/unsupported external-$TARGET/include
 
-    wget -q -O external-$TARGET/include/exprtk.hpp https://raw.githubusercontent.com/ArashPartow/exprtk/refs/heads/master/exprtk.hpp
-
     rm -rf eigen libint llvm openblas zigcc zigcpp && cd external-$TARGET && rm -rf bin share lib/*archer* lib/*cblas* lib/*la lib/cmake lib/pkgconfig && cd ..
 
 done
