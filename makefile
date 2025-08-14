@@ -8,6 +8,8 @@ LIBINT_VERSION   = 2.11.1
 LLVM_VERSION     = 20.1.8
 OPENBLAS_VERSION = 0.3.30
 
+BENCHMARK_SAMPLES = 1
+
 all: acorn
 
 # ACORN BUILDING TARGETS ===============================================================================================================================================================================
@@ -28,16 +30,16 @@ test: library
 benchmark: benchmark-contract benchmark-dgees benchmark-dgemm benchmark-dsyevd
 
 benchmark-contract: full
-> ./zig-out/x86_64-linux-musl/benchmark/contract 100 | tee benchmark/contract.out
+> ./zig-out/x86_64-linux-musl/benchmark/contract 100 $(BENCHMARK_SAMPLES) | grep AVERAGE | tee -a benchmark.out
 
 benchmark-dgees: full
-> ./zig-out/x86_64-linux-musl/benchmark/dgees 1000 | tee benchmark/dgees.out
+> ./zig-out/x86_64-linux-musl/benchmark/dgees 1000 $(BENCHMARK_SAMPLES) | grep AVERAGE | tee -a benchmark.out
 
 benchmark-dgemm: full
-> ./zig-out/x86_64-linux-musl/benchmark/dgemm 3000 | tee benchmark/dgemm.out
+> ./zig-out/x86_64-linux-musl/benchmark/dgemm 3000 $(BENCHMARK_SAMPLES) | grep AVERAGE | tee -a benchmark.out
 
 benchmark-dsyevd: full
-> ./zig-out/x86_64-linux-musl/benchmark/dsyevd 2000 | tee benchmark/dsyevd.out
+> ./zig-out/x86_64-linux-musl/benchmark/dsyevd 2000 $(BENCHMARK_SAMPLES) | grep AVERAGE | tee -a benchmark.out
 
 # DOCUMENTATION TARGETS ================================================================================================================================================================================
 
