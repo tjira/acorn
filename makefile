@@ -28,16 +28,16 @@ test: library
 benchmark: benchmark-contract benchmark-dgees benchmark-dgemm benchmark-dsyevd
 
 benchmark-contract: full
-> ./zig-out/x86_64-linux-musl/benchmark/contract 100
+> ./zig-out/x86_64-linux-musl/benchmark/contract 100 | tee benchmark/contract.out
 
 benchmark-dgees: full
-> ./zig-out/x86_64-linux-musl/benchmark/dgees 1000
+> ./zig-out/x86_64-linux-musl/benchmark/dgees 1000 | tee benchmark/dgees.out
 
 benchmark-dgemm: full
-> ./zig-out/x86_64-linux-musl/benchmark/dgemm 3000
+> ./zig-out/x86_64-linux-musl/benchmark/dgemm 3000 | tee benchmark/dgemm.out
 
 benchmark-dsyevd: full
-> ./zig-out/x86_64-linux-musl/benchmark/dsyevd 2000
+> ./zig-out/x86_64-linux-musl/benchmark/dsyevd 2000 | tee benchmark/dsyevd.out
 
 # DOCUMENTATION TARGETS ================================================================================================================================================================================
 

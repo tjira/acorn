@@ -6,7 +6,7 @@ pub fn benchmark(title: []const u8, object: anytype, D: *usize, print: bool) !vo
         return error.UndefinedNumberOfThreads;
     }
 
-    std.debug.print("ZIG VERSION: {}, THREADS: {s}\n\n", .{builtin.zig_version, std.posix.getenv("OMP_NUM_THREADS").?});
+    try std.io.getStdOut().writer().print("ZIG VERSION: {}, THREADS: {s}\n\n", .{builtin.zig_version, std.posix.getenv("OMP_NUM_THREADS").?});
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){}; const allocator = gpa.allocator();
 
@@ -24,7 +24,7 @@ pub fn benchmark(title: []const u8, object: anytype, D: *usize, print: bool) !vo
 
         try args.randomize(i);
 
-        std.debug.print("{[i]d:[width]}/{[n]d}: {[title]s} TIME: ", .{.i = i + 1, .width = digits, .n = N, .title = title});
+        try std.io.getStdOut().writer().print("{[i]d:[width]}/{[n]d}: {[title]s} TIME: ", .{.i = i + 1, .width = digits, .n = N, .title = title});
 
         var timer = try std.time.Timer.start();
 
@@ -32,7 +32,7 @@ pub fn benchmark(title: []const u8, object: anytype, D: *usize, print: bool) !vo
 
         times[i] = acorn.helper.asfloat(f64, timer.read());
 
-        std.debug.print("{s}\n", .{std.fmt.fmtDuration(@as(u64, @intFromFloat(times[i])))});
+        try std.io.getStdOut().writer().print("{s}\n", .{std.fmt.fmtDuration(@as(u64, @intFromFloat(times[i])))});
 
         if (print) try args.print();
     }
@@ -40,7 +40,7 @@ pub fn benchmark(title: []const u8, object: anytype, D: *usize, print: bool) !vo
     const time_mean   = @as(u64, @intFromFloat(acorn.math.mean(  f64, times) catch 0));
     const time_stddev = @as(u64, @intFromFloat(acorn.math.stddev(f64, times) catch 0));
 
-    std.debug.print("\nAVERAGE {s} TIME: {s} ± {d}\n", .{title, std.fmt.fmtDuration(time_mean), std.fmt.fmtDuration(time_stddev)});
+    try std.io.getStdOut().writer().print("\nAVERAGE {s} TIME: {s} ± {d}\n", .{title, std.fmt.fmtDuration(time_mean), std.fmt.fmtDuration(time_stddev)});
 }
 
 /// Parser for the arguments, where first argument is difficulty and second is number of samples.
