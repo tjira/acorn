@@ -3,6 +3,8 @@
 ZIG_VERSION = 0.14.1
 ZLS_VERSION = 0.14.0
 
+ZIG_FLAGS = --cache-dir zig-cache --global-cache-dir zig-global
+
 EIGEN_VERSION    =  3.4.0
 LIBINT_VERSION   = 2.11.1
 LLVM_VERSION     = 20.1.8
@@ -15,13 +17,13 @@ all: acorn
 # ACORN BUILDING TARGETS ===============================================================================================================================================================================
 
 acorn: library
-> ./zig-bin/zig build
+> ./zig-bin/zig build $(ZIG_FLAGS)
 
 full: library
-> ./zig-bin/zig build -DFULL
+> ./zig-bin/zig build $(ZIG_FLAGS) -DFULL
 
 test: library
-> ./zig-bin/zig build test
+> ./zig-bin/zig build $(ZIG_FLAGS) test
 
 # BENCHMARKING TARGETS =================================================================================================================================================================================
 
@@ -92,16 +94,18 @@ zig-bin/.done: zig-bin/zig zig-bin/zls
 > touch $@
 
 zig-bin/zig: | zig-bin
-> wget -q -O zig.tar.xz https://ziglang.org/download/$(ZIG_VERSION)/zig-x86_64-linux-$(ZIG_VERSION).tar.xz
-> tar -xf zig.tar.xz -C zig-bin --strip-components=1
-> rm zig.tar.xz
+> wget -q -O zig.tar.xz https://ziglang.org/download/$(ZIG_VERSION)/zig-x86_64-linux-$(ZIG_VERSION).tar.xz && tar -xf zig.tar.xz -C zig-bin --strip-components=1 && rm zig.tar.xz
 
 zig-bin/zls: | zig-bin
-> wget -q -O zls.tar.xz https://github.com/zigtools/zls/releases/download/$(ZLS_VERSION)/zls-x86_64-linux.tar.xz
-> tar -xf zls.tar.xz -C zig-bin
-> rm zls.tar.xz
+> wget -q -O zls.tar.xz https://github.com/zigtools/zls/releases/download/$(ZLS_VERSION)/zls-x86_64-linux.tar.xz && tar -xf zls.tar.xz -C zig-bin && rm zls.tar.xz
 
 # CLEAN TARGETS ========================================================================================================================================================================================
 
 clean:
 > git clean -dffx
+
+clean-cache:
+> rm -rf zig-cache zig-global
+
+clean-output:
+> rm -rf zig-out
