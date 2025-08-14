@@ -22,7 +22,7 @@ CMAKE_OMP=(
 )
 
 cmake_install() {
-    cmake --build . --parallel $CORES --verbose && cmake --install .
+    cmake --build . --parallel $CORES && cmake --install .
 }
 
 for TARGET in "${TARGETS[@]}"; do
