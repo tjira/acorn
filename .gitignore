@@ -20,6 +20,7 @@ docs/**/*.py*
 
 education/**/*.mat*
 
+*cac*/
 *cod*/
 *sit*/
 *tex*/

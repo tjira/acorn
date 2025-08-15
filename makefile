@@ -3,8 +3,6 @@
 ZIG_VERSION = 0.14.1
 ZLS_VERSION = 0.14.0
 
-ZIG_FLAGS = --cache-dir $(PWD)/zig-cache --global-cache-dir $(PWD)/zig-global
-
 EIGEN_VERSION    =  3.4.0
 LIBINT_VERSION   = 2.11.1
 LLVM_VERSION     = 20.1.8
@@ -12,18 +10,21 @@ OPENBLAS_VERSION = 0.3.30
 
 BENCHMARK_SAMPLES = 1
 
+export ZIG_LOCAL_CACHE_DIR  =  $(PWD)/.cache/local
+export ZIG_GLOBAL_CACHE_DIR = $(PWD)/.cache/global
+
 all: acorn
 
 # ACORN BUILDING TARGETS ===============================================================================================================================================================================
 
 acorn: library
-> ./zig-bin/zig build $(ZIG_FLAGS)
+> ./zig-bin/zig build -DDEBUG
 
 full: library
-> ./zig-bin/zig build $(ZIG_FLAGS) -DFULL
+> ./zig-bin/zig build -DFULL
 
 test: library
-> ./zig-bin/zig build $(ZIG_FLAGS) test
+> ./zig-bin/zig build test
 
 # BENCHMARKING TARGETS =================================================================================================================================================================================
 
@@ -67,7 +68,7 @@ external-x86_64-linux:
 > mkdir -p external-x86_64-linux/include external-x86_64-linux/lib
 
 external-x86_64-linux/.done: zig-bin/.done external-x86_64-linux/eigen.tar.gz external-x86_64-linux/libint.tar.gz external-x86_64-linux/llvm.tar.xz external-x86_64-linux/openblas.tar.gz external-x86_64-linux/include/exprtk.hpp
-> ZIG_LOCAL_CACHE_DIR="$(PWD)/zig-cache" ZIG_GLOBAL_CACHE_DIR="$(PWD)/zig-global" ./script/library.sh && touch $@
+> ./script/library.sh && touch $@
 
 external-x86_64-linux/eigen.tar.gz: | external-x86_64-linux
 > wget -q -O $@ https://gitlab.com/libeigen/eigen/-/archive/$(EIGEN_VERSION)/eigen-$(EIGEN_VERSION).tar.gz
@@ -105,7 +106,7 @@ clean:
 > git clean -dffx
 
 clean-cache:
-> rm -rf zig-cache zig-global
+> rm -rf .cache
 
 clean-output:
 > rm -rf zig-out
