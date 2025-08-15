@@ -3,7 +3,7 @@
 ZIG_VERSION = 0.14.1
 ZLS_VERSION = 0.14.0
 
-ZIG_FLAGS = --cache-dir zig-cache --global-cache-dir zig-global
+ZIG_FLAGS = --cache-dir $(PWD)/zig-cache --global-cache-dir $(PWD)/zig-global
 
 EIGEN_VERSION    =  3.4.0
 LIBINT_VERSION   = 2.11.1
@@ -17,7 +17,7 @@ all: acorn
 # ACORN BUILDING TARGETS ===============================================================================================================================================================================
 
 acorn: library
-> ./zig-bin/zig build $(ZIG_FLAGS) -DDEBUG
+> ./zig-bin/zig build $(ZIG_FLAGS)
 
 full: library
 > ./zig-bin/zig build $(ZIG_FLAGS) -DFULL
@@ -67,7 +67,7 @@ external-x86_64-linux:
 > mkdir -p external-x86_64-linux/include external-x86_64-linux/lib
 
 external-x86_64-linux/.done: zig-bin/.done external-x86_64-linux/eigen.tar.gz external-x86_64-linux/libint.tar.gz external-x86_64-linux/llvm.tar.xz external-x86_64-linux/openblas.tar.gz external-x86_64-linux/include/exprtk.hpp
-> ./script/library.sh && touch $@
+> ZIG_LOCAL_CACHE_DIR="$(PWD)/zig-cache" ZIG_GLOBAL_CACHE_DIR="$(PWD)/zig-global" ./script/library.sh && touch $@
 
 external-x86_64-linux/eigen.tar.gz: | external-x86_64-linux
 > wget -q -O $@ https://gitlab.com/libeigen/eigen/-/archive/$(EIGEN_VERSION)/eigen-$(EIGEN_VERSION).tar.gz

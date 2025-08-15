@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CORES=$(nproc --all); DIRNAME=$(dirname "$(realpath $0)"); TARGETS=("x86_64-linux"); export PATH="$PWD/zig-bin:$PATH"
+CORES=$(nproc --all); DIRNAME=$(dirname "$(realpath $0)"); TARGETS=("x86_64-linux")
 
 CMAKE_GENERAL=(
     -DBUILD_SHARED_LIBS=OFF
@@ -20,17 +20,19 @@ CMAKE_OMP=(
 )
 
 MAKE_OPENBLAS=(
+    AR="$DIRNAME/../zigar"
     CC="$DIRNAME/../zigcc"
     DYNAMIC_ARCH=1
     HOSTCC=gcc
     NO_SHARED=1
     NOFORTRAN=1
     NUM_THREADS=128
+    RANLIB="$DIRNAME/../zigranlib"
     USE_OPENMP=1
 )
 
 cmake_install() {
-    cmake --build . --parallel $CORES && cmake --install .
+    cmake --build . --parallel $CORES --verbose && cmake --install .
 }
 
 for TARGET in "${TARGETS[@]}"; do
@@ -42,7 +44,10 @@ for TARGET in "${TARGETS[@]}"; do
         -DCMAKE_PREFIX_PATH="$DIRNAME/../external-$TARGET"
     )
 
-    echo "zig cc --target=$TARGET-gnu \"\$@\"" > zigcc && chmod +x zigcc && echo "zig c++ --target=$TARGET-gnu \"\$@\"" > zigcpp && chmod +x zigcpp
+    echo "$DIRNAME/../zig-bin/zig ar                          \"\$@\"" > zigar     && chmod +x     zigar
+    echo "$DIRNAME/../zig-bin/zig cc     --target=$TARGET-gnu \"\$@\"" > zigcc     && chmod +x     zigcc
+    echo "$DIRNAME/../zig-bin/zig c++    --target=$TARGET-gnu \"\$@\"" > zigcpp    && chmod +x    zigcpp
+    echo "$DIRNAME/../zig-bin/zig ranlib                      \"\$@\"" > zigranlib && chmod +x zigranlib
 
     tar -xzf    external-$TARGET/eigen.tar.gz && mv eigen*       eigen
     tar -xzf   external-$TARGET/libint.tar.gz && mv libint*     libint
@@ -55,6 +60,6 @@ for TARGET in "${TARGETS[@]}"; do
 
     cd openblas && make "${MAKE_OPENBLAS[@]}" -j $CORES libs shared && make NO_SHARED=1 PREFIX="$DIRNAME/../external-$TARGET" install && cd ..
 
-    rm -rf eigen libint llvm openblas zigcc zigcpp
+    rm -rf eigen libint llvm openblas zigar zigcc zigcpp zigranlib
 
 done
