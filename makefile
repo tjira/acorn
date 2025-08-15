@@ -17,7 +17,7 @@ all: acorn
 # ACORN BUILDING TARGETS ===============================================================================================================================================================================
 
 acorn: library
-> ./zig-bin/zig build $(ZIG_FLAGS)
+> ./zig-bin/zig build $(ZIG_FLAGS) -DDEBUG
 
 full: library
 > ./zig-bin/zig build $(ZIG_FLAGS) -DFULL
