@@ -1,0 +1,22 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - '*'
+
+permissions:
+  contents: write
+
+jobs:
+  test_linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Upterm Session
+        run: make
+
+      - name: Run Tests
+        run: lhotari/action-upterm@v1
