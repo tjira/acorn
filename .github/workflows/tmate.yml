@@ -9,11 +9,11 @@ permissions:
   contents: write
 
 jobs:
-  test_linux:
+  session_linux:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Upterm Session
-        uses: lhotari/action-upterm@v1
+      - name: Setup Tmate Session
+        uses: mxschmitt/action-tmate@v3
