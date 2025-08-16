@@ -1,4 +1,4 @@
-name: Test
+name: Upterm
 
 on:
   push:
@@ -16,7 +16,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Upterm Session
-        run: make
-
-      - name: Run Tests
         run: lhotari/action-upterm@v1
