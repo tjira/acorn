@@ -16,4 +16,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Upterm Session
-        run: lhotari/action-upterm@v1
+        uses: lhotari/action-upterm@v1
