@@ -44,7 +44,7 @@ benchmark-dsyevd: full
 # DOCUMENTATION TARGETS ================================================================================================================================================================================
 
 docs: library
-> zig build docs && cp -r education/python docs && ./script/docstopdf.sh && cd docs && bundler install
+> ./zig-bin/zig build docs && cp -r education/python docs && ./script/docstopdf.sh && cd docs && bundler install
 
 serve: docs
 > cd docs && bundle exec jekyll serve

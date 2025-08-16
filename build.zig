@@ -14,6 +14,8 @@ pub fn build(builder: *std.Build) !void {
         const os_name   = switch (target.os_tag.?  ) {.linux  => "linux",  .macos   => "macos",   .windows => "windows", else => unreachable};
         const arch_name = switch (target.cpu_arch.?) {.x86_64 => "x86_64", .aarch64 => "aarch64", .riscv64 => "riscv64", else => unreachable};
 
+        const library = builder.addStaticLibrary(.{.name = "acorn", .root_source_file = builder.path("src/acorn.zig"), .target = builder.resolveTargetQuery(target)});
+
         const main_executable = builder.addExecutable(.{
             .name = "acorn",
             .optimize = if (debug) .Debug else .ReleaseFast,
@@ -33,9 +35,10 @@ pub fn build(builder: *std.Build) !void {
         const external_include = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/include"});
         const external_lib     = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/lib"    });
 
-        main_executable.addIncludePath(.{.cwd_relative = "include"       });
-        main_executable.addIncludePath(.{.cwd_relative = external_include});
-        main_executable.addLibraryPath(.{.cwd_relative = external_lib    });
+        main_executable.addIncludePath(.{.cwd_relative = "include"       }); library.addIncludePath(.{.cwd_relative = "include"       });
+        main_executable.addIncludePath(.{.cwd_relative = external_include}); library.addIncludePath(.{.cwd_relative = external_include});
+        main_executable.addLibraryPath(.{.cwd_relative = external_lib    }); library.addLibraryPath(.{.cwd_relative = external_lib    });
+
 
         main_executable.addIncludePath(.{.cwd_relative = try std.mem.concat(builder.allocator, u8, &[_][]const u8{external_include, "/eigen3"})});
 
@@ -43,7 +46,7 @@ pub fn build(builder: *std.Build) !void {
         main_executable.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
         main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
 
-        main_executable.linkLibC(); main_executable.linkLibCpp();
+        main_executable.linkLibC(); main_executable.linkLibCpp(); library.linkLibC(); library.linkLibCpp();
 
         main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
         main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
@@ -62,7 +65,7 @@ pub fn build(builder: *std.Build) !void {
             builder.step("run",  "Run the compiled executable"   ).dependOn(&builder.addRunArtifact(main_executable).step);
             builder.step("test", "Run unit tests"                ).dependOn(&builder.addRunArtifact(test_executable).step);
 
-            const docs = builder.addInstallDirectory(.{.source_dir = main_executable.getEmittedDocs(), .install_dir = .{.custom = "../docs"}, .install_subdir = "code"});
+            const docs = builder.addInstallDirectory(.{.source_dir = library.getEmittedDocs(), .install_dir = .{.custom = "../docs"}, .install_subdir = "code"});
 
             builder.step("docs", "Install the code documentation").dependOn(&docs.step);
         }

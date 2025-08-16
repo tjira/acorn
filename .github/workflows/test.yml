@@ -15,17 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compile the Project
-        run: make
-
       - name: Run Tests
         run: make test
 
       - name: Setup Tmate Session
         if: failure()
-        uses: mxschmitt/action-tmate@v3
-
-      - name: Upload Coverage Reports
-        uses: codecov/codecov-action@v4.0.1
-        with:
-          token: ${{secrets.CODECOV_TOKEN}}
+        uses: mxschmitt/action-tmate/detached@v3
