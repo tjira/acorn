@@ -10,41 +10,40 @@ OPENBLAS_VERSION = 0.3.30
 
 BENCHMARK_SAMPLES = 1
 
+export OMP_NUM_THREADS = 1
+
+.PHONY: benchmark
+
 all: acorn
 
 # ACORN BUILDING TARGETS ===============================================================================================================================================================================
 
 acorn: library
-> ./zig-bin/zig build
-
-full: library
-> ./zig-bin/zig build -DFULL
+> ./zig-bin/zig build --summary all
 
 test: library
-> ./zig-bin/zig build test
+> ./zig-bin/zig build --summary all test
 
 # BENCHMARKING TARGETS =================================================================================================================================================================================
 
-.PHONY: benchmark
-
 benchmark: benchmark-contract benchmark-dgees benchmark-dgemm benchmark-dsyevd
 
-benchmark-contract: full
-> ./zig-out/x86_64-linux-musl/benchmark/contract 100 $(BENCHMARK_SAMPLES) | grep AVERAGE | tee -a benchmark.out
+benchmark-contract: acorn
+> ./zig-out/x86_64-linux-musl/benchmark contract 100 $(BENCHMARK_SAMPLES)
 
-benchmark-dgees: full
-> ./zig-out/x86_64-linux-musl/benchmark/dgees 1000 $(BENCHMARK_SAMPLES) | grep AVERAGE | tee -a benchmark.out
+benchmark-dgees: acorn
+> ./zig-out/x86_64-linux-musl/benchmark dgees 1000 $(BENCHMARK_SAMPLES)
 
-benchmark-dgemm: full
-> ./zig-out/x86_64-linux-musl/benchmark/dgemm 3000 $(BENCHMARK_SAMPLES) | grep AVERAGE | tee -a benchmark.out
+benchmark-dgemm: acorn
+> ./zig-out/x86_64-linux-musl/benchmark dgemm 3000 $(BENCHMARK_SAMPLES)
 
-benchmark-dsyevd: full
-> ./zig-out/x86_64-linux-musl/benchmark/dsyevd 2000 $(BENCHMARK_SAMPLES) | grep AVERAGE | tee -a benchmark.out
+benchmark-dsyevd: acorn
+> ./zig-out/x86_64-linux-musl/benchmark dsyevd 2000 $(BENCHMARK_SAMPLES)
 
 # DOCUMENTATION TARGETS ================================================================================================================================================================================
 
 docs: library
-> ./zig-bin/zig build docs && cp -r education/python docs && ./script/docstopdf.sh && cd docs && bundler install
+> ./zig-bin/zig build --summary all docs && cp -r education/python docs && ./script/docstopdf.sh && cd docs && bundler install
 
 serve: docs
 > cd docs && bundle exec jekyll serve

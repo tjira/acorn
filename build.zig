@@ -6,8 +6,7 @@ const targets: []const std.Target.Query = &.{
 };
 
 pub fn build(builder: *std.Build) !void {
-    const full  = builder.option(bool, "FULL",  "Full build with all complementary binaries") orelse false;
-    const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode"        ) orelse false;
+    const debug = builder.option(bool, "DEBUG", "Build everything in the debug mode") orelse false;
 
     for (targets) |target| {
 
@@ -18,6 +17,14 @@ pub fn build(builder: *std.Build) !void {
             .name = "acorn",
             .optimize = if (debug) .Debug else .ReleaseFast,
             .root_source_file = builder.path("src/acorn.zig"),
+            .strip = !debug,
+            .target = builder.resolveTargetQuery(target)
+        });
+
+        const benchmark_executable = builder.addExecutable(.{
+            .name = "benchmark",
+            .optimize = if (debug) .Debug else .ReleaseFast,
+            .root_source_file = builder.path("benchmark/main.zig"),
             .strip = !debug,
             .target = builder.resolveTargetQuery(target)
         });
@@ -58,14 +65,20 @@ pub fn build(builder: *std.Build) !void {
         main_library.root_module.linkSystemLibrary("omp",      .{.preferred_link_mode = .static});
         main_library.root_module.linkSystemLibrary("openblas", .{.preferred_link_mode = .static});
 
-        test_executable.root_module.addImport("acorn", main_library.root_module);
-        main_executable.root_module.addImport("acorn", main_library.root_module);
+        test_executable     .root_module.addImport("acorn", main_library.root_module);
+        main_executable     .root_module.addImport("acorn", main_library.root_module);
+        benchmark_executable.root_module.addImport("acorn", main_library.root_module);
 
         const main_executable_install = builder.addInstallArtifact(main_executable, .{
             .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
         });
 
-        builder.getInstallStep().dependOn(&main_executable_install.step);
+        const benchmark_executable_install = builder.addInstallArtifact(benchmark_executable, .{
+            .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
+        });
+
+        builder.getInstallStep().dependOn(     &main_executable_install.step);
+        builder.getInstallStep().dependOn(&benchmark_executable_install.step);
 
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag and target.abi == .musl) {
 
@@ -76,10 +89,6 @@ pub fn build(builder: *std.Build) !void {
 
             builder.step("docs", "Install the code documentation").dependOn(&docs.step);
         }
-
-        if (full) {
-            try benchmarkExecutable(builder, main_executable, target, debug);
-        }
     }
 
     std.fs.cwd().makeDir("zig-out") catch {};
@@ -87,31 +96,6 @@ pub fn build(builder: *std.Build) !void {
     for (targets) |target| if (target.os_tag == .linux) {
         try linuxScripts(try target.zigTriple(std.heap.page_allocator), std.heap.page_allocator);
     };
-}
-
-pub fn benchmarkExecutable(builder: *std.Build, main_executable: *std.Build.Step.Compile, target: std.Target.Query, debug: bool) !void {
-    const benchmarks = &[_][]const u8{
-        "contract", "dgees", "dgemm", "dsyevd"
-    };
-
-    for (benchmarks) |benchmark| {
-
-        const benchmark_executable = builder.addExecutable(.{
-            .name = benchmark,
-            .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path(try std.mem.concat(builder.allocator, u8, &[_][]const u8{"benchmark/", benchmark, ".zig"})),
-            .strip = !debug,
-            .target = builder.resolveTargetQuery(target)
-        });
-
-        benchmark_executable.root_module.addImport("acorn", main_executable.root_module);
-
-        const benchmark_install = builder.addInstallArtifact(benchmark_executable, .{
-            .dest_dir = .{.override = .{.custom = try std.mem.concat(builder.allocator, u8, &[_][]const u8{try target.zigTriple(builder.allocator), "/benchmark"})}}
-        });
-
-        builder.getInstallStep().dependOn(&benchmark_install.step);
-    }
 }
 
 pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
@@ -131,7 +115,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
     const header =
         \\#!/bin/bash
         \\
-        \\clean() {{ rm -f .input.json; }}; trap clean SIGINT
+        \\INPUT_JSON=$(mktemp)
         \\
         \\usage() {{
         \\  cat <<EOF
@@ -165,7 +149,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\    "log_interval" : '"$LOG_INTERVAL"',
         \\    "output" : '"$OUTPUT"'
         \\  }}
-        \\}}' > .input.json
+        \\}}' > $INPUT_JSON
     ;
 
     const content_hf =
@@ -217,7 +201,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\      "generalized" : '$GENERALIZED',
         \\      "direct" : '$DIRECT'
         \\  }}
-        \\}}' > .input.json
+        \\}}' > $INPUT_JSON
     ;
 
     const content_integral =
@@ -255,7 +239,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\          "coulomb" : '"$J_AO"'
         \\      }}
         \\  }}
-        \\}}' > .input.json
+        \\}}' > $INPUT_JSON
     ;
 
     const content_matmul =
@@ -288,7 +272,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\    "outputs" : '"$OUTPUT"',
         \\    "print" : '$PRINT'
         \\  }}
-        \\}}' > .input.json
+        \\}}' > $INPUT_JSON
     ;
 
     const content_matsort =
@@ -320,7 +304,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\    "column" : '$COLUMN',
         \\    "print" : '$PRINT'
         \\  }}
-        \\}}' > .input.json
+        \\}}' > $INPUT_JSON
     ;
 
     const content_mersenne =
@@ -351,7 +335,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\    }},
         \\    "number" : '"$START"'
         \\  }}
-        \\}}' > .input.json
+        \\}}' > $INPUT_JSON
     ;
 
     const content_prime =
@@ -385,11 +369,11 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\    }},
         \\    "number" : '"$START"'
         \\  }}
-        \\}}' > .input.json
+        \\}}' > $INPUT_JSON
     ;
 
     const content_randmat =
-        \\  -c <rows>         Number of cols. (default: ${{COLS}})
+        \\  -c <columns>      Number of cols. (default: ${{COLS}})
         \\  -d <distribution> Distribution. (default: ${{DISTRIBUTION}})
         \\  -o <output>       Output matrix. (default: ${{OUTPUT}})
         \\  -p <print>        Boolean print flag. (default: ${{PRINT}})
@@ -424,16 +408,16 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\    "outputs" : '"$OUTPUT"',
         \\    "print" : '$PRINT'
         \\  }}
-        \\}}' > .input.json
+        \\}}' > $INPUT_JSON
     ;
 
-    try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{}); file_fibonacci.close();
-    try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_matsort .close();
-    try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});  file_mersenne.close();
-    try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});     file_prime.close();
-    try file_randmat  .writer().print(header ++ "\n" ++ content_randmat   ++ "\n\nexport OMP_NUM_THREADS=1; acorn .input.json && clean", .{});   file_randmat.close();
+    try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{}); file_fibonacci.close();
+    try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});  file_matsort .close();
+    try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});  file_mersenne.close();
+    try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});     file_prime.close();
+    try file_randmat  .writer().print(header ++ "\n" ++ content_randmat   ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});   file_randmat.close();
 
-    try file_hf      .writer().print(header ++ "\n" ++ content_hf       ++ "\n\nexport OMP_NUM_THREADS=$N; acorn .input.json && clean", .{}); file_hf      .close();
-    try file_integral.writer().print(header ++ "\n" ++ content_integral ++ "\n\nexport OMP_NUM_THREADS=$N; acorn .input.json && clean", .{}); file_integral.close();
-    try file_matmul  .writer().print(header ++ "\n" ++ content_matmul   ++ "\n\nexport OMP_NUM_THREADS=$N; acorn .input.json && clean", .{}); file_matmul  .close();
+    try file_hf      .writer().print(header ++ "\n" ++ content_hf       ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON", .{}); file_hf      .close();
+    try file_integral.writer().print(header ++ "\n" ++ content_integral ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON", .{}); file_integral.close();
+    try file_matmul  .writer().print(header ++ "\n" ++ content_matmul   ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON", .{}); file_matmul  .close();
 }

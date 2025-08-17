@@ -1,8 +1,6 @@
 const std = @import("std"); const acorn = @import("acorn");
 
-const benchmark = @import("benchmark.zig");
-
-const Args = struct {
+pub const Args = struct {
     A: acorn.Matrix(f64), AJ: acorn.Matrix(f64), AC: acorn.Matrix(f64),
 
     pub fn init(allocator: std.mem.Allocator, D: usize) !Args {
@@ -22,16 +20,12 @@ const Args = struct {
     }
 
     pub fn print(self: Args) !void {
-        std.debug.print("MATRIX A:\n",     .{}); try self.A.print( std.io.getStdOut().writer());
-        std.debug.print("EIGENVALUES:\n",  .{}); try self.AJ.print(std.io.getStdOut().writer());
-        std.debug.print("EIGENVECTORS:\n", .{}); try self.AC.print(std.io.getStdOut().writer());
+        try std.io.getStdOut().writer().print("MATRIX A:\n",     .{}); try self.A.print( std.io.getStdOut().writer());
+        try std.io.getStdOut().writer().print("EIGENVALUES:\n",  .{}); try self.AJ.print(std.io.getStdOut().writer());
+        try std.io.getStdOut().writer().print("EIGENVECTORS:\n", .{}); try self.AC.print(std.io.getStdOut().writer());
     }
 
     pub fn randomize(self: *Args, seed: usize) !void {
         self.A.randn(0, 1, seed); try self.A.symmetrize();
     }
 };
-
-pub fn main() !void {
-    var D: usize = 2; try benchmark.benchmark("MATRIX DIAGONALIZATION", Args, &D, false);
-}

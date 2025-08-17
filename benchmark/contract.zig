@@ -1,8 +1,6 @@
 const std = @import("std"); const acorn = @import("acorn");
 
-const benchmark = @import("benchmark.zig");
-
-const Args = struct {
+pub const Args = struct {
     A: acorn.Tensor(f64), B: acorn.Tensor(f64), C: acorn.Tensor(f64), allocator: std.mem.Allocator,
 
     pub fn init(allocator: std.mem.Allocator, D: usize) !Args {
@@ -23,7 +21,7 @@ const Args = struct {
     }
 
     pub fn print(self: Args) !void {
-        std.debug.print("MATRIX C:\n", .{}); try self.C.matrix(1).print(std.io.getStdOut().writer());
+        try std.io.getStdOut().writer().print("MATRIX C:\n", .{}); try self.C.matrix(1).print(std.io.getStdOut().writer());
     }
 
     pub fn randomize(self: *Args, seed: usize) !void {
@@ -31,7 +29,3 @@ const Args = struct {
         self.B.randn(0, 1, 2 * seed + 1);
     }
 };
-
-pub fn main() !void {
-    var D: usize = 2; try benchmark.benchmark("TENSOR CONTRACTION", Args, &D, false);
-}
