@@ -103,7 +103,7 @@ clean:
 > git clean -dffx
 
 clean-cache:
-> rm -rf .cache
+> rm -rf .zig-cache
 
 clean-output:
 > rm -rf zig-out

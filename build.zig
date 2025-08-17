@@ -14,9 +14,7 @@ pub fn build(builder: *std.Build) !void {
         const os_name   = switch (target.os_tag.?  ) {.linux  => "linux",  .macos   => "macos",   .windows => "windows", else => unreachable};
         const arch_name = switch (target.cpu_arch.?) {.x86_64 => "x86_64", .aarch64 => "aarch64", .riscv64 => "riscv64", else => unreachable};
 
-        const library = builder.addStaticLibrary(.{.name = "acorn", .root_source_file = builder.path("src/acorn.zig"), .target = builder.resolveTargetQuery(target)});
-
-        const main_executable = builder.addExecutable(.{
+        const main_library = builder.addStaticLibrary(.{
             .name = "acorn",
             .optimize = if (debug) .Debug else .ReleaseFast,
             .root_source_file = builder.path("src/acorn.zig"),
@@ -24,10 +22,18 @@ pub fn build(builder: *std.Build) !void {
             .target = builder.resolveTargetQuery(target)
         });
 
+        const main_executable = builder.addExecutable(.{
+            .name = "acorn",
+            .optimize = if (debug) .Debug else .ReleaseFast,
+            .root_source_file = builder.path("src/main.zig"),
+            .strip = !debug,
+            .target = builder.resolveTargetQuery(target)
+        });
+
         const test_executable = builder.addTest(.{
             .name = "test",
             .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path("test/acorn.zig"),
+            .root_source_file = builder.path("test/main.zig"),
             .strip = !debug,
             .target = builder.resolveTargetQuery(target)
         });
@@ -35,37 +41,38 @@ pub fn build(builder: *std.Build) !void {
         const external_include = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/include"});
         const external_lib     = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/lib"    });
 
-        main_executable.addIncludePath(.{.cwd_relative = "include"       }); library.addIncludePath(.{.cwd_relative = "include"       });
-        main_executable.addIncludePath(.{.cwd_relative = external_include}); library.addIncludePath(.{.cwd_relative = external_include});
-        main_executable.addLibraryPath(.{.cwd_relative = external_lib    }); library.addLibraryPath(.{.cwd_relative = external_lib    });
+        main_executable.root_module.addIncludePath(.{.cwd_relative = "include"       }); main_library.root_module.addIncludePath(.{.cwd_relative = "include"       });
+        main_executable.root_module.addIncludePath(.{.cwd_relative = external_include}); main_library.root_module.addIncludePath(.{.cwd_relative = external_include});
+        main_executable.root_module.addLibraryPath(.{.cwd_relative = external_lib    }); main_library.root_module.addLibraryPath(.{.cwd_relative = external_lib    });
 
+        main_library.root_module.addIncludePath(.{.cwd_relative = try std.mem.concat(builder.allocator, u8, &[_][]const u8{external_include, "/eigen3"})});
 
-        main_executable.addIncludePath(.{.cwd_relative = try std.mem.concat(builder.allocator, u8, &[_][]const u8{external_include, "/eigen3"})});
+        main_library.root_module.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
+        main_library.root_module.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
+        main_library.root_module.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
 
-        main_executable.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
-        main_executable.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
-        main_executable.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
+        main_library.root_module.link_libc   = true;
+        main_library.root_module.link_libcpp = true;
 
-        main_executable.linkLibC(); main_executable.linkLibCpp(); library.linkLibC(); library.linkLibCpp();
+        main_library.root_module.linkSystemLibrary("int2",     .{.preferred_link_mode = .static});
+        main_library.root_module.linkSystemLibrary("omp",      .{.preferred_link_mode = .static});
+        main_library.root_module.linkSystemLibrary("openblas", .{.preferred_link_mode = .static});
 
-        main_executable.linkSystemLibrary2("int2",     .{.preferred_link_mode = .static});
-        main_executable.linkSystemLibrary2("omp",      .{.preferred_link_mode = .static});
-        main_executable.linkSystemLibrary2("openblas", .{.preferred_link_mode = .static});
+        test_executable.root_module.addImport("acorn", main_library.root_module);
+        main_executable.root_module.addImport("acorn", main_library.root_module);
 
-        test_executable.root_module.addImport("acorn", main_executable.root_module);
-
-        const main_install = builder.addInstallArtifact(main_executable, .{
+        const main_executable_install = builder.addInstallArtifact(main_executable, .{
             .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
         });
 
-        builder.getInstallStep().dependOn(&main_install.step);
+        builder.getInstallStep().dependOn(&main_executable_install.step);
 
         if (builtin.target.cpu.arch == target.cpu_arch and builtin.target.os.tag == target.os_tag and target.abi == .musl) {
 
             builder.step("run",  "Run the compiled executable"   ).dependOn(&builder.addRunArtifact(main_executable).step);
             builder.step("test", "Run unit tests"                ).dependOn(&builder.addRunArtifact(test_executable).step);
 
-            const docs = builder.addInstallDirectory(.{.source_dir = library.getEmittedDocs(), .install_dir = .{.custom = "../docs"}, .install_subdir = "code"});
+            const docs = builder.addInstallDirectory(.{.source_dir = main_library.getEmittedDocs(), .install_dir = .{.custom = "../docs"}, .install_subdir = "code"});
 
             builder.step("docs", "Install the code documentation").dependOn(&docs.step);
         }
