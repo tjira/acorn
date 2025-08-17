@@ -1,100 +1,99 @@
 .RECIPEPREFIX = >
 
-ZIG_VERSION = 0.14.1
-ZLS_VERSION = 0.14.0
+ARCH := x86_64
+OS   :=  linux
+ABI  :=   musl
 
-EIGEN_VERSION    =  3.4.0
-LIBINT_VERSION   = 2.11.1
-LLVM_VERSION     = 20.1.8
-OPENBLAS_VERSION = 0.3.30
+ZIG_VERSION      := 0.14.1
+ZLS_VERSION      := 0.14.0
+EIGEN_VERSION    :=  3.4.0
+LIBINT_VERSION   := 2.11.1
+LLVM_VERSION     := 20.1.8
+OPENBLAS_VERSION := 0.3.30
 
-BENCHMARK_SAMPLES = 1
+EXPRTK_COMMIT := cc1b800c2bd1ac3ac260478c915d2aec6f4eb41c
 
-export OMP_NUM_THREADS = 1
+URL_EIGEN    :=                             https://gitlab.com/libeigen/eigen/-/archive/$(EIGEN_VERSION)/eigen-$(EIGEN_VERSION).tar.gz
+URL_LIBINT   :=                    https://github.com/evaleev/libint/releases/download/v$(LIBINT_VERSION)/libint-$(LIBINT_VERSION).tgz
+URL_LLVM     := https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/llvm-project-$(LLVM_VERSION).src.tar.xz
+URL_OPENBLAS :=     https://github.com/OpenMathLib/OpenBLAS/releases/download/v$(OPENBLAS_VERSION)/OpenBLAS-$(OPENBLAS_VERSION).tar.gz
+URL_EXPRTK   :=                                       https://raw.githubusercontent.com/ArashPartow/exprtk/$(EXPRTK_COMMIT)/exprtk.hpp
+URL_ZIG      :=                                    https://ziglang.org/download/$(ZIG_VERSION)/zig-$(ARCH)-$(OS)-$(ZIG_VERSION).tar.xz
+URL_ZLS      :=                              https://github.com/zigtools/zls/releases/download/$(ZLS_VERSION)/zls-$(ARCH)-$(OS).tar.xz
 
-.PHONY: benchmark
+export OMP_NUM_THREADS := 1
 
 all: acorn
 
 # ACORN BUILDING TARGETS ===============================================================================================================================================================================
 
-acorn: library
+.PHONY: acorn docs test
+
+acorn: zig-bin/.done external-$(ARCH)-$(OS)/.done
 > ./zig-bin/zig build --summary all
 
-test: library
+docs: zig-bin/.done external-$(ARCH)-$(OS)/.done
+> ./zig-bin/zig build --summary all docs
+
+test: zig-bin/.done external-$(ARCH)-$(OS)/.done
 > ./zig-bin/zig build --summary all test
 
 # BENCHMARKING TARGETS =================================================================================================================================================================================
 
-benchmark: benchmark-contract benchmark-dgees benchmark-dgemm benchmark-dsyevd
+BENCHMARK_TARGETS := contract dgees dgemm dsyevd
 
-benchmark-contract: acorn
-> ./zig-out/x86_64-linux-musl/benchmark contract 100 $(BENCHMARK_SAMPLES)
+BENCHMARK_ARGS.contract := contract  100
+BENCHMARK_ARGS.dgees    := dgees    1000
+BENCHMARK_ARGS.dgemm    := dgemm    3000
+BENCHMARK_ARGS.dsyevd   := dsyevd   2000
 
-benchmark-dgees: acorn
-> ./zig-out/x86_64-linux-musl/benchmark dgees 1000 $(BENCHMARK_SAMPLES)
+BENCHMARK_SAMPLES := 1
 
-benchmark-dgemm: acorn
-> ./zig-out/x86_64-linux-musl/benchmark dgemm 3000 $(BENCHMARK_SAMPLES)
+benchmark: $(addprefix benchmark-,$(BENCHMARK_TARGETS))
 
-benchmark-dsyevd: acorn
-> ./zig-out/x86_64-linux-musl/benchmark dsyevd 2000 $(BENCHMARK_SAMPLES)
+benchmark-%: acorn
+> ./zig-out/$(ARCH)-$(OS)-$(ABI)/benchmark $(BENCHMARK_ARGS.$*) $(BENCHMARK_SAMPLES)
 
-# DOCUMENTATION TARGETS ================================================================================================================================================================================
-
-docs: library
-> ./zig-bin/zig build --summary all docs && cp -r education/python docs && ./script/docstopdf.sh && cd docs && bundler install
-
-serve: docs
-> cd docs && bundle exec jekyll serve
-
-# ANALYSIS TARGETS =====================================================================================================================================================================================
+# CUSTOM TARGETS --=====================================================================================================================================================================================
 
 lines:
-> git ls-files | grep -E '\.cpp$$|\.h$$|\.zig$$' | xargs cat | awk 'NF' | wc -l
+> @git ls-files | grep -E '\.cpp$$|\.h$$|\.zig$$' | xargs cat | awk 'NF' | wc -l
 
 linguist:
-> github-linguist
+> @github-linguist
+
+serve:
+> @cd docs && bundle exec jekyll serve
+
+tree:
+> @mkdir -p external-$(ARCH)-$(OS)/include external-$(ARCH)-$(OS)/lib zig-bin
 
 # LIBRARY TARGETS ======================================================================================================================================================================================
 
-library: external-x86_64-linux/.done
+LIBRARIES := eigen.tar.gz libint.tar.gz llvm.tar.xz openblas.tar.gz include/exprtk.hpp
 
-external-x86_64-linux:
-> mkdir -p external-x86_64-linux/include external-x86_64-linux/lib
-
-external-x86_64-linux/.done: zig-bin/.done external-x86_64-linux/eigen.tar.gz external-x86_64-linux/libint.tar.gz external-x86_64-linux/llvm.tar.xz external-x86_64-linux/openblas.tar.gz external-x86_64-linux/include/exprtk.hpp
+external-$(ARCH)-$(OS)/.done: $(addprefix external-$(ARCH)-$(OS)/,$(LIBRARIES))
 > ./script/library.sh && touch $@
 
-external-x86_64-linux/eigen.tar.gz: | external-x86_64-linux
-> wget -q -O $@ https://gitlab.com/libeigen/eigen/-/archive/$(EIGEN_VERSION)/eigen-$(EIGEN_VERSION).tar.gz
+external-$(ARCH)-$(OS)/eigen.tar.gz:       URL =    $(URL_EIGEN)
+external-$(ARCH)-$(OS)/libint.tar.gz:      URL =   $(URL_LIBINT)
+external-$(ARCH)-$(OS)/llvm.tar.xz:        URL =     $(URL_LLVM)
+external-$(ARCH)-$(OS)/openblas.tar.gz:    URL = $(URL_OPENBLAS)
+external-$(ARCH)-$(OS)/include/exprtk.hpp: URL =   $(URL_EXPRTK)
 
-external-x86_64-linux/libint.tar.gz: | external-x86_64-linux
-> wget -q -O $@ https://github.com/evaleev/libint/releases/download/v$(LIBINT_VERSION)/libint-$(LIBINT_VERSION).tgz
-
-external-x86_64-linux/llvm.tar.xz: | external-x86_64-linux
-> wget -q -O $@ https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/llvm-project-$(LLVM_VERSION).src.tar.xz
-
-external-x86_64-linux/openblas.tar.gz: | external-x86_64-linux
-> wget -q -O $@ https://github.com/OpenMathLib/OpenBLAS/releases/download/v$(OPENBLAS_VERSION)/OpenBLAS-$(OPENBLAS_VERSION).tar.gz
-
-external-x86_64-linux/include/exprtk.hpp: | external-x86_64-linux
-> wget -q -O $@ https://raw.githubusercontent.com/ArashPartow/exprtk/refs/heads/master/exprtk.hpp
-
+external-$(ARCH)-$(OS)/%: | tree
+> wget -q -O $@ $(URL)
 
 # COMPILER TARGETS =====================================================================================================================================================================================
-
-zig-bin:
-> mkdir -p zig-bin
 
 zig-bin/.done: zig-bin/zig zig-bin/zls
 > touch $@
 
-zig-bin/zig: | zig-bin
-> wget -q -O zig.tar.xz https://ziglang.org/download/$(ZIG_VERSION)/zig-x86_64-linux-$(ZIG_VERSION).tar.xz && tar -xf zig.tar.xz -C zig-bin --strip-components=1 && rm zig.tar.xz
+zig-bin/zig: | tree
+> wget -q -O zig.tar.xz $(URL_ZIG) && tar -xf zig.tar.xz -C zig-bin --strip-components=1 && rm zig.tar.xz
 
-zig-bin/zls: | zig-bin
-> wget -q -O zls.tar.xz https://github.com/zigtools/zls/releases/download/$(ZLS_VERSION)/zls-x86_64-linux.tar.xz && tar -xf zls.tar.xz -C zig-bin && rm zls.tar.xz
+zig-bin/zls: | tree
+> wget -q -O zls.tar.xz $(URL_ZLS) && tar -xf zls.tar.xz -C zig-bin && rm zls.tar.xz
 
 # CLEAN TARGETS ========================================================================================================================================================================================
 

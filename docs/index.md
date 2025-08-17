@@ -17,9 +17,9 @@ You can also download this documentation along with complementary files in vario
 
 ### Educational Toolkits in Python
 
-[Electronic Structure Methods    ](/acorn/python/resmet.py){: .btn .btn-purple }
-[Quantum and Bohmian Dynamics    ](/acorn/python/neqdet.py){: .btn .btn-purple }
-[Mixed Quantum-Classical Dynamics](/acorn/python/shcdet.py){: .btn .btn-purple }
+[Electronic Structure Methods    ](https://raw.githubusercontent.com/tjira/acorn/refs/heads/master/education/python/resmet.py){: .btn .btn-purple }
+[Quantum and Bohmian Dynamics    ](https://raw.githubusercontent.com/tjira/acorn/refs/heads/master/education/python/neqdet.py){: .btn .btn-purple }
+[Mixed Quantum-Classical Dynamics](https://raw.githubusercontent.com/tjira/acorn/refs/heads/master/education/python/shcdet.py){: .btn .btn-purple }
 
 ### Other Tools
 
