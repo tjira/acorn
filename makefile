@@ -78,7 +78,7 @@ $(EXTERNAL_DIR)/zls.tar.xz:         URL =                              https://g
 $(EXTERNAL_DIR)/include/exprtk.hpp: URL =                                       https://raw.githubusercontent.com/ArashPartow/exprtk/$(EXPRTK_COMMIT)/exprtk.hpp
 
 $(EXTERNAL_DIR)/%: | tree
-> curl -Lfs -o $@ $(URL)
+> wget -q -O $@ $(URL)
 
 # CLEAN TARGETS ========================================================================================================================================================================================
 

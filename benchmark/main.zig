@@ -3,6 +3,7 @@ const std = @import("std"); const builtin = @import("builtin"); const acorn = @i
 const contract = @import("contract.zig");
 const dgees    = @import("dgees.zig"   );
 const dgemm    = @import("dgemm.zig"   );
+const dgesdd   = @import("dgesdd.zig"  );
 const dsyevd   = @import("dsyevd.zig"  );
 
 /// Function to benchmark a given object with a specific title.
@@ -64,6 +65,7 @@ pub fn main() !void {
     if      (std.mem.eql(u8, name.items, "contract")) {try benchmark("TENSOR CONTRACTION",               contract.Args, D, N, S, P == 1, allocator);}
     else if (std.mem.eql(u8, name.items, "dgees"   )) {try benchmark("REAL SCHUR DECOMPOSITION",         dgees.Args,    D, N, S, P == 1, allocator);}
     else if (std.mem.eql(u8, name.items, "dgemm"   )) {try benchmark("MATRIX MULTIPLICATION",            dgemm.Args,    D, N, S, P == 1, allocator);}
+    else if (std.mem.eql(u8, name.items, "dgesdd"  )) {try benchmark("SVD DECOMPOSITION",                dgesdd.Args,   D, N, S, P == 1, allocator);}
     else if (std.mem.eql(u8, name.items, "dsyevd"  )) {try benchmark("SYMMETRIC MATRIX DIAGONALIZATION", dsyevd.Args,   D, N, S, P == 1, allocator);}
 
     else return error.InvalidBenchmarkName;

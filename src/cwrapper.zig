@@ -86,34 +86,61 @@ pub fn Expression(comptime T: type) type {
 pub fn Lapack(comptime T: type) type {
     return struct {
 
-        /// Calculate the condition number of a matrix A, provided its LU decomposition and 1-norm. The result returned.
-        pub fn dgecon(ALU: Matrix(T), onorm: T) !T {
-            const n: i32 = @intCast(ALU.rows); var rcond: T = 0;
+        /// Calculate the condition number of a matrix A. The result returned.
+        pub fn dgecon(A: Matrix(T)) !T {
+            const n: i32 = @intCast(A.rows); var rcond: T = 0;
 
-            const info = lapacke.LAPACKE_dgecon(lapacke.LAPACK_ROW_MAJOR, '1', n, &ALU.data[0], n, onorm, &rcond);
+            var LU = try A.clone(); try dgetrf(&LU, A);
+
+            const info = lapacke.LAPACKE_dgecon(lapacke.LAPACK_ROW_MAJOR, '1', n, &LU.data[0], n, A.onorm(), &rcond);
 
             return if (info == 0) rcond else error.ErrorInConditionNumberCalculation;
         }
 
-        /// Calculate the Schur decomposition of matrix A. The JR and JI will contain real and imaginary parts of calculated eigenvalues.
-        pub fn dgees(D: *Matrix(T), Q: *Matrix(T), A: Matrix(T), JR: *Matrix(T), JI: *Matrix(T)) !void {
-            const n: i32 = @intCast(A.rows); var sdim: i32 = undefined; A.memcpy(D.*);
+        /// Calculate the Schur decomposition of matrix A.
+        pub fn dgees(D: *Matrix(T), Q: *Matrix(T), A: Matrix(T)) !void {
+            const n: i32 = @intCast(A.rows); A.memcpy(D.*);
 
-            const info = lapacke.LAPACKE_dgees(lapacke.LAPACK_ROW_MAJOR, 'V', 'N', null, n, &D.data[0], n, &sdim, &JR.data[0], &JI.data[0], &Q.data[0], n);
+            var t1: i32 = undefined; var T1 = try Vector(T).init(@as(usize, @intCast(n)), A.allocator); var T2 = try Vector(T).init(@as(usize, @intCast(n)), A.allocator);
 
-            for (0..JR.rows) |i| std.mem.swap(T, JR.ptr(i, i), JR.ptr(0, i));
-            for (0..JI.rows) |i| std.mem.swap(T, JI.ptr(i, i), JI.ptr(0, i));
+            const info = lapacke.LAPACKE_dgees(lapacke.LAPACK_ROW_MAJOR, 'V', 'N', null, n, &D.data[0], n, &t1, &T1.data[0], &T2.data[0], &Q.data[0], n);
 
             if (info != 0) return error.ErrorInRealSchurDecomposition;
         }
 
-        /// Solve the linear system Ax = b using the LU decomposition of A. The result is stored in x. The LU decomposition is stored in ALU and the pivot indices are stored in p.
-        pub fn dgesv(x: *Vector(T), ALU: *Matrix(T), p: *Vector(i32), A: Matrix(T), b: Vector(T)) !void {
-            const n: i32 = @intCast(A.rows); A.memcpy(ALU.*); b.memcpy(x.*);
+        /// Perform the SVD decomposition of a general matrix.
+        pub fn dgesdd(U: *Matrix(T), S: *Matrix(T), VT: *Matrix(T), A: Matrix(T)) !void {
+            const m: i32 = @intCast(A.rows); const n: i32 = @intCast(A.cols);
 
-            const info = lapacke.LAPACKE_dgesv(lapacke.LAPACK_ROW_MAJOR, n, 1, &ALU.data[0], n, &p.data[0], &x.data[0], 1);
+            var T1 = try A.clone();
+
+            const info = lapacke.LAPACKE_dgesdd(lapacke.LAPACK_ROW_MAJOR, 'A', m, n, &T1.data[0], n, &S.data[0], &U.data[0], m, &VT.data[0], n);
+
+            for (0..S.cols) |i| std.mem.swap(T, S.ptr(i, i), S.ptr(0, i));
+
+            if (info != 0) return error.ErrorInSingularValueDecomposition;
+        }
+
+        /// Solve the linear system Ax = b using the LU decomposition of A. The result is stored in x.
+        pub fn dgesv(x: *Vector(T), A: Matrix(T), b: Vector(T)) !void {
+            const n: i32 = @intCast(A.rows); b.memcpy(x.*);
+
+            var T1 = try A.clone(); var T2 = try Vector(i32).init(@as(usize, @intCast(n)), A.allocator);
+
+            const info = lapacke.LAPACKE_dgesv(lapacke.LAPACK_ROW_MAJOR, n, 1, &T1.data[0], n, &T2.data[0], &x.data[0], 1);
 
             if (info != 0) return error.ErrorInLinearSystemSolution;
+        }
+
+        /// Solve the linear system Ax = b using the LU decomposition of A. The result is stored in x. The LU decomposition is stored in LU.
+        pub fn dgetrf(LU: *Matrix(T), A: Matrix(T)) !void {
+            const m: i32 = @intCast(A.rows); const n: i32 = @intCast(A.cols); A.memcpy(LU.*);
+
+            var T1 = try Vector(i32).init(@as(usize, @intCast(@min(m, n))), A.allocator);
+
+            const info = lapacke.LAPACKE_dgetrf(lapacke.LAPACK_ROW_MAJOR, m, n, &LU.data[0], n, &T1.data[0]);
+
+            if (info != 0) return error.ErrorInLUFactorization;
         }
 
         /// Calculate the eigenvalues and eigenvectors of a symmetric matrix A. The eigenvalues are stored in J and the eigenvectors are stored in C.
@@ -127,11 +154,13 @@ pub fn Lapack(comptime T: type) type {
             if (info != 0) return error.ErrorInEigenvalueCalculation;
         }
 
-        /// Finds the eigenvalues and eigenvectors of a symmetric-definite generalized eigenproblem A*x = λ*B*x. The eigenvalues are stored in J and the eigenvectors are stored in C. The upper triangular part of Cholesky decmposition will be stored in CH.
-        pub fn dsygvd(J: *Matrix(T), C: *Matrix(T), A: Matrix(T), B: Matrix(T), CH: *Matrix(T)) !void {
-            const n: i32 = @intCast(A.rows); A.memcpy(C.*); B.memcpy(CH.*); J.fill(0);
+        /// Finds the eigenvalues and eigenvectors of a symmetric-definite generalized eigenproblem A*x = λ*B*x. The eigenvalues are stored in J and the eigenvectors are stored in C.
+        pub fn dsygvd(J: *Matrix(T), C: *Matrix(T), A: Matrix(T), B: Matrix(T)) !void {
+            const n: i32 = @intCast(A.rows); A.memcpy(C.*); J.fill(0);
 
-            const info = lapacke.LAPACKE_dsygvd(lapacke.LAPACK_ROW_MAJOR, 1, 'V', 'U', n, &C.data[0], n, &CH.data[0], n, &J.data[0]);
+            var T1 = try B.clone();
+
+            const info = lapacke.LAPACKE_dsygvd(lapacke.LAPACK_ROW_MAJOR, 1, 'V', 'U', n, &C.data[0], n, &T1.data[0], n, &J.data[0]);
 
             for (0..J.rows) |i| std.mem.swap(T, J.ptr(i, i), J.ptr(0, i));
 

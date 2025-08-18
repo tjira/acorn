@@ -1,24 +1,22 @@
 const std = @import("std"); const acorn = @import("acorn");
 
 pub const Args = struct {
-    A: acorn.Matrix(f64), AT: acorn.Matrix(f64), AQ: acorn.Matrix(f64), AJR: acorn.Matrix(f64), AJI: acorn.Matrix(f64),
+    A: acorn.Matrix(f64), AT: acorn.Matrix(f64), AQ: acorn.Matrix(f64),
 
     pub fn init(allocator: std.mem.Allocator, D: usize) !Args {
         return .{
             .A   = try acorn.Matrix(f64).init(D, D, allocator),
             .AT  = try acorn.Matrix(f64).init(D, D, allocator),
             .AQ  = try acorn.Matrix(f64).init(D, D, allocator),
-            .AJR = try acorn.Matrix(f64).init(D, D, allocator),
-            .AJI = try acorn.Matrix(f64).init(D, D, allocator),
         };
     }
 
     pub fn deinit(self: *Args) void {
-        self.A.deinit(); self.AT.deinit(); self.AQ.deinit(); self.AJR.deinit(); self.AJI.deinit();
+        self.A.deinit(); self.AT.deinit(); self.AQ.deinit();
     }
 
     pub fn function(self: *Args) !void {
-        try acorn.cwrapper.Lapack(f64).dgees(&self.AT, &self.AQ, self.A, &self.AJR, &self.AJI);
+        try acorn.cwrapper.Lapack(f64).dgees(&self.AT, &self.AQ, self.A);
     }
 
     pub fn print(self: Args) !void {

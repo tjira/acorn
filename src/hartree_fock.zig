@@ -207,7 +207,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
             try diisExtrapolate(T, &F_A, &DIIS_F, &DIIS_E, iter, allocator);
         }
 
-        try cwp.Lapack(T).dsygvd(&E_M, &C_A, F_A, S_A, &T1); D_A.fill(0); EP = E; E = 0;
+        try cwp.Lapack(T).dsygvd(&E_M, &C_A, F_A, S_A); D_A.fill(0); EP = E; E = 0;
 
         for (0..nbf) |i| for (0..nocc) |j| for (0..nbf) |k| {
             D_A.ptr(i, k).* += C_A.at(i, j) * C_A.at(k, j);
@@ -250,10 +250,8 @@ pub fn diisExtrapolate(comptime T: type, F_A: *Matrix(T), DIIS_F: *std.ArrayList
     const size = if (iter < DIIS_F.items.len) iter else DIIS_F.items.len;
 
     var A   = try Matrix(T  ).init(size + 1, size + 1, allocator); defer   A.deinit();
-    var ALU = try Matrix(T  ).init(size + 1, size + 1, allocator); defer ALU.deinit();
     var b   = try Vector(T  ).init(size + 1,           allocator); defer   b.deinit();
     var c   = try Vector(T  ).init(size + 1,           allocator); defer   c.deinit();
-    var p   = try Vector(i32).init(size + 1,           allocator); defer   p.deinit();
 
     A.fill(1); b.fill(0); A.ptr(A.rows - 1, A.cols - 1).* = 0; b.ptr(b.rows - 1).* = 1;
 
@@ -269,9 +267,9 @@ pub fn diisExtrapolate(comptime T: type, F_A: *Matrix(T), DIIS_F: *std.ArrayList
         };
     };
 
-    try cwp.Lapack(T).dgesv(&c, &ALU, &p, A, b);
+    try cwp.Lapack(T).dgesv(&c, A, b);
 
-    if (try cwp.Lapack(T).dgecon(ALU, A.onorm()) < 1e-12) return else F_A.fill(0);
+    if (try cwp.Lapack(T).dgecon(A) < 1e-12) return else F_A.fill(0);
 
     for (0..size) |i| {
 
