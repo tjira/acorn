@@ -6,7 +6,7 @@ const dgemm    = @import("dgemm.zig"   );
 const dsyevd   = @import("dsyevd.zig"  );
 
 /// Function to benchmark a given object with a specific title.
-pub fn benchmark(title: []const u8, object: anytype, D: usize, N: usize, print: bool, allocator: std.mem.Allocator) !void {
+pub fn benchmark(title: []const u8, object: anytype, D: usize, N: usize, S: usize, print: bool, allocator: std.mem.Allocator) !void {
 
     const digits = std.math.log10(N) + 1;
 
@@ -24,7 +24,7 @@ pub fn benchmark(title: []const u8, object: anytype, D: usize, N: usize, print: 
 
         try std.io.getStdOut().writer().print("{[i]d:[width]}/{[n]d}) RANDOMIZATION: ", .{.i = i + 1, .width = digits, .n = N});
 
-        try args.randomize(i);
+        try args.randomize(i + S);
 
         try std.io.getStdOut().writer().print("{s:9}, EXECUTION: ", .{std.fmt.fmtDuration(timer.read())  });
 
@@ -57,20 +57,20 @@ pub fn main() !void {
         if (gpa.deinit() == .leak) std.debug.panic("MEMORY LEAK DETECTED IN THE ALLOCATOR\n", .{});
     }
 
-    var name = std.ArrayList(u8).init(allocator); var D: usize = 2; var N: usize = 1; defer name.deinit();
+    var name = std.ArrayList(u8).init(allocator); var D: usize = 2; var N: usize = 1; var S: usize = 0; var P: u1 = 0; defer name.deinit();
 
-    try parse(&name, &D, &N, allocator);
+    try parse(&name, &D, &N, &S, &P, allocator);
 
-    if      (std.mem.eql(u8, name.items, "contract")) {try benchmark("TENSOR CONTRACTION",               contract.Args, D, N, false, allocator);}
-    else if (std.mem.eql(u8, name.items, "dgees"   )) {try benchmark("REAL SCHUR DECOMPOSITION",         dgees.Args,    D, N, false, allocator);}
-    else if (std.mem.eql(u8, name.items, "dgemm"   )) {try benchmark("MATRIX MULTIPLICATION",            dgemm.Args,    D, N, false, allocator);}
-    else if (std.mem.eql(u8, name.items, "dsyevd"   )) {try benchmark("SYMMETRIC MATRIX DIAGONALIZATION", dsyevd.Args,   D, N, false, allocator);}
+    if      (std.mem.eql(u8, name.items, "contract")) {try benchmark("TENSOR CONTRACTION",               contract.Args, D, N, S, P == 1, allocator);}
+    else if (std.mem.eql(u8, name.items, "dgees"   )) {try benchmark("REAL SCHUR DECOMPOSITION",         dgees.Args,    D, N, S, P == 1, allocator);}
+    else if (std.mem.eql(u8, name.items, "dgemm"   )) {try benchmark("MATRIX MULTIPLICATION",            dgemm.Args,    D, N, S, P == 1, allocator);}
+    else if (std.mem.eql(u8, name.items, "dsyevd"  )) {try benchmark("SYMMETRIC MATRIX DIAGONALIZATION", dsyevd.Args,   D, N, S, P == 1, allocator);}
 
     else return error.InvalidBenchmarkName;
 }
 
 /// Parser for the arguments, where first argument is difficulty and second is number of samples.
-pub fn parse(name: *std.ArrayList(u8), D: *usize, N: *usize, allocator: std.mem.Allocator) !void {
+pub fn parse(name: *std.ArrayList(u8), D: *usize, N: *usize, S: *usize, P: *u1, allocator: std.mem.Allocator) !void {
     var argv = try std.process.argsWithAllocator(allocator); defer argv.deinit(); var argc: usize = 0;
 
     _ = argv.next(); while (argv.next()) |arg| {
@@ -85,6 +85,14 @@ pub fn parse(name: *std.ArrayList(u8), D: *usize, N: *usize, allocator: std.mem.
 
         else if (argc == 2) {
             N.* = try std.fmt.parseInt(usize, arg, 10);
+        }
+
+        else if (argc == 3) {
+            S.* = try std.fmt.parseInt(usize, arg, 10);
+        }
+
+        else if (argc == 4) {
+            P.* = try std.fmt.parseInt(u1, arg, 10);
         }
 
         else {
