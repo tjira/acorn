@@ -35,6 +35,9 @@ cmake_install() {
     cmake --build . --parallel $CORES --verbose && cmake --install .
 }
 
+tar -xf external-x86_64-linux/zig.tar.xz -C zig-bin --strip-components=1
+tar -xf external-x86_64-linux/zls.tar.xz -C zig-bin --strip-components=0
+
 for TARGET in "${TARGETS[@]}"; do
 
     export C_INCLUDE_PATH="$DIRNAME/../external-$TARGET/include:$C_INCLUDE_PATH"
