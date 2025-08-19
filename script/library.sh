@@ -19,6 +19,16 @@ CMAKE_OMP=(
     -DLIBOMP_OMPT_SUPPORT=False
 )
 
+CMAKE_RAYLIB=(
+    -DPLATFORM=Desktop
+)
+
+CONFIGURE_GENERAL=(
+    CC="$DIRNAME/../zigcc"
+    --enable-static
+    --disable-shared
+)
+
 MAKE_OPENBLAS=(
     AR="$DIRNAME/../zigar"
     CC="$DIRNAME/../zigcc"
@@ -47,22 +57,35 @@ for TARGET in "${TARGETS[@]}"; do
         -DCMAKE_PREFIX_PATH="$DIRNAME/../external-$TARGET"
     )
 
+    CONFIGURE_GENERAL+=(
+        --prefix="$DIRNAME/../external-$TARGET"
+    )
+
     echo "$DIRNAME/../zig-bin/zig ar                          \"\$@\"" > zigar     && chmod +x     zigar
     echo "$DIRNAME/../zig-bin/zig cc     --target=$TARGET-gnu \"\$@\"" > zigcc     && chmod +x     zigcc
     echo "$DIRNAME/../zig-bin/zig c++    --target=$TARGET-gnu \"\$@\"" > zigcpp    && chmod +x    zigcpp
     echo "$DIRNAME/../zig-bin/zig ranlib                      \"\$@\"" > zigranlib && chmod +x zigranlib
 
-    tar -xzf    external-$TARGET/eigen.tar.gz && mv eigen*       eigen
-    tar -xzf   external-$TARGET/libint.tar.gz && mv libint*     libint
-    tar -xf      external-$TARGET/llvm.tar.xz && mv llvm*         llvm
-    tar -xzf external-$TARGET/openblas.tar.gz && mv OpenBLAS* openblas
+    tar -xzf     external-$TARGET/eigen.tar.gz && mv eigen*         eigen
+    tar -xzf    external-$TARGET/libint.tar.gz && mv libint*       libint
+    tar -xf       external-$TARGET/llvm.tar.xz && mv llvm*           llvm
+    tar -xzf  external-$TARGET/openblas.tar.gz && mv OpenBLAS*   openblas
+    # tar -xzf    external-$TARGET/raylib.tar.gz && mv raylib*       raylib
+    # tar -xzf       external-$TARGET/x11.tar.gz && mv libx11*          x11
+    # tar -xzf external-$TARGET/xorgproto.tar.gz && mv xorgproto* xorgproto
+    # tar -xzf    external-$TARGET/xtrans.tar.gz && mv libxtrans*    xtrans
+
+    # cd xorgproto && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    # cd xtrans    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    # cd x11       && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
 
     cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}"    ../openmp && cmake_install && cd ../..
     cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                      ..        && cmake_install && cd ../..
     cd libint && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_LIBINT[@]}" ..        && cmake_install && cd ../..
+    # cd raylib && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_RAYLIB[@]}" ..        && cmake_install && cd ../..
 
     cd openblas && make "${MAKE_OPENBLAS[@]}" -j $CORES libs shared && make NO_SHARED=1 PREFIX="$DIRNAME/../external-$TARGET" install && cd ..
 
-    rm -rf eigen libint llvm openblas zigar zigcc zigcpp zigranlib
+    rm -rf eigen libint llvm openblas raylib x11 xorgproto xtrans zigar zigcc zigcpp zigranlib
 
 done
