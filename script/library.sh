@@ -72,6 +72,7 @@ for TARGET in "${TARGETS[@]}"; do
     tar -xf  external-$TARGET/llvm.tar.xz       && mv llvm*            llvm
     tar -xzf external-$TARGET/eigen.tar.gz      && mv eigen*          eigen
     tar -xzf external-$TARGET/libint.tar.gz     && mv libint*        libint
+    tar -xzf external-$TARGET/mesa.tar.gz       && mv mesa*            mesa
     tar -xzf external-$TARGET/openblas.tar.gz   && mv OpenBLAS*    openblas
     tar -xzf external-$TARGET/raylib.tar.gz     && mv raylib*        raylib
     tar -xzf external-$TARGET/x11.tar.gz        && mv libx11*           x11
@@ -106,6 +107,8 @@ for TARGET in "${TARGETS[@]}"; do
     cd xi         && ./autogen.sh && PKG_CONFIG="pkg-config --static" ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
     cd xinput     && ./autogen.sh && PKG_CONFIG="pkg-config --static" ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
 
+    # cd mesa && mkdir build && meson setup build -Dprefix="$DIRNAME/../external-$TARGET"
+
     # cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}"    ../openmp && cmake_install && cd ../..
     # cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                      ..        && cmake_install && cd ../..
     # cd libint && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_LIBINT[@]}" ..        && cmake_install && cd ../..
@@ -113,6 +116,6 @@ for TARGET in "${TARGETS[@]}"; do
 
     # cd openblas && make "${MAKE_OPENBLAS[@]}" -j $CORES libs shared && make NO_SHARED=1 PREFIX="$DIRNAME/../external-$TARGET" install && cd ..
 
-    # rm -rf eigen libint llvm openblas raylib x11 xau xcb xcbproto xext xfixes xi xinerama xinput xorgmacros xorgproto xrender xrandr xtrans zigar zigcc zigcpp zigranlib
+    # rm -rf eigen libint llvm mesa openblas raylib x11 xau xcb xcbproto xext xfixes xi xinerama xinput xorgmacros xorgproto xrender xrandr xtrans zigar zigcc zigcpp zigranlib
 
 done

@@ -9,6 +9,7 @@ EXTERNAL_DIR := external-$(ARCH)-$(OS)
 EIGEN_VERSION      :=  3.4.0
 LIBINT_VERSION     := 2.11.1
 LLVM_VERSION       := 20.1.8
+MESA_VERSION	   := 25.2.1
 OPENBLAS_VERSION   := 0.3.30
 RAYLIB_VERSION     :=    5.5
 X11_VERSION        := 1.8.12
@@ -83,7 +84,7 @@ tree:
 
 # EXTERNAL TARGETS =====================================================================================================================================================================================
 
-EXTERNAL := eigen.tar.gz libint.tar.gz llvm.tar.xz openblas.tar.gz raylib.tar.gz x11.tar.gz xau.tar.gz xcb.tar.gz xcbproto.tar.gz xcursor.tar.gz xext.tar.gz xfixes.tar.gz xi.tar.gz xinerama.tar.gz xinput.tar.gz xorgmacros.tar.gz xorgproto.tar.gz xrandr.tar.gz xrender.tar.gz xtrans.tar.gz zig.tar.xz zls.tar.xz include/exprtk.hpp
+EXTERNAL := eigen.tar.gz libint.tar.gz llvm.tar.xz mesa.tar.gz openblas.tar.gz raylib.tar.gz x11.tar.gz xau.tar.gz xcb.tar.gz xcbproto.tar.gz xcursor.tar.gz xext.tar.gz xfixes.tar.gz xi.tar.gz xinerama.tar.gz xinput.tar.gz xorgmacros.tar.gz xorgproto.tar.gz xrandr.tar.gz xrender.tar.gz xtrans.tar.gz zig.tar.xz zls.tar.xz include/exprtk.hpp
 
 $(EXTERNAL_DIR)/.done: $(addprefix $(EXTERNAL_DIR)/,$(EXTERNAL))
 > ./script/library.sh && touch $@
@@ -91,6 +92,7 @@ $(EXTERNAL_DIR)/.done: $(addprefix $(EXTERNAL_DIR)/,$(EXTERNAL))
 $(EXTERNAL_DIR)/eigen.tar.gz:       URL =                                                       https://gitlab.com/libeigen/eigen/-/archive/$(EIGEN_VERSION)/eigen-$(EIGEN_VERSION).tar.gz
 $(EXTERNAL_DIR)/libint.tar.gz:      URL =                                              https://github.com/evaleev/libint/releases/download/v$(LIBINT_VERSION)/libint-$(LIBINT_VERSION).tgz
 $(EXTERNAL_DIR)/llvm.tar.xz:        URL =                           https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/llvm-project-$(LLVM_VERSION).src.tar.xz
+$(EXTERNAL_DIR)/mesa.tar.gz:        URL =                                         https://gitlab.freedesktop.org/mesa/mesa/-/archive/mesa-$(MESA_VERSION)/mesa-mesa-$(MESA_VERSION).tar.gz
 $(EXTERNAL_DIR)/openblas.tar.gz:    URL =                               https://github.com/OpenMathLib/OpenBLAS/releases/download/v$(OPENBLAS_VERSION)/OpenBLAS-$(OPENBLAS_VERSION).tar.gz
 $(EXTERNAL_DIR)/raylib.tar.gz:      URL =                                                                     https://github.com/raysan5/raylib/archive/refs/tags/$(RAYLIB_VERSION).tar.gz
 $(EXTERNAL_DIR)/x11.tar.gz:         URL =                               https://gitlab.freedesktop.org/xorg/lib/libx11/-/archive/libX11-$(X11_VERSION)/libx11-libX11-$(X11_VERSION).tar.gz
