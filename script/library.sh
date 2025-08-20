@@ -50,7 +50,9 @@ tar -xf external-x86_64-linux/zls.tar.xz -C zig-bin --strip-components=0
 
 for TARGET in "${TARGETS[@]}"; do
 
-    export C_INCLUDE_PATH="$DIRNAME/../external-$TARGET/include:$C_INCLUDE_PATH"
+    export    ACLOCAL_PATH="$DIRNAME/../external-$TARGET/share/aclocal:$ACLOCAL_PATH"
+    export  C_INCLUDE_PATH="$DIRNAME/../external-$TARGET/include:$C_INCLUDE_PATH"
+    export PKG_CONFIG_PATH="$DIRNAME/../external-$TARGET/share/pkgconfig:$PKG_CONFIG_PATH"
 
     CMAKE_GENERAL+=(
         -DCMAKE_INSTALL_PREFIX="$DIRNAME/../external-$TARGET"
@@ -66,26 +68,32 @@ for TARGET in "${TARGETS[@]}"; do
     echo "$DIRNAME/../zig-bin/zig c++    --target=$TARGET-gnu \"\$@\"" > zigcpp    && chmod +x    zigcpp
     echo "$DIRNAME/../zig-bin/zig ranlib                      \"\$@\"" > zigranlib && chmod +x zigranlib
 
-    tar -xzf     external-$TARGET/eigen.tar.gz && mv eigen*         eigen
-    tar -xzf    external-$TARGET/libint.tar.gz && mv libint*       libint
-    tar -xf       external-$TARGET/llvm.tar.xz && mv llvm*           llvm
-    tar -xzf  external-$TARGET/openblas.tar.gz && mv OpenBLAS*   openblas
-    # tar -xzf    external-$TARGET/raylib.tar.gz && mv raylib*       raylib
-    # tar -xzf       external-$TARGET/x11.tar.gz && mv libx11*          x11
-    # tar -xzf external-$TARGET/xorgproto.tar.gz && mv xorgproto* xorgproto
-    # tar -xzf    external-$TARGET/xtrans.tar.gz && mv libxtrans*    xtrans
+    tar -xzf      external-$TARGET/eigen.tar.gz && mv eigen*          eigen
+    tar -xzf     external-$TARGET/libint.tar.gz && mv libint*        libint
+    tar -xf        external-$TARGET/llvm.tar.xz && mv llvm*            llvm
+    tar -xzf   external-$TARGET/openblas.tar.gz && mv OpenBLAS*    openblas
+    tar -xzf     external-$TARGET/raylib.tar.gz && mv raylib*        raylib
+    tar -xzf        external-$TARGET/x11.tar.gz && mv libx11*           x11
+    tar -xzf        external-$TARGET/xau.tar.gz && mv libxau*           xau
+    tar -xzf        external-$TARGET/xcb.tar.gz && mv libxcb*           xcb
+    tar -xzf  external-$TARGET/xorgproto.tar.gz && mv xorgproto*  xorgproto
+    tar -xzf     external-$TARGET/xtrans.tar.gz && mv libxtrans*     xtrans
+    tar -xzf external-$TARGET/xorgmacros.tar.gz && mv macros*    xorgmacros
 
-    # cd xorgproto && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xtrans    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd x11       && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xorgmacros && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xorgproto  && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xtrans     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xau        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xcb        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd x11        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
 
     cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}"    ../openmp && cmake_install && cd ../..
     cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                      ..        && cmake_install && cd ../..
     cd libint && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_LIBINT[@]}" ..        && cmake_install && cd ../..
-    # cd raylib && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_RAYLIB[@]}" ..        && cmake_install && cd ../..
+    cd raylib && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_RAYLIB[@]}" ..        && cmake_install && cd ../..
 
     cd openblas && make "${MAKE_OPENBLAS[@]}" -j $CORES libs shared && make NO_SHARED=1 PREFIX="$DIRNAME/../external-$TARGET" install && cd ..
 
-    rm -rf eigen libint llvm openblas raylib x11 xorgproto xtrans zigar zigcc zigcpp zigranlib
+    rm -rf eigen libint llvm openblas raylib x11 xau xcb xorgmacros xorgproto xtrans zigar zigcc zigcpp zigranlib
 
 done
