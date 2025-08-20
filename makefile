@@ -15,9 +15,14 @@ OPENBLAS_VERSION   := 0.3.30
 RAYLIB_VERSION     :=    5.5
 X11_VERSION        := 1.8.12
 XAU_VERSION        := 1.0.12
+XI_VERSION         :=  1.8.2
 XCB_VERSION        := 1.17.0
 XCBPROTO_VERSION   := 1.17.0
+XCURSOR_VERSION    :=  1.2.3
 XEXT_VERSION       :=  1.3.6
+XFIXES_VERSION     :=  6.0.1
+XINPUT_VERSION     :=  1.6.4
+XINERAMA_VERSION   :=  1.1.5
 XORGMACROS_VERSION := 1.20.2
 XORGPROTO_VERSION  := 2024.1
 XRANDR_VERSION     :=  1.5.4
@@ -78,7 +83,7 @@ tree:
 
 # EXTERNAL TARGETS =====================================================================================================================================================================================
 
-EXTERNAL := eigen.tar.gz libint.tar.gz llvm.tar.xz openblas.tar.gz raylib.tar.gz x11.tar.gz xau.tar.gz xcb.tar.gz xcbproto.tar.gz xext.tar.gz xorgproto.tar.gz xorgmacros.tar.gz xrandr.tar.gz xrender.tar.gz xtrans.tar.gz zig.tar.xz zls.tar.xz include/exprtk.hpp
+EXTERNAL := eigen.tar.gz libint.tar.gz llvm.tar.xz openblas.tar.gz raylib.tar.gz x11.tar.gz xau.tar.gz xcb.tar.gz xcbproto.tar.gz xcursor.tar.gz xext.tar.gz xfixes.tar.gz xi.tar.gz xinerama.tar.gz xinput.tar.gz xorgproto.tar.gz xorgmacros.tar.gz xrandr.tar.gz xrender.tar.gz xtrans.tar.gz zig.tar.xz zls.tar.xz include/exprtk.hpp
 
 $(EXTERNAL_DIR)/.done: $(addprefix $(EXTERNAL_DIR)/,$(EXTERNAL))
 > ./script/library.sh && touch $@
@@ -90,9 +95,14 @@ $(EXTERNAL_DIR)/openblas.tar.gz:    URL =                           https://gith
 $(EXTERNAL_DIR)/raylib.tar.gz:      URL =                                                                 https://github.com/raysan5/raylib/archive/refs/tags/$(RAYLIB_VERSION).tar.gz
 $(EXTERNAL_DIR)/x11.tar.gz:         URL =                           https://gitlab.freedesktop.org/xorg/lib/libx11/-/archive/libX11-$(X11_VERSION)/libx11-libX11-$(X11_VERSION).tar.gz
 $(EXTERNAL_DIR)/xau.tar.gz:         URL =                           https://gitlab.freedesktop.org/xorg/lib/libxau/-/archive/libXau-$(XAU_VERSION)/libxau-libXau-$(XAU_VERSION).tar.gz
+$(EXTERNAL_DIR)/xinput.tar.gz:      URL =       https://gitlab.freedesktop.org/xorg/app/xinput/-/archive/xinput-$(XINPUT_VERSION)/xinput-xinput-$(XINPUT_VERSION).tar.gz
 $(EXTERNAL_DIR)/xcb.tar.gz:         URL =                           https://gitlab.freedesktop.org/xorg/lib/libxcb/-/archive/libxcb-$(XCB_VERSION)/libxcb-libxcb-$(XCB_VERSION).tar.gz
+$(EXTERNAL_DIR)/xcursor.tar.gz:     URL = https://gitlab.freedesktop.org/xorg/lib/libxcursor/-/archive/libXcursor-$(XCURSOR_VERSION)/libxcursor-libXcursor-$(XCURSOR_VERSION).tar.gz 
+$(EXTERNAL_DIR)/xi.tar.gz:          URL = https://gitlab.freedesktop.org/xorg/lib/libxi/-/archive/libXi-$(XI_VERSION)/libxi-libXi-$(XI_VERSION).tar.gz
+$(EXTERNAL_DIR)/xfixes.tar.gz:      URL = https://gitlab.freedesktop.org/xorg/lib/libxfixes/-/archive/libXfixes-$(XFIXES_VERSION)/libxfixes-libXfixes-$(XFIXES_VERSION).tar.gz
 $(EXTERNAL_DIR)/xext.tar.gz:        URL =                     https://gitlab.freedesktop.org/xorg/lib/libxext/-/archive/libXext-$(XEXT_VERSION)/libxext-libXext-$(XEXT_VERSION).tar.gz
 $(EXTERNAL_DIR)/xcbproto.tar.gz:    URL =     https://gitlab.freedesktop.org/xorg/proto/xcbproto/-/archive/xcb-proto-$(XCBPROTO_VERSION)/xcbproto-xcb-proto-$(XCBPROTO_VERSION).tar.gz
+$(EXTERNAL_DIR)/xinerama.tar.gz:    URL =  https://gitlab.freedesktop.org/xorg/lib/libxinerama/-/archive/libXinerama-$(XINERAMA_VERSION)/libxinerama-libXinerama-$(XINERAMA_VERSION).tar.gz
 $(EXTERNAL_DIR)/xorgproto.tar.gz:   URL = https://gitlab.freedesktop.org/xorg/proto/xorgproto/-/archive/xorgproto-$(XORGPROTO_VERSION)/xorgproto-xorgproto-$(XORGPROTO_VERSION).tar.gz
 $(EXTERNAL_DIR)/xorgmacros.tar.gz:  URL =  https://gitlab.freedesktop.org/xorg/util/macros/-/archive/util-macros-$(XORGMACROS_VERSION)/macros-util-macros-$(XORGMACROS_VERSION).tar.gz
 $(EXTERNAL_DIR)/xrandr.tar.gz:      URL =         https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/archive/libXrandr-$(XRANDR_VERSION)/libxrandr-libXrandr-$(XRANDR_VERSION).tar.gz
