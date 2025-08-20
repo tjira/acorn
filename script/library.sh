@@ -69,42 +69,42 @@ for TARGET in "${TARGETS[@]}"; do
     echo "$DIRNAME/../zig-bin/zig c++    --target=$TARGET-gnu \"\$@\"" > zigcpp    && chmod +x    zigcpp
     echo "$DIRNAME/../zig-bin/zig ranlib                      \"\$@\"" > zigranlib && chmod +x zigranlib
 
-    # tar -xzf      external-$TARGET/eigen.tar.gz && mv eigen*          eigen
-    # tar -xzf     external-$TARGET/libint.tar.gz && mv libint*        libint
-    # tar -xf        external-$TARGET/llvm.tar.xz && mv llvm*            llvm
-    # tar -xzf   external-$TARGET/openblas.tar.gz && mv OpenBLAS*    openblas
-    # tar -xzf     external-$TARGET/raylib.tar.gz && mv raylib*        raylib
-    # tar -xzf        external-$TARGET/x11.tar.gz && mv libx11*           x11
-    # tar -xzf        external-$TARGET/xau.tar.gz && mv libxau*           xau
-    # tar -xzf        external-$TARGET/xcb.tar.gz && mv libxcb*           xcb
-    # tar -xzf external-$TARGET/xorgmacros.tar.gz && mv macros*    xorgmacros
-    # tar -xzf   external-$TARGET/xcbproto.tar.gz && mv xcbproto*    xcbproto
-    # tar -xzf       external-$TARGET/xext.tar.gz && mv libxext*         xext
-    # tar -xzf  external-$TARGET/xorgproto.tar.gz && mv xorgproto*  xorgproto
-    # tar -xzf     external-$TARGET/xrandr.tar.gz && mv libxrandr*     xrandr
-    # tar -xzf    external-$TARGET/xrender.tar.gz && mv libxrender*  xrender
-    # tar -xzf     external-$TARGET/xtrans.tar.gz && mv libxtrans*     xtrans
-    # tar -xzf     external-$TARGET/xinerama.tar.gz && mv libxinerama*     xinerama
-    # tar -xzf     external-$TARGET/xcursor.tar.gz && mv libxcursor*     xcursor
-    # tar -xzf     external-$TARGET/xfixes.tar.gz && mv libxfixes*     xfixes
-    # tar -xzf     external-$TARGET/xinput.tar.gz && mv xinput*     xinput
-    tar -xzf     external-$TARGET/xi.tar.gz && mv libxi-*     xi
+    tar -xf  external-$TARGET/llvm.tar.xz       && mv llvm*            llvm
+    tar -xzf external-$TARGET/eigen.tar.gz      && mv eigen*          eigen
+    tar -xzf external-$TARGET/libint.tar.gz     && mv libint*        libint
+    tar -xzf external-$TARGET/openblas.tar.gz   && mv OpenBLAS*    openblas
+    tar -xzf external-$TARGET/raylib.tar.gz     && mv raylib*        raylib
+    tar -xzf external-$TARGET/x11.tar.gz        && mv libx11*           x11
+    tar -xzf external-$TARGET/xau.tar.gz        && mv libxau*           xau
+    tar -xzf external-$TARGET/xcb.tar.gz        && mv libxcb*           xcb
+    tar -xzf external-$TARGET/xcbproto.tar.gz   && mv xcbproto*    xcbproto
+    tar -xzf external-$TARGET/xcursor.tar.gz    && mv libxcursor*   xcursor
+    tar -xzf external-$TARGET/xext.tar.gz       && mv libxext*         xext
+    tar -xzf external-$TARGET/xfixes.tar.gz     && mv libxfixes*     xfixes
+    tar -xzf external-$TARGET/xi.tar.gz         && mv libxi*             xi
+    tar -xzf external-$TARGET/xinerama.tar.gz   && mv libxinerama* xinerama
+    tar -xzf external-$TARGET/xinput.tar.gz     && mv xinput*        xinput
+    tar -xzf external-$TARGET/xorgmacros.tar.gz && mv macros*    xorgmacros
+    tar -xzf external-$TARGET/xorgproto.tar.gz  && mv xorgproto*  xorgproto
+    tar -xzf external-$TARGET/xrandr.tar.gz     && mv libxrandr*     xrandr
+    tar -xzf external-$TARGET/xrender.tar.gz    && mv libxrender*   xrender
+    tar -xzf external-$TARGET/xtrans.tar.gz     && mv libxtrans*     xtrans
 
-    # cd xorgmacros && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xorgproto  && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xtrans     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xau        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xcbproto   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xcb        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd x11        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xext       && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xrender    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xrandr     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xinerama   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xfixes   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xcursor   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xi       && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    # cd xinput   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd x11        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xau        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xcb        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xcbproto   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xcursor    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xext       && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xfixes     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xi         && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xinerama   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xinput     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xorgmacros && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xorgproto  && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xrandr     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xrender    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xtrans     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
 
     # cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}"    ../openmp && cmake_install && cd ../..
     # cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                      ..        && cmake_install && cd ../..
@@ -113,6 +113,6 @@ for TARGET in "${TARGETS[@]}"; do
 
     # cd openblas && make "${MAKE_OPENBLAS[@]}" -j $CORES libs shared && make NO_SHARED=1 PREFIX="$DIRNAME/../external-$TARGET" install && cd ..
 
-    # rm -rf eigen libint llvm openblas raylib x11 xau xcb xcbproto xext xorgmacros xorgproto xrender xrandr xtrans zigar zigcc zigcpp zigranlib
+    # rm -rf eigen libint llvm openblas raylib x11 xau xcb xcbproto xext xfixes xi xinerama xinput xorgmacros xorgproto xrender xrandr xtrans zigar zigcc zigcpp zigranlib
 
 done
