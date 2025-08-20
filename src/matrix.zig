@@ -69,6 +69,17 @@ pub fn Matrix(comptime T: type) type {
             return other;
         }
 
+        /// Calculate the product of the diagonal elements of the matrix.
+        pub fn diagProd(self: Matrix(T)) T {
+            var result: T = 1;
+
+            for (0..@min(self.rows, self.cols)) |i| {
+                result *= self.at(i, i);
+            }
+
+            return result;
+        }
+
         /// Check if two matrices are equal. The function returns true if the matrices are equal, false otherwise.
         pub fn eq(self: Matrix(T), other: Matrix(T)) bool {
             if (self.rows != other.rows or self.cols != other.cols) return false;
@@ -106,6 +117,17 @@ pub fn Matrix(comptime T: type) type {
         /// Copy the data to another matrix.
         pub fn memcpy(self: Matrix(T), dest: Matrix(T)) void {
             @memcpy(dest.data, self.data);
+        }
+
+        /// Multiply the matrix with a scalar.
+        pub fn muls(self: Matrix(T), s: T) void {
+            if (comptime !istruct(T)) for (0..self.data.len) |i| {
+                self.data[i] *= s;
+            };
+
+            if (comptime istruct(T)) for (0..self.data.len) |i| {
+                self.data[i] = self.data[i].mul(s);
+            };
         }
 
         /// Calculates the 1-norm of the matrix.
@@ -163,6 +185,13 @@ pub fn Matrix(comptime T: type) type {
             for (0..self.data.len) |i| {
                 self.data[i] = low + (high - low) * random.float(T);
             }
+        }
+
+        /// Reshape the matrix to a new number of rows and columns. The function returns an error if the new shape is not compatible with the current data.
+        pub fn reshape(self: *Matrix(T), nm: usize, nn: usize) !void {
+            if (nm * nn != self.rows * self.cols) return error.IncompatibleShape;
+
+            self.rows = nm; self.cols = nn;
         }
 
         /// Returns a reference to the row at the given index. The row is returned as a new matrix. No memory is allocated.

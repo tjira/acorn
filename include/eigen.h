@@ -1,3 +1,4 @@
 typedef unsigned long ulong;
 
-void logm(double *B, double *A, const ulong dim);
+double det (           double *A, const ulong dim);
+void   logm(double *B, double *A, const ulong dim);

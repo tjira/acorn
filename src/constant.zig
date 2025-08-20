@@ -2,7 +2,6 @@
 
 const std = @import("std");
 
-
 pub const Eh  = 4.359744722206e-18; // J
 pub const a0  = 5.29177210544e-11;  // m
 pub const c   = 299792458.0;        // m/s
@@ -10,10 +9,14 @@ pub const amu = 1.66053906892e-27;  // kg
 pub const e   = 1.602176634e-19;    // C
 pub const h   = 6.62607015e-34;     // J.s
 pub const kB  = 1.380649e-23;       // J/K
+pub const me  = 9.109383701528e-31; // kg
+pub const NA  = 6.02214076e23;      // mol^-1
 
 pub const A2AU = 1e-10 / a0;         // Å to a.u. of length
 pub const AU2EV = Eh / e;            // a.u. of energy to eV
 pub const EV2RCM = 1e-2 * e / h / c; // eV of a photon to its wavenumber in cm^-1
+pub const J2AU = 1.0 / Eh;           // J to a.u. of energy
+pub const U2AU = amu / me;           // g/mol to a.u
 
 /// Atomic symbol to atomic number map.
 pub const SM2AN = std.StaticStringMap(u32).initComptime(.{
@@ -68,3 +71,12 @@ pub const AN2M = [_]f64{
     79.904000000, // Br
     83.798000000, // Kr
 };
+
+/// Function to revert the SM2AN map to get the symbol from the atomic number.
+pub fn AN2SM(AN: u32) ![]const u8 {
+    for (SM2AN.keys(), SM2AN.values()) |key, value| if (value == AN) {
+        return key;
+    };
+
+    return error.InvalidAtomicNumber;
+}

@@ -267,9 +267,9 @@ pub fn diisExtrapolate(comptime T: type, F_A: *Matrix(T), DIIS_F: *std.ArrayList
         };
     };
 
-    try cwp.Lapack(T).dgesv(&c, A, b);
-
     if (try cwp.Lapack(T).dgecon(A) < 1e-12) return else F_A.fill(0);
+
+    try cwp.Lapack(T).dgesv(&c, A, b);
 
     for (0..size) |i| {
 

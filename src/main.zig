@@ -27,6 +27,7 @@ pub const sort                      = @import("sort.zig"                     );
 pub const strided_array             = @import("strided_array.zig"            );
 pub const system                    = @import("system.zig"                   );
 pub const tensor                    = @import("tensor.zig"                   );
+pub const trajectory_analysis       = @import("trajectory_analysis.zig"      );
 pub const transform                 = @import("transform.zig"                );
 pub const vector                    = @import("vector.zig"                   );
 pub const wavefunction              = @import("wavefunction.zig"             );
@@ -114,6 +115,13 @@ pub fn parse(filebuf: []const u8, allocator: std.mem.Allocator) !void {
         const obj = try std.json.parseFromValue(input.SortOptions(f64), allocator, inputjs.value.object.get("sort").?, .{}); defer obj.deinit();
 
         _ = try sort.run(f64, obj.value, true, allocator);
+    }
+
+    if (inputjs.value.object.contains("trajectory_analysis")) {
+
+        const obj = try std.json.parseFromValue(input.TrajectoryAnalysisOptions(f64), allocator, inputjs.value.object.get("trajectory_analysis").?, .{}); defer obj.deinit();
+
+        _ = try trajectory_analysis.run(f64, obj.value, true, allocator);
     }
 }
 
