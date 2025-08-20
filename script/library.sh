@@ -90,21 +90,21 @@ for TARGET in "${TARGETS[@]}"; do
     tar -xzf external-$TARGET/xrender.tar.gz    && mv libxrender*   xrender
     tar -xzf external-$TARGET/xtrans.tar.gz     && mv libxtrans*     xtrans
 
-    cd x11        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xau        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xcb        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xcbproto   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xcursor    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xext       && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xfixes     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xi         && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xinerama   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xinput     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
     cd xorgmacros && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
     cd xorgproto  && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xrandr     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
-    cd xrender    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
     cd xtrans     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xau        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xcbproto   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xcb        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd x11        && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xext       && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xrender    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xrandr     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xinerama   && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xfixes     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xcursor    && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xi         && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
+    cd xinput     && ./autogen.sh && ./configure "${CONFIGURE_GENERAL[@]}" && make -j $CORES && make install && cd ..
 
     # cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}"    ../openmp && cmake_install && cd ../..
     # cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                      ..        && cmake_install && cd ../..
