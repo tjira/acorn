@@ -344,3 +344,20 @@ pub fn SortOptions(comptime _: type) type {
         algorithm: []const u8 = "bubble", column: usize = 0, input: []const u8, output: ?[]const u8 = null, print: bool = true
     };
 }
+
+/// The trajectory options
+pub fn TrajectoryAnalysisOptions(comptime T: type) type {
+    return struct {
+        pub const Entropy = struct {
+            algorithm: []const u8 = "schlitter",
+            temperature: T = 298.15,
+        };
+
+        input: []const u8, output: ?[]const u8 = null,
+
+        remove_translation: bool = false,
+        remove_rotation: bool    = false,
+
+        entropy: ?Entropy = null
+    };
+}

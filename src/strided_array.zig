@@ -42,10 +42,15 @@ pub fn StridedArray(comptime T: type) type {
             }
         }
 
+        /// Calculate the mean of the strided array.
+        pub fn mean(self: StridedArray(T)) T {
+            return if (self.len == 0) 0 else self.sum() / asfloat(T, self.len);
+        }
+
         /// Multiply the strided array elements with a constant value.
-        pub fn mul(self: StridedArray(T), value: T) void {
+        pub fn muls(self: StridedArray(T), value: T) void {
             if (comptime !istruct(T)) for (0..self.len) |i| {
-                self.ptr(i).* = value;
+                self.ptr(i).* *= value;
             };
 
             if (comptime istruct(T)) for (0..self.len) |i| {
@@ -56,6 +61,17 @@ pub fn StridedArray(comptime T: type) type {
         /// Return the element at the specified index as a mutable reference.
         pub fn ptr(self: StridedArray(T), i: usize) *T {
             return &self.data[self.zero + i * self.stride];
+        }
+
+        /// Subtract a constant value from the strided array elements.
+        pub fn subs(self: StridedArray(T), value: T) void {
+            if (comptime !istruct(T)) for (0..self.len) |i| {
+                self.ptr(i).* -= value;
+            };
+
+            if (comptime istruct(T)) for (0..self.len) |i| {
+                self.ptr(i).* = self.at(i).sub(value);
+            };
         }
 
         /// Return the sum of the strided array.

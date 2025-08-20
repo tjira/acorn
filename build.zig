@@ -111,6 +111,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
     const file_mersenne  = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "mersenne" }), .{.mode=0o755});
     const file_prime     = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "prime"    }), .{.mode=0o755});
     const file_randmat   = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "randmat"  }), .{.mode=0o755});
+    const file_schlitter = try std.fs.cwd().createFile(try std.mem.concat(allocator, u8, &[_][]const u8{path, "schlitter"}), .{.mode=0o755});
 
     const header =
         \\#!/bin/bash
@@ -411,11 +412,40 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\}}' > $INPUT_JSON
     ;
 
+    const content_schlitter =
+        \\  -i <input>        Trajectory to use. (default: ${{INPUT}})
+        \\  -t <temperature>  Temperature. (default: ${{TEMP}})
+        \\  -h                Display this help message and exit.
+        \\EOF
+        \\
+        \\}}; INPUT="trajectory.xyz"; TEMP=298.15
+        \\
+        \\while getopts "i:t:h" OPT; do case "$OPT" in
+        \\  i ) INPUT="$OPTARG" ;;
+        \\  t ) TEMP="$OPTARG" ;;
+        \\  h ) usage && exit 0 ;;
+        \\  \?) usage && exit 1 ;;
+        \\esac done
+        \\
+        \\echo '{{
+        \\  "trajectory_analysis" : {{
+        \\    "input" : "'"$INPUT"'",
+        \\    "remove_translation" : true,
+        \\    "remove_rotation" : true,
+        \\    "entropy" : {{
+        \\      "algorithm" : "schlitter",
+        \\      "temperature" : '$TEMP'
+        \\    }}
+        \\  }}
+        \\}}' > $INPUT_JSON
+    ;
+
     try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{}); file_fibonacci.close();
     try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});  file_matsort .close();
     try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});  file_mersenne.close();
     try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});     file_prime.close();
     try file_randmat  .writer().print(header ++ "\n" ++ content_randmat   ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});   file_randmat.close();
+    try file_schlitter.writer().print(header ++ "\n" ++ content_schlitter ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{}); file_schlitter.close();
 
     try file_hf      .writer().print(header ++ "\n" ++ content_hf       ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON", .{}); file_hf      .close();
     try file_integral.writer().print(header ++ "\n" ++ content_integral ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON", .{}); file_integral.close();

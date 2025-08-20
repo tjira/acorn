@@ -24,13 +24,16 @@ all: acorn
 .PHONY: acorn docs test
 
 acorn: $(EXTERNAL_DIR)/.done
-> ./zig-bin/zig build --summary all
+> ./zig-bin/zig build
 
 docs: $(EXTERNAL_DIR)/.done
-> ./zig-bin/zig build --summary all docs
+> ./zig-bin/zig build docs
+
+run: $(EXTERNAL_DIR)/.done
+> ./zig-bin/zig build run
 
 test: $(EXTERNAL_DIR)/.done
-> ./zig-bin/zig build --summary all test
+> ./zig-bin/zig build test
 
 # BENCHMARKING TARGETS =================================================================================================================================================================================
 
