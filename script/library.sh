@@ -53,6 +53,7 @@ for TARGET in "${TARGETS[@]}"; do
     export    ACLOCAL_PATH="$DIRNAME/../external-$TARGET/share/aclocal:$ACLOCAL_PATH"
     export  C_INCLUDE_PATH="$DIRNAME/../external-$TARGET/include:$C_INCLUDE_PATH"
     export PKG_CONFIG_PATH="$DIRNAME/../external-$TARGET/share/pkgconfig:$PKG_CONFIG_PATH"
+    export PKG_CONFIG_PATH="$DIRNAME/../external-$TARGET/lib/pkgconfig:$PKG_CONFIG_PATH"
 
     CMAKE_GENERAL+=(
         -DCMAKE_INSTALL_PREFIX="$DIRNAME/../external-$TARGET"
