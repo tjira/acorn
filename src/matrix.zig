@@ -2,6 +2,7 @@
 
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
+const hlp = @import("helper.zig");
 const inp = @import("input.zig" );
 const mth = @import("math.zig"  );
 const vec = @import("vector.zig");
@@ -9,10 +10,6 @@ const vec = @import("vector.zig");
 const StridedArray = @import("strided_array.zig").StridedArray;
 const Tensor       = @import("tensor.zig"       ).Tensor      ;
 const Vector       = @import("vector.zig"       ).Vector      ;
-
-const asfloat = @import("helper.zig").asfloat;
-const istruct = @import("helper.zig").istruct;
-const uncr    = @import("helper.zig").uncr   ;
 
 /// Matrix class.
 pub fn Matrix(comptime T: type) type {
@@ -110,7 +107,7 @@ pub fn Matrix(comptime T: type) type {
             self.data[0] = start;
 
             for (1..self.data.len) |i| {
-                self.data[i] = start + asfloat(T, i) * (end - start) / asfloat(T, self.rows * self.cols - 1);
+                self.data[i] = start + hlp.asfloat(T, i) * (end - start) / hlp.asfloat(T, self.rows * self.cols - 1);
             }
         }
 
@@ -121,11 +118,11 @@ pub fn Matrix(comptime T: type) type {
 
         /// Multiply the matrix with a scalar.
         pub fn muls(self: Matrix(T), s: T) void {
-            if (comptime !istruct(T)) for (0..self.data.len) |i| {
+            if (comptime !hlp.istruct(T)) for (0..self.data.len) |i| {
                 self.data[i] *= s;
             };
 
-            if (comptime istruct(T)) for (0..self.data.len) |i| {
+            if (comptime hlp.istruct(T)) for (0..self.data.len) |i| {
                 self.data[i] = self.data[i].mul(s);
             };
         }
@@ -148,20 +145,20 @@ pub fn Matrix(comptime T: type) type {
 
         /// Print the matrix to the given device.
         pub fn print(self: Matrix(T), device: anytype) !void {
-            var buffered = std.io.bufferedWriter(device); var writer = buffered.writer();
+            var buffer: [32768]u8 = undefined; var writer = device.writer(&buffer); var writer_interface = &writer.interface;
 
-            try writer.print("{d} {d}\n", .{self.rows, self.cols});
+            try writer_interface.print("{d} {d}\n", .{self.rows, self.cols});
 
             for (self.data, 1..) |e, i| {
 
-                if (comptime istruct(T)) {
-                    try writer.print("({d:20.14}, {d:20.14}){s}", .{e.re, e.im, if(i % self.cols == 0) "\n" else " "});
+                if (comptime hlp.istruct(T)) {
+                    try writer_interface.print("({d:20.14}, {d:20.14}){s}", .{e.re, e.im, if(i % self.cols == 0) "\n" else " "});
                 }
 
-                else try writer.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
+                else try writer_interface.print("{d:20.14}{s}", .{e, if(i % self.cols == 0) "\n" else " "});
             }
 
-            try buffered.flush();
+            try writer_interface.flush();
         }
 
         /// Access the element at the given row and column as a mutable reference.
@@ -232,14 +229,14 @@ pub fn Matrix(comptime T: type) type {
         pub fn write(self: Matrix(T), path: []const u8) !void {
             const file = try std.fs.cwd().createFile(path, .{}); defer file.close();
 
-            try self.print(file.writer());
+            try self.print(file);
         }
     };
 }
 
 /// The main function for matrix manipulation.
 pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: std.mem.Allocator) !void {
-    var A: ?Matrix(T) = null; var B: ?Matrix(T) = null; var C: ?Matrix(T) = null; var outputs = std.ArrayList(Matrix(T)).init(allocator); defer outputs.deinit();
+    var A: ?Matrix(T) = null; var B: ?Matrix(T) = null; var C: ?Matrix(T) = null; var outputs = std.ArrayList(Matrix(T)){}; defer outputs.deinit(allocator);
 
     var timer = try std.time.Timer.start();
 
@@ -255,16 +252,16 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
             else return error.UnknownDistribution;
 
             if (opt.outputs != null and opt.outputs.?.len > i) {
-                try outputs.append(try A.?.clone());
+                try outputs.append(allocator, try A.?.clone());
             }
 
             if (print and opt.print) {
-                try std.io.getStdOut().writer().print("\nGENERATED MATRIX #{d:2}\n", .{i}); try A.?.print(std.io.getStdOut().writer());
+                try hlp.print(std.fs.File.stdout(), "\nGENERATED MATRIX #{d:2}\n", .{i}); try A.?.print(std.fs.File.stdout());
             }
         }
 
         if (print) {
-            try std.io.getStdOut().writer().print("\nGENERATING RANDOM MATRICES: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+            try hlp.print(std.fs.File.stdout(), "\nGENERATING RANDOM MATRICES: {D}\n", .{timer.read()});
         }
     }
 
@@ -282,15 +279,15 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
         }
 
         if (print and opt.print) {
-            try std.io.getStdOut().writer().print("\nRESULT\n", .{}); try A.?.print(std.io.getStdOut().writer());
+            try hlp.print(std.fs.File.stdout(), "\nRESULT\n", .{}); try A.?.print(std.fs.File.stdout());
         }
 
         if (opt.outputs != null) {
-            try outputs.append(try A.?.clone());
+            try outputs.append(allocator, try A.?.clone());
         }
 
         if (print) {
-            try std.io.getStdOut().writer().print("\nCALCULATING MATRIX PRODUCT: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+            try hlp.print(std.fs.File.stdout(), "\nCALCULATING MATRIX PRODUCT: {D}\n", .{timer.read()});
         }
     }
 
@@ -301,7 +298,7 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
     }
 
     if (print and opt.outputs != null) {
-        try std.io.getStdOut().writer().print("SAVING THE OUTPUT MATRICES: {s}\n", .{std.fmt.fmtDuration(timer.read())});
+        try hlp.print(std.fs.File.stdout(), "SAVING THE OUTPUT MATRICES: {D}\n", .{timer.read()});
     }
 
     if (opt.outputs != null) for (outputs.items) |*e| {
@@ -311,33 +308,33 @@ pub fn run(comptime T: type, opt: inp.MatrixOptions(T), print: bool, allocator: 
 
 /// Add two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn add(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (comptime !istruct(T)) for (0..C.data.len) |i| {
+    if (comptime !hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] + B.data[i];
     };
 
-    if (comptime istruct(T)) for (0..C.data.len) |i| {
+    if (comptime hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].add(B.data[i]);
     };
 }
 
 /// Add a scalar to a matrix element-wise. The output matrix is stored in the matrix C.
 pub fn adds(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
-    if (comptime !istruct(T)) for (0..C.data.len) |i| {
+    if (comptime !hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] + s;
     };
 
-    if (comptime istruct(T)) for (0..C.data.len) |i| {
+    if (comptime hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].add(s);
     };
 }
 
 /// Divide a matrix by a scalar. The output matrix is stored in the matrix C.
 pub fn divs(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
-    if (comptime !istruct(T)) for (0..C.data.len) |i| {
+    if (comptime !hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] / s;
     };
 
-    if (comptime istruct(T)) for (0..C.data.len) |i| {
+    if (comptime hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].div(s);
     };
 }
@@ -358,49 +355,46 @@ pub fn hjoin(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
 
 /// Multiply two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn mul(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (comptime !istruct(T)) for (0..C.data.len) |i| {
+    if (comptime !hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] * B.data[i];
     };
 
-    if (comptime istruct(T)) for (0..C.data.len) |i| {
+    if (comptime hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].mul(B.data[i]);
     };
 }
 
 /// Multiply a matrix by a scalar. The output matrix is stored in the matrix C.
 pub fn muls(comptime T: type, C: *Matrix(T), A: Matrix(T), s: T) void {
-    if (comptime !istruct(T)) for (0..C.data.len) |i| {
+    if (comptime !hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] * s;
     };
 
-    if (comptime istruct(T)) for (0..C.data.len) |i| {
+    if (comptime hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].mul(s);
     };
 }
 
 /// Read a matrix from a file. The function returns an error if the file cannot be opened or if the matrix cannot be read.
 pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !Matrix(T) {
-    const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [16]u8 = undefined;
+    const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
 
-    var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
-    var stream   = std.io.fixedBufferStream(&buffer);  const writer =   stream.writer();
+    var buffer: [32768]u8 = undefined; var reader = file.reader(&buffer); var reader_interface = &reader.interface;
 
-    stream.reset(); try reader.streamUntilDelimiter(writer, ' ',  10); const rows = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
-    stream.reset(); try reader.streamUntilDelimiter(writer, '\n', 10); const cols = try std.fmt.parseInt(usize, uncr(stream.getWritten()), 10);
+    const rowstr = try reader_interface.takeDelimiterExclusive(' ' ); const rows = try std.fmt.parseInt(usize, rowstr, 10);
+    const colstr = try reader_interface.takeDelimiterExclusive('\n'); const cols = try std.fmt.parseInt(usize, colstr, 10);
 
-    const mat = try Matrix(T).init(rows, cols, allocator); var bytes: [100]u8 = undefined;
+    const mat = try Matrix(T).init(rows, cols, allocator); var i: usize = 0;
 
-    for (0..rows * cols) |i| {
+    while (true) {
 
-        var slice: []u8 = bytes[0..0];
+        const line = reader_interface.takeDelimiterExclusive('\n') catch {break;};
 
-        while (slice.len == 0) {
-            slice = try reader.readUntilDelimiter(bytes[0..], if ((i + 1) % cols == 0) '\n' else ' ');
+        var it = std.mem.tokenizeAny(u8, line, " "); 
+
+        while (it.next()) |element| {
+            mat.data[i] = try std.fmt.parseFloat(T, element); i += 1;
         }
-
-        var j: u32 = 0; while (slice[j] == ' ') : (j += 1) {}
-
-        mat.data[i] = try std.fmt.parseFloat(T, uncr(slice[j..]));
     }
 
     return mat;
@@ -408,11 +402,11 @@ pub fn read(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !M
 
 /// Subtract two matrices element-wise. The output matrix is stored in the matrix C.
 pub fn sub(comptime T: type, C: *Matrix(T), A: Matrix(T), B: Matrix(T)) void {
-    if (comptime !istruct(T)) for (0..C.data.len) |i| {
+    if (comptime !hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i] - B.data[i];
     };
 
-    if (comptime istruct(T)) for (0..C.data.len) |i| {
+    if (comptime hlp.istruct(T)) for (0..C.data.len) |i| {
         C.data[i] = A.data[i].sub(B.data[i]);
     };
 }

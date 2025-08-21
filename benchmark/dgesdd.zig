@@ -21,10 +21,10 @@ pub const Args = struct {
     }
 
     pub fn print(self: Args) !void {
-        try std.io.getStdOut().writer().print("MATRIX A:\n",     .{}); try   self.A.print(std.io.getStdOut().writer());
-        try std.io.getStdOut().writer().print("MATRIX U:\n",     .{}); try  self.AU.print(std.io.getStdOut().writer());
-        try std.io.getStdOut().writer().print("MATRIX SIGMA:\n", .{}); try  self.AS.print(std.io.getStdOut().writer());
-        try std.io.getStdOut().writer().print("MATRIX V^T:\n",   .{}); try self.AVT.print(std.io.getStdOut().writer());
+        try acorn.helper.print(std.fs.File.stdout(), "MATRIX A:\n",     .{}); try   self.A.print(std.fs.File.stdout());
+        try acorn.helper.print(std.fs.File.stdout(), "MATRIX U:\n",     .{}); try  self.AU.print(std.fs.File.stdout());
+        try acorn.helper.print(std.fs.File.stdout(), "MATRIX SIGMA:\n", .{}); try  self.AS.print(std.fs.File.stdout());
+        try acorn.helper.print(std.fs.File.stdout(), "MATRIX V^T:\n",   .{}); try self.AVT.print(std.fs.File.stdout());
     }
 
     pub fn randomize(self: *Args, seed: usize) !void {

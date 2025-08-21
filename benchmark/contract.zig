@@ -21,7 +21,7 @@ pub const Args = struct {
     }
 
     pub fn print(self: Args) !void {
-        try std.io.getStdOut().writer().print("MATRIX C:\n", .{}); try self.C.matrix(1).print(std.io.getStdOut().writer());
+        try acorn.helper.print(std.fs.File.stdout(), "MATRIX C:\n", .{}); try self.C.matrix(1).print(std.fs.File.stdout());
     }
 
     pub fn randomize(self: *Args, seed: usize) !void {

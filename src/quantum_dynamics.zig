@@ -3,6 +3,7 @@
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const ftr = @import("fourier_transform.zig");
+const hlp = @import("helper.zig"           );
 const inp = @import("input.zig"            );
 const mat = @import("matrix.zig"           );
 const mpt = @import("potential.zig"        );
@@ -13,8 +14,6 @@ const wfn = @import("wavefunction.zig"     );
 const Matrix       = @import("matrix.zig"      ).Matrix      ;
 const Vector       = @import("vector.zig"      ).Vector      ;
 const Wavefunction = @import("wavefunction.zig").Wavefunction;
-
-const asfloat = @import("helper.zig").asfloat;
 
 /// The main function to run the quantum dynamics simulation.
 pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, allocator: std.mem.Allocator) !out.QuantumDynamicsOutput(T) {
@@ -37,19 +36,19 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
     var output = try out.QuantumDynamicsOutput(T).init(ndim, nstate, opt.mode[0] + opt.mode[1], allocator);
 
-    var bloch    = try Matrix(T).init(opt.iterations + 1, 1 + 4,      allocator); defer    bloch.deinit(); bloch   .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate, allocator); defer      pop.deinit(); pop     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     ekin.deinit(); ekin    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     epot.deinit(); epot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var etot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     etot.deinit(); etot    .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var position = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer position.deinit(); position.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer momentum.deinit(); momentum.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-    var acf      = try Matrix(T).init(opt.iterations + 1, 1 + 2     , allocator); defer      acf.deinit(); acf     .column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+    var bloch    = try Matrix(T).init(opt.iterations + 1, 1 + 4,      allocator); defer    bloch.deinit(); bloch   .column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+    var pop      = try Matrix(T).init(opt.iterations + 1, 1 + nstate, allocator); defer      pop.deinit(); pop     .column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+    var ekin     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     ekin.deinit(); ekin    .column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+    var epot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     epot.deinit(); epot    .column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+    var etot     = try Matrix(T).init(opt.iterations + 1, 1 + 1     , allocator); defer     etot.deinit(); etot    .column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+    var position = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer position.deinit(); position.column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+    var momentum = try Matrix(T).init(opt.iterations + 1, 1 + ndim  , allocator); defer momentum.deinit(); momentum.column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+    var acf      = try Matrix(T).init(opt.iterations + 1, 1 + 2     , allocator); defer      acf.deinit(); acf     .column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
     var acft     = try Matrix(T).init(spectrum_points,    1 + 2     , allocator); defer     acft.deinit();
     var spectrum = try Matrix(T).init(spectrum_points,    1 + 1     , allocator); defer spectrum.deinit();
 
-    if ( opt.spectrum.flip) acft.column(0).linspace(-opt.time_step * asfloat(T, acft.rows / 2), opt.time_step * asfloat(T, acft.rows / 2 - 1));
-    if (!opt.spectrum.flip) acft.column(0).linspace(0,                                          opt.time_step * asfloat(T, acft.rows     - 1));
+    if ( opt.spectrum.flip) acft.column(0).linspace(-opt.time_step * hlp.asfloat(T, acft.rows / 2), opt.time_step * hlp.asfloat(T, acft.rows / 2 - 1));
+    if (!opt.spectrum.flip) acft.column(0).linspace(0,                                              opt.time_step * hlp.asfloat(T, acft.rows     - 1));
 
     var wavefunction:       Matrix(T) = undefined; defer if (opt.write.wavefunction       != null                                 )       wavefunction.deinit();
     var density:            Matrix(T) = undefined; defer if (opt.write.density            != null                                 )            density.deinit();
@@ -74,7 +73,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
         var r = try Vector(T).init(ndim, allocator); defer r.deinit(); r.fill(0);
         var p = try Vector(T).init(ndim, allocator); defer p.deinit(); p.fill(0);
 
-        var dr: T = 1; for (0..ndim) |i| dr *= (opt.grid.limits[i][1] - opt.grid.limits[i][0]) / asfloat(T, opt.grid.points - 1);
+        var dr: T = 1; for (0..ndim) |i| dr *= (opt.grid.limits[i][1] - opt.grid.limits[i][0]) / hlp.asfloat(T, opt.grid.points - 1);
 
         var W0: ?Wavefunction(T) = null; var WA: ?Wavefunction(T) = null; var W = try Wavefunction(T).init(ndim, nstate, opt.grid.points, dr, allocator); defer W.deinit();
 
@@ -87,10 +86,10 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
         if (opt.bohmian_dynamics != null) {
 
-            if (opt.write.bohm_position      != null)     bohm_positions.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-            if (opt.write.bohm_momentum      != null)       bohm_momenta.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-            if (opt.write.bohm_position_mean != null) bohm_position_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
-            if (opt.write.bohm_momentum_mean != null) bohm_momentum_mean.column(0).linspace(0, opt.time_step * asfloat(T, opt.iterations));
+            if (opt.write.bohm_position      != null)     bohm_positions.column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+            if (opt.write.bohm_momentum      != null)       bohm_momenta.column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+            if (opt.write.bohm_position_mean != null) bohm_position_mean.column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
+            if (opt.write.bohm_momentum_mean != null) bohm_momentum_mean.column(0).linspace(0, opt.time_step * hlp.asfloat(T, opt.iterations));
 
             bohm_field    = try Vector(T).init(rdim,                                       allocator);
             bohm_position = try Vector(T).init(ndim * opt.bohmian_dynamics.?.trajectories, allocator);
@@ -121,21 +120,21 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
             for (0..rdim) |_| {
 
-                try VS[i].append(try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
+                try VS[i].append(allocator, try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
 
                 if (i == 0) {
-                    try R.append(try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
-                    try K.append(try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
+                    try R.append(allocator, try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
+                    try K.append(allocator, try Matrix(std.math.Complex(T)).init(nstate, nstate, allocator));
                 }
             }
         }
 
-        var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(); defer VA.deinit(); defer VC.deinit();
+        var V = VS[0]; var VA = VS[1]; var VC = VS[2]; defer V.deinit(allocator); defer VA.deinit(allocator); defer VC.deinit(allocator);
 
         try rgridPotentials(T, &VS, pot.?, opt.hamiltonian.cap, rvec, 0, allocator);
 
-        try rgridPropagators(T, &R, VA, VC,         opt.time_step,                              opt.mode[0] > 0); defer R.deinit();
-        kgridPropagators(    T, &K, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.mode[0] > 0); defer K.deinit();
+        try rgridPropagators(T, &R, VA, VC,         opt.time_step,                              opt.mode[0] > 0); defer R.deinit(allocator);
+        kgridPropagators(    T, &K, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, opt.mode[0] > 0); defer K.deinit(allocator);
 
         if (opt.write.wavefunction != null) for (0..rdim) |i| for (0..ndim) |j| {
             wavefunction.ptr(i, j).* = rvec.at(i, j);
@@ -147,7 +146,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
         for (0..opt.mode[0] + opt.mode[1]) |i| {
 
-            if (print) try std.io.getStdOut().writer().print("\n{s} TIME DYNAMICS #{d}", .{if (i < opt.mode[0]) "IMAGINARY" else "REAL", if (i < opt.mode[0]) i + 1 else i - opt.mode[0] + 1});
+            if (print) try hlp.print(std.fs.File.stdout(), "\n{s} TIME DYNAMICS #{d}", .{if (i < opt.mode[0]) "IMAGINARY" else "REAL", if (i < opt.mode[0]) i + 1 else i - opt.mode[0] + 1});
 
             if (opt.mode[0] > 0 and i == opt.mode[0]) {
                 try rgridPropagators(T, &R, VA, VC, opt.time_step, false); kgridPropagators(T, &K, W.nstate, kvec, opt.time_step, opt.initial_conditions.mass, false);
@@ -168,11 +167,11 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
             if (opt.write.autocorrelation_function != null or opt.write.spectrum != null) W.memcpy(W0.?);
 
-            if (print) try std.io.getStdOut().writer().print("\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
+            if (print) try hlp.print(std.fs.File.stdout(), "\n{s:6} {s:12} {s:12} {s:12}", .{"ITER", "EKIN", "EPOT", "ETOT"});
 
-            if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"POSITION"  });}
-            if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try std.io.getStdOut().writer().print(" " ** 11, .{});}; try std.io.getStdOut().writer().print(" {s:11}",   .{"MOMENTUM"  });}
-            if (print) {if (W.nstate > 1) for (0..W.nstate - 1) |_| {try std.io.getStdOut().writer().print(" " ** 10, .{});}; try std.io.getStdOut().writer().print(" {s:10}\n", .{"POPULATION"});}
+            if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try hlp.print(std.fs.File.stdout(), " " ** 11, .{});}; try hlp.print(std.fs.File.stdout(), " {s:11}",   .{"POSITION"  });}
+            if (print) {if (W.ndim   > 1) for (0..W.ndim   - 1) |_| {try hlp.print(std.fs.File.stdout(), " " ** 11, .{});}; try hlp.print(std.fs.File.stdout(), " {s:11}",   .{"MOMENTUM"  });}
+            if (print) {if (W.nstate > 1) for (0..W.nstate - 1) |_| {try hlp.print(std.fs.File.stdout(), " " ** 10, .{});}; try hlp.print(std.fs.File.stdout(), " {s:10}\n", .{"POPULATION"});}
 
             for (0..opt.iterations + 1) |j| {
 
@@ -182,7 +181,7 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
 
                 if (pot.?.tdep and j > 0) {
 
-                    try rgridPotentials(T, &VS, pot.?, opt.hamiltonian.cap, rvec, opt.time_step * asfloat(T, j), allocator);
+                    try rgridPotentials(T, &VS, pot.?, opt.hamiltonian.cap, rvec, opt.time_step * hlp.asfloat(T, j), allocator);
 
                     try rgridPropagators(T, &R, VA, VC, opt.time_step, opt.mode[0] > 0);
                 }
@@ -241,8 +240,8 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                         var mean_position: T = 0; for (0..opt.bohmian_dynamics.?.trajectories) |l| mean_position += bohm_position.at(l * ndim + k);
                         var mean_momentum: T = 0; for (0..opt.bohmian_dynamics.?.trajectories) |l| mean_momentum += bohm_momentum.at(l * ndim + k);
 
-                        if (opt.write.bohm_position_mean != null) bohm_position_mean.ptr(j, 1 + k).* = mean_position / asfloat(T, opt.bohmian_dynamics.?.trajectories);
-                        if (opt.write.bohm_momentum_mean != null) bohm_momentum_mean.ptr(j, 1 + k).* = mean_momentum / asfloat(T, opt.bohmian_dynamics.?.trajectories);
+                        if (opt.write.bohm_position_mean != null) bohm_position_mean.ptr(j, 1 + k).* = mean_position / hlp.asfloat(T, opt.bohmian_dynamics.?.trajectories);
+                        if (opt.write.bohm_momentum_mean != null) bohm_momentum_mean.ptr(j, 1 + k).* = mean_momentum / hlp.asfloat(T, opt.bohmian_dynamics.?.trajectories);
                     };
                 }
 
@@ -253,17 +252,17 @@ pub fn run(comptime T: type, opt: inp.QuantumDynamicsOptions(T), print: bool, al
                 if (j == opt.iterations and opt.mode[0] > 0 and i < opt.mode[0] - 1) W.memcpy(WOPT[i]);
 
                 if (print and j == opt.iterations and opt.mode[0] + opt.mode[1] == 1) {
-                    try std.io.getStdOut().writer().print("\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{Ekin + Epot});
+                    try hlp.print(std.fs.File.stdout(), "\nFINAL ENERGY OF THE PROPAGATED WFN: {d:.6}\n", .{Ekin + Epot});
                 }
 
                 if (print and j == opt.iterations and nstate > 1) for (0..nstate) |k| {
-                    try std.io.getStdOut().writer().print("{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P[i].at(k, k).re});
+                    try hlp.print(std.fs.File.stdout(), "{s}FINAL POPULATION OF STATE {d:2}: {d:.6}\n", .{if (k == 0) "\n" else "", k, output.P[i].at(k, k).re});
                 };
             }
         }
 
         if (opt.mode[0] + opt.mode[1] > 1 and print) for (0..opt.mode[0] + opt.mode[1]) |i| {
-            try std.io.getStdOut().writer().print("{s}FINAL ENERGY OF PROPAGATION #{d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i + 1, output.Ekin[i] + output.Epot[i]});
+            try hlp.print(std.fs.File.stdout(), "{s}FINAL ENERGY OF PROPAGATION #{d:2}: {d:.6}\n", .{if (i == 0) "\n" else "", i + 1, output.Ekin[i] + output.Epot[i]});
         };
 
         if (W0 != null) W0.?.deinit();
@@ -335,7 +334,7 @@ pub fn initBohmianTrajectories(comptime T: type, bohm_position: *Vector(T), rvec
 
         outer: for (0..rvec.rows) |j| for (0..W.nstate) |k| {
 
-            cumprob += W.at(j, k).magnitude() * W.at(j, k).magnitude() * std.math.pow(T, (rvec.at(1, W.ndim - 1) - rvec.at(0, W.ndim - 1)), asfloat(T, W.ndim));
+            cumprob += W.at(j, k).magnitude() * W.at(j, k).magnitude() * std.math.pow(T, (rvec.at(1, W.ndim - 1) - rvec.at(0, W.ndim - 1)), hlp.asfloat(T, W.ndim));
 
             if (rn < cumprob) {
                 rvec.row(j).vector().memcpy(bohm_position.slice(i * W.ndim, (i + 1) * W.ndim)); break :outer;
@@ -361,7 +360,7 @@ pub fn makeSpectrum(comptime T: type, opt: inp.QuantumDynamicsOptions(T).Spectru
     var transform = try Vector(std.math.Complex(T)).init(spectrum.rows,    allocator); defer transform.deinit();
     var frequency = try Matrix(T                  ).init(spectrum.rows, 1, allocator); defer frequency.deinit();
 
-    mpt.kgrid(T, &frequency, &[_][]const T{&[_]T{0, asfloat(T, spectrum.rows) * (acf.at(1, 0) - acf.at(0, 0))}}, @intCast(spectrum.rows));
+    mpt.kgrid(T, &frequency, &[_][]const T{&[_]T{0, hlp.asfloat(T, spectrum.rows) * (acf.at(1, 0) - acf.at(0, 0))}}, @intCast(spectrum.rows));
 
     for (0..acf.rows) |i| {
 
@@ -419,7 +418,7 @@ pub fn propagateBohmianTrajectories(comptime T: type, bohm_position: *Vector(T),
 
             for (0..W.ndim) |j| {
 
-                const qj = std.math.clamp((bohm_position.at(i * W.ndim + j) - rvec.at(0, j)) / W.dr, 0, asfloat(T, W.shape[j] - 1));
+                const qj = std.math.clamp((bohm_position.at(i * W.ndim + j) - rvec.at(0, j)) / W.dr, 0, hlp.asfloat(T, W.shape[j] - 1));
 
                 q += @mod(qj, 1) * @mod(qj, 1);
 
@@ -495,25 +494,25 @@ pub fn rgridPropagators(comptime T: type, R: *std.ArrayList(Matrix(std.math.Comp
 
 /// Prints the iteration information.
 pub fn printIteration(comptime T: type, i: usize, Ekin: T, Epot: T, r: Vector(T), p: Vector(T), P: Matrix(std.math.Complex(T))) !void {
-        try std.io.getStdOut().writer().print("{d:6} {d:12.6} {d:12.6} {d:12.6} [", .{i, Ekin, Epot, Ekin + Epot});
+        try hlp.print(std.fs.File.stdout(), "{d:6} {d:12.6} {d:12.6} {d:12.6} [", .{i, Ekin, Epot, Ekin + Epot});
 
         for (0..r.rows) |j| {
-            try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", r.at(j)});
+            try hlp.print(std.fs.File.stdout(), "{s}{d:9.4}", .{if (j == 0) "" else ", ", r.at(j)});
         }
 
-        try std.io.getStdOut().writer().print("] [", .{});
+        try hlp.print(std.fs.File.stdout(), "] [", .{});
 
         for (0..p.rows) |j| {
-            try std.io.getStdOut().writer().print("{s}{d:9.4}", .{if (j == 0) "" else ", ", p.at(j)});
+            try hlp.print(std.fs.File.stdout(), "{s}{d:9.4}", .{if (j == 0) "" else ", ", p.at(j)});
         }
 
-        try std.io.getStdOut().writer().print("] [", .{});
+        try hlp.print(std.fs.File.stdout(), "] [", .{});
 
         for (0..P.rows) |j| {
-            try std.io.getStdOut().writer().print("{s}{d:8.5}", .{if (j == 0) "" else ", ", P.at(j, j).re});
+            try hlp.print(std.fs.File.stdout(), "{s}{d:8.5}", .{if (j == 0) "" else ", ", P.at(j, j).re});
         }
 
-        try std.io.getStdOut().writer().print("]\n", .{});
+        try hlp.print(std.fs.File.stdout(), "]\n", .{});
 }
 
 /// Orthogonalizes the wavefunction to the lower eigenstates.

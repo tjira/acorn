@@ -30,10 +30,10 @@ test "moller_plesset_hydrogen_2" {
     var opt_ccpvdz = opt_sto3g; opt_ccpvdz.hartree_fock.integral.basis = "cc-pvdz";
     var opt_ccpvtz = opt_sto3g; opt_ccpvtz.hartree_fock.integral.basis = "cc-pvtz";
 
-    const output_sto3g  = try moller_plesset.run(f64, opt_sto3g,  false, allocator); defer  output_sto3g.deinit();
-    const output_631g   = try moller_plesset.run(f64, opt_631g,   false, allocator); defer   output_631g.deinit();
-    const output_ccpvdz = try moller_plesset.run(f64, opt_ccpvdz, false, allocator); defer output_ccpvdz.deinit();
-    const output_ccpvtz = try moller_plesset.run(f64, opt_ccpvtz, false, allocator); defer output_ccpvtz.deinit();
+    var output_sto3g  = try moller_plesset.run(f64, opt_sto3g,  false, allocator); defer  output_sto3g.deinit();
+    var output_631g   = try moller_plesset.run(f64, opt_631g,   false, allocator); defer   output_631g.deinit();
+    var output_ccpvdz = try moller_plesset.run(f64, opt_ccpvdz, false, allocator); defer output_ccpvdz.deinit();
+    var output_ccpvtz = try moller_plesset.run(f64, opt_ccpvtz, false, allocator); defer output_ccpvtz.deinit();
 
     try expect(output_sto3g.E,  -1.13012364534534);
     try expect(output_631g.E,   -1.14391755479002);

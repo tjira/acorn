@@ -10,11 +10,11 @@ pub fn Basis(comptime T: type) type {
 
         /// Return the basis set as an array of consecutive numbers.
         pub fn array(system: System(T), name: []const u8, allocator: std.mem.Allocator) !std.ArrayList(T){
-            var basis = std.ArrayList(T).init(allocator); const parsed = try std.json.parseFromSlice(std.json.Value, allocator, try embedded(name, "json", allocator), .{});
+            var basis = std.ArrayList(T){}; const parsed = try std.json.parseFromSlice(std.json.Value, allocator, try embedded(name, "json", allocator), .{});
 
             for (0..system.atoms.rows) |i| {
 
-                var an: [3]u8 = undefined; const ans = std.fmt.formatIntBuf(&an, @as(u8, @intFromFloat(system.atoms.at(i))), 10, std.fmt.Case.lower, .{});
+                var an: [3]u8 = undefined; const ans = (try std.fmt.bufPrint(&an, "{d}", .{@as(u8, @intFromFloat(system.atoms.at(i)))})).len;
 
                 if (parsed.value.object.get("elements").?.object.get(an[0..ans]) == null) return error.AtomNotFoundInBasis;
 
@@ -33,15 +33,15 @@ pub fn Basis(comptime T: type) type {
 
                     for (coefs) |coef| {
 
-                        try basis.append(@as(T, @floatFromInt(c.len)));
-                        try basis.append(@as(T, @floatFromInt(am   )));
+                        try basis.append(allocator, @as(T, @floatFromInt(c.len)));
+                        try basis.append(allocator, @as(T, @floatFromInt(am   )));
 
-                        for (0..3) |j| try basis.append(system.getCoords(i)[j]);
+                        for (0..3) |j| try basis.append(allocator, system.getCoords(i)[j]);
 
                         for (0..c.len) |j| c[j] = try std.fmt.parseFloat(T, coef.array.items[j].string);
 
-                        for (0..alpha.len) |j| try basis.append(alpha[j]);
-                        for (0..c.len    ) |j| try basis.append(    c[j]);
+                        for (0..alpha.len) |j| try basis.append(allocator, alpha[j]);
+                        for (0..c.len    ) |j| try basis.append(allocator,    c[j]);
                     }
                 }
             }

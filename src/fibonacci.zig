@@ -2,6 +2,7 @@
 
 const std = @import("std");
 
+const hlp = @import("helper.zig");
 const inp = @import("input.zig" );
 
 const Vector = @import("vector.zig").Vector;
@@ -16,22 +17,22 @@ pub fn run(comptime T: type, opt: inp.FibonacciOptions(T), print: bool, allocato
     }
 
     if (print) {
-        try std.io.getStdOut().writer().print("\nFIBONACCI NUMBERS\n", .{});
+        try hlp.print(std.fs.File.stdout(), "\nFIBONACCI NUMBERS\n", .{});
     }
 
-    if (print and opt.count >= 1 and opt.log_interval >= 1) try std.io.getStdOut().writer().print("0: {d} ({s})\n", .{fibs[0], std.fmt.fmtDuration(timer.read())});
-    if (print and opt.count >= 2 and opt.log_interval <= 2) try std.io.getStdOut().writer().print("1: {d} ({s})\n", .{fibs[1], std.fmt.fmtDuration(timer.read())});
+    if (print and opt.count >= 1 and opt.log_interval >= 1) try hlp.print(std.fs.File.stdout(), "0: {d} ({D})\n", .{fibs[0], timer.read()});
+    if (print and opt.count >= 2 and opt.log_interval <= 2) try hlp.print(std.fs.File.stdout(), "1: {d} ({D})\n", .{fibs[1], timer.read()});
 
     for (2..opt.count + 1) |i| {
 
         fibs[i % 2] = fibs[0] + fibs[1];
 
         if (opt.output != null) {
-            F.ptr(i, 0).* = i + 1; F.ptr(i, 1).* = fibs[i % 2];
+            F.ptr(i, 0).* = @as(T, @intCast(i)) + 1; F.ptr(i, 1).* = fibs[i % 2];
         }
 
         if (print and (i + 1) % opt.log_interval == 0 or i == 1) {
-            try std.io.getStdOut().writer().print("{d}: {d} ({s})\n", .{i, fibs[i % 2], std.fmt.fmtDuration(timer.read())});
+            try hlp.print(std.fs.File.stdout(), "{d}: {d} ({D})\n", .{i, fibs[i % 2], timer.read()});
         }
     }
 

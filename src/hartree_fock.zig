@@ -6,6 +6,7 @@ const A2AU  = @import("constant.zig").A2AU ;
 const SM2AN = @import("constant.zig").SM2AN;
 
 const edf = @import("energy_derivative.zig");
+const hlp = @import("helper.zig"           );
 const inp = @import("input.zig"            );
 const mat = @import("matrix.zig"           );
 const mth = @import("math.zig"             );
@@ -24,14 +25,12 @@ const System = @import("system.zig").System;
 const Tensor = @import("tensor.zig").Tensor;
 const Vector = @import("vector.zig").Vector;
 
-const asfloat = @import("helper.zig").asfloat;
-
 /// Main function to run the Hartree-Fock calculation with the given options.
 pub fn run(comptime T: type, opt: inp.HartreeFockOptions(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
     var system = try sys.load(T, opt.system, opt.system_file, allocator); defer system.deinit();
 
     if (print) {
-        try std.io.getStdOut().writer().print("\nSYSTEM:\n", .{}); try system.print(std.io.getStdOut().writer());
+        try hlp.print(std.fs.File.stdout(), "\nSYSTEM:\n", .{}); try system.print(std.fs.File.stdout());
     }
 
     return runFull(T, opt, &system, print, allocator);
@@ -46,7 +45,7 @@ pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System
     }
 
     if (print) {
-        if (opt.optimize != null) {try std.io.getStdOut().writer().print("\n{s} OPTIMIZED SYSTEM:\n", .{name}); try system.print(std.io.getStdOut().writer());}
+        if (opt.optimize != null) {try hlp.print(std.fs.File.stdout(), "\n{s} OPTIMIZED SYSTEM:\n", .{name}); try system.print(std.fs.File.stdout());}
     }
 
     var hf = try hfFull(T, opt, system.*, print, allocator);
@@ -54,25 +53,25 @@ pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System
     if (opt.mulliken) hf.mulliken = try pop.mulliken(T, system.*, hf.basis, hf.S_A, hf.D_A, allocator);
 
     if (print) {
-        if (hf.mulliken != null) {try std.io.getStdOut().writer().print("\n{s} MULLIKEN POPULATION ANALYSIS:\n", .{name}); try hf.mulliken.?.matrix().print(std.io.getStdOut().writer());}
+        if (hf.mulliken != null) {try hlp.print(std.fs.File.stdout(), "\n{s} MULLIKEN POPULATION ANALYSIS:\n", .{name}); try hf.mulliken.?.matrix().print(std.fs.File.stdout());}
     }
 
     if (opt.gradient != null) hf.G = try edf.gradient(T, opt, system.*, hfFull, name, true, allocator);
 
     if (print) {
-        if (hf.G != null) {try std.io.getStdOut().writer().print("\n{s} GRADIENT:\n", .{name}); try hf.G.?.print(std.io.getStdOut().writer());}
+        if (hf.G != null) {try hlp.print(std.fs.File.stdout(), "\n{s} GRADIENT:\n", .{name}); try hf.G.?.print(std.fs.File.stdout());}
     }
 
     if (opt.hessian != null) hf.H = try edf.hessian(T, opt, system.*, hfFull, name, true, allocator);
 
     if (print and opt.hessian != null and opt.print.hessian) {
-        if (hf.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try hf.H.?.print(std.io.getStdOut().writer());}
+        if (hf.H != null) {try hlp.print(std.fs.File.stdout(), "\n{s} HESSIAN:\n", .{name}); try hf.H.?.print(std.fs.File.stdout());}
     }
 
     if (opt.hessian != null and opt.hessian.?.freq) hf.freqs = try prp.freq(T, system.*, hf.H.?, allocator);
 
     if (print) {
-        if (hf.freqs != null) {try std.io.getStdOut().writer().print("\n{s} HARMONIC FREQUENCIES:\n", .{name}); try hf.freqs.?.matrix().print(std.io.getStdOut().writer());}
+        if (hf.freqs != null) {try hlp.print(std.fs.File.stdout(), "\n{s} HARMONIC FREQUENCIES:\n", .{name}); try hf.freqs.?.matrix().print(std.fs.File.stdout());}
     }
 
     if (opt.write.coefficient != null) try hf.C_A.write(opt.write.coefficient.?);
@@ -108,12 +107,12 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
         mem = 8 * @as(f64, @floatFromInt(nmat * nbf * nbf + nten * nbf * nbf * nbf * nbf));
     }
 
-    if (print) try std.io.getStdOut().writer().print("\n# NUMBER OF ELECTRONS: {d}\n", .{system.getElectrons()});
+    if (print) try hlp.print(std.fs.File.stdout(), "\n# NUMBER OF ELECTRONS: {d}\n", .{system.getElectrons()});
 
-    if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print("\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
-    if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE  GAUSSIAN SHELLS: {d}\n", .{npgs});
+    if (print and opt.integral.basis != null) try hlp.print(std.fs.File.stdout(), "\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
+    if (print and opt.integral.basis != null) try hlp.print(std.fs.File.stdout(),   "# OF PRIMITIVE  GAUSSIAN SHELLS: {d}\n", .{npgs});
 
-    if (print and opt.integral.basis != null) try std.io.getStdOut().writer().print("\n# OF GB NEEDED TO PERFORM THE HF CALCULATION: {d:.2}\n", .{mem / 1e9});
+    if (print and opt.integral.basis != null) try hlp.print(std.fs.File.stdout(), "\n# OF GB NEEDED TO PERFORM THE HF CALCULATION: {d:.2}\n", .{mem / 1e9});
 
     var timer = try std.time.Timer.start(); const nbf_spatial = if (opt.generalized) nbf / 2 else nbf;
 
@@ -145,7 +144,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
     const nocc: usize = if (opt.generalized) system.getElectrons() else system.getElectrons() / 2;
 
-    if (print) try std.io.getStdOut().writer().print("\nINTEGRALS OBTAINED: {}\n", .{std.fmt.fmtDuration(timer.read())});
+    if (print) try hlp.print(std.fs.File.stdout(), "\nINTEGRALS OBTAINED: {D}\n", .{timer.read()});
 
     var T1 = try Matrix(T).init(nbf, nbf, allocator); defer T1.deinit();
     var T2 = try Matrix(T).init(nbf, nbf, allocator); defer T2.deinit();
@@ -154,12 +153,12 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
     var H_A = try Matrix(T).init(nbf, nbf, allocator); defer H_A.deinit();
     var ERR = try Matrix(T).init(nbf, nbf, allocator); defer ERR.deinit();
 
-    var DIIS_E = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_E.deinit();
-    var DIIS_F = std.ArrayList(Matrix(T)).init(allocator); defer DIIS_F.deinit();
+    var DIIS_E = std.ArrayList(Matrix(T)){}; defer DIIS_E.deinit(allocator);
+    var DIIS_F = std.ArrayList(Matrix(T)){}; defer DIIS_F.deinit(allocator);
 
     if (opt.dsize != null) for (0..opt.dsize.?) |_| {
-        try DIIS_E.append(try Matrix(T).init(H_A.rows, H_A.cols, allocator));
-        try DIIS_F.append(try Matrix(T).init(H_A.rows, H_A.cols, allocator));
+        try DIIS_E.append(allocator, try Matrix(T).init(H_A.rows, H_A.cols, allocator));
+        try DIIS_F.append(allocator, try Matrix(T).init(H_A.rows, H_A.cols, allocator));
     };
 
     var F_A = try Matrix(T).init(nbf, nbf, allocator); F_A.fill(0);
@@ -169,7 +168,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
 
     var iter: u32 = 0; var E: T = 0; var EP: T = 1; mat.add(T, &H_A, T_A, V_A);
 
-    if (print) try std.io.getStdOut().writer().print("\nHF SELF-CONSISTENT FIELD:\n{s:4} {s:20} {s:8} {s:4}\n", .{"ITER", "ENERGY", "|DELTA E|", "TIME"});
+    if (print) try hlp.print(std.fs.File.stdout(), "\nHF SELF-CONSISTENT FIELD:\n{s:4} {s:20} {s:8} {s:4}\n", .{"ITER", "ENERGY", "|DELTA E|", "TIME"});
 
     while (@abs(EP - E) > opt.threshold) : (iter += 1) {
 
@@ -217,16 +216,18 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
             E += ef * D_A.at(i, j) * (H_A.at(i, j) + F_A.at(i, j));
         };
 
-        if (print) try std.io.getStdOut().writer().print("{d:4} {d:20.14} {e:9.3} {s}\n", .{iter + 1, E + VNN, @abs(EP - E), std.fmt.fmtDuration(timer.read())});
+        if (print) try hlp.print(std.fs.File.stdout(), "{d:4} {d:20.14} {e:9.3} {D}\n", .{iter + 1, E + VNN, @abs(EP - E), timer.read()});
     }
 
-    if (print) try std.io.getStdOut().writer().print("\nHF ENERGY: {d:.14}\n", .{E + VNN});
+    if (print) try hlp.print(std.fs.File.stdout(), "\nHF ENERGY: {d:.14}\n", .{E + VNN});
 
     for (0..DIIS_E.items.len) |i| DIIS_E.items[i].deinit();
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
 
     return out.HartreeFockOutput(T){
-        .S_A = S_A, .T_A = T_A, .V_A = V_A, .J_A = J_A, .C_A = C_A, .D_A = D_A, .E_M = E_M, .F_A = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .freqs = null, .basis = basis
+        .S_A = S_A, .T_A = T_A, .V_A = V_A, .J_A = J_A, .C_A = C_A, .D_A = D_A, .E_M = E_M, .F_A = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .freqs = null,
+
+        .basis = basis, .allocator = allocator,
     };
 }
 

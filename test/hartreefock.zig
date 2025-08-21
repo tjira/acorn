@@ -26,10 +26,10 @@ test "hartree_fock_hydrogen" {
     var opt_ccpvdz = opt_sto3g; opt_ccpvdz.integral.basis = "cc-pvdz";
     var opt_ccpvtz = opt_sto3g; opt_ccpvtz.integral.basis = "cc-pvtz";
 
-    const output_sto3g  = try hartree_fock.run(f64, opt_sto3g,  false, allocator); defer  output_sto3g.deinit();
-    const output_631g   = try hartree_fock.run(f64, opt_631g,   false, allocator); defer   output_631g.deinit();
-    const output_ccpvdz = try hartree_fock.run(f64, opt_ccpvdz, false, allocator); defer output_ccpvdz.deinit();
-    const output_ccpvtz = try hartree_fock.run(f64, opt_ccpvtz, false, allocator); defer output_ccpvtz.deinit();
+    var output_sto3g  = try hartree_fock.run(f64, opt_sto3g,  false, allocator); defer  output_sto3g.deinit();
+    var output_631g   = try hartree_fock.run(f64, opt_631g,   false, allocator); defer   output_631g.deinit();
+    var output_ccpvdz = try hartree_fock.run(f64, opt_ccpvdz, false, allocator); defer output_ccpvdz.deinit();
+    var output_ccpvtz = try hartree_fock.run(f64, opt_ccpvtz, false, allocator); defer output_ccpvtz.deinit();
 
     try expect(output_sto3g.E,  -1.11744507742492);
     try expect(output_631g.E,   -1.12675331626040);

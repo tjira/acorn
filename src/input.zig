@@ -33,7 +33,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
     return struct {
         pub const Bias = struct {
             pub const EnergyDifference = struct {
-                states: ?[2]usize = null,
+                states: ?[2]u32 = null,
                 difference: T = 0,
                 force_constant: T = 2
             };
@@ -132,7 +132,7 @@ pub fn ConfigurationInteractionOptions(comptime T: type) type {
             hessian:  ?[]const u8 = null
         };
 
-        active_space: ?[]const usize = null,
+        active_space: ?[]const u32 = null,
 
         hartree_fock: HartreeFockOptions(T) = .{}, gradient: ?Gradient = null, hessian: ?Hessian = null, optimize: ?Optimize = null, print: Print = .{}, write: Write = .{}
     };
@@ -210,11 +210,11 @@ pub fn MatrixOptions(comptime T: type) type {
         pub const Multiply = struct {
         };
         pub const Random = struct {
-            dims: [2]usize,
+            dims: [2]u32,
             distribution: []const u8 = "normal",
             parameters: [2]T = .{0, 1},
-            seed: usize = 1,
-            count: usize = 1,
+            seed: u32 = 1,
+            count: u32 = 1,
         };
 
         inputs: ?[]const []const u8 = null, outputs: ?[]const []const u8 = null, print: bool = true,
@@ -290,8 +290,8 @@ pub fn PrimeOptions(comptime T: type) type {
 pub fn QuantumDynamicsOptions(comptime T: type) type {
     return struct {
         pub const BohmianDynamics = struct {
-            trajectories: usize = 100,
-            seed: usize = 1,
+            trajectories: u32 = 100,
+            seed: u32 = 1,
         };
         pub const Grid = struct {
             limits: []const []const T, points: u32
@@ -300,7 +300,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
             dims: ?u32 = null, matrix: ?[]const []const []const u8 = null, cap: ?[]const u8 = null, name: ?[]const u8 = null, file: ?[]const u8 = null
         };
         pub const InitialConditions = struct {
-            position: []const T, momentum: []const T, gamma: T = 2, state: u32, mass: T, adiabatic: bool = false, excite: ?[]const usize = null
+            position: []const T, momentum: []const T, gamma: T = 2, state: u32, mass: T, adiabatic: bool = false, excite: ?[]const u32 = null
         };
         pub const LogIntervals = struct {
             iteration: u32 = 1
@@ -341,7 +341,7 @@ pub fn QuantumDynamicsOptions(comptime T: type) type {
 /// The sort options
 pub fn SortOptions(comptime _: type) type {
     return struct {
-        algorithm: []const u8 = "bubble", column: usize = 0, input: []const u8, output: ?[]const u8 = null, print: bool = true
+        algorithm: []const u8 = "bubble", column: u32 = 0, input: []const u8, output: ?[]const u8 = null, print: bool = true
     };
 }
 

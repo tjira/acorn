@@ -58,21 +58,21 @@ pub fn parse(filebuf: []const u8, allocator: std.mem.Allocator) !void {
 
         const obj = try std.json.parseFromValue(input.ConfigurationInteractionOptions(f64), allocator, inputjs.value.object.get("configuration_interaction").?, .{}); defer obj.deinit();
 
-        const out = try configuration_interaction.run(f64, obj.value, true, allocator); defer out.deinit();
+        var out = try configuration_interaction.run(f64, obj.value, true, allocator); defer out.deinit();
     }
 
     if (inputjs.value.object.contains("fibonacci")) {
 
-        const obj = try std.json.parseFromValue(input.FibonacciOptions(u128), allocator, inputjs.value.object.get("fibonacci").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.FibonacciOptions(u32), allocator, inputjs.value.object.get("fibonacci").?, .{}); defer obj.deinit();
 
-        _ = try fibonacci.run(u128, obj.value, true, allocator);
+        _ = try fibonacci.run(u32, obj.value, true, allocator);
     }
 
     if (inputjs.value.object.contains("hartree_fock")) {
 
         const obj = try std.json.parseFromValue(input.HartreeFockOptions(f64), allocator, inputjs.value.object.get("hartree_fock").?, .{}); defer obj.deinit();
 
-        const out = try hartree_fock.run(f64, obj.value, true, allocator); defer out.deinit();
+        var out = try hartree_fock.run(f64, obj.value, true, allocator); defer out.deinit();
     }
 
     if (inputjs.value.object.contains("matrix")) {
@@ -93,14 +93,14 @@ pub fn parse(filebuf: []const u8, allocator: std.mem.Allocator) !void {
 
         const obj = try std.json.parseFromValue(input.MollerPlessetOptions(f64), allocator, inputjs.value.object.get("moller_plesset").?, .{}); defer obj.deinit();
 
-        const out = try moller_plesset.run(f64, obj.value, true, allocator); defer out.deinit();
+        var out = try moller_plesset.run(f64, obj.value, true, allocator); defer out.deinit();
     }
 
     if (inputjs.value.object.contains("prime")) {
 
-        const obj = try std.json.parseFromValue(input.PrimeOptions(u128), allocator, inputjs.value.object.get("prime").?, .{}); defer obj.deinit();
+        const obj = try std.json.parseFromValue(input.PrimeOptions(u32), allocator, inputjs.value.object.get("prime").?, .{}); defer obj.deinit();
 
-        _ = try prime.run(u128, obj.value, true, allocator);
+        _ = try prime.run(u32, obj.value, true, allocator);
     }
 
     if (inputjs.value.object.contains("quantum_dynamics")) {
@@ -139,7 +139,7 @@ pub fn main() !void {
 
     const fsize = 8192; var argc: usize = 0; var timer = try std.time.Timer.start();
 
-    try std.io.getStdOut().writer().print("ZIG VERSION: {}, THREADS: {s}\n", .{builtin.zig_version, std.posix.getenv("OMP_NUM_THREADS").?});
+    try helper.print(std.fs.File.stdout(), "ZIG VERSION: {any}, THREADS: {s}\n", .{builtin.zig_version, std.posix.getenv("OMP_NUM_THREADS").?});
 
     var argv = try std.process.argsWithAllocator(allocator); defer argv.deinit();
 
@@ -147,7 +147,7 @@ pub fn main() !void {
 
         const filebuf = try std.fs.cwd().readFileAlloc(allocator, arg, fsize); defer allocator.free(filebuf);
 
-        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{arg});
+        try helper.print(std.fs.File.stdout(), "\nPROCESSED FILE: {s}\n", .{arg});
 
         try parse(filebuf, allocator); argc += 1;
     }
@@ -156,10 +156,10 @@ pub fn main() !void {
 
         const filebuf = std.fs.cwd().readFileAlloc(allocator, "input.json", fsize) catch break :default;
 
-        try std.io.getStdOut().writer().print("\nPROCESSED FILE: {s}\n", .{"input.json"});
+        try helper.print(std.fs.File.stdout(), "\nPROCESSED FILE: {s}\n", .{"input.json"});
 
         try parse(filebuf, allocator); allocator.free(filebuf); 
     }}
 
-    try std.io.getStdOut().writer().print("\nTOTAL EXECUTION TIME: {}\n", .{std.fmt.fmtDuration(timer.read())});
+    try helper.print(std.fs.File.stdout(), "\nTOTAL EXECUTION TIME: {D}\n", .{timer.read()});
 }

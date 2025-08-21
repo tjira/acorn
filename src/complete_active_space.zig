@@ -47,8 +47,8 @@ pub fn generateAllSingletDeterminants(nbf: usize, nel: usize, allocator: std.mem
     for (0..data_alpha.len) |i| data_alpha[i] = 2 * i + 0;
     for (0..data_beta.len ) |i| data_beta[i]  = 2 * i + 1;
 
-    const dets_alpha = try mth.combinations(usize, data_alpha, nel / 2, allocator); defer dets_alpha.deinit();
-    const dets_beta  = try mth.combinations(usize, data_beta,  nel / 2, allocator); defer  dets_beta.deinit();
+    var dets_alpha = try mth.combinations(usize, data_alpha, nel / 2, allocator); defer dets_alpha.deinit(allocator);
+    var dets_beta  = try mth.combinations(usize, data_beta,  nel / 2, allocator); defer  dets_beta.deinit(allocator);
 
     const D = try Matrix(usize).init(dets_alpha.items.len * dets_beta.items.len, nel, allocator);
 

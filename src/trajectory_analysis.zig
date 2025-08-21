@@ -3,14 +3,13 @@
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const cnt = @import("constant.zig");
+const hlp = @import("helper.zig"  );
 const inp = @import("input.zig"   );
 const out = @import("output.zig"  );
 
 const Matrix       = @import("matrix.zig"       ).Matrix;
 const StridedArray = @import("strided_array.zig").StridedArray;
 const Vector       = @import("vector.zig"       ).Vector;
-
-const asfloat = @import("helper.zig").asfloat;
 
 /// The main function of the trajectory module.
 pub fn run(comptime T: type, opt: inp.TrajectoryAnalysisOptions(T), print: bool, allocator: std.mem.Allocator) !void {
@@ -28,7 +27,7 @@ pub fn run(comptime T: type, opt: inp.TrajectoryAnalysisOptions(T), print: bool,
 
         if (std.mem.eql(u8, opt.entropy.?.algorithm, "schlitter")) entropy = try schlitterEntropy(T, coords, atoms, opt.entropy.?.temperature, allocator);
 
-        if (print) std.debug.print("\nSCHLITTER ENTROPY: {d:.14} a.u. = {d:.14} J/MOL\n", .{entropy, entropy * cnt.NA / cnt.J2AU});
+        if (print) try hlp.print(std.fs.File.stdout(), "\nSCHLITTER ENTROPY: {d:.14} a.u. = {d:.14} J/MOL\n", .{entropy, entropy * cnt.NA / cnt.J2AU});
     }
 
     if (opt.output) |path| try writeTrajectory(T, path, atoms, coords);
@@ -36,40 +35,40 @@ pub fn run(comptime T: type, opt: inp.TrajectoryAnalysisOptions(T), print: bool,
 
 /// Parses the trajectory input file into a matrix, where each line is a frame and each column is a coordinate.
 pub fn parseTrajectory(comptime T: type, path: []const u8, allocator: std.mem.Allocator) !struct {atoms: Vector(u32), coords: Matrix(T)} {
-    const file = try std.fs.cwd().openFile(path, .{}); defer file.close(); var buffer: [64]u8 = undefined;
+    const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
 
-    var atoms  = std.ArrayList(u32).init(allocator);
-    var coords = std.ArrayList(T  ).init(allocator);
+    var buffer: [1024]u8 = undefined; var reader = file.reader(&buffer); var reader_interface = &reader.interface;
 
-    var buffered = std.io.bufferedReader(file.reader()); var reader = buffered.reader();
+    var atoms  = std.ArrayList(u32){};
+    var coords = std.ArrayList(T  ){};
 
     while (true) {
 
-        const natom = try std.fmt.parseInt(usize, reader.readUntilDelimiter(&buffer, '\n') catch {break;}, 10);
+        const natom = try std.fmt.parseInt(usize, reader_interface.takeDelimiterExclusive('\n') catch break, 10);
 
-        try reader.skipUntilDelimiterOrEof('\n');
+        _ = try reader_interface.discardDelimiterInclusive('\n');
 
         for (0..natom) |_| {
 
-            var it = std.mem.tokenizeAny(u8, try reader.readUntilDelimiter(&buffer, '\n'), " ,");
+            var it = std.mem.tokenizeAny(u8, try reader_interface.takeDelimiterExclusive('\n'), " ,");
 
             const symbol = it.next().?;
 
-            if (atoms.items.len < natom) try atoms.append(cnt.SM2AN.get(symbol).?);
+            if (atoms.items.len < natom) try atoms.append(allocator, cnt.SM2AN.get(symbol).?);
 
             const x = try std.fmt.parseFloat(T, it.next().?) * cnt.A2AU;
             const y = try std.fmt.parseFloat(T, it.next().?) * cnt.A2AU;
             const z = try std.fmt.parseFloat(T, it.next().?) * cnt.A2AU;
 
-            try coords.append(x); try coords.append(y); try coords.append(z);
+            try coords.append(allocator, x); try coords.append(allocator, y); try coords.append(allocator, z);
         }
     }
 
     const natom = atoms.items.len; const ntraj = coords.items.len / natom / 3;
 
-    const coords_matrix = Matrix(T){.data = try coords.toOwnedSlice(), .rows = ntraj, .cols = 3 * natom, .allocator = allocator};
+    const coords_matrix = Matrix(T){.data = try coords.toOwnedSlice(allocator), .rows = ntraj, .cols = 3 * natom, .allocator = allocator};
 
-    return .{.atoms = Vector(u32){.data = try atoms.toOwnedSlice(), .rows = natom, .allocator = allocator}, .coords = coords_matrix};
+    return .{.atoms = Vector(u32){.data = try atoms.toOwnedSlice(allocator), .rows = natom, .allocator = allocator}, .coords = coords_matrix};
 }
 
 /// Removes the rotation from the trajectory data by subtracting the mean position of each atom.
@@ -137,7 +136,7 @@ pub fn schlitterEntropy(comptime T: type, coords: Matrix(T), atoms: Vector(u32),
             sigma.ptr(i, j).* += xcol.at(k) * ycol.at(k);
         }
 
-        sigma.ptr(i, j).* /= asfloat(T, coords.rows - 1);
+        sigma.ptr(i, j).* /= hlp.asfloat(T, coords.rows - 1);
     };
 
     try cwp.Blas(T).dgemm(&S, M, false, sigma, false);
@@ -153,11 +152,11 @@ pub fn schlitterEntropy(comptime T: type, coords: Matrix(T), atoms: Vector(u32),
 pub fn writeTrajectory(comptime T: type, path: []const u8, atoms: Vector(u32), coords: Matrix(T)) !void {
     const file = try std.fs.cwd().createFile(path, .{}); defer file.close();
 
-    var buffered = std.io.bufferedWriter(file.writer()); var writer = buffered.writer();
+    var buffer: [1024]u8 = undefined; var writer = file.writer(&buffer); var writer_interface = &writer.interface;
 
     for (0..coords.rows) |i| {
 
-        try writer.print("{d}\nGeometry #{d}\n", .{atoms.rows, i});
+        try writer_interface.print("{d}\nGeometry #{d}\n", .{atoms.rows, i});
 
         for (0..atoms.rows) |j| {
 
@@ -165,7 +164,9 @@ pub fn writeTrajectory(comptime T: type, path: []const u8, atoms: Vector(u32), c
             const y = coords.at(i, 3 * j + 1) / cnt.A2AU;
             const z = coords.at(i, 3 * j + 2) / cnt.A2AU;
 
-            try writer.print("{s:2} {d:20.14} {d:20.14} {d:20.14}\n", .{try cnt.AN2SM(atoms.at(j)), x, y, z});
+            try writer_interface.print("{s:2} {d:20.14} {d:20.14} {d:20.14}\n", .{try cnt.AN2SM(atoms.at(j)), x, y, z});
         }
     }
+
+    try writer_interface.flush();
 }

@@ -5,6 +5,7 @@ const std = @import("std"); const cwp = @import("cwrapper.zig");
 const cas = @import("complete_active_space.zig");
 const edf = @import("energy_derivative.zig"    );
 const hfm = @import("hartree_fock.zig"         );
+const hlp = @import("helper.zig"               );
 const inp = @import("input.zig"                );
 const mat = @import("matrix.zig"               );
 const mth = @import("math.zig"                 );
@@ -20,14 +21,12 @@ const System = @import("system.zig").System;
 const Tensor = @import("tensor.zig").Tensor;
 const Vector = @import("vector.zig").Vector;
 
-const asfloat = @import("helper.zig").asfloat;
-
 /// Main function to run the CI calculation with the given options.
 pub fn run(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), print: bool, allocator: std.mem.Allocator) !out.ConfigurationInteractionOutput(T) {
     var system = try sys.load(T, opt.hartree_fock.system, opt.hartree_fock.system_file, allocator); defer system.deinit();
 
     if (print) {
-        try std.io.getStdOut().writer().print("\nSYSTEM:\n", .{}); try system.print(std.io.getStdOut().writer());
+        try hlp.print(std.fs.File.stdout(), "\nSYSTEM:\n", .{}); try system.print(std.fs.File.stdout());
     }
 
     return runFull(T, opt, &system, print, allocator);
@@ -42,7 +41,7 @@ pub fn runFull(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sy
     }
 
     if (print) {
-        if (opt.optimize != null) {try std.io.getStdOut().writer().print("\n{s} OPTIMIZED SYSTEM:\n", .{name}); try system.print(std.io.getStdOut().writer());}
+        if (opt.optimize != null) {try hlp.print(std.fs.File.stdout(), "\n{s} OPTIMIZED SYSTEM:\n", .{name}); try system.print(std.fs.File.stdout());}
     }
 
     const hf = try hfm.runFull(T, opt.hartree_fock, system, print, allocator); var ci = try ciPost(T, opt, system.*, hf, print, allocator);
@@ -50,19 +49,19 @@ pub fn runFull(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sy
     if (opt.gradient != null) ci.G = try edf.gradient(T, opt, system.*, ciFull, name, true, allocator);
 
     if (print) {
-        if (ci.G != null) {try std.io.getStdOut().writer().print("\n{s} GRADIENT:\n", .{name}); try ci.G.?.print(std.io.getStdOut().writer());}
+        if (ci.G != null) {try hlp.print(std.fs.File.stdout(), "\n{s} GRADIENT:\n", .{name}); try ci.G.?.print(std.fs.File.stdout());}
     }
 
     if (opt.hessian != null) ci.H = try edf.hessian(T, opt, system.*, ciFull, name, true, allocator);
 
     if (print and opt.hessian != null and opt.print.hessian) {
-        if (ci.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try ci.H.?.print(std.io.getStdOut().writer());}
+        if (ci.H != null) {try hlp.print(std.fs.File.stdout(), "\n{s} HESSIAN:\n", .{name}); try ci.H.?.print(std.fs.File.stdout());}
     }
 
     if (opt.hessian != null and opt.hessian.?.freq) ci.freqs = try prp.freq(T, system.*, ci.H.?, allocator);
 
     if (print) {
-        if (ci.freqs != null) {try std.io.getStdOut().writer().print("\n{s} HARMONIC FREQUENCIES:\n", .{name}); try ci.freqs.?.matrix().print(std.io.getStdOut().writer());}
+        if (ci.freqs != null) {try hlp.print(std.fs.File.stdout(), "\n{s} HARMONIC FREQUENCIES:\n", .{name}); try ci.freqs.?.matrix().print(std.fs.File.stdout());}
     }
 
     if (opt.gradient != null and opt.write.gradient != null) try ci.G.?.write(opt.write.gradient.?);
@@ -87,7 +86,7 @@ pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sys
 
     if (AS[0] > nocc or AS[1] > nbf or AS[0] > AS[1] or AS[1] - AS[0] > nbf - nocc) return error.InvalidActiveSpace;
 
-    if (print) try std.io.getStdOut().writer().print("\nCI ACTIVE SPACE: {d} ELECTRONS IN {d} SPINORBITALS\n", .{AS[0], AS[1]});
+    if (print) try hlp.print(std.fs.File.stdout(), "\nCI ACTIVE SPACE: {d} ELECTRONS IN {d} SPINORBITALS\n", .{AS[0], AS[1]});
 
     var D = try cas.generateCasDeterminants(AS[0], AS[1], nocc, opt.hartree_fock.generalized, allocator); defer D.deinit();
 
@@ -96,7 +95,7 @@ pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sys
 
     try transform(T, &H_MS, &J_MS_A, hf.T_A, hf.V_A, hf.J_A, hf.C_A, allocator);
 
-    if (print) try std.io.getStdOut().writer().print("\nNUMBER OF CI DETERMINANTS: {d}\n", .{D.rows});
+    if (print) try hlp.print(std.fs.File.stdout(), "\nNUMBER OF CI DETERMINANTS: {d}\n", .{D.rows});
 
     var A = try Vector(usize).init(nocc,           allocator); defer A.deinit();
     var H = try Matrix(T    ).init(D.rows, D.rows, allocator); defer H.deinit();
@@ -123,12 +122,12 @@ pub fn ciPost(comptime T: type, opt: inp.ConfigurationInteractionOptions(T), sys
             so[if (k == 0) 0 else 1] = A.at(l); so[if (k == 0) 2 else 3] = D.at(i, l); k += 1;
         };
 
-        H.ptr(i, j).* = asfloat(T, sign) * try slater(T, A, so[0..diff * 2], H_MS, J_MS_A); H.ptr(j, i).* = H.at(i, j);
+        H.ptr(i, j).* = hlp.asfloat(T, sign) * try slater(T, A, so[0..diff * 2], H_MS, J_MS_A); H.ptr(j, i).* = H.at(i, j);
     };
 
     try cwp.Lapack(T).dsyevd(&E, &C, H);
 
-    if (print) try std.io.getStdOut().writer().print("\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + system.nuclearRepulsion()});
+    if (print) try hlp.print(std.fs.File.stdout(), "\nCI ENERGY: {d:.14}\n", .{E.at(0, 0) + system.nuclearRepulsion()});
 
     return .{
         .hf = hf, .E = E.at(0, 0) + system.nuclearRepulsion(), .G = null, .H = null, .freqs = null,

@@ -15,7 +15,7 @@ pub fn benchmark(title: []const u8, object: anytype, D: usize, N: usize, S: usiz
 
     var args = try object.init(allocator, D); defer args.deinit();
 
-    try std.io.getStdOut().writer().print("{s} BENCHMARK (SIZE: {d}, SAMPLES: {d}, INIT: {s})\n\n", .{title, D, N, std.fmt.fmtDuration(timer.read())});
+    try acorn.helper.print(std.fs.File.stdout(), "{s} BENCHMARK (SIZE: {d}, SAMPLES: {d}, INIT: {D})\n\n", .{title, D, N, timer.read()});
 
     var times = try allocator.alloc(f64, N); defer allocator.free(times);
 
@@ -23,11 +23,11 @@ pub fn benchmark(title: []const u8, object: anytype, D: usize, N: usize, S: usiz
 
         timer.reset();
 
-        try std.io.getStdOut().writer().print("{[i]d:[width]}/{[n]d}) RANDOMIZATION: ", .{.i = i + 1, .width = digits, .n = N});
+        try acorn.helper.print(std.fs.File.stdout(), "{[i]d:[width]}/{[n]d}) RANDOMIZATION: ", .{.i = i + 1, .width = digits, .n = N});
 
         try args.randomize(i + S);
 
-        try std.io.getStdOut().writer().print("{s:9}, EXECUTION: ", .{std.fmt.fmtDuration(timer.read())  });
+        try acorn.helper.print(std.fs.File.stdout(), "{D:9}, EXECUTION: ", .{timer.read()});
 
         timer.reset();
 
@@ -35,7 +35,7 @@ pub fn benchmark(title: []const u8, object: anytype, D: usize, N: usize, S: usiz
 
         times[i] = acorn.helper.asfloat(f64, timer.read());
 
-        try std.io.getStdOut().writer().print("{s:9}\n", .{std.fmt.fmtDuration(@as(u64, @intFromFloat(times[i])))});
+        try acorn.helper.print(std.fs.File.stdout(), "{D:9}\n", .{@as(u64, @intFromFloat(times[i]))});
 
         if (print) try args.print();
     }
@@ -43,7 +43,7 @@ pub fn benchmark(title: []const u8, object: anytype, D: usize, N: usize, S: usiz
     const time_mean   = @as(u64, @intFromFloat(acorn.math.mean(  f64, times) catch 0));
     const time_stddev = @as(u64, @intFromFloat(acorn.math.stddev(f64, times) catch 0));
 
-    try std.io.getStdOut().writer().print("\nAVERAGE {s} TIME: {s} ± {d}\n", .{title, std.fmt.fmtDuration(time_mean), std.fmt.fmtDuration(time_stddev)});
+    try acorn.helper.print(std.fs.File.stdout(), "\nAVERAGE {s} TIME: {D} ± {D}\n", .{title, time_mean, time_stddev});
 }
 
 /// Main function for the benchmarks
@@ -58,7 +58,7 @@ pub fn main() !void {
         if (gpa.deinit() == .leak) std.debug.panic("MEMORY LEAK DETECTED IN THE ALLOCATOR\n", .{});
     }
 
-    var name = std.ArrayList(u8).init(allocator); var D: usize = 2; var N: usize = 1; var S: usize = 0; var P: u1 = 0; defer name.deinit();
+    var name = std.ArrayList(u8){}; var D: usize = 2; var N: usize = 1; var S: usize = 0; var P: u1 = 0; defer name.deinit(allocator);
 
     try parse(&name, &D, &N, &S, &P, allocator);
 
@@ -78,7 +78,7 @@ pub fn parse(name: *std.ArrayList(u8), D: *usize, N: *usize, S: *usize, P: *u1, 
     _ = argv.next(); while (argv.next()) |arg| {
 
         if (argc == 0) {
-            try name.appendSlice(arg);
+            try name.appendSlice(allocator, arg);
         }
 
         else if (argc == 1) {

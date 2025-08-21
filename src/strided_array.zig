@@ -2,8 +2,7 @@
 
 const std = @import("std");
 
-const asfloat = @import("helper.zig").asfloat;
-const istruct = @import("helper.zig").istruct;
+const hlp = @import("helper.zig");
 
 /// Strided array class.
 pub fn StridedArray(comptime T: type) type {
@@ -38,22 +37,22 @@ pub fn StridedArray(comptime T: type) type {
             self.ptr(0).* = start;
 
             for (1..self.len) |i| {
-                self.ptr(i).* = start + asfloat(T, i) * (end - start) / asfloat(T, self.len - 1);
+                self.ptr(i).* = start + hlp.asfloat(T, i) * (end - start) / hlp.asfloat(T, self.len - 1);
             }
         }
 
         /// Calculate the mean of the strided array.
         pub fn mean(self: StridedArray(T)) T {
-            return if (self.len == 0) 0 else self.sum() / asfloat(T, self.len);
+            return if (self.len == 0) 0 else self.sum() / hlp.asfloat(T, self.len);
         }
 
         /// Multiply the strided array elements with a constant value.
         pub fn muls(self: StridedArray(T), value: T) void {
-            if (comptime !istruct(T)) for (0..self.len) |i| {
+            if (comptime !hlp.istruct(T)) for (0..self.len) |i| {
                 self.ptr(i).* *= value;
             };
 
-            if (comptime istruct(T)) for (0..self.len) |i| {
+            if (comptime hlp.istruct(T)) for (0..self.len) |i| {
                 self.ptr(i).* = self.at(i).mul(value);
             };
         }
@@ -65,11 +64,11 @@ pub fn StridedArray(comptime T: type) type {
 
         /// Subtract a constant value from the strided array elements.
         pub fn subs(self: StridedArray(T), value: T) void {
-            if (comptime !istruct(T)) for (0..self.len) |i| {
+            if (comptime !hlp.istruct(T)) for (0..self.len) |i| {
                 self.ptr(i).* -= value;
             };
 
-            if (comptime istruct(T)) for (0..self.len) |i| {
+            if (comptime hlp.istruct(T)) for (0..self.len) |i| {
                 self.ptr(i).* = self.at(i).sub(value);
             };
         }

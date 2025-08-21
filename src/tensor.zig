@@ -2,11 +2,10 @@
 
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
+const hlp = @import("helper.zig");
 const mth = @import("math.zig");
 
 const Matrix = @import("matrix.zig").Matrix;
-
-const contains = @import("helper.zig").contains;
 
 /// Tensor class.
 pub fn Tensor(comptime T: type) type {
@@ -68,17 +67,17 @@ pub fn Tensor(comptime T: type) type {
 
         /// Print the matrix to the given device.
         pub fn print(self: Tensor(T), device: anytype) !void {
-            var buffered = std.io.bufferedWriter(device); var writer = buffered.writer();
+            var buffer: [32768]u8 = undefined; var writer = device.writer(&buffer); var writer_interface = &writer.interface;
 
             for (0..self.shape.len) |i| {
-                try writer.print("{d}{s}", .{self.shape[i], if(i < self.shape.len - 1) " " else "\n"});
+                try writer_interface.print("{d}{s}", .{self.shape[i], if(i < self.shape.len - 1) " " else "\n"});
             }
 
             for (self.data, 1..) |e, i| {
-                try writer.print("{d:20.14}{s}", .{e, if(i % (self.shape[2] * self.shape[3]) == 0) "\n" else " "});
+                try writer_interface.print("{d:20.14}{s}", .{e, if(i % (self.shape[2] * self.shape[3]) == 0) "\n" else " "});
             }
 
-            try buffered.flush();
+            try writer_interface.flush();
         }
 
         /// Returns the element at the specified indices as a mutable reference.
@@ -146,10 +145,10 @@ pub fn Tensor(comptime T: type) type {
 
             for (0..visited.len) |i| if (!visited[i]) {
 
-                var cycle = std.ArrayList(usize).init(allocator); defer cycle.deinit();
+                var cycle = std.ArrayList(usize){}; defer cycle.deinit(allocator);
 
                 var j = i; while (!visited[j]) : (j = axes[j]) {
-                    try cycle.append(j); visited[j] = true;
+                    try cycle.append(allocator, j); visited[j] = true;
                 }
 
                 if (cycle.items.len == 1) continue;
@@ -166,7 +165,7 @@ pub fn Tensor(comptime T: type) type {
         pub fn write(self: Tensor(T), path: []const u8) !void {
             const file = try std.fs.cwd().createFile(path, .{}); defer file.close();
 
-            try self.print(file.writer());
+            try self.print(file);
         }
     };
 }
@@ -200,18 +199,18 @@ pub fn contract(comptime T: type, C: anytype, A: anytype, Ai: []const usize, B: 
     const B_TEN = if (comptime bisten) B   else Tensor(T){.data = B.data, .shape = &b_shape[0..].*, .stride = &b_stride[0..].*, .allocator = allocator};
     const C_TEN = if (comptime cisten) C.* else Tensor(T){.data = C.data, .shape = &c_shape[0..].*, .stride = &c_stride[0..].*, .allocator = allocator};
 
-    var a_axes = std.ArrayList(usize).init(allocator); defer a_axes.deinit();
-    var b_axes = std.ArrayList(usize).init(allocator); defer b_axes.deinit();
+    var a_axes = std.ArrayList(usize){}; defer a_axes.deinit(allocator);
+    var b_axes = std.ArrayList(usize){}; defer b_axes.deinit(allocator);
 
-    for (0..A_TEN.shape.len) |i| if (!contains(usize, Ai, i)) {
-        try a_axes.append(i);
+    for (0..A_TEN.shape.len) |i| if (!hlp.contains(usize, Ai, i)) {
+        try a_axes.append(allocator, i);
     };
 
-    for (Ai) |i| try a_axes.append(i);
-    for (Bi) |i| try b_axes.append(i);
+    for (Ai) |i| try a_axes.append(allocator, i);
+    for (Bi) |i| try b_axes.append(allocator, i);
 
-    for (0..B_TEN.shape.len) |i| if (!contains(usize, Bi, i)) {
-        try b_axes.append(i);
+    for (0..B_TEN.shape.len) |i| if (!hlp.contains(usize, Bi, i)) {
+        try b_axes.append(allocator, i);
     };
 
     var a_axes_inv = try allocator.alloc(usize, a_axes.items.len); defer allocator.free(a_axes_inv);
@@ -259,29 +258,25 @@ pub fn muls(comptime T: type, C: *Tensor(T), A: Tensor(T), s: T) void {
 pub fn read(comptime T: type, path: []const u8, dim: usize, allocator: std.mem.Allocator) !Tensor(T) {
     const file = try std.fs.cwd().openFile(path, .{}); defer file.close();
 
+    var buffer: [32768]u8 = undefined; var reader = file.reader(&buffer); var reader_interface = &reader.interface;
+
     var shape = try allocator.alloc(usize, dim); defer allocator.free(shape);
 
-    var freader = std.io.bufferedReader(file.reader()); var reader = freader.reader();
-    var hbuffer: [16]u8 = undefined; var hstream = std.io.fixedBufferStream(&hbuffer);
-
     for (0..dim) |i| {
-
-        hstream.reset();
-
-        try reader.streamUntilDelimiter(hstream.writer(), if (i < dim - 1) ' ' else '\n',  4);
-
-        shape[i] = try std.fmt.parseInt(usize, hbuffer[0..@intCast(try hstream.getPos())], 10);
+        shape[i] = try std.fmt.parseInt(usize, try reader_interface.takeDelimiterExclusive(if (i < dim - 1) ' ' else '\n'), 10);
     }
 
-    const ten = try Tensor(T).init(shape, allocator);
+    const ten = try Tensor(T).init(shape, allocator); var i: usize = 0;
 
-    for (0..mth.prod(usize, shape)) |i| {
+    while (true) {
 
-        const bytes = try reader.readBytesNoEof(20); try reader.skipBytes(1, .{});
+        const line = reader_interface.takeDelimiterExclusive('\n') catch {break;};
 
-        var j: u32 = 0; while (bytes[j] == ' ') : (j += 1) {}
+        var it = std.mem.tokenizeAny(u8, line, " "); 
 
-        ten.data[i] = try std.fmt.parseFloat(T, bytes[j..bytes.len]);
+        while (it.next()) |element| {
+            ten.data[i] = try std.fmt.parseFloat(T, element); i += 1;
+        }
     }
 
     return ten;

@@ -5,8 +5,6 @@ CORES=$(nproc --all); DIRNAME=$(dirname "$(realpath $0)"); TARGETS=("x86_64-linu
 CMAKE_GENERAL=(
     -DBUILD_SHARED_LIBS=OFF
     -DCMAKE_BUILD_TYPE=Release
-    -DCMAKE_C_COMPILER="$DIRNAME/../zigcc"
-    -DCMAKE_CXX_COMPILER="$DIRNAME/../zigcpp"
 )
 
 CMAKE_LIBINT=(
@@ -20,14 +18,11 @@ CMAKE_OMP=(
 )
 
 MAKE_OPENBLAS=(
-    AR="$DIRNAME/../zigar"
-    CC="$DIRNAME/../zigcc"
     DYNAMIC_ARCH=1
     HOSTCC=gcc
     NO_SHARED=1
     NOFORTRAN=1
     NUM_THREADS=128
-    RANLIB="$DIRNAME/../zigranlib"
     USE_OPENMP=1
 )
 
@@ -38,6 +33,8 @@ cmake_install() {
 tar -xf external-x86_64-linux/zig.tar.xz -C zig-bin --strip-components=1
 tar -xf external-x86_64-linux/zls.tar.xz -C zig-bin --strip-components=0
 
+export CC="$DIRNAME/../zigcc"; export CXX="$DIRNAME/../zigcpp"; export AR="$DIRNAME/../zigar"; export RANLIB="$DIRNAME/../zigranlib"
+
 for TARGET in "${TARGETS[@]}"; do
 
     export C_INCLUDE_PATH="$DIRNAME/../external-$TARGET/include:$C_INCLUDE_PATH"
@@ -47,10 +44,10 @@ for TARGET in "${TARGETS[@]}"; do
         -DCMAKE_PREFIX_PATH="$DIRNAME/../external-$TARGET"
     )
 
-    echo "$DIRNAME/../zig-bin/zig ar                          \"\$@\"" > zigar     && chmod +x     zigar
-    echo "$DIRNAME/../zig-bin/zig cc     --target=$TARGET-gnu \"\$@\"" > zigcc     && chmod +x     zigcc
-    echo "$DIRNAME/../zig-bin/zig c++    --target=$TARGET-gnu \"\$@\"" > zigcpp    && chmod +x    zigcpp
-    echo "$DIRNAME/../zig-bin/zig ranlib                      \"\$@\"" > zigranlib && chmod +x zigranlib
+    echo -e "#!/usr/bin/env bash\n\n$DIRNAME/../zig-bin/zig ar                          \"\$@\"" > zigar     && chmod +x     zigar
+    echo -e "#!/usr/bin/env bash\n\n$DIRNAME/../zig-bin/zig cc     --target=$TARGET-gnu \"\$@\"" > zigcc     && chmod +x     zigcc
+    echo -e "#!/usr/bin/env bash\n\n$DIRNAME/../zig-bin/zig c++    --target=$TARGET-gnu \"\$@\"" > zigcpp    && chmod +x    zigcpp
+    echo -e "#!/usr/bin/env bash\n\n$DIRNAME/../zig-bin/zig ranlib                      \"\$@\"" > zigranlib && chmod +x zigranlib
 
     tar -xzf    external-$TARGET/eigen.tar.gz && mv eigen*       eigen
     tar -xzf   external-$TARGET/libint.tar.gz && mv libint*     libint

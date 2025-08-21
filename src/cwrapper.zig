@@ -13,8 +13,6 @@ const System = @import("system.zig").System;
 const Tensor = @import("tensor.zig").Tensor;
 const Vector = @import("vector.zig").Vector;
 
-const asfloat = @import("helper.zig").asfloat;
-
 /// Blas struct.
 pub fn Blas(comptime T: type) type {
     return struct {

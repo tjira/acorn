@@ -3,6 +3,7 @@
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
 const cnt = @import("constant.zig");
+const hlp = @import("helper.zig");
 const inp = @import("input.zig"   );
 const mat = @import("matrix.zig"  );
 const mth = @import("math.zig"    );
@@ -11,11 +12,6 @@ const sys = @import("system.zig"  );
 const Matrix = @import("matrix.zig").Matrix;
 const System = @import("system.zig").System;
 const Vector = @import("vector.zig").Vector;
-
-const asfloat               = @import("helper.zig").asfloat              ;
-const call                  = @import("helper.zig").call                 ;
-const contains              = @import("helper.zig").contains             ;
-const writeVectorAsMolecule = @import("helper.zig").writeVectorAsMolecule;
 
 /// Potential type enumeration.
 const PotentialType = enum {Abinitio, Expression, File, Named};
@@ -58,17 +54,17 @@ pub fn Potential(comptime T: type) type {
 
             else if (self.mode == .Abinitio) {
 
-                try writeVectorAsMolecule(T, "geometry.xyz", r, self.atoms.?);
+                try hlp.writeVectorAsMolecule(T, "geometry.xyz", r, self.atoms.?);
 
-                var full_command = std.ArrayList([]const u8).init(self.allocator.?); defer full_command.deinit();
+                var full_command = std.ArrayList([]const u8){}; defer full_command.deinit(self.allocator.?, );
 
-                try full_command.appendSlice(self.command.?); try full_command.append("-r"); try full_command.append("-k");
+                try full_command.appendSlice(self.allocator.?, self.command.?); try full_command.append(self.allocator.?, "-r"); try full_command.append(self.allocator.?, "-k");
 
                 const state_string = try std.fmt.allocPrint(self.allocator.?, "{d}", .{self.states}); defer self.allocator.?.free(state_string);
 
-                try full_command.append(state_string); try full_command.append("-s"); try full_command.append("geometry.xyz");
+                try full_command.append(self.allocator.?, state_string); try full_command.append(self.allocator.?, "-s"); try full_command.append(self.allocator.?, "geometry.xyz");
 
-                var out = try call(full_command.items, self.allocator.?); defer {
+                var out = try hlp.call(full_command.items, self.allocator.?); defer {
                     out.stdout.deinit(self.allocator.?);
                     out.stderr.deinit(self.allocator.?);
                 }
@@ -104,7 +100,7 @@ pub fn getPotential(comptime T: type, dims: u32, hamiltonian: []const []const []
 
         e.* = try cwp.Expression(T).init(hamiltonian[i / hamiltonian.len][i % hamiltonian.len], dims, allocator);
 
-        if(contains(u8, hamiltonian[i / hamiltonian.len][i % hamiltonian.len], 't')) tdep = true;
+        if(hlp.contains(u8, hamiltonian[i / hamiltonian.len][i % hamiltonian.len], 't')) tdep = true;
     }
 
     return .{.mode = PotentialType.Expression, .allocator = allocator, .dims = dims, .states = @as(u32, @intCast(hamiltonian.len)), .tdep = tdep, .eval_fn = struct {
@@ -325,7 +321,7 @@ pub fn kgrid(comptime T: type, k: *Matrix(T), limits: []const []const T, points:
 
             const d = k.cols - j - 1; const ii: i32 = @as(i32, @intCast(index % points)); const shift = if (ii < points / 2) ii else ii - @as(i32, @intCast(points)); index /= points;
 
-            k.ptr(i, d).* = 2 * std.math.pi * asfloat(T, shift) / asfloat(T, points) / (limits[d][1] - limits[d][0]) * asfloat(T, points - 1);
+            k.ptr(i, d).* = 2 * std.math.pi * hlp.asfloat(T, shift) / hlp.asfloat(T, points) / (limits[d][1] - limits[d][0]) * hlp.asfloat(T, points - 1);
         }
     }
 }
@@ -333,7 +329,7 @@ pub fn kgrid(comptime T: type, k: *Matrix(T), limits: []const []const T, points:
 /// Generate a grid in the r-space. The result is stored in the matrix r. Both the start and end values are included.
 pub fn rgrid(comptime T: type, r: *Matrix(T), limits: []const []const T, points: u32) void {
     for (0..r.rows) |i| for (0..r.cols) |j| {
-        r.ptr(i, j).* = limits[j][0] + asfloat(T, i / std.math.pow(usize, points, r.cols - j - 1) % points) * (limits[j][1] - limits[j][0]) / asfloat(T, points - 1);
+        r.ptr(i, j).* = limits[j][0] + hlp.asfloat(T, i / std.math.pow(usize, points, r.cols - j - 1) % points) * (limits[j][1] - limits[j][0]) / hlp.asfloat(T, points - 1);
     };
 }
 

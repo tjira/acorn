@@ -2,6 +2,7 @@
 
 const std = @import("std");
 
+const hlp = @import("helper.zig");
 const inp = @import("input.zig" );
 
 const Vector = @import("vector.zig").Vector;
@@ -18,23 +19,23 @@ pub fn run(comptime T: type, opt: inp.PrimeOptions(T), print: bool, allocator: s
     if (std.mem.eql(u8, opt.mode, "basic")) {
 
         if (opt.generate == null and print) {
-            try std.io.getStdOut().writer().print("\nNUMBER: {d}, PRIME: {any}\n", .{opt.number, isPrime(p)});
+            try hlp.print(std.fs.File.stdout(), "\nNUMBER: {d}, PRIME: {any}\n", .{opt.number, isPrime(p)});
         }
 
         if (opt.generate != null and print) {
 
-            try std.io.getStdOut().writer().print("\nPRIME NUMBERS\n", .{});
+            try hlp.print(std.fs.File.stdout(), "\nPRIME NUMBERS\n", .{});
 
             for (0..opt.generate.?.count) |i| {
 
                 p = nextPrime(p);
 
                 if (opt.generate.?.output != null) {
-                    P.ptr(i, 0).* = i + 1; P.ptr(i, 1).* = p;
+                    P.ptr(i, 0).* = @as(T, @intCast(i)) + 1; P.ptr(i, 1).* = p;
                 }
 
                 if ((i + 1) % opt.generate.?.log_interval == 0 or i == 0) {
-                    try std.io.getStdOut().writer().print("{d}: {d} ({s})\n", .{i + 1, p, std.fmt.fmtDuration(timer.read())});
+                    try hlp.print(std.fs.File.stdout(), "{d}: {d} ({D})\n", .{i + 1, p, timer.read()});
                 }
             }
         }
@@ -43,23 +44,23 @@ pub fn run(comptime T: type, opt: inp.PrimeOptions(T), print: bool, allocator: s
     else if (std.mem.eql(u8, opt.mode, "mersenne")) {
 
         if (opt.generate == null and print) {
-            try std.io.getStdOut().writer().print("\nEXPONENT: {d}, MERSENNE PRIME: {any}\n", .{opt.number, try isMersenne(allocator, p)});
+            try hlp.print(std.fs.File.stdout(), "\nEXPONENT: {d}, MERSENNE PRIME: {any}\n", .{opt.number, try isMersenne(allocator, p)});
         }
 
         if (opt.generate != null and print) {
 
-            try std.io.getStdOut().writer().print("\nMERSENNE PRIME EXPONENTS\n", .{});
+            try hlp.print(std.fs.File.stdout(), "\nMERSENNE PRIME EXPONENTS\n", .{});
 
             for (0..opt.generate.?.count) |i| {
 
                 p = try nextMersenne(allocator, p);
 
                 if (opt.generate.?.output != null) {
-                    P.ptr(i, 0).* = i + 1; P.ptr(i, 1).* = p;
+                    P.ptr(i, 0).* = @as(T, @intCast(i)) + 1; P.ptr(i, 1).* = p;
                 }
 
                 if ((i + 1) % opt.generate.?.log_interval == 0 or i == 0) {
-                    try std.io.getStdOut().writer().print("{d}: {d} ({s})\n", .{i + 1, p, std.fmt.fmtDuration(timer.read())});
+                    try hlp.print(std.fs.File.stdout(), "{d}: {d} ({D})\n", .{i + 1, p, timer.read()});
                 }
             }
         }

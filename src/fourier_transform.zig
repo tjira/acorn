@@ -2,14 +2,12 @@
 
 const std = @import("std");
 
+const hlp = @import("helper.zig");
 const mth = @import("math.zig"  );
 const vec = @import("vector.zig");
 
 const StridedArray = @import("strided_array.zig").StridedArray;
 const Vector       = @import("vector.zig"       ).Vector      ;
-
-const asfloat = @import("helper.zig").asfloat;
-const bitrev  = @import("helper.zig").bitrev ;
 
 /// Fast Fourier transform for a one-dimensional array. The factor argument is the value in the exponent of the Fourier transform. Factor -1 corresponds to the forward Fourier transform, while factor 1 corresponds to the inverse Fourier transform.
 pub fn fft(comptime T: type, arr: StridedArray(std.math.Complex(T)), factor: i32) !void {
@@ -21,7 +19,7 @@ pub fn fft(comptime T: type, arr: StridedArray(std.math.Complex(T)), factor: i32
 
     for (0..n) |i| {
 
-        const j = bitrev(i, logn);
+        const j = hlp.bitrev(i, logn);
 
         if (i < j) {
             std.mem.swap(std.math.Complex(T), arr.ptr(j), arr.ptr(i));
@@ -30,7 +28,7 @@ pub fn fft(comptime T: type, arr: StridedArray(std.math.Complex(T)), factor: i32
 
     for (0..logn) |i| {
 
-        const m = std.math.pow(usize, 2, i + 1); const mix = std.math.complex.exp(std.math.Complex(T).init(0, asfloat(T, factor) * 2 * std.math.pi / asfloat(T, m)));
+        const m = std.math.pow(usize, 2, i + 1); const mix = std.math.complex.exp(std.math.Complex(T).init(0, hlp.asfloat(T, factor) * 2 * std.math.pi / hlp.asfloat(T, m)));
 
         for (0..n / m) |j| {
 
@@ -49,7 +47,7 @@ pub fn fft(comptime T: type, arr: StridedArray(std.math.Complex(T)), factor: i32
     }
 
     if (factor > 0) for (0..n) |i| {
-        arr.ptr(i).* = arr.at(i).div(std.math.Complex(T).init(asfloat(T, n), 0));
+        arr.ptr(i).* = arr.at(i).div(std.math.Complex(T).init(hlp.asfloat(T, n), 0));
     };
 }
 

@@ -2,6 +2,7 @@
 
 const std = @import("std"); const cwp = @import("cwrapper.zig");
 
+const hlp = @import("helper.zig");
 const inp = @import("input.zig" );
 const sys = @import("system.zig");
 
@@ -10,14 +11,11 @@ const Vector = @import("vector.zig").Vector;
 const Matrix = @import("matrix.zig").Matrix;
 const Tensor = @import("tensor.zig").Tensor;
 
-const asfloat   = @import("helper.zig").asfloat  ;
-const memFormat = @import("helper.zig").memFormat;
-
 /// The main function for generating the integrals.
 pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, allocator: std.mem.Allocator) !void {
     var system = try sys.load(T, opt.system, opt.system_file, allocator); defer system.deinit();
 
-    var basis = try Basis(T).array(system, opt.basis, allocator); defer basis.deinit();
+    var basis = try Basis(T).array(system, opt.basis, allocator); defer basis.deinit(allocator);
 
     var nbf: usize = 0; var npgs: usize = 0;
 
@@ -27,22 +25,22 @@ pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, all
         }
     }
 
-    if (print) try std.io.getStdOut().writer().print("\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
-    if (print) try std.io.getStdOut().writer().print(  "# OF PRIMITIVE  GAUSSIAN SHELLS: {d}\n", .{npgs});
+    if (print) try hlp.print(std.fs.File.stdout(), "\n# OF CONTRACTED GAUSSIAN SHELLS: {d}\n", .{nbf });
+    if (print) try hlp.print(std.fs.File.stdout(),   "# OF PRIMITIVE  GAUSSIAN SHELLS: {d}\n", .{npgs});
 
-    var timer = try std.time.Timer.start(); if (print) try std.io.getStdOut().writer().print("\n", .{});
+    var timer = try std.time.Timer.start(); if (print) try hlp.print(std.fs.File.stdout(), "\n", .{});
 
     {
 
-        const mem = try memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
+        const mem = try hlp.memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
 
-        if (print) try std.io.getStdOut().writer().print("# OVERLAP INTEGRALS ({s}): ", .{mem});
+        if (print) try hlp.print(std.fs.File.stdout(), "# OVERLAP INTEGRALS ({s}): ", .{mem});
 
         var S_AO = try Matrix(T).init(nbf, nbf, allocator); defer S_AO.deinit(); cwp.Libint(T).overlap(&S_AO, system, basis);
 
-        if (print) try std.io.getStdOut().writer().print("{s}\n", .{std.fmt.fmtDuration(timer.read())});
+        if (print) try hlp.print(std.fs.File.stdout(), "{D}\n", .{timer.read()});
 
-        if (print and opt.print.overlap) try S_AO.print(std.io.getStdOut().writer());
+        if (print and opt.print.overlap) try S_AO.print(std.fs.File.stdout());
 
         if (opt.write.overlap != null) try S_AO.write(opt.write.overlap.?);
     }
@@ -51,15 +49,15 @@ pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, all
 
     {
 
-        const mem = try memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
+        const mem = try hlp.memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
 
-        if (print) try std.io.getStdOut().writer().print("# KINETIC INTEGRALS ({s}): ", .{mem});
+        if (print) try hlp.print(std.fs.File.stdout(), "# KINETIC INTEGRALS ({s}): ", .{mem});
 
         var T_AO = try Matrix(T).init(nbf, nbf, allocator); defer T_AO.deinit(); cwp.Libint(T).kinetic(&T_AO, system, basis);
 
-        if (print) try std.io.getStdOut().writer().print("{s}\n", .{std.fmt.fmtDuration(timer.read())});
+        if (print) try hlp.print(std.fs.File.stdout(), "{D}\n", .{timer.read()});
 
-        if (print and opt.print.kinetic) try T_AO.print(std.io.getStdOut().writer());
+        if (print and opt.print.kinetic) try T_AO.print(std.fs.File.stdout());
 
         if (opt.write.kinetic != null) try T_AO.write(opt.write.kinetic.?);
     }
@@ -68,15 +66,15 @@ pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, all
 
     {
 
-        const mem = try memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
+        const mem = try hlp.memFormat(T, nbf * nbf, allocator); defer allocator.free(mem);
 
-        if (print) try std.io.getStdOut().writer().print("# NUCLEAR INTEGRALS ({s}): ", .{mem});
+        if (print) try hlp.print(std.fs.File.stdout(), "# NUCLEAR INTEGRALS ({s}): ", .{mem});
 
         var V_AO = try Matrix(T).init(nbf, nbf, allocator); defer V_AO.deinit(); cwp.Libint(T).nuclear(&V_AO, system, basis);
 
-        if (print) try std.io.getStdOut().writer().print("{s}\n", .{std.fmt.fmtDuration(timer.read())});
+        if (print) try hlp.print(std.fs.File.stdout(), "{D}\n", .{timer.read()});
 
-        if (print and opt.print.nuclear) try V_AO.print(std.io.getStdOut().writer());
+        if (print and opt.print.nuclear) try V_AO.print(std.fs.File.stdout());
 
         if (opt.write.nuclear != null) try V_AO.write(opt.write.nuclear.?);
     }
@@ -85,15 +83,15 @@ pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, all
 
     {
 
-        const mem = try memFormat(T, nbf * nbf * nbf * nbf, allocator); defer allocator.free(mem);
+        const mem = try hlp.memFormat(T, nbf * nbf * nbf * nbf, allocator); defer allocator.free(mem);
 
-        if (print) try std.io.getStdOut().writer().print("# COULOMB INTEGRALS ({s}): ", .{mem});
+        if (print) try hlp.print(std.fs.File.stdout(), "# COULOMB INTEGRALS ({s}): ", .{mem});
 
         var J_AO = try Tensor(T).init(&[_]usize{nbf, nbf, nbf, nbf}, allocator); defer J_AO.deinit(); cwp.Libint(T).coulomb(&J_AO, system, basis);
 
-        if (print) try std.io.getStdOut().writer().print("{s}\n", .{std.fmt.fmtDuration(timer.read())});
+        if (print) try hlp.print(std.fs.File.stdout(), "{D}\n", .{timer.read()});
 
-        if (print and opt.print.coulomb) try J_AO.print(std.io.getStdOut().writer());
+        if (print and opt.print.coulomb) try J_AO.print(std.fs.File.stdout());
 
         if (opt.write.coulomb != null) try J_AO.write(opt.write.coulomb.?);
     }

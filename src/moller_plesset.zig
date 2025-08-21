@@ -7,6 +7,7 @@ const SM2AN = @import("constant.zig").SM2AN;
 
 const edf = @import("energy_derivative.zig");
 const hfm = @import("hartree_fock.zig"     );
+const hlp = @import("helper.zig"           );
 const inp = @import("input.zig"            );
 const opm = @import("optimize.zig"         );
 const out = @import("output.zig"           );
@@ -25,7 +26,7 @@ pub fn run(comptime T: type, opt: inp.MollerPlessetOptions(T), print: bool, allo
     var system = try sys.load(T, opt.hartree_fock.system, opt.hartree_fock.system_file, allocator); defer system.deinit();
 
     if (print) {
-        try std.io.getStdOut().writer().print("\nSYSTEM:\n", .{}); try system.print(std.io.getStdOut().writer());
+        try hlp.print(std.fs.File.stdout(), "\nSYSTEM:\n", .{}); try system.print(std.fs.File.stdout());
     }
 
     return runFull(T, opt, &system, print, allocator);
@@ -40,7 +41,7 @@ pub fn runFull(comptime T: type, opt: inp.MollerPlessetOptions(T), system: *Syst
     }
 
     if (print) {
-        if (opt.optimize != null) {try std.io.getStdOut().writer().print("\n{s} OPTIMIZED SYSTEM:\n", .{name}); try system.print(std.io.getStdOut().writer());}
+        if (opt.optimize != null) {try hlp.print(std.fs.File.stdout(), "\n{s} OPTIMIZED SYSTEM:\n", .{name}); try system.print(std.fs.File.stdout());}
     }
 
     const hf = try hfm.runFull(T, opt.hartree_fock, system, print, allocator); var mp = try mpPost(T, opt, system.*, hf, print, allocator);
@@ -48,19 +49,19 @@ pub fn runFull(comptime T: type, opt: inp.MollerPlessetOptions(T), system: *Syst
     if (opt.gradient != null) mp.G = try edf.gradient(T, opt, system.*, mpFull, name, true, allocator);
 
     if (print) {
-        if (mp.G != null) {try std.io.getStdOut().writer().print("\n{s} GRADIENT:\n", .{name}); try mp.G.?.print(std.io.getStdOut().writer());}
+        if (mp.G != null) {try hlp.print(std.fs.File.stdout(), "\n{s} GRADIENT:\n", .{name}); try mp.G.?.print(std.fs.File.stdout());}
     }
 
     if (opt.hessian != null) mp.H = try edf.hessian(T, opt, system.*, mpFull, name, true, allocator);
 
     if (print and opt.hessian != null and opt.print.hessian) {
-        if (mp.H != null) {try std.io.getStdOut().writer().print("\n{s} HESSIAN:\n", .{name}); try mp.H.?.print(std.io.getStdOut().writer());}
+        if (mp.H != null) {try hlp.print(std.fs.File.stdout(), "\n{s} HESSIAN:\n", .{name}); try mp.H.?.print(std.fs.File.stdout());}
     }
 
     if (opt.hessian != null and opt.hessian.?.freq) mp.freqs = try prp.freq(T, system.*, mp.H.?, allocator);
 
     if (print) {
-        if (mp.freqs != null) {try std.io.getStdOut().writer().print("\n{s} HARMONIC FREQUENCIES:\n", .{name}); try mp.freqs.?.matrix().print(std.io.getStdOut().writer());}
+        if (mp.freqs != null) {try hlp.print(std.fs.File.stdout(), "\n{s} HARMONIC FREQUENCIES:\n", .{name}); try mp.freqs.?.matrix().print(std.fs.File.stdout());}
     }
 
     if (opt.gradient != null and opt.write.gradient != null) try mp.G.?.write(opt.write.gradient.?);
@@ -87,7 +88,7 @@ pub fn mpPost(comptime T: type, opt: inp.MollerPlessetOptions(T), system: System
 
     if (opt.order >= 2) E += mp2(T, F_MS, J_MS_A, nocc);
 
-    if (print) try std.io.getStdOut().writer().print("\nMP{d} ENERGY: {d:.14}\n", .{opt.order, hf.E + E});
+    if (print) try hlp.print(std.fs.File.stdout(), "\nMP{d} ENERGY: {d:.14}\n", .{opt.order, hf.E + E});
 
     return .{
         .hf = hf, .E = hf.E + E, .G = null, .H = null, .freqs = null,

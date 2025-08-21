@@ -20,9 +20,9 @@ pub const Args = struct {
     }
 
     pub fn print(self: Args) !void {
-        try std.io.getStdOut().writer().print("MATRIX A:\n",        .{}); try self.A.print( std.io.getStdOut().writer());
-        try std.io.getStdOut().writer().print("SCHUR FORM:\n",      .{}); try self.AT.print(std.io.getStdOut().writer());
-        try std.io.getStdOut().writer().print("ORTHOGONAL FORM:\n", .{}); try self.AQ.print(std.io.getStdOut().writer());
+        try acorn.helper.print(std.fs.File.stdout(), "MATRIX A:\n",        .{}); try self.A.print( std.fs.File.stdout());
+        try acorn.helper.print(std.fs.File.stdout(), "SCHUR FORM:\n",      .{}); try self.AT.print(std.fs.File.stdout());
+        try acorn.helper.print(std.fs.File.stdout(), "ORTHOGONAL FORM:\n", .{}); try self.AQ.print(std.fs.File.stdout());
     }
 
     pub fn randomize(self: *Args, seed: usize) !void {

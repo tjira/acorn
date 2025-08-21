@@ -1,11 +1,10 @@
 //! A vector is a one-dimensional array of elements. This module provides a generic implementation of a vector.
 
-const std = @import("std"); const Complex = std.math.Complex;
+const std = @import("std");
+
+const hlp = @import("helper.zig");
 
 const Matrix = @import("matrix.zig").Matrix;
-
-const asfloat = @import("helper.zig").asfloat;
-const istruct = @import("helper.zig").istruct;
 
 /// Vector class.
 pub fn Vector(comptime T: type) type {
@@ -41,11 +40,11 @@ pub fn Vector(comptime T: type) type {
         }
 
         /// Convert the vector to a complex vector. Returns an error if the allocation fails.
-        pub fn complex(self: Vector(T)) !Vector(Complex(T)) {
-            var other = try Vector(Complex(T)).init(self.rows, self.allocator);
+        pub fn complex(self: Vector(T)) !Vector(std.math.complex.Complex(T)) {
+            var other = try Vector(std.math.complex.Complex(T)).init(self.rows, self.allocator);
 
             for (0..self.data.len) |i| {
-                other.data[i] = Complex(T).init(self.data[i], 0);
+                other.data[i] = std.math.complex.Complex(T).init(self.data[i], 0);
             }
 
             return other;
@@ -130,55 +129,55 @@ pub fn Vector(comptime T: type) type {
 
 /// Add two vectors element-wise. The output vector is stored in the vector w.
 pub fn add(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
-    if (comptime !istruct(T)) for (0..u.rows) |i| {
+    if (comptime !hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i) + v.at(i);
     };
 
-    if (comptime istruct(T)) for (0..u.rows) |i| {
+    if (comptime hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i).add(v.at(i));
     };
 }
 
 /// Divide two vectors element-wise. The output vector is stored in the vector w.
 pub fn div(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
-    if (comptime !istruct(T)) for (0..u.rows) |i| {
+    if (comptime !hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i) / v.at(i);
     };
 
-    if (comptime istruct(T)) for (0..u.rows) |i| {
+    if (comptime hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i).div(v.at(i));
     };
 }
 
 /// Divide a vector by a scalar. The output vector is stored in the vector w.
 pub fn divs(comptime T: type, w: *Vector(T), u: Vector(T), s: T) void {
-    if (comptime !istruct(T)) for (0..u.rows) |i| {
+    if (comptime !hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i) / s;
     };
 
-    if (comptime istruct(T)) for (0..u.rows) |i| {
+    if (comptime hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i).div(s);
     };
 }
 
 /// Multiply two vectors element-wise. The output vector is stored in the vector w.
 pub fn mul(comptime T: type, w: *Vector(T), u: Vector(T), v: Vector(T)) void {
-    if (comptime !istruct(T)) for (0..u.rows) |i| {
+    if (comptime !hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i) * v.at(i);
     };
 
-    if (comptime istruct(T)) for (0..u.rows) |i| {
+    if (comptime hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i).mul(v.at(i));
     };
 }
 
 /// Multiply a vector by a scalar. The output vector is stored in the vector w.
 pub fn muls(comptime T: type, w: *Vector(T), u: Vector(T), s: T) void {
-    if (comptime !istruct(T)) for (0..u.rows) |i| {
+    if (comptime !hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i) * s;
     };
 
-    if (comptime istruct(T)) for (0..u.rows) |i| {
+    if (comptime hlp.istruct(T)) for (0..u.rows) |i| {
         w.ptr(i).* = u.at(i).add(s);
     };
 }

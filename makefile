@@ -6,7 +6,7 @@ ABI  :=   musl
 
 EXTERNAL_DIR := external-$(ARCH)-$(OS)
 
-ZIG_VERSION      := 0.14.1
+ZIG_VERSION      := 0.15.1
 ZLS_VERSION      := 0.14.0
 EIGEN_VERSION    :=  3.4.0
 LIBINT_VERSION   := 2.11.1
@@ -37,10 +37,11 @@ test: $(EXTERNAL_DIR)/.done
 
 # BENCHMARKING TARGETS =================================================================================================================================================================================
 
-BENCHMARK_TARGETS := contract dgees dgemm dsyevd
+BENCHMARK_TARGETS := contract dgees dgesdd dgemm dsyevd
 
 BENCHMARK_ARGS.contract := contract  100
 BENCHMARK_ARGS.dgees    := dgees    1000
+BENCHMARK_ARGS.dgesdd   := dgesdd   1000
 BENCHMARK_ARGS.dgemm    := dgemm    3000
 BENCHMARK_ARGS.dsyevd   := dsyevd   2000
 

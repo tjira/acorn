@@ -3,6 +3,7 @@
 const std = @import("std");
 
 const edf = @import("energy_derivative.zig");
+const hlp = @import("helper.zig"           );
 const mat = @import("matrix.zig"           );
 
 const Matrix = @import("matrix.zig").Matrix;
@@ -14,7 +15,7 @@ pub fn optimize(comptime T: type, opt: anytype, system: System(T), efunc: anytyp
 
     var optsystem = try system.clone();
 
-    if (print) try std.io.getStdOut().writer().print("\n{s} GEOMETRY OPTIMIZATION:\n{s:4} {s:20} {s:4}\n", .{method, "ITER", "GRADIENT NORM", "TIME"});
+    if (print) try hlp.print(std.fs.File.stdout(), "\n{s} GEOMETRY OPTIMIZATION:\n{s:4} {s:20} {s:4}\n", .{method, "ITER", "GRADIENT NORM", "TIME"});
 
     for (0..opt.optimize.?.maxiter) |i| {
 
@@ -22,11 +23,11 @@ pub fn optimize(comptime T: type, opt: anytype, system: System(T), efunc: anytyp
 
         var timer = try std.time.Timer.start();
 
-        if (print) try std.io.getStdOut().writer().print("{d:4} ", .{i + 1});
+        if (print) try hlp.print(std.fs.File.stdout(), "{d:4} ", .{i + 1});
 
         var G = try edf.gradient(T, opt, optsystem, efunc, method, false, allocator);
 
-        if (print) try std.io.getStdOut().writer().print("{d:20.14} {s}\n", .{G.vector().norm(), std.fmt.fmtDuration(timer.read())});
+        if (print) try hlp.print(std.fs.File.stdout(), "{d:20.14} {D}\n", .{G.vector().norm(), timer.read()});
 
         if (G.vector().norm() < opt.optimize.?.threshold) break;
 

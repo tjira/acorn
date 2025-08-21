@@ -13,61 +13,58 @@ pub fn build(builder: *std.Build) !void {
         const os_name   = switch (target.os_tag.?  ) {.linux  => "linux",  .macos   => "macos",   .windows => "windows", else => unreachable};
         const arch_name = switch (target.cpu_arch.?) {.x86_64 => "x86_64", .aarch64 => "aarch64", .riscv64 => "riscv64", else => unreachable};
 
-        const main_library = builder.addStaticLibrary(.{
-            .name = "acorn",
-            .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path("src/acorn.zig"),
-            .strip = !debug,
-            .target = builder.resolveTargetQuery(target)
-        });
-
         const benchmark_executable = builder.addExecutable(.{
             .name = "benchmark",
-            .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path("benchmark/main.zig"),
-            .strip = !debug,
-            .target = builder.resolveTargetQuery(target)
+            .root_module = builder.createModule(.{
+                .optimize = if (debug) .Debug else .ReleaseFast,
+                .root_source_file = builder.path("benchmark/main.zig"),
+                .strip = !debug,
+                .target = builder.resolveTargetQuery(target)
+            })
         });
 
         const main_executable = builder.addExecutable(.{
             .name = "acorn",
-            .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path("src/main.zig"),
-            .strip = !debug,
-            .target = builder.resolveTargetQuery(target)
+            .root_module = builder.createModule(.{
+                .optimize = if (debug) .Debug else .ReleaseFast,
+                .root_source_file = builder.path("src/main.zig"),
+                .strip = !debug,
+                .target = builder.resolveTargetQuery(target)
+            })
         });
 
         const test_executable = builder.addTest(.{
             .name = "test",
-            .optimize = if (debug) .Debug else .ReleaseFast,
-            .root_source_file = builder.path("test/main.zig"),
-            .strip = !debug,
-            .target = builder.resolveTargetQuery(target)
+            .root_module = builder.createModule(.{
+                .optimize = if (debug) .Debug else .ReleaseFast,
+                .root_source_file = builder.path("test/main.zig"),
+                .strip = !debug,
+                .target = builder.resolveTargetQuery(target)
+            })
         });
 
         const external_include = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/include"});
         const external_lib     = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/lib"    });
 
-        main_executable.root_module.addIncludePath(.{.cwd_relative = "include"       }); main_library.root_module.addIncludePath(.{.cwd_relative = "include"       });
-        main_executable.root_module.addIncludePath(.{.cwd_relative = external_include}); main_library.root_module.addIncludePath(.{.cwd_relative = external_include});
-        main_executable.root_module.addLibraryPath(.{.cwd_relative = external_lib    }); main_library.root_module.addLibraryPath(.{.cwd_relative = external_lib    });
+        main_executable.root_module.addIncludePath(.{.cwd_relative = "include"       }); main_executable.addIncludePath(.{.cwd_relative = "include"       });
+        main_executable.root_module.addIncludePath(.{.cwd_relative = external_include}); main_executable.addIncludePath(.{.cwd_relative = external_include});
+        main_executable.root_module.addLibraryPath(.{.cwd_relative = external_lib    }); main_executable.addLibraryPath(.{.cwd_relative = external_lib    });
 
-        main_library.root_module.addIncludePath(.{.cwd_relative = try std.mem.concat(builder.allocator, u8, &[_][]const u8{external_include, "/eigen3"})});
+        main_executable.addIncludePath(.{.cwd_relative = try std.mem.concat(builder.allocator, u8, &[_][]const u8{external_include, "/eigen3"})});
 
-        main_library.root_module.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
-        main_library.root_module.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
-        main_library.root_module.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
+        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
+        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
+        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
 
-        main_library.root_module.link_libc   = true;
-        main_library.root_module.link_libcpp = true;
+        main_executable.root_module.link_libc   = true;
+        main_executable.root_module.link_libcpp = true;
 
-        main_library.root_module.linkSystemLibrary("int2",     .{.preferred_link_mode = .static});
-        main_library.root_module.linkSystemLibrary("omp",      .{.preferred_link_mode = .static});
-        main_library.root_module.linkSystemLibrary("openblas", .{.preferred_link_mode = .static});
+        main_executable.root_module.linkSystemLibrary("int2",     .{.preferred_link_mode = .static});
+        main_executable.root_module.linkSystemLibrary("omp",      .{.preferred_link_mode = .static});
+        main_executable.root_module.linkSystemLibrary("openblas", .{.preferred_link_mode = .static});
 
-        test_executable     .root_module.addImport("acorn", main_library.root_module);
-        main_executable     .root_module.addImport("acorn", main_library.root_module);
-        benchmark_executable.root_module.addImport("acorn", main_library.root_module);
+        test_executable     .root_module.addImport("acorn", main_executable.root_module);
+        benchmark_executable.root_module.addImport("acorn", main_executable.root_module);
 
         const main_executable_install = builder.addInstallArtifact(main_executable, .{
             .dest_dir = .{.override = .{.custom = try target.zigTriple(builder.allocator)}}
@@ -85,7 +82,7 @@ pub fn build(builder: *std.Build) !void {
             builder.step("run",  "Run the compiled executable"   ).dependOn(&builder.addRunArtifact(main_executable).step);
             builder.step("test", "Run unit tests"                ).dependOn(&builder.addRunArtifact(test_executable).step);
 
-            const docs = builder.addInstallDirectory(.{.source_dir = main_library.getEmittedDocs(), .install_dir = .{.custom = "../docs"}, .install_subdir = "code"});
+            const docs = builder.addInstallDirectory(.{.source_dir = main_executable.getEmittedDocs(), .install_dir = .{.custom = "../docs"}, .install_subdir = "code"});
 
             builder.step("docs", "Install the code documentation").dependOn(&docs.step);
         }
@@ -118,7 +115,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\
         \\INPUT_JSON=$(mktemp)
         \\
-        \\usage() {{
+        \\usage() {
         \\  cat <<EOF
         \\Usage: $(basename $0) [options]
         \\
@@ -126,13 +123,13 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
     ;
 
     const content_fibonacci =
-        \\  -c <count>        Number of Fibonacci numbers to generate. (default: ${{COUNT}})
-        \\  -l <log_interval> Log interval for output. (default: ${{LOG_INTERVAL}})
-        \\  -o <output>       Output file. (default: ${{OUTPUT}})
+        \\  -c <count>        Number of Fibonacci numbers to generate. (default: ${COUNT})
+        \\  -l <log_interval> Log interval for output. (default: ${LOG_INTERVAL})
+        \\  -o <output>       Output file. (default: ${OUTPUT})
         \\  -h                Display this help message and exit.
         \\EOF
         \\
-        \\}}; COUNT=10; LOG_INTERVAL=1; OUTPUT=null
+        \\}; COUNT=10; LOG_INTERVAL=1; OUTPUT=null
         \\
         \\while getopts "c:l:o:h" OPT; do case "$OPT" in
         \\  c ) COUNT="$OPTARG" ;;
@@ -144,27 +141,27 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
         \\
-        \\echo '{{
-        \\  "fibonacci" : {{
+        \\echo '{
+        \\  "fibonacci" : {
         \\    "count" : '"$COUNT"',
         \\    "log_interval" : '"$LOG_INTERVAL"',
         \\    "output" : '"$OUTPUT"'
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
     const content_hf =
-        \\  -b <basis>       Atomic orbital basis. (default: ${{BASIS}})
-        \\  -c <charge>      Charge of the system. (default: ${{CHARGE}})
-        \\  -d <direct>      Boolean direct flag. (default: ${{DIRECT}})
-        \\  -e <export>      Boolean export flag. (default: ${{EXPORT}})
-        \\  -g <generalized> Boolean generalized flag. (default: ${{GENERALIZED}})
-        \\  -i <input>       Input system file in .xyz format. (default: ${{SYSTEM}})
-        \\  -n <nthread>     Number of threads to use. (default: ${{N}})
+        \\  -b <basis>       Atomic orbital basis. (default: ${BASIS})
+        \\  -c <charge>      Charge of the system. (default: ${CHARGE})
+        \\  -d <direct>      Boolean direct flag. (default: ${DIRECT})
+        \\  -e <export>      Boolean export flag. (default: ${EXPORT})
+        \\  -g <generalized> Boolean generalized flag. (default: ${GENERALIZED})
+        \\  -i <input>       Input system file in .xyz format. (default: ${SYSTEM})
+        \\  -n <nthread>     Number of threads to use. (default: ${N})
         \\  -h               Display this help message and exit.
         \\EOF
         \\
-        \\}}; N=1; BASIS="sto-3g"; CHARGE=0; DIRECT=false; EXPORT=false; GENERALIZED=false; INPUT="molecule.xyz";
+        \\}; N=1; BASIS="sto-3g"; CHARGE=0; DIRECT=false; EXPORT=false; GENERALIZED=false; INPUT="molecule.xyz";
         \\
         \\while getopts "b:c:degi:n:h" OPT; do case "$OPT" in
         \\  b ) BASIS="$OPTARG" ;;
@@ -182,38 +179,38 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\[[ "$EXPORT" == true ]] && C_AO="\"T_AO.mat\"" || C_AO="null"
         \\[[ "$EXPORT" == true ]] && F_AO="\"V_AO.mat\"" || F_AO="null"
         \\
-        \\echo '{{
-        \\  "hartree_fock" : {{
+        \\echo '{
+        \\  "hartree_fock" : {
         \\      "system_file" : "'"$INPUT"'",
-        \\      "system" : {{
+        \\      "system" : {
         \\          "charge" : 0
-        \\      }},
-        \\      "integral" : {{
+        \\      },
+        \\      "integral" : {
         \\          "basis" : "'"$BASIS"'"
-        \\      }},
-        \\      "write" : {{
+        \\      },
+        \\      "write" : {
         \\          "coefficient" : '"$C_AO"',
         \\          "density" : '"$D_AO"',
         \\          "fock" : '"$F_AO"'
-        \\      }},
+        \\      },
         \\      "threshold" : 1e-8,
         \\      "maxiter" : 1000,
         \\      "dsize" : 5,
         \\      "generalized" : '$GENERALIZED',
         \\      "direct" : '$DIRECT'
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
     const content_integral =
-        \\  -b <basis>   Atomic orbital basis. (default: ${{BASIS}})
-        \\  -e <export>  Boolean export flag. (default: ${{EXPORT}})
-        \\  -i <input>   Input system file in .xyz format. (default: ${{SYSTEM}})
-        \\  -n <nthread> Number of threads to use. (default: ${{N}})
+        \\  -b <basis>   Atomic orbital basis. (default: ${BASIS})
+        \\  -e <export>  Boolean export flag. (default: ${EXPORT})
+        \\  -i <input>   Input system file in .xyz format. (default: ${SYSTEM})
+        \\  -n <nthread> Number of threads to use. (default: ${N})
         \\  -h           Display this help message and exit.
         \\EOF
         \\
-        \\}}; N=1; BASIS="sto-3g"; EXPORT=false; INPUT="molecule.xyz";
+        \\}; N=1; BASIS="sto-3g"; EXPORT=false; INPUT="molecule.xyz";
         \\
         \\while getopts "b:ei:n:h" OPT; do case "$OPT" in
         \\  b ) BASIS="$OPTARG" ;;
@@ -229,30 +226,30 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\[[ "$EXPORT" == true ]] && V_AO="\"V_AO.mat\"" || V_AO="null"
         \\[[ "$EXPORT" == true ]] && J_AO="\"J_AO.mat\"" || J_AO="null"
         \\
-        \\echo '{{
-        \\  "atomic_integral" : {{
+        \\echo '{
+        \\  "atomic_integral" : {
         \\      "system_file" : "'"$INPUT"'",
         \\      "basis" : "'"$BASIS"'",
-        \\      "write" : {{
+        \\      "write" : {
         \\          "overlap" : '"$S_AO"',
         \\          "kinetic" : '"$T_AO"',
         \\          "nuclear" : '"$V_AO"',
         \\          "coulomb" : '"$J_AO"'
-        \\      }}
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\      }
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
     const content_matmul =
         \\  -l <left>    Left multiplicant.
-        \\  -o <output>  Output matrix. (default: ${{OUTPUT}})
-        \\  -p <print>   Boolean print flag. (default: ${{PRINT}})
-        \\  -n <nthread> Number of threads to use. (default: ${{N}})
+        \\  -o <output>  Output matrix. (default: ${OUTPUT})
+        \\  -p <print>   Boolean print flag. (default: ${PRINT})
+        \\  -n <nthread> Number of threads to use. (default: ${N})
         \\  -r <right>   Right multiplicant.
         \\  -h           Display this help message and exit.
         \\EOF
         \\
-        \\}}; N=1; OUTPUT=null; PRINT=false;
+        \\}; N=1; OUTPUT=null; PRINT=false;
         \\
         \\while getopts "l:n:o:pr:h" OPT; do case "$OPT" in
         \\  l ) LEFT="$OPTARG" ;;
@@ -266,25 +263,25 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="[\"$OUTPUT\"]"
         \\
-        \\echo '{{
-        \\  "matrix" : {{
-        \\    "multiply" : {{}},
+        \\echo '{
+        \\  "matrix" : {
+        \\    "multiply" : {},
         \\    "inputs" : ["'"$LEFT"'", "'"$RIGHT"'"],
         \\    "outputs" : '"$OUTPUT"',
         \\    "print" : '$PRINT'
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
     const content_matsort =
-        \\  -c <column> Reference column. (default: ${{COLUMN}})
+        \\  -c <column> Reference column. (default: ${COLUMN})
         \\  -i <input>  Matrix to sort.
-        \\  -o <output> Output matrix. (default: ${{OUTPUT}})
-        \\  -p <print>  Boolean print flag. (default: ${{PRINT}})
+        \\  -o <output> Output matrix. (default: ${OUTPUT})
+        \\  -p <print>  Boolean print flag. (default: ${PRINT})
         \\  -h          Display this help message and exit.
         \\EOF
         \\
-        \\}}; COLUMN=0; OUTPUT=null; PRINT=false
+        \\}; COLUMN=0; OUTPUT=null; PRINT=false
         \\
         \\while getopts "c:i:o:ph" OPT; do case "$OPT" in
         \\  c ) COLUMN="$OPTARG" ;;
@@ -297,25 +294,25 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
         \\
-        \\echo '{{
-        \\  "sort" : {{
+        \\echo '{
+        \\  "sort" : {
         \\    "input" : "'"$MATRIX"'",
         \\    "algorithm" : "bubble",
         \\    "output" : '"$OUTPUT"',
         \\    "column" : '$COLUMN',
         \\    "print" : '$PRINT'
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
     const content_mersenne =
-        \\  -c <count>  Number of Mersenne primes to generate. (default: ${{COUNT}})
-        \\  -o <output> Output file. (default: ${{OUTPUT}})
-        \\  -s <start>  Starting number. (default: ${{START}})
+        \\  -c <count>  Number of Mersenne primes to generate. (default: ${COUNT})
+        \\  -o <output> Output file. (default: ${OUTPUT})
+        \\  -s <start>  Starting number. (default: ${START})
         \\  -h          Display this help message and exit.
         \\EOF
         \\
-        \\}}; COUNT=10; OUTPUT=null; START=1
+        \\}; COUNT=10; OUTPUT=null; START=1
         \\
         \\while getopts "c:o:s:h" OPT; do case "$OPT" in
         \\  c ) COUNT="$OPTARG" ;;
@@ -327,27 +324,27 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
         \\
-        \\echo '{{
-        \\  "prime" : {{
+        \\echo '{
+        \\  "prime" : {
         \\    "mode" : "mersenne",
-        \\    "generate" : {{
+        \\    "generate" : {
         \\      "count" : '"$COUNT"',
         \\      "output" : '"$OUTPUT"'
-        \\    }},
+        \\    },
         \\    "number" : '"$START"'
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
     const content_prime =
-        \\  -c <count>        Number of primes to generate. (default: ${{COUNT}})
-        \\  -l <log_interval> Log interval for output. (default: ${{LOG_INTERVAL}})
-        \\  -o <output>       Output file. (default: ${{OUTPUT}})
-        \\  -s <start>        Starting number. (default: ${{START}})
+        \\  -c <count>        Number of primes to generate. (default: ${COUNT})
+        \\  -l <log_interval> Log interval for output. (default: ${LOG_INTERVAL})
+        \\  -o <output>       Output file. (default: ${OUTPUT})
+        \\  -s <start>        Starting number. (default: ${START})
         \\  -h                Display this help message and exit.
         \\EOF
         \\
-        \\}}; COUNT=10; LOG_INTERVAL=1; OUTPUT=null; START=1
+        \\}; COUNT=10; LOG_INTERVAL=1; OUTPUT=null; START=1
         \\
         \\while getopts "c:l:o:s:h" OPT; do case "$OPT" in
         \\  c ) COUNT="$OPTARG" ;;
@@ -360,30 +357,30 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="\"$OUTPUT\""
         \\
-        \\echo '{{
-        \\  "prime" : {{
+        \\echo '{
+        \\  "prime" : {
         \\    "mode" : "basic",
-        \\    "generate" : {{
+        \\    "generate" : {
         \\      "count" : '"$COUNT"',
         \\      "log_interval" : '"$LOG_INTERVAL"',
         \\      "output" : '"$OUTPUT"'
-        \\    }},
+        \\    },
         \\    "number" : '"$START"'
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
     const content_randmat =
-        \\  -c <columns>      Number of cols. (default: ${{COLS}})
-        \\  -d <distribution> Distribution. (default: ${{DISTRIBUTION}})
-        \\  -o <output>       Output matrix. (default: ${{OUTPUT}})
-        \\  -p <print>        Boolean print flag. (default: ${{PRINT}})
-        \\  -r <rows>         Number of rows. (default: ${{ROWS}})
-        \\  -s <seed>         Random seed. (default: ${{SEED}})
+        \\  -c <columns>      Number of cols. (default: ${COLS})
+        \\  -d <distribution> Distribution. (default: ${DISTRIBUTION})
+        \\  -o <output>       Output matrix. (default: ${OUTPUT})
+        \\  -p <print>        Boolean print flag. (default: ${PRINT})
+        \\  -r <rows>         Number of rows. (default: ${ROWS})
+        \\  -s <seed>         Random seed. (default: ${SEED})
         \\  -h                Display this help message and exit.
         \\EOF
         \\
-        \\}}; COLS=2; DISTRIBUTION="normal"; OUTPUT=null; PRINT=false; ROWS=2; SEED=1
+        \\}; COLS=2; DISTRIBUTION="normal"; OUTPUT=null; PRINT=false; ROWS=2; SEED=1
         \\
         \\while getopts "c:d:o:pr:s:h" OPT; do case "$OPT" in
         \\  c ) COLS="$OPTARG" ;;
@@ -398,27 +395,27 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\
         \\[[ "$OUTPUT" != "null" ]] && OUTPUT="[\"$OUTPUT\"]"
         \\
-        \\echo '{{
-        \\  "matrix" : {{
-        \\    "random" : {{
+        \\echo '{
+        \\  "matrix" : {
+        \\    "random" : {
         \\      "distribution" : "'"$DISTRIBUTION"'",
         \\      "parameters" : [0, 1],
         \\      "seed" : '$SEED',
         \\      "dims" : ['$ROWS', '$COLS']
-        \\    }},
+        \\    },
         \\    "outputs" : '"$OUTPUT"',
         \\    "print" : '$PRINT'
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
     const content_schlitter =
-        \\  -i <input>        Trajectory to use. (default: ${{INPUT}})
-        \\  -t <temperature>  Temperature. (default: ${{TEMP}})
+        \\  -i <input>        Trajectory to use. (default: ${INPUT})
+        \\  -t <temperature>  Temperature. (default: ${TEMP})
         \\  -h                Display this help message and exit.
         \\EOF
         \\
-        \\}}; INPUT="trajectory.xyz"; TEMP=298.15
+        \\}; INPUT="trajectory.xyz"; TEMP=298.15
         \\
         \\while getopts "i:t:h" OPT; do case "$OPT" in
         \\  i ) INPUT="$OPTARG" ;;
@@ -427,27 +424,27 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
         \\  \?) usage && exit 1 ;;
         \\esac done
         \\
-        \\echo '{{
-        \\  "trajectory_analysis" : {{
+        \\echo '{
+        \\  "trajectory_analysis" : {
         \\    "input" : "'"$INPUT"'",
         \\    "remove_translation" : true,
         \\    "remove_rotation" : true,
-        \\    "entropy" : {{
+        \\    "entropy" : {
         \\      "algorithm" : "schlitter",
         \\      "temperature" : '$TEMP'
-        \\    }}
-        \\  }}
-        \\}}' > $INPUT_JSON
+        \\    }
+        \\  }
+        \\}' > $INPUT_JSON
     ;
 
-    try file_fibonacci.writer().print(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{}); file_fibonacci.close();
-    try file_matsort  .writer().print(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});  file_matsort .close();
-    try file_mersenne .writer().print(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});  file_mersenne.close();
-    try file_prime    .writer().print(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});     file_prime.close();
-    try file_randmat  .writer().print(header ++ "\n" ++ content_randmat   ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{});   file_randmat.close();
-    try file_schlitter.writer().print(header ++ "\n" ++ content_schlitter ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON", .{}); file_schlitter.close();
+    _ = try file_fibonacci.write(header ++ "\n" ++ content_fibonacci ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON"); file_fibonacci.close();
+    _ = try file_matsort  .write(header ++ "\n" ++ content_matsort   ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON");  file_matsort .close();
+    _ = try file_mersenne .write(header ++ "\n" ++ content_mersenne  ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON");  file_mersenne.close();
+    _ = try file_prime    .write(header ++ "\n" ++ content_prime     ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON");     file_prime.close();
+    _ = try file_randmat  .write(header ++ "\n" ++ content_randmat   ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON");   file_randmat.close();
+    _ = try file_schlitter.write(header ++ "\n" ++ content_schlitter ++ "\n\nexport OMP_NUM_THREADS=1; acorn $INPUT_JSON"); file_schlitter.close();
 
-    try file_hf      .writer().print(header ++ "\n" ++ content_hf       ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON", .{}); file_hf      .close();
-    try file_integral.writer().print(header ++ "\n" ++ content_integral ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON", .{}); file_integral.close();
-    try file_matmul  .writer().print(header ++ "\n" ++ content_matmul   ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON", .{}); file_matmul  .close();
+    _ = try file_hf      .write(header ++ "\n" ++ content_hf       ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON"); file_hf      .close();
+    _ = try file_integral.write(header ++ "\n" ++ content_integral ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON"); file_integral.close();
+    _ = try file_matmul  .write(header ++ "\n" ++ content_matmul   ++ "\n\nexport OMP_NUM_THREADS=$N; acorn $INPUT_JSON"); file_matmul  .close();
 }

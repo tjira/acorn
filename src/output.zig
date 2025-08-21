@@ -48,7 +48,7 @@ pub fn ConfigurationInteractionOutput(comptime T: type) type {
         hf: HartreeFockOutput(T), E: T, G: ?Matrix(T), H: ?Matrix(T), freqs: ?Vector(T),
 
         /// Free the memory allocated for the CI output.
-        pub fn deinit(self: ConfigurationInteractionOutput(T)) void {
+        pub fn deinit(self: *ConfigurationInteractionOutput(T)) void {
             self.hf.deinit();
 
             if (self.G != null) self.G.?.deinit();
@@ -68,15 +68,17 @@ pub fn HartreeFockOutput(comptime T: type) type {
 
         basis: std.ArrayList(T), E: T, G: ?Matrix(T), H: ?Matrix(T), freqs: ?Vector(T),
 
+        allocator: std.mem.Allocator,
+
         /// Free the memory allocated for the Hartree-Fock output.
-        pub fn deinit(self: HartreeFockOutput(T)) void {
+        pub fn deinit(self: *HartreeFockOutput(T)) void {
             self.S_A.deinit(); self.T_A.deinit(); self.V_A.deinit(); self.C_A.deinit(); self.D_A.deinit(); self.E_M.deinit(); self.F_A.deinit();
 
             if (self.J_A != null) self.J_A.?.deinit();
 
             if (self.mulliken != null) self.mulliken.?.deinit();
 
-            self.basis.deinit();
+            self.basis.deinit(self.allocator);
 
             if (self.G != null) self.G.?.deinit();
             if (self.H != null) self.H.?.deinit();
@@ -92,7 +94,7 @@ pub fn MollerPlessetOutput(comptime T: type) type {
         hf: HartreeFockOutput(T), E: T, G: ?Matrix(T), H: ?Matrix(T), freqs: ?Vector(T),
 
         /// Free the memory allocated for the Moller-Plesset output.
-        pub fn deinit(self: MollerPlessetOutput(T)) void {
+        pub fn deinit(self: *MollerPlessetOutput(T)) void {
             self.hf.deinit();
 
             if (self.G != null) self.G.?.deinit();
