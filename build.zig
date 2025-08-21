@@ -46,15 +46,15 @@ pub fn build(builder: *std.Build) !void {
         const external_include = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/include"});
         const external_lib     = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/lib"    });
 
-        main_executable.root_module.addIncludePath(.{.cwd_relative = "include"       }); main_executable.addIncludePath(.{.cwd_relative = "include"       });
-        main_executable.root_module.addIncludePath(.{.cwd_relative = external_include}); main_executable.addIncludePath(.{.cwd_relative = external_include});
-        main_executable.root_module.addLibraryPath(.{.cwd_relative = external_lib    }); main_executable.addLibraryPath(.{.cwd_relative = external_lib    });
+        main_executable.root_module.addIncludePath(.{.cwd_relative = "include"       });
+        main_executable.root_module.addIncludePath(.{.cwd_relative = external_include});
+        main_executable.root_module.addLibraryPath(.{.cwd_relative = external_lib    });
 
-        main_executable.addIncludePath(.{.cwd_relative = try std.mem.concat(builder.allocator, u8, &[_][]const u8{external_include, "/eigen3"})});
+        main_executable.root_module.addIncludePath(.{.cwd_relative = try std.mem.concat(builder.allocator, u8, &[_][]const u8{external_include, "/eigen3"})});
 
-        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}});
-        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
-        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}});
+        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/eigen.cpp" ), .flags = &[_][]const u8{"-fopenmp"}, .language = .cpp});
+        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/exprtk.cpp"), .flags = &[_][]const u8{"-fopenmp"}, .language = .cpp});
+        main_executable.root_module.addCSourceFile(.{.file = builder.path("src/libint.cpp"), .flags = &[_][]const u8{"-fopenmp"}, .language = .cpp});
 
         main_executable.root_module.link_libc   = true;
         main_executable.root_module.link_libcpp = true;
