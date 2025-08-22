@@ -27,15 +27,15 @@ pub fn System(comptime T: type) type {
         }
 
         /// Get the atom to basis function map.
-        pub fn getBasisMap(self: System(T), basis: std.ArrayList(T), allocator: std.mem.Allocator) !std.ArrayList(usize) {
+        pub fn getBasisMap(self: System(T), basis: Vector(T), allocator: std.mem.Allocator) !std.ArrayList(usize) {
             var map = std.ArrayList(usize){}; var i: usize = 0;
 
-            while (i < basis.items.len) {
+            while (i < basis.rows) {
                 
-                const size: usize = @intFromFloat(basis.items[i    ]);
-                const   am: usize = @intFromFloat(basis.items[i + 1]);
+                const size: usize = @intFromFloat(basis.at(i    ));
+                const   am: usize = @intFromFloat(basis.at(i + 1));
 
-                for (0..self.coords.rows) |j| if (self.coords.at(j, 0) == basis.items[i + 2] and self.coords.at(j, 1) == basis.items[i + 3] and self.coords.at(j, 2) == basis.items[i + 4]) {
+                for (0..self.coords.rows) |j| if (self.coords.at(j, 0) == basis.at(i + 2) and self.coords.at(j, 1) == basis.at(i + 3) and self.coords.at(j, 2) == basis.at(i + 4)) {
                     for (0..2 * am + 1) |_| try map.append(allocator, j);
                 };
 

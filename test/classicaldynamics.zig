@@ -23,6 +23,7 @@ test "classical_dynamics_adiabatic" {
 
         .iterations = 1000,
         .time_step = 0.01,
+        .derivative_step = 1e-3,
         .trajectories = 1000,
     };
 
@@ -50,6 +51,7 @@ test "classical_dynamics_nonadiabatic_fssh" {
 
         .iterations = 3500,
         .time_step = 1,
+        .derivative_step = 1e-3,
         .trajectories = 100,
     };
 
@@ -96,6 +98,7 @@ test "classical_dynamics_nonadiabatic_lzsh" {
 
         .iterations = 3500,
         .time_step = 1,
+        .derivative_step = 1e-3,
         .trajectories = 100,
     };
 
@@ -142,6 +145,7 @@ test "classical_dynamics_nonadiabatic_mash" {
 
         .iterations = 3500,
         .time_step = 1,
+        .derivative_step = 1e-3,
         .trajectories = 100,
     };
 

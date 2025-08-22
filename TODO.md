@@ -26,3 +26,4 @@
 - [ ] Implement Boltzmann sampling for the initial conditions in ab initio dynamics.
 - [ ] Implement parallelization for classical dynamics.
 - [ ] The AIMD code is currently unparallelizable due to file reading.
+- [ ] Degrees of freedom in AIMD should are always 3*N - 6

@@ -200,28 +200,28 @@ pub fn Libint(comptime T: type) type {
     return struct {
 
         /// Calculate the Coulomb integrals.
-        pub fn coulomb(I: *Tensor(T), system: System(T), basis: std.ArrayList(T)) void {
-            libint.coulomb(&I.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
+        pub fn coulomb(I: *Tensor(T), system: System(T), basis: Vector(T)) void {
+            libint.coulomb(&I.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.rows, basis.data.ptr);
         }
 
         /// Calculate the kinetic integrals.
-        pub fn kinetic(I: *Matrix(T), system: System(T), basis: std.ArrayList(T)) void {
-            libint.kinetic(&I.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
+        pub fn kinetic(I: *Matrix(T), system: System(T), basis: Vector(T)) void {
+            libint.kinetic(&I.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.rows, basis.data.ptr);
         }
 
         /// Calculate the nuclear integrals.
-        pub fn nuclear(I: *Matrix(T), system: System(T), basis: std.ArrayList(T)) void {
-            libint.nuclear(&I.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
+        pub fn nuclear(I: *Matrix(T), system: System(T), basis: Vector(T)) void {
+            libint.nuclear(&I.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.rows, basis.data.ptr);
         }
 
         /// Calculate the overlap integrals.
-        pub fn overlap(I: *Matrix(T), system: System(T), basis: std.ArrayList(T)) void {
-            libint.overlap(&I.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr);
+        pub fn overlap(I: *Matrix(T), system: System(T), basis: Vector(T)) void {
+            libint.overlap(&I.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.rows, basis.data.ptr);
         }
 
         /// Calculate the Coulomb integrals and contract them with density.
-        pub fn fock(F: *Matrix(T), system: System(T), basis: std.ArrayList(T), D: Matrix(T), generalized: bool) void {
-            libint.fock(&F.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.items.len, basis.items.ptr, &D.data[0], generalized);
+        pub fn fock(F: *Matrix(T), system: System(T), basis: Vector(T), D: Matrix(T), generalized: bool) void {
+            libint.fock(&F.data[0], system.atoms.rows, &system.atoms.data[0], &system.coords.data[0], basis.rows, basis.data.ptr, &D.data[0], generalized);
         }
     };
 }

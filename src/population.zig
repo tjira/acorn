@@ -11,7 +11,7 @@ const Vector = @import("vector.zig").Vector;
 const asfloat = @import("helper.zig").asfloat;
 
 /// Mulliken population analysis. The function outputs the Mulliken population of each atom in the system given the system struct, overlap matrix and density matrix.
-pub fn mulliken(comptime T: type, system: System(T), basis: std.ArrayList(T), S_AO: Matrix(T), D_AO: Matrix(T), allocator: std.mem.Allocator) !Vector(T) {
+pub fn mulliken(comptime T: type, system: System(T), basis: Vector(T), S_AO: Matrix(T), D_AO: Matrix(T), allocator: std.mem.Allocator) !Vector(T) {
     var m = try Vector(T).init(system.atoms.rows, allocator);
 
     for (0..system.atoms.rows) |i| m.ptr(i).* = system.atoms.at(i);

@@ -3,14 +3,15 @@
 const std = @import("std");
 
 const System = @import("system.zig").System;
+const Vector = @import("vector.zig").Vector;
 
 /// Basis struct.
 pub fn Basis(comptime T: type) type {
     return struct {
 
         /// Return the basis set as an array of consecutive numbers.
-        pub fn array(system: System(T), name: []const u8, allocator: std.mem.Allocator) !std.ArrayList(T){
-            var basis = std.ArrayList(T){}; const parsed = try std.json.parseFromSlice(std.json.Value, allocator, try embedded(name, "json", allocator), .{});
+        pub fn array(system: System(T), name: []const u8, allocator: std.mem.Allocator) !Vector(T){
+            var basis = try Vector(T).init(0, allocator); const parsed = try std.json.parseFromSlice(std.json.Value, allocator, try embedded(name, "json", allocator), .{});
 
             for (0..system.atoms.rows) |i| {
 
@@ -33,15 +34,15 @@ pub fn Basis(comptime T: type) type {
 
                     for (coefs) |coef| {
 
-                        try basis.append(allocator, @as(T, @floatFromInt(c.len)));
-                        try basis.append(allocator, @as(T, @floatFromInt(am   )));
+                        try basis.append(@as(T, @floatFromInt(c.len)));
+                        try basis.append(@as(T, @floatFromInt(am   )));
 
-                        for (0..3) |j| try basis.append(allocator, system.getCoords(i)[j]);
+                        for (0..3) |j| try basis.append(system.getCoords(i)[j]);
 
                         for (0..c.len) |j| c[j] = try std.fmt.parseFloat(T, coef.array.items[j].string);
 
-                        for (0..alpha.len) |j| try basis.append(allocator, alpha[j]);
-                        for (0..c.len    ) |j| try basis.append(allocator,    c[j]);
+                        for (0..alpha.len) |j| try basis.append(alpha[j]);
+                        for (0..c.len    ) |j| try basis.append(    c[j]);
                     }
                 }
             }

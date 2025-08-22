@@ -20,6 +20,15 @@ pub fn Vector(comptime T: type) type {
             };
         }
 
+        /// Append an element to the vector. Returns an error if the allocation fails.
+        pub fn append(self: *Vector(T), value: T) !void {
+            self.data = try self.allocator.realloc(self.data, self.data.len + 1);
+
+            self.data[self.data.len - 1] = value;
+
+            self.rows += 1;
+        }
+
         /// Free the memory allocated for the vector.
         pub fn deinit(self: Vector(T)) void {
             self.allocator.free(self.data);
@@ -79,6 +88,17 @@ pub fn Vector(comptime T: type) type {
             }
 
             return std.math.sqrt(sumsq);
+        }
+
+        /// Multiply the vector by a scalar.
+        pub fn muls(self: Vector(T), s: T) void {
+            if (comptime !hlp.istruct(T)) for (0..self.data.len) |i| {
+                self.data[i] *= s;
+            };
+
+            if (comptime hlp.istruct(T)) for (0..self.data.len) |i| {
+                self.data[i] = self.data[i].mul(s);
+            };
         }
 
         /// Return the element at the specified index as a mutable reference.

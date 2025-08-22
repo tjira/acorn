@@ -15,13 +15,13 @@ const Tensor = @import("tensor.zig").Tensor;
 pub fn run(comptime T: type, opt: inp.AtomicIntegralOptions(T), print: bool, allocator: std.mem.Allocator) !void {
     var system = try sys.load(T, opt.system, opt.system_file, allocator); defer system.deinit();
 
-    var basis = try Basis(T).array(system, opt.basis, allocator); defer basis.deinit(allocator);
+    var basis = try Basis(T).array(system, opt.basis, allocator); defer basis.deinit();
 
     var nbf: usize = 0; var npgs: usize = 0;
 
     {
-        var i: usize = 0; while (i < basis.items.len) : (i += 2 * @as(usize, @intFromFloat(basis.items[i])) + 5) {
-            const cgs: usize = @as(usize, @intFromFloat((basis.items[i + 1] + 1) * (basis.items[i + 1] + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis.items[i])) * cgs;
+        var i: usize = 0; while (i < basis.rows) : (i += 2 * @as(usize, @intFromFloat(basis.at(i))) + 5) {
+            const cgs: usize = @as(usize, @intFromFloat((basis.at(i + 1) + 1) * (basis.at(i + 1) + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis.at(i))) * cgs;
         }
     }
 

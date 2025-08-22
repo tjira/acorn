@@ -91,13 +91,13 @@ pub fn runFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: *System
 
 /// Function to actually run the Hartree-Fock energy calculation on the provided system without additional calculation.
 pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T), print: bool, allocator: std.mem.Allocator) !out.HartreeFockOutput(T) {
-    var basis: std.ArrayList(T) = undefined; if (opt.integral.basis != null) basis = try Basis(T).array(system, opt.integral.basis.?, allocator);
+    var basis: Vector(T) = undefined; if (opt.integral.basis != null) basis = try Basis(T).array(system, opt.integral.basis.?, allocator);
 
     var nbf: usize = 0; var npgs: usize = 0; var mem: f64 = 0; const VNN = system.nuclearRepulsion();
 
     {
-        var i: usize = 0; while (opt.integral.basis != null and i < basis.items.len) : (i += 2 * @as(usize, @intFromFloat(basis.items[i])) + 5) {
-            const cgs: usize = @as(usize, @intFromFloat((basis.items[i + 1] + 1) * (basis.items[i + 1] + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis.items[i])) * cgs;
+        var i: usize = 0; while (opt.integral.basis != null and i < basis.rows) : (i += 2 * @as(usize, @intFromFloat(basis.at(i))) + 5) {
+            const cgs: usize = @as(usize, @intFromFloat((basis.at(i + 1) + 1) * (basis.at(i + 1) + 2))) / 2; nbf += cgs; npgs += @as(usize, @intFromFloat(basis.at(i))) * cgs;
         }
 
         nbf = if (opt.generalized) 2 * nbf else nbf; npgs = if (opt.generalized) 2 * npgs else npgs;
@@ -225,9 +225,7 @@ pub fn hfFull(comptime T: type, opt: inp.HartreeFockOptions(T), system: System(T
     for (0..DIIS_F.items.len) |i| DIIS_F.items[i].deinit();
 
     return out.HartreeFockOutput(T){
-        .S_A = S_A, .T_A = T_A, .V_A = V_A, .J_A = J_A, .C_A = C_A, .D_A = D_A, .E_M = E_M, .F_A = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .freqs = null,
-
-        .basis = basis, .allocator = allocator,
+        .S_A = S_A, .T_A = T_A, .V_A = V_A, .J_A = J_A, .C_A = C_A, .D_A = D_A, .E_M = E_M, .F_A = F_A, .E = E + VNN, .mulliken = null, .G = null, .H = null, .freqs = null, .basis = basis
     };
 }
 

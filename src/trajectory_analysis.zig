@@ -17,6 +17,10 @@ pub fn run(comptime T: type, opt: inp.TrajectoryAnalysisOptions(T), print: bool,
 
     const atoms = parsed_trajectory.atoms; var coords = parsed_trajectory.coords; defer atoms.deinit(); defer coords.deinit();
 
+    var masses = try Vector(T).init(3 * atoms.rows, allocator); defer masses.deinit();
+
+    for (0..masses.rows) |i| masses.data[i] = cnt.AN2M[atoms.at(i / 3) - 1] * cnt.U2AU;
+
     if (opt.remove_translation) removeTranslation(T, &coords);
 
     if (opt.remove_rotation) try removeRotation(T, &coords, allocator);
@@ -25,9 +29,9 @@ pub fn run(comptime T: type, opt: inp.TrajectoryAnalysisOptions(T), print: bool,
 
         var entropy: T = 0;
 
-        if (std.mem.eql(u8, opt.entropy.?.algorithm, "schlitter")) entropy = try schlitterEntropy(T, coords, atoms, opt.entropy.?.temperature, allocator);
+        if (std.mem.eql(u8, opt.entropy.?.algorithm, "schlitter")) entropy = try schlitterEntropy(T, coords, masses, opt.entropy.?.temperature, allocator);
 
-        if (print) try hlp.print(std.fs.File.stdout(), "\nSCHLITTER ENTROPY: {d:.14} a.u. = {d:.14} J/MOL\n", .{entropy, entropy * cnt.NA / cnt.J2AU});
+        if (print) try hlp.print(std.fs.File.stdout(), "\nSCHLITTER ENTROPY: {d:.14} Eh/K = {d:.14} J/MOL/K\n", .{entropy, entropy * cnt.NA / cnt.J2AU});
     }
 
     if (opt.output) |path| try writeTrajectory(T, path, atoms, coords);
@@ -112,15 +116,13 @@ pub fn removeTranslation(comptime T: type, coords: *Matrix(T)) void {
 }
 
 /// Function to calculate the Schlitter entropy of the trajectory data.
-pub fn schlitterEntropy(comptime T: type, coords: Matrix(T), atoms: Vector(u32), temp: T, allocator: std.mem.Allocator) !T {
-    var M = try Matrix(T).init(3 * atoms.rows, 3 * atoms.rows, allocator); defer M.deinit();
-    var S = try Matrix(T).init(3 * atoms.rows, 3 * atoms.rows, allocator); defer S.deinit();
+pub fn schlitterEntropy(comptime T: type, coords: Matrix(T), masses: Vector(T), temp: T, allocator: std.mem.Allocator) !T {
+    var M = try Matrix(T).init(masses.rows, masses.rows, allocator); defer M.deinit();
+    var S = try Matrix(T).init(masses.rows, masses.rows, allocator); defer S.deinit();
 
-    for (0..3 * atoms.rows) |i| {
-        M.ptr(i, i).* = cnt.AN2M[atoms.at(i / 3) - 1] * cnt.U2AU;
-    }
+    for (0..masses.rows) |i| M.ptr(i, i).* = masses.at(i);
 
-    var sigma = try Matrix(T).init(3 * atoms.rows, 3 * atoms.rows, allocator); defer sigma.deinit();
+    var sigma = try Matrix(T).init(masses.rows, masses.rows, allocator); defer sigma.deinit();
 
     sigma.fill(0);
 

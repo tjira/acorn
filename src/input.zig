@@ -70,6 +70,19 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
         pub const LogIntervals = struct {
             trajectory: u32 = 1, iteration: u32 = 1
         };
+        pub const Thermostat = struct {
+            pub const Andersen = struct {
+                frequency: T = 0.1
+            };
+            pub const Berendsen = struct {
+                tau: T = 100
+            };
+
+            temperature: T = 298.15,
+
+            andersen:  ?Andersen  = null,
+            berendsen: ?Berendsen = null
+        };
         pub const Write = struct {
             bloch_vector:                  ?[]const u8 = null,
             bloch_vector_mean:             ?[]const u8 = null,
@@ -88,22 +101,25 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             potential_energy_mean:         ?[]const u8 = null,
             potential_matrix:              ?[]const u8 = null,
             potential_matrix_mean:         ?[]const u8 = null,
+            temperature:                   ?[]const u8 = null,
+            temperature_mean:              ?[]const u8 = null,
             time_derivative_coupling:      ?[]const u8 = null,
             time_derivative_coupling_mean: ?[]const u8 = null,
             total_energy:                  ?[]const u8 = null,
             total_energy_mean:             ?[]const u8 = null
         };
 
-        derivative_step: T = 0.001,
+        derivative_step: T = 1e-8,
         iterations: u32,
         seed: u32 = 1,
         time_derivative_coupling: ?[]const u8 = "npi",
         time_step: T,
         trajectories: u32,
+        entropy: bool = true,
 
         hamiltonian: Hamiltonian, bias: ?Bias = null, fewest_switches: ?FewestSwitches = null, landau_zener: ?LandauZener = null, spin_mapping: ?SpinMapping = null,
 
-        initial_conditions: InitialConditions, log_intervals: LogIntervals = .{}, write: Write = .{},
+        initial_conditions: InitialConditions, thermostat: ?Thermostat = null, log_intervals: LogIntervals = .{}, write: Write = .{},
     };
 }
 
