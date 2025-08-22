@@ -20,7 +20,8 @@ pub fn build(builder: *std.Build) !void {
                 .root_source_file = builder.path("benchmark/main.zig"),
                 .strip = !debug,
                 .target = builder.resolveTargetQuery(target)
-            })
+            }),
+            .use_llvm = true
         });
 
         const main_executable = builder.addExecutable(.{
@@ -30,7 +31,8 @@ pub fn build(builder: *std.Build) !void {
                 .root_source_file = builder.path("src/main.zig"),
                 .strip = !debug,
                 .target = builder.resolveTargetQuery(target)
-            })
+            }),
+            .use_llvm = true
         });
 
         const test_executable = builder.addTest(.{
@@ -40,7 +42,8 @@ pub fn build(builder: *std.Build) !void {
                 .root_source_file = builder.path("test/main.zig"),
                 .strip = !debug,
                 .target = builder.resolveTargetQuery(target)
-            })
+            }),
+            .use_llvm = true
         });
 
         const external_include = try std.mem.concat(builder.allocator, u8, &[_][]const u8{"external-", arch_name, "-", os_name, "/include"});
