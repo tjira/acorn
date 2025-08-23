@@ -1,10 +1,14 @@
 #!/bin/bash
 
-CORES=$(nproc --all); DIRNAME=$(dirname "$(realpath $0)"); TARGETS=("x86_64-linux")
+if [ $# -lt 1 ]; then exit 1; fi
+
+CORES=$(nproc --all); DIRNAME=$(dirname "$(realpath $0)"); TARGET=${1,,}; HOST="$(uname -m)-$(uname -s | tr '[:upper:]' '[:lower:]')"
 
 CMAKE_GENERAL=(
-    -DBUILD_SHARED_LIBS=OFF
+    -DBUILD_SHARED_LIBS=False
     -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_INSTALL_PREFIX="$PWD/external-$TARGET"
+    -DCMAKE_PREFIX_PATH="$PWD/external-$TARGET"
 )
 
 CMAKE_LIBINT=(
@@ -18,11 +22,11 @@ CMAKE_OMP=(
 )
 
 MAKE_OPENBLAS=(
-    DYNAMIC_ARCH=1
     HOSTCC=gcc
-    NO_SHARED=1
     NOFORTRAN=1
+    NO_SHARED=1
     NUM_THREADS=128
+    PREFIX="$PWD/external-$TARGET"
     USE_OPENMP=1
 )
 
@@ -30,36 +34,28 @@ cmake_install() {
     cmake --build . --parallel $CORES --verbose && cmake --install .
 }
 
-tar -xf external-x86_64-linux/zig.tar.xz -C zig-bin --strip-components=1
-tar -xf external-x86_64-linux/zls.tar.xz -C zig-bin --strip-components=0
+if [[ "$HOST" == "$TARGET" ]]; then MAKE_OPENBLAS+=(DYNAMIC_ARCH=1); else MAKE_OPENBLAS+=(CROSS=1 TARGET=GENERIC); fi
 
-export CC="$DIRNAME/../zigcc"; export CXX="$DIRNAME/../zigcpp"; export AR="$DIRNAME/../zigar"; export RANLIB="$DIRNAME/../zigranlib"
+export C_INCLUDE_PATH="$PWD/external-$TARGET/include:$C_INCLUDE_PATH"
 
-for TARGET in "${TARGETS[@]}"; do
+echo -e "#!/usr/bin/env bash\n\n$PWD/zig-bin/zig ar                          \"\$@\"" > zigar     && chmod +x     zigar
+echo -e "#!/usr/bin/env bash\n\n$PWD/zig-bin/zig cc     --target=$TARGET-gnu \"\$@\"" > zigcc     && chmod +x     zigcc
+echo -e "#!/usr/bin/env bash\n\n$PWD/zig-bin/zig c++    --target=$TARGET-gnu \"\$@\"" > zigcpp    && chmod +x    zigcpp
+echo -e "#!/usr/bin/env bash\n\n$PWD/zig-bin/zig ranlib                      \"\$@\"" > zigranlib && chmod +x zigranlib
 
-    export C_INCLUDE_PATH="$DIRNAME/../external-$TARGET/include:$C_INCLUDE_PATH"
+export CC="$PWD/zigcc"; export CXX="$PWD/zigcpp"; export AR="$PWD/zigar"; export RANLIB="$PWD/zigranlib"
 
-    CMAKE_GENERAL+=(
-        -DCMAKE_INSTALL_PREFIX="$DIRNAME/../external-$TARGET"
-        -DCMAKE_PREFIX_PATH="$DIRNAME/../external-$TARGET"
-    )
+rm -rf eigen    && tar -xzf    external-$HOST/eigen.tar.gz && mv eigen*       eigen
+rm -rf libint   && tar -xzf   external-$HOST/libint.tar.gz && mv libint*     libint
+rm -rf llvm     && tar -xf      external-$HOST/llvm.tar.xz && mv llvm*         llvm
+rm -rf openblas && tar -xzf external-$HOST/openblas.tar.gz && mv OpenBLAS* openblas
 
-    echo -e "#!/usr/bin/env bash\n\n$DIRNAME/../zig-bin/zig ar                          \"\$@\"" > zigar     && chmod +x     zigar
-    echo -e "#!/usr/bin/env bash\n\n$DIRNAME/../zig-bin/zig cc     --target=$TARGET-gnu \"\$@\"" > zigcc     && chmod +x     zigcc
-    echo -e "#!/usr/bin/env bash\n\n$DIRNAME/../zig-bin/zig c++    --target=$TARGET-gnu \"\$@\"" > zigcpp    && chmod +x    zigcpp
-    echo -e "#!/usr/bin/env bash\n\n$DIRNAME/../zig-bin/zig ranlib                      \"\$@\"" > zigranlib && chmod +x zigranlib
+cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}"    ../openmp && cmake_install && cd ../..
+cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                      ..        && cmake_install && cd ../..
+cd libint && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_LIBINT[@]}" ..        && cmake_install && cd ../..
 
-    tar -xzf    external-$TARGET/eigen.tar.gz && mv eigen*       eigen
-    tar -xzf   external-$TARGET/libint.tar.gz && mv libint*     libint
-    tar -xf      external-$TARGET/llvm.tar.xz && mv llvm*         llvm
-    tar -xzf external-$TARGET/openblas.tar.gz && mv OpenBLAS* openblas
+cd openblas && make "${MAKE_OPENBLAS[@]}" -j $CORES libs shared && make "${MAKE_OPENBLAS[@]}" install && cd ..
 
-    cd llvm   && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_OMP[@]}"    ../openmp && cmake_install && cd ../..
-    cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"                      ..        && cmake_install && cd ../..
-    cd libint && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_LIBINT[@]}" ..        && cmake_install && cd ../..
+wget -q -O external-$TARGET/include/exprtk.hpp https://raw.githubusercontent.com/ArashPartow/exprtk/cc1b800c2bd1ac3ac260478c915d2aec6f4eb41c/exprtk.hpp
 
-    cd openblas && make "${MAKE_OPENBLAS[@]}" -j $CORES libs shared && make NO_SHARED=1 PREFIX="$DIRNAME/../external-$TARGET" install && cd ..
-
-    rm -rf eigen libint llvm openblas zigar zigcc zigcpp zigranlib
-
-done
+rm -rf eigen libint llvm openblas zigar zigcc zigcpp zigranlib

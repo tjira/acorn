@@ -1,8 +1,10 @@
 const std = @import("std"); const builtin = @import("builtin");
 
 const targets: []const std.Target.Query = &.{
-    .{.os_tag = .linux, .cpu_arch = .x86_64, .abi = .gnu },
-    .{.os_tag = .linux, .cpu_arch = .x86_64, .abi = .musl},
+    .{.os_tag = .linux, .cpu_arch = .aarch64, .abi = .gnu },
+    .{.os_tag = .linux, .cpu_arch = .aarch64, .abi = .musl},
+    .{.os_tag = .linux, .cpu_arch = .x86_64,  .abi = .gnu },
+    .{.os_tag = .linux, .cpu_arch = .x86_64,  .abi = .musl},
 };
 
 pub fn build(builder: *std.Build) !void {
