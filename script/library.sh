@@ -34,7 +34,7 @@ cmake_install() {
     cmake --build . --parallel $CORES --verbose && cmake --install .
 }
 
-if [[ "$(uname -m)" == "x86_64" ]]; then MAKE_OPENBLAS+=(DYNAMIC_ARCH=1); else MAKE_OPENBLAS+=(TARGET=GENERIC); fi
+if [[ "$TARGET" == "x86_64"* ]]; then MAKE_OPENBLAS+=(DYNAMIC_ARCH=1); else MAKE_OPENBLAS+=(TARGET=GENERIC); fi
 
 export C_INCLUDE_PATH="$PWD/external-$TARGET/include:$C_INCLUDE_PATH"
 
