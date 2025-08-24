@@ -1,7 +1,7 @@
 .RECIPEPREFIX = >
 
-ARCH := x86_64
-OS   :=  linux
+ARCH := $(shell uname -m | tr '[:upper:]' '[:lower:]')
+OS   := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 
 TARGETS := aarch64-linux x86_64-linux
 
@@ -73,7 +73,7 @@ external-$(ARCH)-$(OS)/llvm.tar.xz:        URL = https://github.com/llvm/llvm-pr
 external-$(ARCH)-$(OS)/openblas.tar.gz:    URL =     https://github.com/OpenMathLib/OpenBLAS/releases/download/v$(OPENBLAS_VERSION)/OpenBLAS-$(OPENBLAS_VERSION).tar.gz
 
 external-$(ARCH)-$(OS)/%:
-> mkdir -p external-x86_64-linux/include && wget -q -O $@ $(URL)
+> mkdir -p external-$(ARCH)-$(OS)/include && wget -q -O $@ $(URL)
 
 zig-bin/zig:
 > mkdir -p zig-bin && wget -q -O - https://ziglang.org/download/$(ZIG_VERSION)/zig-$(ARCH)-$(OS)-$(ZIG_VERSION).tar.xz       | tar -Jx -C zig-bin --strip-components=1 && touch zig-bin/zig
