@@ -217,7 +217,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                     if (tdc_npi   ) try derivativeCouplingNpi(   T, &TDC, &UCS, UC2_sorted,      opt.time_step);
                     if (tdc_nacv  )     derivativeCouplingNacv(  T, &TDC, NACV2_sorted, v,                    );
 
-                    if (lzsh) ns = try landauZener(T, &C, &P, opt.landau_zener.?, U3_sorted, s, opt.time_step, rand_jump, &I, &KC1);
+                    if (lzsh) ns = try landauZener(T, &C, &P, opt.landau_zener.?, U3_sorted, v, s, opt.time_step, rand_jump, &I, &KC1);
                     if (fssh) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
                     if (mash) ns = try spinMapping(T, &S, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
@@ -844,7 +844,7 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
 }
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.
-pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), s: u32, time_step: T, rand: std.Random, I: *Matrix(std.math.Complex(T)), T1: *Vector(std.math.Complex(T))) !u32 {
+pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), v: Vector(T), s: u32, time_step: T, rand: std.Random, I: *Matrix(std.math.Complex(T)), T1: *Vector(std.math.Complex(T))) !u32 {
     var ns = s; var rn: T = 0; var maxddZ0: T = 0; P.fill(0);
 
     for (0..U3[0].rows) |i| if (i != s) {
@@ -857,7 +857,7 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
 
         if (dZ0 * dZ1 > 0 or (dZ0 * dZ1 < 0 and ddZ0 < 0) or @abs(ddZ0) < 1e-14) continue;
 
-        const g = Z0; const v = std.math.sqrt(Z0 * ddZ0); const delta: T = 0.25 * std.math.pow(T, g, 2) / v;
+        const g = Z0; const veff = std.math.sqrt(Z0 * ddZ0); const delta: T = 0.25 * std.math.pow(T, g, 2) / veff;
 
         var p = std.math.exp(-2 * std.math.pi * delta); if (std.math.isNan(p)) p = 0;
 
@@ -895,7 +895,8 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
             I.ptr(0, 0).* = I.at(0, 0).mul(exp1);
             I.ptr(1, 1).* = I.at(1, 1).mul(exp2);
 
-            var T1M = T1.matrix(); try cwp.Blas(T).zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);
+            if (v.at(0) >= 0) {var T1M = T1.matrix(); try cwp.Blas(T).zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);}
+            if (v.at(0) <  0) {var T1M = T1.matrix(); try cwp.Blas(T).zgemm(&T1M, I.*, true,  C.matrix(), false); T1.memcpy(C.*);}
         }
     };
 

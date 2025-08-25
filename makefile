@@ -1,16 +1,21 @@
 .RECIPEPREFIX = >
 
+DEBUG ?= 0
+NPROC ?= 1
+
 ARCH := $(shell uname -m | tr '[:upper:]' '[:lower:]')
 OS   := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 
 TARGETS := aarch64-linux x86_64-linux
 
 ZIG_VERSION      := 0.15.1
-ZLS_VERSION      := 0.14.0
+ZLS_VERSION      := 0.15.0
 EIGEN_VERSION    :=  3.4.0
 LIBINT_VERSION   := 2.11.1
 LLVM_VERSION     := 20.1.8
 OPENBLAS_VERSION := 0.3.30
+
+EXPRTK_COMMIT := cc1b800c2bd1ac3ac260478c915d2aec6f4eb41c
 
 export OMP_NUM_THREADS := 1
 
@@ -21,16 +26,16 @@ all: acorn
 .PHONY: acorn docs test
 
 acorn: $(addprefix external-,$(addsuffix /.done,$(TARGETS)))
-> ./zig-bin/zig build -j4
+> ./zig-bin/zig build $(if $(filter 1,$(DEBUG)),-DDEBUG) -j$(NPROC)
 
 docs: $(addprefix external-,$(addsuffix /.done,$(TARGETS)))
-> ./zig-bin/zig build docs
+> ./zig-bin/zig build $(if $(filter 1,$(DEBUG)),-DDEBUG) -j$(NPROC) docs
 
 run: $(addprefix external-,$(addsuffix /.done,$(TARGETS)))
-> ./zig-bin/zig build run
+> ./zig-bin/zig build $(if $(filter 1,$(DEBUG)),-DDEBUG) -j$(NPROC) run
 
 test: $(addprefix external-,$(addsuffix /.done,$(TARGETS)))
-> ./zig-bin/zig build test
+> ./zig-bin/zig build $(if $(filter 1,$(DEBUG)),-DDEBUG) -j$(NPROC) test
 
 # BENCHMARKING TARGETS =================================================================================================================================================================================
 
@@ -62,7 +67,7 @@ serve:
 
 # EXTERNAL TARGETS =====================================================================================================================================================================================
 
-EXTERNAL := eigen.tar.gz libint.tar.gz llvm.tar.xz openblas.tar.gz
+EXTERNAL := eigen.tar.gz libint.tar.gz llvm.tar.xz openblas.tar.gz include/exprtk.hpp
 
 $(addprefix external-,$(addsuffix /.done,$(TARGETS))): external-%/.done: $(addprefix external-$(ARCH)-$(OS)/,$(EXTERNAL)) zig-bin/zig
 > ./script/library.sh $* && touch $@
@@ -71,6 +76,7 @@ external-$(ARCH)-$(OS)/eigen.tar.gz:       URL =                             htt
 external-$(ARCH)-$(OS)/libint.tar.gz:      URL =                    https://github.com/evaleev/libint/releases/download/v$(LIBINT_VERSION)/libint-$(LIBINT_VERSION).tgz
 external-$(ARCH)-$(OS)/llvm.tar.xz:        URL = https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/llvm-project-$(LLVM_VERSION).src.tar.xz
 external-$(ARCH)-$(OS)/openblas.tar.gz:    URL =     https://github.com/OpenMathLib/OpenBLAS/releases/download/v$(OPENBLAS_VERSION)/OpenBLAS-$(OPENBLAS_VERSION).tar.gz
+external-$(ARCH)-$(OS)/include/exprtk.hpp: URL =                                       https://raw.githubusercontent.com/ArashPartow/exprtk/$(EXPRTK_COMMIT)/exprtk.hpp
 
 external-$(ARCH)-$(OS)/%:
 > mkdir -p external-$(ARCH)-$(OS)/include && wget -q -O $@ $(URL)

@@ -2,7 +2,7 @@
 
 if [ $# -lt 1 ]; then exit 1; fi
 
-CORES=$(nproc --all); DIRNAME=$(dirname "$(realpath $0)"); TARGET=${1,,}; HOST="$(uname -m)-$(uname -s | tr '[:upper:]' '[:lower:]')"
+CORES=$(nproc --all); TARGET=${1,,}; HOST="$(uname -m)-$(uname -s | tr '[:upper:]' '[:lower:]')"
 
 CMAKE_GENERAL=(
     -DBUILD_SHARED_LIBS=False
@@ -45,6 +45,8 @@ echo -e "#!/usr/bin/env bash\n\n$PWD/zig-bin/zig ranlib                      \"\
 
 export CC="$PWD/zigcc"; export CXX="$PWD/zigcpp"; export AR="$PWD/zigar"; export RANLIB="$PWD/zigranlib"
 
+mkdir -p external-$TARGET/include && cp -r external-$HOST/include/exprtk.hpp external-$TARGET/include
+
 rm -rf eigen    && tar -xzf    external-$HOST/eigen.tar.gz && mv eigen*       eigen
 rm -rf libint   && tar -xzf   external-$HOST/libint.tar.gz && mv libint*     libint
 rm -rf llvm     && tar -xf      external-$HOST/llvm.tar.xz && mv llvm*         llvm
@@ -55,7 +57,5 @@ cd eigen  && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}"          
 cd libint && mkdir -p build && cd build && cmake "${CMAKE_GENERAL[@]}" "${CMAKE_LIBINT[@]}" ..        && cmake_install && cd ../..
 
 cd openblas && make "${MAKE_OPENBLAS[@]}" -j $CORES libs shared && make "${MAKE_OPENBLAS[@]}" install && cd ..
-
-wget -q -O external-$TARGET/include/exprtk.hpp https://raw.githubusercontent.com/ArashPartow/exprtk/cc1b800c2bd1ac3ac260478c915d2aec6f4eb41c/exprtk.hpp
 
 rm -rf eigen libint llvm openblas zigar zigcc zigcpp zigranlib

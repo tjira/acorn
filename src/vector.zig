@@ -20,6 +20,11 @@ pub fn Vector(comptime T: type) type {
             };
         }
 
+        /// Free the memory allocated for the vector.
+        pub fn deinit(self: Vector(T)) void {
+            self.allocator.free(self.data);
+        }
+
         /// Append an element to the vector. Returns an error if the allocation fails.
         pub fn append(self: *Vector(T), value: T) !void {
             self.data = try self.allocator.realloc(self.data, self.data.len + 1);
@@ -27,11 +32,6 @@ pub fn Vector(comptime T: type) type {
             self.data[self.data.len - 1] = value;
 
             self.rows += 1;
-        }
-
-        /// Free the memory allocated for the vector.
-        pub fn deinit(self: Vector(T)) void {
-            self.allocator.free(self.data);
         }
 
         /// Get the element at the specified index as a value.

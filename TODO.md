@@ -17,7 +17,7 @@
 - [x] Should I weigh also the other observables like energy in MASH algorithm?
 - [ ] Check the suspicious sign in front of TDC during formation of MASH propagation matrix.
 - [x] The propagators in QD do not have to be reallocated every time, they can be just rewritten when using time-dependent Hamiltonian.
-- [ ] Landau-Zener scattering matrix doesnt work for multiple crossings.
+- [ ] Landau-Zener scattering matrix doesnt work for multiple crossings. Probably fixed by accumulating Maslov phase.
 - [x] The Landau-Zener scattering matrix needs derivative of the diabatic enegy gap, not the adiabatic.
 - [ ] The hamiltonian specification from file is kind of junk and it doesn't support higher dimensions.
 - [x] Check the propagate function if the derivatives are calculated at the correct points.
