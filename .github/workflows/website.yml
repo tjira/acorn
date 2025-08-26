@@ -17,17 +17,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Biber and LaTeX
-        run: sudo apt update && sudo apt install -y biber texlive-full
-
-      - name: Install Pandoc
-        run: wget https://github.com/jgm/pandoc/releases/download/3.4/pandoc-3.4-1-amd64.deb -O pandoc.deb && sudo dpkg -i pandoc.deb
-
       - name: Compile the Code Documentation
         run: make docs
-
-      - name: Compile the PDF Document
-        run: ./script/docstopdf.sh
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

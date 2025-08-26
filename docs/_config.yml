@@ -13,14 +13,3 @@ remote_theme: just-the-docs/just-the-docs
 aux_links:
   "Quantum Acorn on GitHub":
     - "//github.com/tjira/acorn"
-
-callouts:
-  cite:
-    title: References
-    color: yellow
-  note:
-    title: Note
-    color: blue
-  warning:
-    title: Warning
-    color: red
