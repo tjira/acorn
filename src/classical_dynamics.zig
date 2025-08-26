@@ -173,7 +173,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
 
             if (potential.mode != .Abinitio) sampleInitialConditions(T, &r, &p, &v, &a, mass, opt.initial_conditions, rand_traj);
 
-            if (potential.mode == .Abinitio) try initAbinitio(T, &r, &v, &p, &mass, opt.initial_conditions.position_file, opt.initial_conditions.velocity_file, i, allocator);
+            if (potential.mode == .Abinitio) try initAbinitio(T, &r, &v, &p, &mass, opt.initial_conditions, i, rand_traj, allocator);
 
             if (fssh or lzsh) {C.fill(std.math.Complex(T).init(0, 0)); C.ptr(s).* = std.math.Complex(T).init(1, 0);}
             if (mash        ) {try initialBlochVector(T, &S, s, rand_bloc);                                        }
@@ -181,7 +181,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
             const Wcp: T = if (mash) 2 else 1; const Wpp: T = if (mash) 2 * @abs(S.at(2)) else 1;
             S.memcpy(S0); var S3 = [3]u32{s, s, s}; var ns = s; var Ekin: T = 0; var Epot: T = 0;
 
-            var Tkin: T = 0; var f = hlp.asfloat(T, potential.dims); if (potential.mode == .Abinitio) f -= 6;
+            var Tkin: T = 0; var f = hlp.asfloat(T, potential.dims); if (potential.mode == .Abinitio and potential.dims > 3) f -= if (potential.dims > 6) 6 else 5;
 
             for (0..opt.iterations + 1) |j| {
 
@@ -217,7 +217,7 @@ pub fn run(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), print: bool, 
                     if (tdc_npi   ) try derivativeCouplingNpi(   T, &TDC, &UCS, UC2_sorted,      opt.time_step);
                     if (tdc_nacv  )     derivativeCouplingNacv(  T, &TDC, NACV2_sorted, v,                    );
 
-                    if (lzsh) ns = try landauZener(T, &C, &P, opt.landau_zener.?, U3_sorted, v, s, opt.time_step, rand_jump, &I, &KC1);
+                    if (lzsh) ns = try landauZener(T, &C, &P, opt.landau_zener.?, U3_sorted, s, opt.time_step, rand_jump, &I, &KC1);
                     if (fssh) ns = try fewestSwitches(T, &C, &P, opt.fewest_switches.?, U, TDC, s, opt.time_step, Ekin, rand_jump, &KC1, &KC2, &KC3, &KC4);
                     if (mash) ns = try spinMapping(T, &S, U, TDC, s, opt.time_step, Ekin, &SP, &SN);
 
@@ -410,12 +410,35 @@ pub fn calculateBlocVectorFromCoefficients(comptime T: type, S: *Vector(T), C: V
     S.ptr(2).* = C.at(1).magnitude() * C.at(1).magnitude() - C.at(0).magnitude() * C.at(0).magnitude();
 }
 
+/// Sample initial velocity from Boltzmann distribution.
+pub fn sampleBoltzmann(comptime T: type, v: *Vector(T), mass: []const T, temperature: T, rand: std.Random) void {
+    for (0..v.rows) |i| {
+        v.ptr(i).* = std.math.sqrt(cnt.kB / cnt.Eh * temperature / mass[i]) * rand.floatNorm(T);
+    }
+
+    var Ekin0: T = 0; for (0..v.rows) |k| Ekin0 += 0.5 * mass[k] * v.at(k) * v.at(k);
+
+    var v_center_of_mass: T = 0;
+
+    for (0..v.rows) |i| v_center_of_mass += mass[i] * v.at(i); v_center_of_mass /= mth.sum(T, mass);
+
+    for (0..v.rows) |i| v.ptr(i).* -= v_center_of_mass;
+
+    var Ekin1: T = 0; for (0..v.rows) |k| Ekin1 += 0.5 * mass[k] * v.at(k) * v.at(k);
+
+    vec.muls(T, v, v.*, std.math.sqrt(Ekin0 / Ekin1));
+}
+
 /// Function to sample initial conditions.
 pub fn sampleInitialConditions(comptime T: type, r: *Vector(T), p: *Vector(T), v: *Vector(T), a: *Vector(T), mass: []const T, initial_conditions: inp.ClassicalDynamicsOptions(T).InitialConditions, rand: std.Random) void {
     if (initial_conditions.position_mean != null) {for (0..r.rows) |i| r.ptr(i).* = initial_conditions.position_mean.?[i] + initial_conditions.position_std.?[i] * rand.floatNorm(T);}
     if (initial_conditions.momentum_mean != null) {for (0..p.rows) |i| p.ptr(i).* = initial_conditions.momentum_mean.?[i] + initial_conditions.momentum_std.?[i] * rand.floatNorm(T);}
 
-    for (0..v.rows) |i| v.ptr(i).* = p.at(i) / mass[i];
+    if (initial_conditions.temperature != null) sampleBoltzmann(T, v, mass, initial_conditions.temperature.?, rand);
+
+    if (initial_conditions.temperature == null) {
+        for (0..v.rows) |i| v.ptr(i).* = p.at(i) / mass[i];
+    }
 
     a.fill(0);
 }
@@ -552,11 +575,12 @@ pub fn checkErrors(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), alloc
 
     if (opt.hamiltonian.abinitio == null and opt.initial_conditions.position_file != null) return error.YouCannotSpecifyInitialPositionFile;
     if (opt.hamiltonian.abinitio == null and opt.initial_conditions.position_mean == null) return error.YouNeedToSpecifyInitialPositionMean;
-    if (opt.hamiltonian.abinitio == null and opt.initial_conditions.position_std  == null) return error.YouNeedToSpecifyInitialPositionStd;
+    if (opt.hamiltonian.abinitio == null and opt.initial_conditions.position_std  == null) return  error.YouNeedToSpecifyInitialPositionStd;
     if (opt.hamiltonian.abinitio == null and opt.initial_conditions.velocity_file != null) return error.YouCannotSpecifyInitialVelocityFile;
-    if (opt.hamiltonian.abinitio == null and opt.initial_conditions.momentum_mean == null) return error.YouNeedToSpecifyInitialMomentumMean;
-    if (opt.hamiltonian.abinitio == null and opt.initial_conditions.momentum_std  == null) return error.YouNeedToSpecifyInitialMomentumStd;
-    if (opt.hamiltonian.abinitio == null and opt.initial_conditions.mass          == null) return error.YouNeedToSpecifyCoordinateMasses;
+    if (opt.hamiltonian.abinitio == null and opt.initial_conditions.mass          == null) return    error.YouNeedToSpecifyCoordinateMasses;
+
+    if (opt.hamiltonian.abinitio == null and opt.initial_conditions.momentum_mean == null and opt.initial_conditions.temperature == null) return error.YouNeedToSpecifyInitialMomentumMeanOrTemperature;
+    if (opt.hamiltonian.abinitio == null and opt.initial_conditions.momentum_std  == null and opt.initial_conditions.temperature == null) return  error.YouNeedToSpecifyInitialMomentumStdOrTemperature;
 
     if (opt.hamiltonian.abinitio != null and opt.initial_conditions.position_file == null) return error.YouHaveToSpecifyInitialPositionFileForAbinitioHamiltonian;
     if (opt.hamiltonian.abinitio != null and opt.initial_conditions.position_mean != null) return error.CannotSpecifyInitialPositionMeanForAbinitioHamiltonian;
@@ -564,6 +588,9 @@ pub fn checkErrors(comptime T: type, opt: inp.ClassicalDynamicsOptions(T), alloc
     if (opt.hamiltonian.abinitio != null and opt.initial_conditions.momentum_mean != null) return error.CannotSpecifyInitialMomentumMeanForAbinitioHamiltonian;
     if (opt.hamiltonian.abinitio != null and opt.initial_conditions.momentum_std  != null) return error.CannotSpecifyInitialMomentumStdForAbinitioHamiltonian;
     if (opt.hamiltonian.abinitio != null and opt.initial_conditions.mass          != null) return error.CannotSpecifyCoordinateMassesForAbinitioHamiltonian;
+
+    if (opt.initial_conditions.momentum_mean != null and opt.initial_conditions.temperature != null) return     error.YouCannotSpecifyMomentumAndTemperature;
+    if (opt.initial_conditions.velocity_file != null and opt.initial_conditions.temperature != null) return error.YouCannotSpecifyVelocityFileAndTemperature;
 
     if (opt.hamiltonian.abinitio == null and opt.time_derivative_coupling != null and  std.mem.eql(u8, opt.time_derivative_coupling.?, "nacv")) return error.IncompatibleTimeDerivativeCoupling;
     if (opt.hamiltonian.abinitio != null and opt.time_derivative_coupling != null and !std.mem.eql(u8, opt.time_derivative_coupling.?, "nacv")) return error.IncompatibleTimeDerivativeCoupling;
@@ -735,28 +762,10 @@ pub fn fewestSwitches(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vec
 }
 
 // Transform the coordinate file into the initial position vector.
-pub fn initAbinitio(comptime T: type, r: *Vector(T), v: *Vector(T), p: *Vector(T), mass: *[]T, position_file: ?[]const u8, velocity_file: ?[]const u8, i: usize, allocator: std.mem.Allocator) !void {
-
-    if (velocity_file == null) {v.fill(0); p.fill(0);}
-
-    else {
-
-        const velocity_geometry = try std.fmt.allocPrint(allocator, "velocity_{d}.xyz", .{i}); defer allocator.free(velocity_geometry);
-
-        try hlp.extractGeometryFromMovie(velocity_geometry, velocity_file.?, i);
-
-        const system = try sys.read(T, velocity_geometry, 0, allocator); defer system.deinit();
-
-        @memcpy(v.data, system.coords.data);
-
-        try std.fs.cwd().deleteFile(velocity_geometry);
-
-        for (v.data) |*e| e.* /= A2AU;
-    }
-
+pub fn initAbinitio(comptime T: type, r: *Vector(T), v: *Vector(T), p: *Vector(T), mass: *[]T, initial_conditions: inp.ClassicalDynamicsOptions(T).InitialConditions, i: usize, rand: std.Random, allocator: std.mem.Allocator) !void {
     const position_geometry = try std.fmt.allocPrint(allocator, "geometry_{d}.xyz", .{i}); defer allocator.free(position_geometry);
 
-    try hlp.extractGeometryFromMovie(position_geometry, position_file.?, i);
+    try hlp.extractGeometryFromMovie(position_geometry, initial_conditions.position_file.?, i);
 
     const system = try sys.read(T, position_geometry, 0, allocator); defer system.deinit();
 
@@ -767,6 +776,28 @@ pub fn initAbinitio(comptime T: type, r: *Vector(T), v: *Vector(T), p: *Vector(T
     for (0..system.atoms.rows) |j| for (0..3) |k| {
         mass.*[3 * j + k] = AN2M[@as(usize, @intFromFloat(system.atoms.at(j))) - 1] * 1822.888486;
     };
+
+    if (initial_conditions.velocity_file == null) {
+
+        v.fill(0); p.fill(0);
+
+        if (initial_conditions.temperature != null) sampleBoltzmann(T, v, mass.*, initial_conditions.temperature.?, rand);
+    }
+
+    else {
+
+        const velocity_geometry = try std.fmt.allocPrint(allocator, "velocity_{d}.xyz", .{i}); defer allocator.free(velocity_geometry);
+
+        try hlp.extractGeometryFromMovie(velocity_geometry, initial_conditions.velocity_file.?, i);
+
+        const velocity_system = try sys.read(T, velocity_geometry, 0, allocator); defer velocity_system.deinit();
+
+        @memcpy(v.data, velocity_system.coords.data);
+
+        try std.fs.cwd().deleteFile(velocity_geometry);
+
+        for (v.data) |*e| e.* /= A2AU;
+    }
 
     for (0..p.rows) |j| {
         p.ptr(j).* = v.at(j) * mass.*[j];
@@ -844,7 +875,7 @@ pub fn spinMapping(comptime T: type, S: *Vector(T), U: Matrix(T), TDC: Matrix(T)
 }
 
 /// Function to calculate the Landau-Zener probability of a transition between two states. The function returns the new state, if a switch occurs.
-pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), v: Vector(T), s: u32, time_step: T, rand: std.Random, I: *Matrix(std.math.Complex(T)), T1: *Vector(std.math.Complex(T))) !u32 {
+pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector(T), opt: inp.ClassicalDynamicsOptions(T).LandauZener, U3: []const Matrix(T), s: u32, time_step: T, rand: std.Random, I: *Matrix(std.math.Complex(T)), T1: *Vector(std.math.Complex(T))) !u32 {
     var ns = s; var rn: T = 0; var maxddZ0: T = 0; P.fill(0);
 
     for (0..U3[0].rows) |i| if (i != s) {
@@ -895,8 +926,8 @@ pub fn landauZener(comptime T: type, C: *Vector(std.math.Complex(T)), P: *Vector
             I.ptr(0, 0).* = I.at(0, 0).mul(exp1);
             I.ptr(1, 1).* = I.at(1, 1).mul(exp2);
 
-            if (v.at(0) >= 0) {var T1M = T1.matrix(); try cwp.Blas(T).zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);}
-            if (v.at(0) <  0) {var T1M = T1.matrix(); try cwp.Blas(T).zgemm(&T1M, I.*, true,  C.matrix(), false); T1.memcpy(C.*);}
+            // TODO: Check the correctness of the following matrix multiplication.
+            var T1M = T1.matrix(); try cwp.Blas(T).zgemm(&T1M, I.*, false, C.matrix(), false); T1.memcpy(C.*);
         }
     };
 

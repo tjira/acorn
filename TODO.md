@@ -17,13 +17,14 @@
 - [x] Should I weigh also the other observables like energy in MASH algorithm?
 - [ ] Check the suspicious sign in front of TDC during formation of MASH propagation matrix.
 - [x] The propagators in QD do not have to be reallocated every time, they can be just rewritten when using time-dependent Hamiltonian.
-- [ ] Landau-Zener scattering matrix doesnt work for multiple crossings. Probably fixed by accumulating Maslov phase.
+- [ ] Landau-Zener scattering matrix is kind of sketchy when reflection happens. Maybe Maslov phase?
 - [x] The Landau-Zener scattering matrix needs derivative of the diabatic enegy gap, not the adiabatic.
 - [ ] The hamiltonian specification from file is kind of junk and it doesn't support higher dimensions.
 - [x] Check the propagate function if the derivatives are calculated at the correct points.
 - [ ] Time derivative coupling using NACV in ab initio dynamics is problematic since the coefficient propagation is wrong due to big time step.
-- [x] Implement ab inition dynamics with multiple initial conditions.
-- [ ] Implement Boltzmann sampling for the initial conditions in ab initio dynamics.
+- [x] Implement ab initio dynamics with multiple initial conditions.
+- [x] Implement Boltzmann sampling for the initial conditions in ab initio dynamics.
 - [ ] Implement parallelization for classical dynamics.
 - [ ] The AIMD code is currently unparallelizable due to file reading.
-- [ ] Degrees of freedom in AIMD should are always 3*N - 6
+- [ ] Degrees of freedom in AIMD are not considering multi-atom linear molecules correctly.
+- [ ] Remove rotations after Boltzmann sampling of initial conditions.

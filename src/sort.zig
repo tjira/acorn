@@ -11,7 +11,7 @@ const Matrix = @import("matrix.zig").Matrix;
 
 /// The main function for sorting files
 pub fn run(comptime T: type, opt: inp.SortOptions(T), print: bool, allocator: std.mem.Allocator) !void {
-    var timer = try std.time.Timer.start(); var A = try mat.read(T, opt.input, allocator);
+    var timer = try std.time.Timer.start(); var A = try mat.read(T, opt.input, allocator); defer A.deinit();
 
     if (print) try hlp.print(std.fs.File.stdout(), "\nREADING THE ARRAY OF {d} NUMBERS TOOK {D}", .{A.data.len, timer.read()});
 

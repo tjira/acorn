@@ -90,8 +90,11 @@ zig-bin/zig:
 clean:
 > git clean -dffx
 
-clean-cache:
-> rm -rf .zig-cache
-
-clean-output:
+clean-binary:
 > rm -rf zig-out
+
+clean-cache:
+> rm -rf ${HOME}/.cache/zig .zig-cache
+
+clean-root:
+> rm -rf *.all *.json *.mat *.xyz .bagel .orca

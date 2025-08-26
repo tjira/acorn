@@ -48,6 +48,7 @@ pub fn ClassicalDynamicsOptions(comptime T: type) type {
             momentum_mean: ?[]const T  = null,
             momentum_std:  ?[]const T  = null,
             mass:          ?[]const T  = null,
+            temperature:           ?T  = null,
             state:          []const T
         };
         pub const FewestSwitches = struct {

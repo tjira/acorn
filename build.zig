@@ -210,7 +210,7 @@ pub fn linuxScripts(bindir: []const u8, allocator: std.mem.Allocator) !void {
     const content_integral =
         \\  -b <basis>   Atomic orbital basis. (default: ${BASIS})
         \\  -e <export>  Boolean export flag. (default: ${EXPORT})
-        \\  -i <input>   Input system file in .xyz format. (default: ${SYSTEM})
+        \\  -i <input>   Input system file in .xyz format. (default: ${INPUT})
         \\  -n <nthread> Number of threads to use. (default: ${N})
         \\  -h           Display this help message and exit.
         \\EOF
