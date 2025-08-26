@@ -2,7 +2,7 @@
 title: Mapping Approach to Surface Hopping
 parent: Mixed Quantum-Classical Dynamics
 layout: default
-nav_order: 5
+nav_order: 6
 ---
 {% include mathjax.html %}
 

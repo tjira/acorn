@@ -1,11 +1,11 @@
 ---
-title: Landau–Zener Surface Hopping
+title: Bayond Surface Hopping
 parent: Mixed Quantum-Classical Dynamics
 layout: default
-nav_order: 5
+nav_order: 7
 ---
 {% include mathjax.html %}
 
-# Landau--Zener Surface Hopping<!--\label{sec:landau_zener}-->
+# Beyond Surface Hopping<!--\label{sec:beyond_surface_hopping}-->
 
 {:.no_toc .text-delta}

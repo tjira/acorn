@@ -4,21 +4,27 @@ BIB_COMPILER="biber"; GLOSSARY_COMPILER="makeglossaries"; TEX_COMPILER="lualatex
 
 PAGES=(
     "mathematical_background"
+    "vector_space"
     "hilbert_space"
+    "spectral_theory"
+    "adiabatic_vs_diabatic"
     "electronic_structure_methods"
     "hartree_fock"
     "moller_plesset_perturbation_theory"
     "configuration_interaction"
     "coupled_cluster"
+    "multireference_methods"
     "time_evolution_in_quantum_mechanics"
     "real_time_propagation"
     "imaginary_time_propagation"
     "mixed_quantum_classical_dynamics"
     "electronic_amplitude_propagation"
     "time_derivative_coupling"
+    "ehrenfest"
     "fewest_switches"
     "landau_zener"
     "mapping_approach"
+    "beyond_surface_hopping"
     "mathematical_methods"
     "matrix_exponential"
     "generalized_eigenvalue_problem"
@@ -70,7 +76,7 @@ ACRONYMS=(
 mkdir -p docs/tex && rm -f docs/tex/* && cat > docs/tex/main.tex << EOL
 % This file was transpiled using a script from the online version in the tjira.github.io/acorn repository. Do not edit it directly.
 
-% Compile with the "$TEX_COMPILER main && $BIB_COMPILER main && $GLOSSARY_COMPILER main && $TEX_COMPILER main && $TEX_COMPILER main" command.
+% Compile with the "$TEX_COMPILER main && $GLOSSARY_COMPILER main && $BIB_COMPILER main && $TEX_COMPILER main && $TEX_COMPILER main" command.
 
 \DocumentMetadata{
     lang = en,

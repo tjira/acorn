@@ -1,5 +1,5 @@
 ---
-title: Electronic Amplitude Propagation
+title: Quantum Amplitude Propagation
 parent: Mixed Quantum-Classical Dynamics
 has_children: true
 layout: default
@@ -7,7 +7,7 @@ nav_order: 1
 ---
 {% include mathjax.html %}
 
-# Electronic Amplitude Propagation<!--\label{sec:trajectory_surface_hopping}-->
+# Quantum Amplitude Propagation in Mixed Schemes<!--\label{sec:quantum_amplitude_propagation_in_mixed_themes}-->
 
 Under the Born--Oppenheimer Approximation, the total molecular wavefunction, $$\Psi(\symbf{r},\symbf{R},t)$$, is formally separable into electronic and nuclear parts because the nuclear masses greatly exceed those of the electrons. However, when two or more electronic states approach degeneracy, the Born--Oppenheimer Approximation separation fails and nonadiabatic effects become significant. Trajectory Surface Hopping is a general framework that treats nuclei and electrons separately: nuclei are propagated classically on an adiabatic Potential Energy Surface, while electrons are treated quantum mechanically.
 
