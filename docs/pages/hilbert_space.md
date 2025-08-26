@@ -1,9 +1,9 @@
 ---
-title: Hilbert Space
+title: Hilbert Spaces and Quantum States
 parent: Mathematical Background
 layout: default
-nav_order: 1
+nav_order: 2
 ---
 {% include mathjax.html %}
 
-# Hilbert Space<!--\label{sec:hilbert_space}-->
+# Hilbert Spaces and Quantum States<!--\label{sec:hilbert_spaces}-->

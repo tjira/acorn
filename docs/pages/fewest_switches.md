@@ -2,7 +2,7 @@
 title: Fewest Switches Surface Hopping
 parent: Mixed Quantum-Classical Dynamics
 layout: default
-nav_order: 3
+nav_order: 4
 ---
 {% include mathjax.html %}
 

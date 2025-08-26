@@ -1,11 +1,11 @@
 ---
-title: Landau–Zener Surface Hopping
+title: Ehrenfest Dynamics
 parent: Mixed Quantum-Classical Dynamics
 layout: default
-nav_order: 5
+nav_order: 3
 ---
 {% include mathjax.html %}
 
-# Landau--Zener Surface Hopping<!--\label{sec:landau_zener}-->
+# Ehrenfest Dynamics<!--\label{sec:ehrenfest_dynamics}-->
 
 {:.no_toc .text-delta}
