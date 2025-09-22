@@ -37,6 +37,10 @@
 Quantum Acorn, a collection of electronic structure methods compiled into a small dependency-free binary. If you are here for the educational scripts, you can find them in the education folder.
 </p>
 
+## Notice
+
+This project is archived and is no longer maintained. The code is provided as-is for educational purposes. The focus has ben shifted to the [Zinq](https://github.com/tjira/zinq) project, which is actively maintained and developed.
+
 ## Features
 
 Acorn offers a comprehensive suite of tools for both time-independent and time-dependent quantum mechanical simulations. Key features are grouped below for clarity.
