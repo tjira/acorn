@@ -6,8 +6,6 @@
   <a href="https://github.com/tjira/acorn#compilation">Compilation</a>
   ·
   <a href="https://github.com/tjira/acorn#examples">Examples</a>
-  ·
-  <a href="https://tjira.github.io/acorn/">Docs</a>
 </h4>
 
 <p align="center">
